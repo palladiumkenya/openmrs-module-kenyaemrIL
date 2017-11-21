@@ -6,13 +6,14 @@ package org.openmrs.module.kenyaemrIL.il;
  */
 public class ObservationResult {
     private String observationIdentifier;
+    private String observationSubId;
     private String codingSystem;
     private String valueType;
     private String observationValue;
     private String units;
     private String observationResultStatus;
     private String observationDatetime;
-    private String abnormalFlags;
+    private String abmormalFlags;
 
     public String getObservationIdentifier() {
         return observationIdentifier;
@@ -20,6 +21,14 @@ public class ObservationResult {
 
     public void setObservationIdentifier(String observationIdentifier) {
         this.observationIdentifier = observationIdentifier;
+    }
+
+    public String getObservationSubId() {
+        return observationSubId;
+    }
+
+    public void setObservationSubId(String observationSubId) {
+        this.observationSubId = observationSubId;
     }
 
     public String getCodingSystem() {
@@ -70,11 +79,11 @@ public class ObservationResult {
         this.observationDatetime = observationDatetime;
     }
 
-    public String getAbnormalFlags() {
-        return abnormalFlags;
+    public String getAbmormalFlags() {
+        return abmormalFlags;
     }
 
-    public void setAbnormalFlags(String abnormalFlags) {
-        this.abnormalFlags = abnormalFlags;
+    public void setAbmormalFlags(String abmormalFlags) {
+        this.abmormalFlags = abmormalFlags;
     }
 }
