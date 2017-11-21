@@ -16,6 +16,7 @@ package org.openmrs.module.kenyaemrIL.api;
 import org.openmrs.api.OpenmrsService;
 import org.openmrs.module.kenyaemrIL.il.ILAppointment;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -88,6 +89,17 @@ public interface KenyaEMRILService extends OpenmrsService {
 	 * @return the updated appointment
 	 */
 	ILAppointment updateAppointment(ILAppointment ilAppointment);
+
+
+	List<ILPharmacyOrder> fetchAllPharmacyOrders();
+	List<ILPharmacyOrder> fetchPharmacyOrders(boolean processed);
+	ILPharmacyOrder createPharmacyOrder(ILPharmacyOrder ilPharmacyOrder);
+	ILPharmacyOrder updatePharmacyOrder(ILPharmacyOrder ilPharmacyOrder);
+	boolean deletePharmacyOrder(ILPharmacyOrder ilPharmacyOrder);
+
+
+
+
 
 
 
