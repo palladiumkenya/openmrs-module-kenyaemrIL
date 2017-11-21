@@ -13,11 +13,15 @@
  */
 package org.openmrs.module.kenyaemrIL.api.impl;
 
+import org.hibernate.cfg.NotYetImplementedException;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.openmrs.module.kenyaemrIL.ILPerson;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
+
+import java.util.List;
 
 /**
  * It is a default implementation of {@link KenyaEMRILService}.
@@ -40,5 +44,31 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
      */
     public KenyaEMRILDAO getDao() {
 	    return dao;
+    }
+
+    @Override
+    public List<ILPerson> getPersonList(boolean status) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public List<ILPerson> getAddPersonList(boolean status) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+
+    }
+
+    @Override
+    public List<ILPerson> getUpdatePersonList(boolean status) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public boolean sendUpdateRequest(ILPerson ilPerson) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public boolean sendAddPersonRequest(ILPerson ilPerson) {
+        throw new NotYetImplementedException("Not Yet Implemented");
     }
 }
