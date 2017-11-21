@@ -17,6 +17,7 @@ import org.hibernate.cfg.NotYetImplementedException;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.openmrs.module.kenyaemrIL.il.ILAppointment;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
@@ -71,4 +72,27 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     public boolean sendAddPersonRequest(ILPerson ilPerson) {
         throw new NotYetImplementedException("Not Yet Implemented");
     }
+
+    @Override
+    public List<ILAppointment> fetchAllAppointments() {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public List<ILAppointment> fetchAppointments(boolean processed) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public boolean deleteAppointment(ILAppointment ilAppointment) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public ILAppointment createAppointment(ILAppointment ilAppointment) {
+        throw new NotYetImplementedException("Not Yet Implemented");    }
+
+    @Override
+    public ILAppointment updateAppointment(ILAppointment ilAppointment) {
+        throw new NotYetImplementedException("Not Yet Implemented");    }
 }

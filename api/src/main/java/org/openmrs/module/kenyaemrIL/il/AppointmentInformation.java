@@ -8,8 +8,8 @@ public class AppointmentInformation {
     private String appointmentReason;
     private String actionCode;
     private String appointmentPlacingEntity;
-    private String appointmentHonored;
     private String appointmentLocation;
+    private String appointmentStatus;
     private String appointmentType;
     private String appointmentNote;
     private String appointmentDate;
@@ -18,6 +18,7 @@ public class AppointmentInformation {
     public String getAppointmentReason() {
         return appointmentReason;
     }
+
 
     public void setAppointmentReason(String appointmentReason) {
         this.appointmentReason = appointmentReason;
@@ -39,12 +40,12 @@ public class AppointmentInformation {
         this.appointmentPlacingEntity = appointmentPlacingEntity;
     }
 
-    public String getAppointmentHonored() {
-        return appointmentHonored;
+    public String getAppointmentStatus() {
+        return appointmentStatus;
     }
 
-    public void setAppointmentHonored(String appointmentHonored) {
-        this.appointmentHonored = appointmentHonored;
+    public void setAppointmentStatus(String appointmentStatus) {
+        this.appointmentStatus = appointmentStatus;
     }
 
     public String getAppointmentLocation() {
