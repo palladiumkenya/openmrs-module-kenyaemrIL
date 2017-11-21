@@ -21,6 +21,7 @@ import org.openmrs.module.kenyaemrIL.il.ILAppointment;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
+import org.openmrs.module.kenyaemrIL.il.observation.ILObservation;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
 
@@ -145,6 +146,31 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
     @Override
     public boolean deletePharmacyDispense(ILPharmacyDispense ilPharmacyDispense) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public List<ILObservation> fetchAllObservations() {
+        throw new NotYetImplementedException("Not Yet Implemented");   
+    }
+
+    @Override
+    public List<ILObservation> fetchObservations(boolean processed) {
+        throw new NotYetImplementedException("Not Yet Implemented");   
+    }
+
+    @Override
+    public ILObservation createObservation(ILObservation ilObservation) {
+        throw new NotYetImplementedException("Not Yet Implemented");   
+    }
+
+    @Override
+    public ILObservation updateObservation(ILObservation ilObservation) {
+        throw new NotYetImplementedException("Not Yet Implemented");   
+    }
+
+    @Override
+    public boolean deleteObservation(ILObservation ilObservation) {
         throw new NotYetImplementedException("Not Yet Implemented");
     }
 }
