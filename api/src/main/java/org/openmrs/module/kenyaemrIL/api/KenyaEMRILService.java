@@ -14,6 +14,7 @@
 package org.openmrs.module.kenyaemrIL.api;
 
 import org.openmrs.api.OpenmrsService;
+import org.openmrs.module.kenyaemrIL.il.ILAppointment;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,6 +52,47 @@ public interface KenyaEMRILService extends OpenmrsService {
 	boolean sendUpdateRequest(ILPerson ilPerson);
 
 	boolean sendAddPersonRequest(ILPerson ilPerson);
+
+
+	/**
+	 * Fetches all Appointment Instances received in the system via the IL
+	 * @return  a list of appointments @see {@link ILAppointment}
+	 */
+	List<ILAppointment> fetchAllAppointments();
+
+	/**
+	 *
+	 * Fetches a list of appointments based on the processed status
+	 * @param processed -  flag for the criteria filtering, @see @{@link org.openmrs.module.kenyaemrIL.KenyaEmrInbox  status}
+	 * @return
+	 */
+	List<ILAppointment> fetchAppointments(boolean processed);
+
+	/**
+	 * Deletes/Cancels and appointment
+	 * @param ilAppointment appointment to cancel
+	 * @return true if successful, false otherwise
+	 */
+	boolean deleteAppointment(ILAppointment ilAppointment);
+
+	/**
+	 * Creates an appointment
+	 * @param ilAppointment - the appointment to create
+	 * @return the created appointment
+	 */
+	ILAppointment createAppointment(ILAppointment ilAppointment);
+
+	/**
+	 * Updates an appointment
+	 * @param ilAppointment - the appointment to uppdate
+	 * @return the updated appointment
+	 */
+	ILAppointment updateAppointment(ILAppointment ilAppointment);
+
+
+
+
+
 
 
 }
