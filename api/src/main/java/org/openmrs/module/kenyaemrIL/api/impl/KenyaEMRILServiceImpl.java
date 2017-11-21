@@ -21,6 +21,7 @@ import org.openmrs.module.kenyaemrIL.il.ILAppointment;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
 
 import java.util.List;
@@ -119,6 +120,31 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
     @Override
     public boolean deletePharmacyOrder(ILPharmacyOrder ilPharmacyOrder) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public List<ILPharmacyDispense> fetchAllPharmacyDispenses() {
+        throw new NotYetImplementedException("Not Yet Implemented");   
+    }
+
+    @Override
+    public List<ILPharmacyDispense> fetchPharmacyDispenses(boolean processed) {
+        throw new NotYetImplementedException("Not Yet Implemented");   
+    }
+
+    @Override
+    public ILPharmacyDispense createPharmacyDispense(ILPharmacyDispense ilPharmacyDispense) {
+        throw new NotYetImplementedException("Not Yet Implemented");   
+    }
+
+    @Override
+    public ILPharmacyDispense updatePharmacyDispense(ILPharmacyDispense ilPharmacyDispense) {
+        throw new NotYetImplementedException("Not Yet Implemented");   
+    }
+
+    @Override
+    public boolean deletePharmacyDispense(ILPharmacyDispense ilPharmacyDispense) {
         throw new NotYetImplementedException("Not Yet Implemented");
     }
 }

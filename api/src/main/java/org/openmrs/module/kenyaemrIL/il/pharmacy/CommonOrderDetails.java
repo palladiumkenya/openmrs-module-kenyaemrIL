@@ -7,6 +7,7 @@ package org.openmrs.module.kenyaemrIL.il.pharmacy;
 public class CommonOrderDetails {
     private String orderStatus;
     private PlacerOrderNumber placerOrderNumber;
+    private FillerOrderNumber fillerOrderNumber;
     private String orderControl;
     private String transactionDateTime;
     private String notes;
@@ -26,6 +27,14 @@ public class CommonOrderDetails {
 
     public void setPlacerOrderNumber(PlacerOrderNumber placerOrderNumber) {
         this.placerOrderNumber = placerOrderNumber;
+    }
+
+    public FillerOrderNumber getFillerOrderNumber() {
+        return fillerOrderNumber;
+    }
+
+    public void setFillerOrderNumber(FillerOrderNumber fillerOrderNumber) {
+        this.fillerOrderNumber = fillerOrderNumber;
     }
 
     public String getOrderControl() {
