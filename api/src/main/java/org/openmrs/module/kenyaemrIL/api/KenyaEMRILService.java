@@ -14,7 +14,7 @@
 package org.openmrs.module.kenyaemrIL.api;
 
 import org.openmrs.api.OpenmrsService;
-import org.openmrs.module.kenyaemrIL.ILPerson;
+import org.openmrs.module.kenyaemrIL.il.ILPerson;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;

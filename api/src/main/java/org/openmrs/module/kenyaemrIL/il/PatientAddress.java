@@ -1,4 +1,4 @@
-package org.openmrs.module.kenyaemrIL;
+package org.openmrs.module.kenyaemrIL.il;
 
 /**
  * @author Stanslaus Odhiambo

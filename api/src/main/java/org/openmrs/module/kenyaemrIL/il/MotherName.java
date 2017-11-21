@@ -1,14 +1,13 @@
-package org.openmrs.module.kenyaemrIL;
+package org.openmrs.module.kenyaemrIL.il;
 
 /**
  * @author Stanslaus Odhiambo
  *         Created on 21/11/2017.
  */
-public class PatientName {
+public class MotherName {
     private String firstName;
     private String middleName;
     private String lastName;
-
 
     public String getFirstName() {
         return firstName;
