@@ -62,6 +62,10 @@
 		</dependency>
 				
 		<!-- End OpenMRS core -->
+        <dependency>
+            <groupId>org.openmrs.module</groupId>
+            <artifactId>webservices.rest-api</artifactId>
+        </dependency>
 		
 	</dependencies>
 	

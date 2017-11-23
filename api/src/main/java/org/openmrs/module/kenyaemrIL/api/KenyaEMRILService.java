@@ -14,6 +14,8 @@
 package org.openmrs.module.kenyaemrIL.api;
 
 import org.openmrs.api.OpenmrsService;
+import org.openmrs.module.kenyaemrIL.ILMessageType;
+import org.openmrs.module.kenyaemrIL.KenyaEmrInbox;
 import org.openmrs.module.kenyaemrIL.il.ILAppointment;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
 import org.openmrs.module.kenyaemrIL.il.observation.ILObservation;
@@ -131,4 +133,20 @@ public interface KenyaEMRILService extends OpenmrsService {
     ILObservation updateObservation(ILObservation ilObservation);
 
     boolean deleteObservation(ILObservation ilObservation);
+
+
+
+    List<KenyaEmrInbox> getKenyaEmrInboxes(String s);
+
+    KenyaEmrInbox saveKenyaEmrInbox(KenyaEmrInbox kenyaEmrInbox);
+
+    void retireKenyaEmrInbox(KenyaEmrInbox kenyaEmrInbox, String s);
+
+    void purgeKenyaEmrInbox(KenyaEmrInbox kenyaEmrInbox);
+
+    List<KenyaEmrInbox> getAllKenyaEmrInboxes(boolean b);
+
+    ILMessageType getIlMessageTypeByUuid(String ilMessageTypeUuid);
+
+    List<KenyaEmrInbox> getKenyaEmrInboxesByType(ILMessageType type);
 }
