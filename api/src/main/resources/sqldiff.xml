@@ -19,11 +19,8 @@
 		<date>Nov 21st 2017</date>
 		<description> Create IL Interop tables</description>
 		<sql>
-			CREATE TABLE IF NOT EXISTS kenyaemrIL_messagetype (	`id` INT NOT NULL AUTO_INCREMENT,`uuid` VARCHAR(38) NULL,`message_type` VARCHAR(45) NULL, PRIMARY KEY (`id`);
-            CREATE TABLE IF NOT EXISTS kenyaemrIL_inbox (`id` INT NOT NULL AUTO_INCREMENT,`uuid` VARCHAR(38) NULL,`status` TINYINT(1) NULL,`messagetype_id` INT NOT NULL,PRIMARY KEY (`id`), CONSTRAINT `fk_kenyaemrIL_inbox_kenyaemrIL_messagetype` FOREIGN KEY (`messagetype_id`) REFERENCES kenyaemrIL_messagetype (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION);
-            CREATE INDEX `fk_kenyaemrIL_inbox_kenyaemrIL_messagetype_idx` ON kenyaemrIL_inbox (`messagetype_id` ASC);
-            CREATE TABLE IF NOT EXISTS kenyaemrIL_outbox (`id` INT NOT NULL AUTO_INCREMENT,`uuid` VARCHAR(38) NULL, `status` TINYINT(1) NULL, `messagetype_id` INT NOT NULL, PRIMARY KEY (`id`), CONSTRAINT `fk_kenyaemrIL_outbox_kenyaemrIL_messagetype1` FOREIGN KEY (`messagetype_id`) REFERENCES kenyaemrIL_messagetype (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION);
-            CREATE INDEX `fk_kenyaemrIL_outbox_kenyaemrIL_messagetype1_idx` ON kenyaemrIL_outbox (`messagetype_id` ASC);
+            CREATE TABLE IF NOT EXISTS kenyaemrIL_inbox (`id` INT NOT NULL AUTO_INCREMENT, `status` TINYINT(1) NULL,`message_type` VARCHAR(38) NOT NULL, PRIMARY KEY (`id`));
+            CREATE TABLE IF NOT EXISTS kenyaemrIL_outbox (`id` INT NOT NULL AUTO_INCREMENT, `status` TINYINT(1) NULL, `message_type` VARCHAR(38) NOT NULL, PRIMARY KEY (`id`));
         </sql>
 	</diff>
 

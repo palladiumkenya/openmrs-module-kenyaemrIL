@@ -23,6 +23,8 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import javax.annotation.Resource;
+
 /**
  * The web service controller.
  */
@@ -30,8 +32,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 @RequestMapping("/rest/" + RestConstants.VERSION_1 + KenyaEMRILResourceController.KENYAEMR_IL__NAMESPACE)
 public class KenyaEMRILResourceController extends MainResourceController {
 
-    public static final String KENYAEMR_IL__NAMESPACE = "/kenyaemrIL";
-
+    public static final String KENYAEMR_IL__NAMESPACE = "/kenyaemril";
     /**
      * @see org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController#getNamespace()
      */

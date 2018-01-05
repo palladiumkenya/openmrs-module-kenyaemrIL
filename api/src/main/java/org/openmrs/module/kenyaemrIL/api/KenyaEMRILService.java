@@ -14,7 +14,6 @@
 package org.openmrs.module.kenyaemrIL.api;
 
 import org.openmrs.api.OpenmrsService;
-import org.openmrs.module.kenyaemrIL.ILMessageType;
 import org.openmrs.module.kenyaemrIL.KenyaEmrInbox;
 import org.openmrs.module.kenyaemrIL.il.ILAppointment;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
@@ -136,7 +135,7 @@ public interface KenyaEMRILService extends OpenmrsService {
 
 
 
-    List<KenyaEmrInbox> getKenyaEmrInboxes(String s);
+    KenyaEmrInbox getKenyaEmrInboxByUuid(String uuid);
 
     KenyaEmrInbox saveKenyaEmrInbox(KenyaEmrInbox kenyaEmrInbox);
 
@@ -146,7 +145,5 @@ public interface KenyaEMRILService extends OpenmrsService {
 
     List<KenyaEmrInbox> getAllKenyaEmrInboxes(boolean b);
 
-    ILMessageType getIlMessageTypeByUuid(String ilMessageTypeUuid);
-
-    List<KenyaEmrInbox> getKenyaEmrInboxesByType(ILMessageType type);
+    List<KenyaEmrInbox> getKenyaEmrInboxesByType(String type);
 }

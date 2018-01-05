@@ -1,11 +1,12 @@
 package org.openmrs.module.kenyaemrIL.web.resource;
 
+import java.util.List;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.openmrs.Location;
+import org.openmrs.LocationTag;
+import org.openmrs.api.LocationService;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.kenyaemrIL.KenyaEmrInbox;
-import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
-import org.openmrs.module.kenyaemrIL.web.controller.KenyaEMRILResourceController;
-import org.openmrs.module.webservices.rest.SimpleObject;
-import org.openmrs.module.webservices.rest.web.ConversionUtil;
 import org.openmrs.module.webservices.rest.web.RequestContext;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.annotation.Resource;
@@ -13,21 +14,17 @@ import org.openmrs.module.webservices.rest.web.representation.DefaultRepresentat
 import org.openmrs.module.webservices.rest.web.representation.FullRepresentation;
 import org.openmrs.module.webservices.rest.web.representation.Representation;
 import org.openmrs.module.webservices.rest.web.resource.api.PageableResult;
-import org.openmrs.module.webservices.rest.web.resource.impl.*;
+import org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource;
+import org.openmrs.module.webservices.rest.web.resource.impl.DelegatingResourceDescription;
+import org.openmrs.module.webservices.rest.web.resource.impl.MetadataDelegatingCrudResource;
+import org.openmrs.module.webservices.rest.web.resource.impl.NeedsPaging;
 import org.openmrs.module.webservices.rest.web.response.ResponseException;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * @author Stanslaus Odhiambo
- *         Created on 21/11/2017.
+ * {@link Resource} for {@link Location}, supporting standard CRUD operations
  */
-
-@Resource(name = RestConstants.VERSION_1 + KenyaEMRILResourceController.KENYAEMR_IL__NAMESPACE
-        + "/inbox", supportedClass = KenyaEmrInbox.class, supportedOpenmrsVersions = {"1.9.*", "1.10.*", "1.11.*",
-        "1.12.*", "2.0.*", "2.1.*"})
-public class KenyaEmrInboxResource extends MetadataDelegatingCrudResource<KenyaEmrInbox> {
+@Resource(name = RestConstants.VERSION_1 + "/location", supportedClass = Location.class, supportedOpenmrsVersions = "1.8.*")
+public class LocationResource1_8 extends MetadataDelegatingCrudResource<Location> {
 
     /**
      * @see DelegatingCrudResource#getRepresentationDescription(Representation)
@@ -132,92 +129,85 @@ public class KenyaEmrInboxResource extends MetadataDelegatingCrudResource<KenyaE
      * @see DelegatingCrudResource#newDelegate()
      */
     @Override
-    public KenyaEmrInbox newDelegate() {
-        return new KenyaEmrInbox();
+    public Location newDelegate() {
+        return new Location();
     }
 
     /**
      * @see DelegatingCrudResource#save(java.lang.Object)
      */
     @Override
-    public KenyaEmrInbox save(KenyaEmrInbox kenyaEmrInbox) {
-        return Context.getService(KenyaEMRILService.class).saveKenyaEmrInbox(kenyaEmrInbox);
+    public Location save(Location location) {
+        return Context.getLocationService().saveLocation(location);
     }
 
     /**
-     * Fetches an inbox by uuid, if no match is found, it tries to look up one with a matching
+     * Fetches a location by uuid, if no match is found, it tries to look up one with a matching
      * name with the assumption that the passed parameter is a location name
      *
      * @see DelegatingCrudResource#getByUniqueId(java.lang.String)
      */
     @Override
-    public KenyaEmrInbox getByUniqueId(String uuid) {
-        return Context.getService(KenyaEMRILService.class).getKenyaEmrInboxByUuid(uuid);
+    public Location getByUniqueId(String uuid) {
+        Location location = Context.getLocationService().getLocationByUuid(uuid);
+        //We assume the caller was fetching by name
+        if (location == null)
+            location = Context.getLocationService().getLocation(uuid);
+
+        return location;
     }
 
     /**
      * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#purge(java.lang.Object,
-     * org.openmrs.module.webservices.rest.web.RequestContext)
+     *      org.openmrs.module.webservices.rest.web.RequestContext)
      */
     @Override
-    public void purge(KenyaEmrInbox kenyaEmrInbox, RequestContext requestContext) throws ResponseException {
-        Context.getService(KenyaEMRILService.class).purgeKenyaEmrInbox(kenyaEmrInbox);
+    public void purge(Location location, RequestContext context) throws ResponseException {
+        if (location == null)
+            return;
+        Context.getLocationService().purgeLocation(location);
     }
 
     /**
      * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#doGetAll(org.openmrs.module.webservices.rest.web.RequestContext)
      */
-
     @Override
-    protected PageableResult doGetAll(RequestContext context) throws ResponseException {
-        return new NeedsPaging<KenyaEmrInbox>(Context.getService(KenyaEMRILService.class).getAllKenyaEmrInboxes(false), context);
+    protected NeedsPaging<Location> doGetAll(RequestContext context) {
+        return new NeedsPaging<Location>(Context.getLocationService().getAllLocations(context.getIncludeAll()), context);
     }
 
     /**
      * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#doSearch(org.openmrs.module.webservices.rest.web.RequestContext)
-     * A query string and/or a tag uuid can be passed in; if both are passed in, returns an
-     * intersection of the results; excludes retired locations
+     *      A query string and/or a tag uuid can be passed in; if both are passed in, returns an
+     *      intersection of the results; excludes retired locations
      */
-
     @Override
-    protected PageableResult doSearch(RequestContext context) throws ResponseException {
-        String ilMessageTypeUuid = context.getRequest().getParameter("messageType");
-        if (ilMessageTypeUuid != null) {
-            List<KenyaEmrInbox> inboxes = Context.getService(KenyaEMRILService.class)
-                    .getKenyaEmrInboxesByType(ilMessageTypeUuid);
-            return new NeedsPaging<KenyaEmrInbox>(inboxes, context);
+    protected PageableResult doSearch(RequestContext context) {
+
+        LocationService locationService = Context.getLocationService();
+
+        String tagUuid = context.getParameter("tag");
+        String query = context.getParameter("q");
+
+        List<Location> locationsByTag = null;
+        List<Location> locationsByQuery = null;
+
+        if (tagUuid != null) {
+            LocationTag locationTag = locationService.getLocationTagByUuid(tagUuid);
+            locationsByTag = locationService.getLocationsByTag(locationTag);
         }
-        return new EmptySearchResult();
+
+        if (query != null) {
+            locationsByQuery = locationService.getLocations(query);
+        }
+
+        if (locationsByTag == null) {
+            return new NeedsPaging<Location>(locationsByQuery, context);
+        } else if (locationsByQuery == null) {
+            return new NeedsPaging<Location>(locationsByTag, context);
+        } else {
+            return new NeedsPaging<Location>(
+                    (List<Location>) CollectionUtils.intersection(locationsByQuery, locationsByTag), context);
+        }
     }
-
-//    End
-
-
-    @Override
-    public void delete(KenyaEmrInbox kenyaEmrInbox, String s, RequestContext requestContext) throws ResponseException {
-        Context.getService(KenyaEMRILService.class).retireKenyaEmrInbox(kenyaEmrInbox, s);
-    }
-
-
-    @Override
-    public Object create(SimpleObject postBody, RequestContext context) throws ResponseException {
-//        TODO - Do some conversion here for the postBody
-        Object savedIdentifierSource = null;
-        ArrayList<String> errors = new ArrayList<String>();
-
-        return ConversionUtil.convertToRepresentation(savedIdentifierSource, Representation.DEFAULT);
-
-    }
-
-    @Override
-    public Object update(String uuid, SimpleObject updateBody, RequestContext context) throws ResponseException {
-//        TODO - Do some conversion here for the postBody
-        Object updatedKenyaEmrInbox = null;
-        ArrayList<String> errors = new ArrayList<String>();
-
-        return ConversionUtil.convertToRepresentation(updatedKenyaEmrInbox, Representation.DEFAULT);
-
-    }
-
-
 }

@@ -21,13 +21,13 @@ import java.io.Serializable;
 /**
  * It is a model class. It should extend either {@link BaseOpenmrsObject} or {@link BaseOpenmrsMetadata}.
  */
-public class KenyaEmrInbox extends BaseOpenmrsObject implements Serializable {
+public class KenyaEmrInbox extends BaseOpenmrsMetadata implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 7654L;
 
     private Integer id;
     private boolean status;
-    private ILMessageType ilMessageType;
+    private String messageType;
 
     @Override
     public Integer getId() {
@@ -51,11 +51,11 @@ public class KenyaEmrInbox extends BaseOpenmrsObject implements Serializable {
         this.status = status;
     }
 
-    public ILMessageType getIlMessageType() {
-        return ilMessageType;
+    public String getMessageType() {
+        return messageType;
     }
 
-    public void setIlMessageType(ILMessageType ilMessageType) {
-        this.ilMessageType = ilMessageType;
+    public void setMessageType(String messageType) {
+        this.messageType = messageType;
     }
 }

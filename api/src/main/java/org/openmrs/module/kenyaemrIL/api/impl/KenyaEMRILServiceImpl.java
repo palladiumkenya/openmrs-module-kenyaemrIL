@@ -17,6 +17,7 @@ import org.hibernate.cfg.NotYetImplementedException;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.openmrs.module.kenyaemrIL.KenyaEmrInbox;
 import org.openmrs.module.kenyaemrIL.il.ILAppointment;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
@@ -173,4 +174,36 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     public boolean deleteObservation(ILObservation ilObservation) {
         throw new NotYetImplementedException("Not Yet Implemented");
     }
+
+    @Override
+    public KenyaEmrInbox getKenyaEmrInboxByUuid(String uuid) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+
+    @Override
+    public KenyaEmrInbox saveKenyaEmrInbox(KenyaEmrInbox kenyaEmrInbox) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public void retireKenyaEmrInbox(KenyaEmrInbox kenyaEmrInbox, String s) {
+
+    }
+
+    @Override
+    public void purgeKenyaEmrInbox(KenyaEmrInbox kenyaEmrInbox) {
+
+    }
+
+    @Override
+    public List<KenyaEmrInbox> getAllKenyaEmrInboxes(boolean b) {
+        return null;
+    }
+
+    @Override
+    public List<KenyaEmrInbox> getKenyaEmrInboxesByType(String type) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
 }
