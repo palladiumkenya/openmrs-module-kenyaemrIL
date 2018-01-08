@@ -27,7 +27,7 @@ import java.util.List;
 @Resource(name = RestConstants.VERSION_1 + KenyaEMRILResourceController.KENYAEMR_IL__NAMESPACE
         + "/inbox", supportedClass = KenyaEmrInbox.class, supportedOpenmrsVersions = {"1.9.*", "1.10.*", "1.11.*",
         "1.12.*", "2.0.*", "2.1.*"})
-public class KenyaEmrInboxResource extends MetadataDelegatingCrudResource<KenyaEmrInbox> {
+public class KenyaEmrInboxResource extends DataDelegatingCrudResource<KenyaEmrInbox> {
 
     /**
      * @see DelegatingCrudResource#getRepresentationDescription(Representation)

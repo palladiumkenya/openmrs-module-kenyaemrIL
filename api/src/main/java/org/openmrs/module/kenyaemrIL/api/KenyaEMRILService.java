@@ -17,6 +17,7 @@ import org.openmrs.api.OpenmrsService;
 import org.openmrs.module.kenyaemrIL.KenyaEmrInbox;
 import org.openmrs.module.kenyaemrIL.il.ILAppointment;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
+import org.openmrs.module.kenyaemrIL.il.ILTest;
 import org.openmrs.module.kenyaemrIL.il.observation.ILObservation;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
@@ -146,4 +147,13 @@ public interface KenyaEMRILService extends OpenmrsService {
     List<KenyaEmrInbox> getAllKenyaEmrInboxes(boolean b);
 
     List<KenyaEmrInbox> getKenyaEmrInboxesByType(String type);
+
+
+    ILTest getILTestByUuid(String uniqueId);
+
+    ILTest saveILTest(ILTest delegate);
+
+    List<ILTest> getAllILTests(Boolean includeAll);
+
+    void deleteILTest(ILTest ilTest);
 }

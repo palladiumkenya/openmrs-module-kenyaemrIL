@@ -22,6 +22,7 @@ import org.openmrs.module.kenyaemrIL.il.ILAppointment;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
+import org.openmrs.module.kenyaemrIL.il.ILTest;
 import org.openmrs.module.kenyaemrIL.il.observation.ILObservation;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
@@ -204,6 +205,28 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     @Override
     public List<KenyaEmrInbox> getKenyaEmrInboxesByType(String type) {
         throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public ILTest getILTestByUuid(String uniqueId) {
+        ILTest ilTest = this.dao.getILTestByUuid(uniqueId);
+        System.out.println("What is it htat was returned: "+ilTest);
+        return ilTest;
+    }
+
+    @Override
+    public ILTest saveILTest(ILTest delegate) {
+        return this.dao.createILTest(delegate);
+    }
+
+    @Override
+    public List<ILTest> getAllILTests(Boolean includeAll) {
+        return this.dao.getAllILTests(includeAll);
+    }
+
+    @Override
+    public void deleteILTest(ILTest ilTest) {
+        this.dao.deleteILTest(ilTest);
     }
 
 }

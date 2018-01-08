@@ -11,8 +11,14 @@
         </id>
         <discriminator column="id" insert="false"/>
 
+        <property name="uuid" type="java.lang.String"
+                  column="uuid" length="38" unique="true" />
+
         <property name="messageType" type="java.lang.String" column="message_type"
                   length="38" unique="true"/>
+
+        <property name="message" type="java.lang.String" column="message" />
+
         <property name="status" column="status"/>
 
     </class>

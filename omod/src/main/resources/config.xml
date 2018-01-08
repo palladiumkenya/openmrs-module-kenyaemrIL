@@ -30,7 +30,8 @@
 	<mappingFiles>
 				
 		KenyaEMRIL.hbm.xml
-				
+		ILTest.hbm.xml
+
 	</mappingFiles>
 
 	<!-- Internationalization -->

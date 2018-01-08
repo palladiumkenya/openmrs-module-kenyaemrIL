@@ -7,6 +7,7 @@ import org.openmrs.Location;
 import org.openmrs.LocationTag;
 import org.openmrs.api.LocationService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.kenyaemrIL.web.controller.KenyaEMRILResourceController;
 import org.openmrs.module.webservices.rest.web.RequestContext;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.annotation.Resource;
@@ -23,7 +24,7 @@ import org.openmrs.module.webservices.rest.web.response.ResponseException;
 /**
  * {@link Resource} for {@link Location}, supporting standard CRUD operations
  */
-@Resource(name = RestConstants.VERSION_1 + "/location", supportedClass = Location.class, supportedOpenmrsVersions = "1.8.*")
+@Resource(name = RestConstants.VERSION_1 + KenyaEMRILResourceController.KENYAEMR_IL__NAMESPACE + "/location", supportedClass = Location.class, supportedOpenmrsVersions = "1.8.*")
 public class LocationResource1_8 extends MetadataDelegatingCrudResource<Location> {
 
     /**
@@ -159,7 +160,7 @@ public class LocationResource1_8 extends MetadataDelegatingCrudResource<Location
 
     /**
      * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#purge(java.lang.Object,
-     *      org.openmrs.module.webservices.rest.web.RequestContext)
+     * org.openmrs.module.webservices.rest.web.RequestContext)
      */
     @Override
     public void purge(Location location, RequestContext context) throws ResponseException {
@@ -178,8 +179,8 @@ public class LocationResource1_8 extends MetadataDelegatingCrudResource<Location
 
     /**
      * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#doSearch(org.openmrs.module.webservices.rest.web.RequestContext)
-     *      A query string and/or a tag uuid can be passed in; if both are passed in, returns an
-     *      intersection of the results; excludes retired locations
+     * A query string and/or a tag uuid can be passed in; if both are passed in, returns an
+     * intersection of the results; excludes retired locations
      */
     @Override
     protected PageableResult doSearch(RequestContext context) {

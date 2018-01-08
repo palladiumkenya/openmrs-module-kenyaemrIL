@@ -14,13 +14,23 @@
 package org.openmrs.module.kenyaemrIL.api.db;
 
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
+import org.openmrs.module.kenyaemrIL.il.ILTest;
+
+import java.util.List;
 
 /**
  *  Database methods for {@link KenyaEMRILService}.
  */
 public interface KenyaEMRILDAO {
-	
 	/*
 	 * Add DAO methods here
 	 */
+
+    ILTest getILTestByUuid(String uniqueId);
+
+    List<ILTest> getAllILTests(Boolean includeAll);
+
+    ILTest createILTest(ILTest delegate);
+
+    void deleteILTest(ILTest ilTest);
 }

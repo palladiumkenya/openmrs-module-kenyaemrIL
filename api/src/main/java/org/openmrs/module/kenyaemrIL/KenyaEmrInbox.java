@@ -13,6 +13,9 @@
  */
 package org.openmrs.module.kenyaemrIL;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.openmrs.BaseOpenmrsData;
 import org.openmrs.BaseOpenmrsMetadata;
 import org.openmrs.BaseOpenmrsObject;
 
@@ -21,13 +24,14 @@ import java.io.Serializable;
 /**
  * It is a model class. It should extend either {@link BaseOpenmrsObject} or {@link BaseOpenmrsMetadata}.
  */
-public class KenyaEmrInbox extends BaseOpenmrsMetadata implements Serializable {
+public class KenyaEmrInbox extends BaseOpenmrsData implements Serializable {
 
     private static final long serialVersionUID = 7654L;
-
+    private static final Log log = LogFactory.getLog(KenyaEmrInbox.class);
     private Integer id;
     private boolean status;
     private String messageType;
+    private String message;
 
     @Override
     public Integer getId() {
@@ -57,5 +61,13 @@ public class KenyaEmrInbox extends BaseOpenmrsMetadata implements Serializable {
 
     public void setMessageType(String messageType) {
         this.messageType = messageType;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }
