@@ -14,7 +14,7 @@
 package org.openmrs.module.kenyaemrIL.api.db;
 
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
-import org.openmrs.module.kenyaemrIL.il.ILTest;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 
 import java.util.List;
 
@@ -26,11 +26,15 @@ public interface KenyaEMRILDAO {
 	 * Add DAO methods here
 	 */
 
-    ILTest getILTestByUuid(String uniqueId);
+    KenyaEMRILMessage getKenyaEMRILMessageByUuid(String uniqueId);
 
-    List<ILTest> getAllILTests(Boolean includeAll);
+    KenyaEMRILMessage createKenyaEMRILMessage(KenyaEMRILMessage kenyaEMRILMessage);
 
-    ILTest createILTest(ILTest delegate);
+    void deleteKenyaEMRILMessage(KenyaEMRILMessage kenyaEMRILMessage);
 
-    void deleteILTest(ILTest ilTest);
+    List<KenyaEMRILMessage> getKenyaEMRILInboxes(Boolean includeRetired);
+
+    List<KenyaEMRILMessage> getKenyaEMRILOutboxes(Boolean includeRetired);
+
+    List<KenyaEMRILMessage> getAllKenyaEMRILMessages(Boolean includeAll);
 }

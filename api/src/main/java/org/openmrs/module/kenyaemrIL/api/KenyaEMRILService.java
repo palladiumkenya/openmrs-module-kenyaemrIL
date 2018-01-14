@@ -14,10 +14,9 @@
 package org.openmrs.module.kenyaemrIL.api;
 
 import org.openmrs.api.OpenmrsService;
-import org.openmrs.module.kenyaemrIL.KenyaEmrInbox;
 import org.openmrs.module.kenyaemrIL.il.ILAppointment;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
-import org.openmrs.module.kenyaemrIL.il.ILTest;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.ILObservation;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
@@ -136,24 +135,15 @@ public interface KenyaEMRILService extends OpenmrsService {
 
 
 
-    KenyaEmrInbox getKenyaEmrInboxByUuid(String uuid);
+    KenyaEMRILMessage getKenyaEMRILMessageByUuid(String uniqueId);
 
-    KenyaEmrInbox saveKenyaEmrInbox(KenyaEmrInbox kenyaEmrInbox);
+    KenyaEMRILMessage saveKenyaEMRILMessage(KenyaEMRILMessage kenyaEMRILMessage);
 
-    void retireKenyaEmrInbox(KenyaEmrInbox kenyaEmrInbox, String s);
+    List<KenyaEMRILMessage> getKenyaEMRILInboxes(Boolean includeRetired);
 
-    void purgeKenyaEmrInbox(KenyaEmrInbox kenyaEmrInbox);
+    List<KenyaEMRILMessage> getKenyaEMRILOutboxes(Boolean includeRetired);
 
-    List<KenyaEmrInbox> getAllKenyaEmrInboxes(boolean b);
+    void deleteKenyaEMRILMessage(KenyaEMRILMessage kenyaEMRILMessage);
 
-    List<KenyaEmrInbox> getKenyaEmrInboxesByType(String type);
-
-
-    ILTest getILTestByUuid(String uniqueId);
-
-    ILTest saveILTest(ILTest delegate);
-
-    List<ILTest> getAllILTests(Boolean includeAll);
-
-    void deleteILTest(ILTest ilTest);
+    List<KenyaEMRILMessage> getAllKenyaEMRILMessages(Boolean includeAll);
 }

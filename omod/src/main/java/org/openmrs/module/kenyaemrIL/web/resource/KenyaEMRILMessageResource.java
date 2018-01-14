@@ -14,7 +14,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.hl7.HL7Source;
 import org.openmrs.module.kenyaemrIL.api.ILMessageType;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
-import org.openmrs.module.kenyaemrIL.il.ILTest;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.web.controller.KenyaEMRILResourceController;
 import org.openmrs.module.webservices.rest.web.RequestContext;
 import org.openmrs.module.webservices.rest.web.RestConstants;
@@ -29,16 +29,16 @@ import org.openmrs.module.webservices.rest.web.response.ResponseException;
 /**
  * {@link Resource} for {@link HL7Source}, supporting standard CRUD operations
  */
-@Resource(name = RestConstants.VERSION_1 + KenyaEMRILResourceController.KENYAEMR_IL__NAMESPACE + "/iltest", supportedClass = ILTest.class, supportedOpenmrsVersions = {
+@Resource(name = RestConstants.VERSION_1 + KenyaEMRILResourceController.KENYAEMR_IL__NAMESPACE + "/api", supportedClass = KenyaEMRILMessage.class, supportedOpenmrsVersions = {
         "1.8.*", "1.9.*", "1.10.*", "1.11.*", "1.12.*", "2.0.*", "2.1.*"})
-public class ILTestResource extends MetadataDelegatingCrudResource<ILTest> {
+public class KenyaEMRILMessageResource extends MetadataDelegatingCrudResource<KenyaEMRILMessage> {
 
     /**
      * @see org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResource#getByUniqueId(String)
      */
     @Override
-    public ILTest getByUniqueId(String uniqueId) {
-        return Context.getService(KenyaEMRILService.class).getILTestByUuid(uniqueId);
+    public KenyaEMRILMessage getByUniqueId(String uniqueId) {
+        return Context.getService(KenyaEMRILService.class).getKenyaEMRILMessageByUuid(uniqueId);
     }
 
     /**
@@ -54,9 +54,12 @@ public class ILTestResource extends MetadataDelegatingCrudResource<ILTest> {
      */
     @Override
     public DelegatingResourceDescription getCreatableProperties() {
-        DelegatingResourceDescription description = super.getCreatableProperties();
+        DelegatingResourceDescription description = new DelegatingResourceDescription();
         //description is set as optional on the superclass, we need to over ride that
-        description.addRequiredProperty("description");
+        description.addRequiredProperty("message");
+        description.addRequiredProperty("messageType");
+        description.addRequiredProperty("hl7Type");
+        description.addRequiredProperty("retired");
 
         return description;
     }
@@ -65,8 +68,8 @@ public class ILTestResource extends MetadataDelegatingCrudResource<ILTest> {
      * @see org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResource#newDelegate()
      */
     @Override
-    public ILTest newDelegate() {
-        return new ILTest();
+    public KenyaEMRILMessage newDelegate() {
+        return new KenyaEMRILMessage();
     }
 
     /**
@@ -74,7 +77,7 @@ public class ILTestResource extends MetadataDelegatingCrudResource<ILTest> {
      * RequestContext)
      */
     @Override
-    public void purge(ILTest delegate, RequestContext context) throws ResponseException {
+    public void purge(KenyaEMRILMessage delegate, RequestContext context) throws ResponseException {
         throw new ResourceDoesNotSupportOperationException();
     }
 
@@ -82,14 +85,14 @@ public class ILTestResource extends MetadataDelegatingCrudResource<ILTest> {
      * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingResourceHandler#save(Object)
      */
     @Override
-    public ILTest save(ILTest delegate) {
+    public KenyaEMRILMessage save(KenyaEMRILMessage delegate) {
         if (Context.getAuthenticatedUser() != null) {
             delegate.setCreator(Context.getAuthenticatedUser());
         } else {
             delegate.setCreator(new User(1));
         }
         delegate.setMessageType(ILMessageType.INBOUND.getValue());
-        return Context.getService(KenyaEMRILService.class).saveILTest(delegate);
+        return Context.getService(KenyaEMRILService.class).saveKenyaEMRILMessage(delegate);
     }
 
 
@@ -97,8 +100,8 @@ public class ILTestResource extends MetadataDelegatingCrudResource<ILTest> {
      * @see org.openmrs.module.webservices.rest.web.resource.impl.DelegatingCrudResource#doGetAll(org.openmrs.module.webservices.rest.web.RequestContext)
      */
     @Override
-    protected NeedsPaging<ILTest> doGetAll(RequestContext context) {
-        return new NeedsPaging<ILTest>(Context.getService(KenyaEMRILService.class).getAllILTests(context.getIncludeAll()), context);
+    protected NeedsPaging<KenyaEMRILMessage> doGetAll(RequestContext context) {
+        return new NeedsPaging<KenyaEMRILMessage>(Context.getService(KenyaEMRILService.class).getAllKenyaEMRILMessages(context.getIncludeAll()), context);
     }
 
 

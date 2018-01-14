@@ -15,21 +15,18 @@
         "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
 <hibernate-mapping package="org.openmrs.module.kenyaemrIL.il">
 
-    <class name="ILTest" table="il_test">
+    <class name="org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage" table="il_message">
 
-        <id name="iltestid" type="int" column="il_test_id" unsaved-value="0">
+        <id name="messageId" type="int" column="message_id" unsaved-value="0">
             <generator class="native">
-                <param name="sequence">il_test_il_test_id_seq</param>
+                <param name="sequence">il_message_message_id_seq</param>
             </generator>
         </id>
 
-        <discriminator column="il_test_id" insert="false"/>
+        <discriminator column="message_id" insert="false"/>
 
-        <property name="name" type="java.lang.String"
-                  column="name" not-null="true" length="255"/>
-
-        <property name="description" type="java.lang.String"
-                  column="description" not-null="true" length="2048"/>
+        <property name="message" type="java.lang.String"
+                  column="message" not-null="true" length="2048"/>
 
         <many-to-one name="creator" class="org.openmrs.User" not-null="true">
             <column name="creator"/>
@@ -42,9 +39,12 @@
                   column="uuid" length="38" unique="true"/>
 
         <property name="retired" type="boolean" column="retired"
-                  length="1" not-null="true" />
+                  length="1" not-null="true"/>
 
         <property name="messageType" type="int" column="message_type"
-                  length="1" not-null="true" />
+                  length="1" not-null="true"/>
+
+        <property name="hl7Type" type="java.lang.String" column="hl7_type"
+                  length="10"/>
     </class>
 </hibernate-mapping>

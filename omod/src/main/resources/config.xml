@@ -30,7 +30,7 @@
 	<mappingFiles>
 				
 		KenyaEMRIL.hbm.xml
-		ILTest.hbm.xml
+		KenyaEMRILMessage.hbm.xml
 
 	</mappingFiles>
 

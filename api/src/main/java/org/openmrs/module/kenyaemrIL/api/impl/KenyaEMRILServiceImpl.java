@@ -17,12 +17,11 @@ import org.hibernate.cfg.NotYetImplementedException;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.openmrs.module.kenyaemrIL.KenyaEmrInbox;
 import org.openmrs.module.kenyaemrIL.il.ILAppointment;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
-import org.openmrs.module.kenyaemrIL.il.ILTest;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.ILObservation;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
@@ -177,56 +176,35 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public KenyaEmrInbox getKenyaEmrInboxByUuid(String uuid) {
-        throw new NotYetImplementedException("Not Yet Implemented");
-    }
-
-
-    @Override
-    public KenyaEmrInbox saveKenyaEmrInbox(KenyaEmrInbox kenyaEmrInbox) {
-        throw new NotYetImplementedException("Not Yet Implemented");
+    public KenyaEMRILMessage getKenyaEMRILMessageByUuid(String uniqueId) {
+        KenyaEMRILMessage kenyaEMRILMessage = this.dao.getKenyaEMRILMessageByUuid(uniqueId);
+        System.out.println("What is it htat was returned: "+ kenyaEMRILMessage);
+        return kenyaEMRILMessage;
     }
 
     @Override
-    public void retireKenyaEmrInbox(KenyaEmrInbox kenyaEmrInbox, String s) {
-
+    public KenyaEMRILMessage saveKenyaEMRILMessage(KenyaEMRILMessage delegate) {
+        return this.dao.createKenyaEMRILMessage(delegate);
     }
 
     @Override
-    public void purgeKenyaEmrInbox(KenyaEmrInbox kenyaEmrInbox) {
-
+    public List<KenyaEMRILMessage> getKenyaEMRILInboxes(Boolean includeRetired) {
+        return this.dao.getKenyaEMRILInboxes(includeRetired);
     }
 
     @Override
-    public List<KenyaEmrInbox> getAllKenyaEmrInboxes(boolean b) {
-        return null;
+    public List<KenyaEMRILMessage> getKenyaEMRILOutboxes(Boolean includeRetired) {
+        return this.dao.getKenyaEMRILInboxes(includeRetired);
     }
 
     @Override
-    public List<KenyaEmrInbox> getKenyaEmrInboxesByType(String type) {
-        throw new NotYetImplementedException("Not Yet Implemented");
+    public void deleteKenyaEMRILMessage(KenyaEMRILMessage kenyaEMRILMessage) {
+        this.dao.deleteKenyaEMRILMessage(kenyaEMRILMessage);
     }
 
     @Override
-    public ILTest getILTestByUuid(String uniqueId) {
-        ILTest ilTest = this.dao.getILTestByUuid(uniqueId);
-        System.out.println("What is it htat was returned: "+ilTest);
-        return ilTest;
-    }
-
-    @Override
-    public ILTest saveILTest(ILTest delegate) {
-        return this.dao.createILTest(delegate);
-    }
-
-    @Override
-    public List<ILTest> getAllILTests(Boolean includeAll) {
-        return this.dao.getAllILTests(includeAll);
-    }
-
-    @Override
-    public void deleteILTest(ILTest ilTest) {
-        this.dao.deleteILTest(ilTest);
+    public List<KenyaEMRILMessage> getAllKenyaEMRILMessages(Boolean includeAll) {
+        return this.dao.getAllKenyaEMRILMessages(includeAll);
     }
 
 }

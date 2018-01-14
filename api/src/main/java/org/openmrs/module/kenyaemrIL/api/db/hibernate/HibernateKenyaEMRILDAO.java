@@ -18,9 +18,8 @@ import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
-import org.openmrs.hl7.HL7Source;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
-import org.openmrs.module.kenyaemrIL.il.ILTest;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 
 import java.util.List;
 
@@ -47,28 +46,47 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     }
 
     @Override
-    public ILTest getILTestByUuid(String uniqueId) {
+    public KenyaEMRILMessage getKenyaEMRILMessageByUuid(String uniqueId) {
         System.out.println("About to test this one here " + uniqueId);
-        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(ILTest.class);
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
         crit.add(Restrictions.eq("name", uniqueId));
-        ILTest ilTest = (ILTest) crit.uniqueResult();
-        System.out.println("Just before the return: " + ilTest);
-        return ilTest;
+        KenyaEMRILMessage kenyaEMRILMessage = (KenyaEMRILMessage) crit.uniqueResult();
+        System.out.println("Just before the return: " + kenyaEMRILMessage);
+        return kenyaEMRILMessage;
     }
 
     @Override
-    public List<ILTest> getAllILTests(Boolean includeAll) {
-        return this.sessionFactory.getCurrentSession().createQuery("from ILTest").list();
+    public List<KenyaEMRILMessage> getAllKenyaEMRILMessages(Boolean includeRetired) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
+        crit.add(Restrictions.eq("retired", includeRetired));
+        return crit.list();
     }
 
     @Override
-    public ILTest createILTest(ILTest delegate) {
+    public KenyaEMRILMessage createKenyaEMRILMessage(KenyaEMRILMessage delegate) {
         this.sessionFactory.getCurrentSession().saveOrUpdate(delegate);
         return delegate;
     }
 
     @Override
-    public void deleteILTest(ILTest ilTest) {
-        this.sessionFactory.getCurrentSession().delete(ilTest);
+    public void deleteKenyaEMRILMessage(KenyaEMRILMessage kenyaEMRILMessage) {
+        this.sessionFactory.getCurrentSession().delete(kenyaEMRILMessage);
     }
+
+    @Override
+    public List<KenyaEMRILMessage> getKenyaEMRILInboxes(Boolean includeRetired) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
+        crit.add(Restrictions.eq("messageType", 1));
+        crit.add(Restrictions.eq("retired", includeRetired));
+        return crit.list();
+    }
+
+    @Override
+    public List<KenyaEMRILMessage> getKenyaEMRILOutboxes(Boolean includeRetired) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
+        crit.add(Restrictions.eq("messageType", 2));
+        crit.add(Restrictions.eq("retired", includeRetired));
+        return crit.list();
+    }
+
 }

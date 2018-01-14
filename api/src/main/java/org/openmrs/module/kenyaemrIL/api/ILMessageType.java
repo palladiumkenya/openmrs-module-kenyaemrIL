@@ -1,7 +1,8 @@
 package org.openmrs.module.kenyaemrIL.api;
 
 /**
- * Created by mstan on 08/01/2018.
+ * @author Stanslaus Odhiambo
+ *         Created on 08/01/2018.
  */
 public enum ILMessageType {
     INBOUND(1),

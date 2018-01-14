@@ -20,21 +20,19 @@
         <date>Nov 21st 2017</date>
         <description>Create IL Interop tables</description>
         <sql>
-            <!--CREATE TABLE IF NOT EXISTS kenyaemrIL_inbox (`id` INT NOT NULL AUTO_INCREMENT, `status` TINYINT(1) NULL,`message_type` VARCHAR(38) NOT NULL,`message` VARCHAR NOT NULL, PRIMARY KEY (`id`));-->
-            <!--CREATE TABLE IF NOT EXISTS kenyaemrIL_outbox (`id` INT NOT NULL AUTO_INCREMENT, `status` TINYINT(1) NULL, `message_type` VARCHAR(38) NOT NULL,`message` VARCHAR NOT NULL, PRIMARY KEY (`id`));-->
-            CREATE TABLE `il_test` (
-            `il_test_id` int(11) NOT NULL AUTO_INCREMENT,
-            `name` varchar(255) NOT NULL DEFAULT '',
-            `description` text,
+            CREATE TABLE `il_message` (
+            `message_id` int(11) NOT NULL AUTO_INCREMENT,
+            `message` text,
             `creator` int(11) NOT NULL DEFAULT '0',
             `message_type` int(1) NOT NULL ,
+            `hl7_type` char(10),
             `retired` tinyint(1) NOT NULL DEFAULT '0',
             `date_created` datetime NOT NULL,
             `uuid` char(38) NOT NULL,
-            PRIMARY KEY (`il_test_id`),
-            UNIQUE KEY `il_test_uuid_index` (`uuid`),
-            KEY `user_who_created_il_test` (`creator`),
-            CONSTRAINT `user_who_created_il_test` FOREIGN KEY (`creator`) REFERENCES `users` (`user_id`)
+            PRIMARY KEY (`message_id`),
+            UNIQUE KEY `il_message_uuid_index` (`uuid`),
+            KEY `user_who_created_il_message` (`creator`),
+            CONSTRAINT `user_who_created_il_message` FOREIGN KEY (`creator`) REFERENCES `users` (`user_id`)
             ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 
         </sql>
