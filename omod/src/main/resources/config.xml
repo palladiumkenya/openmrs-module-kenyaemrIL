@@ -30,7 +30,8 @@
 	<mappingFiles>
 				
 		KenyaEMRIL.hbm.xml
-				
+		KenyaEMRILMessage.hbm.xml
+
 	</mappingFiles>
 
 	<!-- Internationalization -->
@@ -48,6 +49,10 @@
 		<file>messages_es.properties</file>
 	</messages>
 	<!-- /Internationalization -->
+
+	<require_modules>
+		<require_module version="2.20.0">org.openmrs.module.webservices.rest</require_module>
+	</require_modules>
 
 </module>
 

@@ -14,13 +14,27 @@
 package org.openmrs.module.kenyaemrIL.api.db;
 
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
+
+import java.util.List;
 
 /**
  *  Database methods for {@link KenyaEMRILService}.
  */
 public interface KenyaEMRILDAO {
-	
 	/*
 	 * Add DAO methods here
 	 */
+
+    KenyaEMRILMessage getKenyaEMRILMessageByUuid(String uniqueId);
+
+    KenyaEMRILMessage createKenyaEMRILMessage(KenyaEMRILMessage kenyaEMRILMessage);
+
+    void deleteKenyaEMRILMessage(KenyaEMRILMessage kenyaEMRILMessage);
+
+    List<KenyaEMRILMessage> getKenyaEMRILInboxes(Boolean includeRetired);
+
+    List<KenyaEMRILMessage> getKenyaEMRILOutboxes(Boolean includeRetired);
+
+    List<KenyaEMRILMessage> getAllKenyaEMRILMessages(Boolean includeAll);
 }

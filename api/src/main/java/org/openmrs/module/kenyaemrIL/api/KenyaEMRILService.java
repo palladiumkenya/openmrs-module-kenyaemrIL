@@ -16,6 +16,7 @@ package org.openmrs.module.kenyaemrIL.api;
 import org.openmrs.api.OpenmrsService;
 import org.openmrs.module.kenyaemrIL.il.ILAppointment;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.ILObservation;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
@@ -131,4 +132,18 @@ public interface KenyaEMRILService extends OpenmrsService {
     ILObservation updateObservation(ILObservation ilObservation);
 
     boolean deleteObservation(ILObservation ilObservation);
+
+
+
+    KenyaEMRILMessage getKenyaEMRILMessageByUuid(String uniqueId);
+
+    KenyaEMRILMessage saveKenyaEMRILMessage(KenyaEMRILMessage kenyaEMRILMessage);
+
+    List<KenyaEMRILMessage> getKenyaEMRILInboxes(Boolean includeRetired);
+
+    List<KenyaEMRILMessage> getKenyaEMRILOutboxes(Boolean includeRetired);
+
+    void deleteKenyaEMRILMessage(KenyaEMRILMessage kenyaEMRILMessage);
+
+    List<KenyaEMRILMessage> getAllKenyaEMRILMessages(Boolean includeAll);
 }

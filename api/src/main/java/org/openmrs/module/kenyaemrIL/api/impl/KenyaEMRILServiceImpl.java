@@ -21,6 +21,7 @@ import org.openmrs.module.kenyaemrIL.il.ILAppointment;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.ILObservation;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
@@ -173,4 +174,37 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     public boolean deleteObservation(ILObservation ilObservation) {
         throw new NotYetImplementedException("Not Yet Implemented");
     }
+
+    @Override
+    public KenyaEMRILMessage getKenyaEMRILMessageByUuid(String uniqueId) {
+        KenyaEMRILMessage kenyaEMRILMessage = this.dao.getKenyaEMRILMessageByUuid(uniqueId);
+        System.out.println("What is it htat was returned: "+ kenyaEMRILMessage);
+        return kenyaEMRILMessage;
+    }
+
+    @Override
+    public KenyaEMRILMessage saveKenyaEMRILMessage(KenyaEMRILMessage delegate) {
+        return this.dao.createKenyaEMRILMessage(delegate);
+    }
+
+    @Override
+    public List<KenyaEMRILMessage> getKenyaEMRILInboxes(Boolean includeRetired) {
+        return this.dao.getKenyaEMRILInboxes(includeRetired);
+    }
+
+    @Override
+    public List<KenyaEMRILMessage> getKenyaEMRILOutboxes(Boolean includeRetired) {
+        return this.dao.getKenyaEMRILInboxes(includeRetired);
+    }
+
+    @Override
+    public void deleteKenyaEMRILMessage(KenyaEMRILMessage kenyaEMRILMessage) {
+        this.dao.deleteKenyaEMRILMessage(kenyaEMRILMessage);
+    }
+
+    @Override
+    public List<KenyaEMRILMessage> getAllKenyaEMRILMessages(Boolean includeAll) {
+        return this.dao.getAllKenyaEMRILMessages(includeAll);
+    }
+
 }
