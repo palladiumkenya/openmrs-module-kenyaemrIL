@@ -146,4 +146,14 @@ public interface KenyaEMRILService extends OpenmrsService {
     void deleteKenyaEMRILMessage(KenyaEMRILMessage kenyaEMRILMessage);
 
     List<KenyaEMRILMessage> getAllKenyaEMRILMessages(Boolean includeAll);
+
+
+//    Process incoming IL requests
+
+    /**
+     * Processes a create person request from the IL
+     * @param ilPerson
+     * @return
+     */
+    boolean processCreatePatientRequest(ILPerson ilPerson);
 }
