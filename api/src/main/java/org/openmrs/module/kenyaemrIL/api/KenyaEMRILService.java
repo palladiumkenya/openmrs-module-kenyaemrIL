@@ -14,10 +14,9 @@
 package org.openmrs.module.kenyaemrIL.api;
 
 import org.openmrs.api.OpenmrsService;
-import org.openmrs.module.kenyaemrIL.il.ILAppointment;
+import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
-import org.openmrs.module.kenyaemrIL.il.observation.ILObservation;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,44 +58,6 @@ public interface KenyaEMRILService extends OpenmrsService {
     boolean sendAddPersonRequest(ILPerson ilPerson);
 
 
-    /**
-     * Fetches all Appointment Instances received in the system via the IL
-     *
-     * @return a list of appointments @see {@link ILAppointment}
-     */
-    List<ILAppointment> fetchAllAppointments();
-
-    /**
-     * Fetches a list of appointments based on the processed status
-     *
-     * @param processed -  flag for the criteria filtering, @see @{@link org.openmrs.module.kenyaemrIL.KenyaEmrInbox  status}
-     * @return
-     */
-    List<ILAppointment> fetchAppointments(boolean processed);
-
-    /**
-     * Deletes/Cancels and appointment
-     *
-     * @param ilAppointment appointment to cancel
-     * @return true if successful, false otherwise
-     */
-    boolean deleteAppointment(ILAppointment ilAppointment);
-
-    /**
-     * Creates an appointment
-     *
-     * @param ilAppointment - the appointment to create
-     * @return the created appointment
-     */
-    ILAppointment createAppointment(ILAppointment ilAppointment);
-
-    /**
-     * Updates an appointment
-     *
-     * @param ilAppointment - the appointment to uppdate
-     * @return the updated appointment
-     */
-    ILAppointment updateAppointment(ILAppointment ilAppointment);
 
     /*    Pharmacy Orders     */
     List<ILPharmacyOrder> fetchAllPharmacyOrders();
@@ -122,18 +83,6 @@ public interface KenyaEMRILService extends OpenmrsService {
     boolean deletePharmacyDispense(ILPharmacyDispense ilPharmacyDispense);
 
 
-    //    Observation Result
-    List<ILObservation> fetchAllObservations();
-
-    List<ILObservation> fetchObservations(boolean processed);
-
-    ILObservation createObservation(ILObservation ilObservation);
-
-    ILObservation updateObservation(ILObservation ilObservation);
-
-    boolean deleteObservation(ILObservation ilObservation);
-
-
 
     KenyaEMRILMessage getKenyaEMRILMessageByUuid(String uniqueId);
 
@@ -152,22 +101,22 @@ public interface KenyaEMRILService extends OpenmrsService {
 
     /**
      * Processes a create person request from the IL
-     * @param ilPerson
+     * @param ilMessage
      * @return
      */
-    boolean processCreatePatientRequest(ILPerson ilPerson);
+    boolean processCreatePatientRequest(ILMessage ilMessage);
 
-    boolean processUpdatePatientRequest(ILPerson iLPerson);
+    boolean processUpdatePatientRequest(ILMessage ilMessage);
 
-    boolean processPharmacyOrder(ILPerson iLPerson);
+    boolean processPharmacyOrder(ILMessage ilMessage);
 
-    boolean processPharmacyDispense(ILPerson iLPerson);
+    boolean processPharmacyDispense(ILMessage ilMessage);
 
-    boolean processAppointmentSchedule(ILPerson iLPerson);
+    boolean processAppointmentSchedule(ILMessage ilMessage);
 
-    boolean processLabOrder(ILPerson iLPerson);
+    boolean processLabOrder(ILMessage ilMessage);
 
-    boolean processObservationResult(ILPerson iLPerson);
+    boolean processObservationResult(ILMessage ilMessage);
 
-    boolean processViralLoad(ILPerson iLPerson);
+    boolean processViralLoad(ILMessage ilMessage);
 }

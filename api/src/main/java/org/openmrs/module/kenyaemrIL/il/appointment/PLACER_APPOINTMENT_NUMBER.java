@@ -5,27 +5,22 @@ package org.openmrs.module.kenyaemrIL.il.appointment;
  *         Created on 15/01/2018.
  */
 public class PLACER_APPOINTMENT_NUMBER {
-    private String ENTITY;
-    private String NUMBER;
+    private String entity;
+    private String number;
 
-    public String getENTITY() {
-        return ENTITY;
+    public String getEntity() {
+        return entity;
     }
 
-    public void setENTITY(String ENTITY) {
-        this.ENTITY = ENTITY;
+    public void setEntity(String entity) {
+        this.entity = entity;
     }
 
-    public String getNUMBER() {
-        return NUMBER;
+    public String getNumber() {
+        return number;
     }
 
-    public void setNUMBER(String NUMBER) {
-        this.NUMBER = NUMBER;
-    }
-
-    @Override
-    public String toString() {
-        return "ClassPojo [ENTITY = " + ENTITY + ", NUMBER = " + NUMBER + "]";
+    public void setNumber(String number) {
+        this.number = number;
     }
 }

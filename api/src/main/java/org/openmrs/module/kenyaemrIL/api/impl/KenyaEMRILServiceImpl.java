@@ -24,7 +24,8 @@ import org.apache.commons.logging.LogFactory;
 import org.openmrs.module.kenyaemrIL.il.*;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
-import org.openmrs.module.kenyaemrIL.il.observation.ILObservation;
+import org.openmrs.module.kenyaemrIL.il.appointment.AppointmentMessage;
+import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,30 +89,6 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         throw new NotYetImplementedException("Not Yet Implemented");
     }
 
-    @Override
-    public List<ILAppointment> fetchAllAppointments() {
-        throw new NotYetImplementedException("Not Yet Implemented");
-    }
-
-    @Override
-    public List<ILAppointment> fetchAppointments(boolean processed) {
-        throw new NotYetImplementedException("Not Yet Implemented");
-    }
-
-    @Override
-    public boolean deleteAppointment(ILAppointment ilAppointment) {
-        throw new NotYetImplementedException("Not Yet Implemented");
-    }
-
-    @Override
-    public ILAppointment createAppointment(ILAppointment ilAppointment) {
-        throw new NotYetImplementedException("Not Yet Implemented");
-    }
-
-    @Override
-    public ILAppointment updateAppointment(ILAppointment ilAppointment) {
-        throw new NotYetImplementedException("Not Yet Implemented");
-    }
 
     @Override
     public List<ILPharmacyOrder> fetchAllPharmacyOrders() {
@@ -164,31 +141,6 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public List<ILObservation> fetchAllObservations() {
-        throw new NotYetImplementedException("Not Yet Implemented");
-    }
-
-    @Override
-    public List<ILObservation> fetchObservations(boolean processed) {
-        throw new NotYetImplementedException("Not Yet Implemented");
-    }
-
-    @Override
-    public ILObservation createObservation(ILObservation ilObservation) {
-        throw new NotYetImplementedException("Not Yet Implemented");
-    }
-
-    @Override
-    public ILObservation updateObservation(ILObservation ilObservation) {
-        throw new NotYetImplementedException("Not Yet Implemented");
-    }
-
-    @Override
-    public boolean deleteObservation(ILObservation ilObservation) {
-        throw new NotYetImplementedException("Not Yet Implemented");
-    }
-
-    @Override
     public KenyaEMRILMessage getKenyaEMRILMessageByUuid(String uniqueId) {
         KenyaEMRILMessage kenyaEMRILMessage = this.dao.getKenyaEMRILMessageByUuid(uniqueId);
         System.out.println("What is it htat was returned: " + kenyaEMRILMessage);
@@ -221,9 +173,9 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public boolean processCreatePatientRequest(ILPerson ilPerson) {
+    public boolean processCreatePatientRequest(ILMessage ilMessage) {
         boolean successful = false;
-        Patient patient = patientService.savePatient(wrapIlPerson(ilPerson));
+        Patient patient = patientService.savePatient(wrapIlPerson((ILPerson) ilMessage));
         if (patient != null) {
             successful = true;
         }
@@ -231,11 +183,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public boolean processUpdatePatientRequest(ILPerson iLPerson) {
+    public boolean processUpdatePatientRequest(ILMessage ilMessage) {
         Patient patient = null;
         String cccNumber = null;
 //        1. Fetch the person to update using the CCC number
-        for (INTERNAL_PATIENT_ID internalPatientId : iLPerson.getPatient_identification().getInternal_patient_id()) {
+        for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
             if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
                 cccNumber = internalPatientId.getId();
                 break;
@@ -243,13 +195,13 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         }
         if (StringUtils.isEmpty(cccNumber)) {
 //            no patient with the given ccc number, proceed to create a new patient with the received details
-            return processCreatePatientRequest(iLPerson);
+            return processCreatePatientRequest(ilMessage);
         } else {
 //            fetch the patient
             List<Patient> patients = Context.getPatientService().getPatients(null, cccNumber, allPatientIdentifierTypes, true);
             if (patients.size() > 0) {
                 patient = patients.get(0);
-                patient = updatePatientDetails(patient, wrapIlPerson(iLPerson));
+                patient = updatePatientDetails(patient, wrapIlPerson((ILPerson) ilMessage));
             }
 
             Patient cPatient = patientService.savePatient(patient);
@@ -267,32 +219,40 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public boolean processPharmacyOrder(ILPerson iLPerson) {
+    public boolean processPharmacyOrder(ILMessage ilMessage) {
         throw new NotYetImplementedException("Not Yet Implemented");
     }
 
     @Override
-    public boolean processPharmacyDispense(ILPerson iLPerson) {
+    public boolean processPharmacyDispense(ILMessage ilMessage) {
         throw new NotYetImplementedException("Not Yet Implemented");
     }
 
     @Override
-    public boolean processAppointmentSchedule(ILPerson iLPerson) {
+    public boolean processAppointmentSchedule(ILMessage ilMessage) {
+        boolean success = false;
+//        TODO - process an appointment
+        AppointmentMessage message = (AppointmentMessage) ilMessage;
+
+
+        return success;
+    }
+
+    @Override
+    public boolean processLabOrder(ILMessage ilMessage) {
         throw new NotYetImplementedException("Not Yet Implemented");
     }
 
     @Override
-    public boolean processLabOrder(ILPerson iLPerson) {
-        throw new NotYetImplementedException("Not Yet Implemented");
+    public boolean processObservationResult(ILMessage ilMessage) {
+        boolean success = false;
+        ObservationMessage observationMessage = (ObservationMessage) ilMessage;
+//        TODO - Process ORUs
+        return success;
     }
 
     @Override
-    public boolean processObservationResult(ILPerson iLPerson) {
-        throw new NotYetImplementedException("Not Yet Implemented");
-    }
-
-    @Override
-    public boolean processViralLoad(ILPerson iLPerson) {
+    public boolean processViralLoad(ILMessage ilMessage) {
         throw new NotYetImplementedException("Not Yet Implemented");
     }
 

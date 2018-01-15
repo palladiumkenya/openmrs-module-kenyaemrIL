@@ -4,7 +4,10 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
-
+/**
+ * @author Stanslaus Odhiambo
+ *         Created on 08/01/2018.
+ */
 public class EXTERNAL_PATIENT_ID
 {
     private String id;

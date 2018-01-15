@@ -10,10 +10,12 @@ import javax.json.JsonObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+/**
+ * @author Stanslaus Odhiambo
+ *         Created on 08/01/2018.
+ */
+public class ILPerson extends ILMessage{
 
-public class ILPerson {
-    private MESSAGE_HEADER message_header;
-    private PATIENT_IDENTIFICATION patient_identification;
     private PATIENT_VISIT patient_visit;
     private NEXT_OF_KIN[] next_of_kin;
 
@@ -33,21 +35,6 @@ public class ILPerson {
         this.patient_visit = patient_visit;
     }
 
-    public PATIENT_IDENTIFICATION getPatient_identification() {
-        return patient_identification;
-    }
-
-    public void setPatient_identification(PATIENT_IDENTIFICATION patient_identification) {
-        this.patient_identification = patient_identification;
-    }
-
-    public MESSAGE_HEADER getMessage_header() {
-        return message_header;
-    }
-
-    public void setMessage_header(MESSAGE_HEADER message_header) {
-        this.message_header = message_header;
-    }
 
     public static ILPerson fill(JsonObject jsonobj) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -87,12 +74,4 @@ public class ILPerson {
         return olist;
     }
 
-    @Override
-    public String toString() {
-        return "ILPerson{" +
-                "message_header=" + message_header +
-                ", patient_identification=" + patient_identification +
-                ", next_of_kin=" + next_of_kin +
-                '}';
-    }
 }

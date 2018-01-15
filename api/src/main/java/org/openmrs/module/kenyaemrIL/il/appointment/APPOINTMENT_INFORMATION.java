@@ -5,91 +5,86 @@ package org.openmrs.module.kenyaemrIL.il.appointment;
  *         Created on 15/01/2018.
  */
 public class APPOINTMENT_INFORMATION {
-    private String APPOINTMENT_REASON;
-    private String ACTION_CODE;
-    private String APPOINTMENT_PLACING_ENTITY;
-    private String APPOINTMENT_LOCATION;
-    private String APPOINTMENT_STATUS;
-    private String APPOINTMENT_TYPE;
-    private String APPOINTMENT_NOTE;
-    private String APPOINTMENT_DATE;
-    private PLACER_APPOINTMENT_NUMBER PLACER_APPOINTMENT_NUMBER;
+    private String  appointment_reason;
+    private String  action_code;
+    private String  appointment_placing_entity;
+    private String  appointment_location;
+    private String  appointment_status;
+    private String  appointment_type;
+    private String  appointment_note;
+    private String  appointment_date;
+    private PLACER_APPOINTMENT_NUMBER  placer_appointment_number;
 
-    public String getAPPOINTMENT_REASON() {
-        return APPOINTMENT_REASON;
+    public String getAppointment_reason() {
+        return appointment_reason;
     }
 
-    public void setAPPOINTMENT_REASON(String APPOINTMENT_REASON) {
-        this.APPOINTMENT_REASON = APPOINTMENT_REASON;
+    public void setAppointment_reason(String appointment_reason) {
+        this.appointment_reason = appointment_reason;
     }
 
-    public String getACTION_CODE() {
-        return ACTION_CODE;
+    public String getAction_code() {
+        return action_code;
     }
 
-    public void setACTION_CODE(String ACTION_CODE) {
-        this.ACTION_CODE = ACTION_CODE;
+    public void setAction_code(String action_code) {
+        this.action_code = action_code;
     }
 
-    public String getAPPOINTMENT_PLACING_ENTITY() {
-        return APPOINTMENT_PLACING_ENTITY;
+    public String getAppointment_placing_entity() {
+        return appointment_placing_entity;
     }
 
-    public void setAPPOINTMENT_PLACING_ENTITY(String APPOINTMENT_PLACING_ENTITY) {
-        this.APPOINTMENT_PLACING_ENTITY = APPOINTMENT_PLACING_ENTITY;
+    public void setAppointment_placing_entity(String appointment_placing_entity) {
+        this.appointment_placing_entity = appointment_placing_entity;
     }
 
-    public String getAPPOINTMENT_LOCATION() {
-        return APPOINTMENT_LOCATION;
+    public String getAppointment_location() {
+        return appointment_location;
     }
 
-    public void setAPPOINTMENT_LOCATION(String APPOINTMENT_LOCATION) {
-        this.APPOINTMENT_LOCATION = APPOINTMENT_LOCATION;
+    public void setAppointment_location(String appointment_location) {
+        this.appointment_location = appointment_location;
     }
 
-    public String getAPPOINTMENT_STATUS() {
-        return APPOINTMENT_STATUS;
+    public String getAppointment_status() {
+        return appointment_status;
     }
 
-    public void setAPPOINTMENT_STATUS(String APPOINTMENT_STATUS) {
-        this.APPOINTMENT_STATUS = APPOINTMENT_STATUS;
+    public void setAppointment_status(String appointment_status) {
+        this.appointment_status = appointment_status;
     }
 
-    public String getAPPOINTMENT_TYPE() {
-        return APPOINTMENT_TYPE;
+    public String getAppointment_type() {
+        return appointment_type;
     }
 
-    public void setAPPOINTMENT_TYPE(String APPOINTMENT_TYPE) {
-        this.APPOINTMENT_TYPE = APPOINTMENT_TYPE;
+    public void setAppointment_type(String appointment_type) {
+        this.appointment_type = appointment_type;
     }
 
-    public String getAPPOINTMENT_NOTE() {
-        return APPOINTMENT_NOTE;
+    public String getAppointment_note() {
+        return appointment_note;
     }
 
-    public void setAPPOINTMENT_NOTE(String APPOINTMENT_NOTE) {
-        this.APPOINTMENT_NOTE = APPOINTMENT_NOTE;
+    public void setAppointment_note(String appointment_note) {
+        this.appointment_note = appointment_note;
     }
 
-    public String getAPPOINTMENT_DATE() {
-        return APPOINTMENT_DATE;
+    public String getAppointment_date() {
+        return appointment_date;
     }
 
-    public void setAPPOINTMENT_DATE(String APPOINTMENT_DATE) {
-        this.APPOINTMENT_DATE = APPOINTMENT_DATE;
+    public void setAppointment_date(String appointment_date) {
+        this.appointment_date = appointment_date;
     }
 
-    public PLACER_APPOINTMENT_NUMBER getPLACER_APPOINTMENT_NUMBER() {
-        return PLACER_APPOINTMENT_NUMBER;
+    public PLACER_APPOINTMENT_NUMBER getPlacer_appointment_number() {
+        return placer_appointment_number;
     }
 
-    public void setPLACER_APPOINTMENT_NUMBER(PLACER_APPOINTMENT_NUMBER PLACER_APPOINTMENT_NUMBER) {
-        this.PLACER_APPOINTMENT_NUMBER = PLACER_APPOINTMENT_NUMBER;
-    }
-
-    @Override
-    public String toString() {
-        return "ClassPojo [APPOINTMENT_REASON = " + APPOINTMENT_REASON + ", ACTION_CODE = " + ACTION_CODE + ", APPOINTMENT_PLACING_ENTITY = " + APPOINTMENT_PLACING_ENTITY + ", APPOINTMENT_LOCATION = " + APPOINTMENT_LOCATION + ", APPOINTMENT_STATUS = " + APPOINTMENT_STATUS + ", APPOINTMENT_TYPE = " + APPOINTMENT_TYPE + ", APPOINTMENT_NOTE = " + APPOINTMENT_NOTE + ", APPOINTMENT_DATE = " + APPOINTMENT_DATE + ", PLACER_APPOINTMENT_NUMBER = " + PLACER_APPOINTMENT_NUMBER + "]";
+    public void setPlacer_appointment_number(PLACER_APPOINTMENT_NUMBER placer_appointment_number) {
+        this.placer_appointment_number = placer_appointment_number;
     }
 }
 

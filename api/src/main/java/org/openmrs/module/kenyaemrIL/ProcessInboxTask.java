@@ -7,6 +7,7 @@ import java.util.List;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
+import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.scheduler.tasks.AbstractTask;
@@ -42,7 +43,7 @@ public class ProcessInboxTask extends AbstractTask {
         message = message.substring(message.indexOf("{"), message.lastIndexOf("}") + 1);
         try {
             boolean returnStatus= false;
-            ILPerson iLPerson = mapper.readValue(message.toLowerCase(), ILPerson.class);
+            ILMessage iLPerson = mapper.readValue(message.toLowerCase(), ILMessage.class);
             switch(iLPerson.getMessage_header().getMessage_type().toUpperCase()){
                 case "ADT^A04":{
                     returnStatus = getEMRILService().processCreatePatientRequest(iLPerson);
