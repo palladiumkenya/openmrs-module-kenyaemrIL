@@ -43,7 +43,7 @@ public class ProcessInboxTask extends AbstractTask {
         try {
             boolean returnStatus= false;
             ILPerson iLPerson = mapper.readValue(message.toLowerCase(), ILPerson.class);
-            switch(iLPerson.getMessage_header().getMessage_type()){
+            switch(iLPerson.getMessage_header().getMessage_type().toUpperCase()){
                 case "ADT^A04":{
                     returnStatus = getEMRILService().processCreatePatientRequest(iLPerson);
                     break;

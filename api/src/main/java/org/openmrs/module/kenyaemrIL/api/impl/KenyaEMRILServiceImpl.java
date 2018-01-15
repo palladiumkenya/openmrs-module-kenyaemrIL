@@ -232,7 +232,38 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
     @Override
     public boolean processUpdatePatientRequest(ILPerson iLPerson) {
-        return processCreatePatientRequest(iLPerson);
+        Patient patient = null;
+        String cccNumber = null;
+//        1. Fetch the person to update using the CCC number
+        for (INTERNAL_PATIENT_ID internalPatientId : iLPerson.getPatient_identification().getInternal_patient_id()) {
+            if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
+                cccNumber = internalPatientId.getId();
+                break;
+            }
+        }
+        if (StringUtils.isEmpty(cccNumber)) {
+//            no patient with the given ccc number, proceed to create a new patient with the received details
+            return processCreatePatientRequest(iLPerson);
+        } else {
+//            fetch the patient
+            List<Patient> patients = Context.getPatientService().getPatients(null, cccNumber, allPatientIdentifierTypes, true);
+            if (patients.size() > 0) {
+                patient = patients.get(0);
+                patient = updatePatientDetails(patient, wrapIlPerson(iLPerson));
+            }
+
+            Patient cPatient = patientService.savePatient(patient);
+            if (cPatient != null) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    private Patient updatePatientDetails(Patient patientToUpdate, Patient newPatientDetails) {
+//        TODO - Do the over writing of details right here
+        return patientToUpdate;
     }
 
     @Override
