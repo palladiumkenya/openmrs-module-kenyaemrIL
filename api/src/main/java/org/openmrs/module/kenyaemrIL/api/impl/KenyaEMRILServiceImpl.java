@@ -13,9 +13,11 @@
  */
 package org.openmrs.module.kenyaemrIL.api.impl;
 
+import com.thoughtworks.xstream.core.util.PresortedSet;
 import org.hibernate.cfg.NotYetImplementedException;
 import org.openmrs.*;
 import org.openmrs.api.PatientService;
+import org.openmrs.api.context.Context;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,10 +29,7 @@ import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * It is a default implementation of {@link KenyaEMRILService}.
@@ -38,6 +37,10 @@ import java.util.Set;
 public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEMRILService {
 
     protected final Log log = LogFactory.getLog(this.getClass());
+
+    private List<PatientIdentifierType> allPatientIdentifierTypes;
+
+    private Map<String, PatientIdentifierType> identifiersMap = new HashMap<>();
 
     private KenyaEMRILDAO dao;
 
@@ -227,6 +230,12 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     private Patient wrapIlPerson(ILPerson ilPerson) {
+        allPatientIdentifierTypes = Context.getPatientService().getAllPatientIdentifierTypes();
+        for (PatientIdentifierType pit : allPatientIdentifierTypes) {
+            identifiersMap.put(pit.getName(), pit);
+        }
+
+
         Patient patient = new Patient();
 
 
@@ -248,7 +257,8 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
 //        Patient name processing
         PATIENT_NAME patientName = patientIdentification.getPatient_name();
-        Set<PersonName> names = new HashSet<>();
+//        Set<PersonName> names = new HashSet<>();
+        SortedSet<PersonName> names = new PresortedSet();
         PersonName personName = new PersonName();
         personName.setGivenName(patientName.getFirst_name());
         personName.setMiddleName(patientName.getMiddle_name());
@@ -262,14 +272,21 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
 //        Process internal patient IDs
         List<INTERNAL_PATIENT_ID> internalPatientIds = patientIdentification.getInternal_patient_id();
-        Set<PatientIdentifier> patientIdentifiers = new HashSet<>();
+//        Set<PatientIdentifier> patientIdentifiers = new HashSet<>();
+        SortedSet<PatientIdentifier> patientIdentifiers = new PresortedSet();
 
 //        Must set a preferred Identifier
         for (INTERNAL_PATIENT_ID internalPatientId : internalPatientIds) {
             PatientIdentifier patientIdentifier = new PatientIdentifier();
+            System.out.println("What we are about to process here:::::: " + internalPatientId.getIdentifier_type());
             PatientIdentifierType idType = processIdentifierType(internalPatientId.getIdentifier_type());
+            System.out.println("Patient Identifier Type: " + idType);
             if (idType != null) {
+                System.out.println("processing: " + idType.getName());
                 patientIdentifier.setIdentifierType(idType);
+                if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
+                    patientIdentifier.setPreferred(true);
+                }
             } else {
                 continue;
             }
@@ -284,10 +301,10 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         MOTHER_NAME motherName = patientIdentification.getMother_name();
 //        TODO - Process as an attribute
 
-
 //        Process patient address if exists
         PATIENT_ADDRESS patientAddress = patientIdentification.getPatient_address();
-        Set<PersonAddress> addresses = new HashSet<>();
+//        Set<PersonAddress> addresses = new HashSet<>();
+        SortedSet<PersonAddress> addresses = new PresortedSet();
         PersonAddress personAddress = new PersonAddress();
         personAddress.setPreferred(true);
         personAddress.setCityVillage(patientAddress.getPhysical_address().getVillage());
@@ -308,41 +325,43 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     private PatientIdentifierType processIdentifierType(String identifierType) {
         PatientIdentifierType patientIdentifierType = null;
 //        TODO - Process the appropriate openmrs identifier types
-        switch (identifierType) {
+//        OpenMRS Identification Number
+//        Old Identification Number
+        switch (identifierType.toUpperCase()) {
             case "CCC_NUMBER": {
-
+                patientIdentifierType = identifiersMap.get("Unique Patient Number");
                 break;
             }
             case "HTS_NUMBER": {
-
+//                TODO - provide appropriate initialization
                 break;
             }
             case "TB_NUMBER": {
-
+                patientIdentifierType = identifiersMap.get("TB Treatment Number");
                 break;
             }
             case "ANC_NUMBER": {
-
+//                TODO - provide appropriate initialization
                 break;
             }
             case "PMTCT_NUMBER": {
-
+//                TODO - provide appropriate initialization
                 break;
             }
             case "OPD_NUMBER": {
-
+//                TODO - provide appropriate initialization
                 break;
             }
             case "NATIONAL_ID": {
-
+                patientIdentifierType = identifiersMap.get("National ID");
                 break;
             }
             case "NHIF": {
-
+//                TODO - provide appropriate initialization
                 break;
             }
             case "HDSS_ID": {
-
+//                TODO - provide appropriate initialization
                 break;
             }
             default: {
