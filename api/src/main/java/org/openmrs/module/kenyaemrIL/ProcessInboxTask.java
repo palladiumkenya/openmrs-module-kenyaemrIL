@@ -31,7 +31,6 @@ public class ProcessInboxTask extends AbstractTask {
         log.info("Executing task at " + new Date());
 //        Fetch non-processed inbox messages
         List<KenyaEMRILMessage> pendingInboxes = fetchILInboxes(false);
-        System.out.printf("# of fetched messages: %d", pendingInboxes.size());
         for (final KenyaEMRILMessage pendingInbox : pendingInboxes) {
             processFetchedRecord(pendingInbox);
         }
@@ -42,8 +41,47 @@ public class ProcessInboxTask extends AbstractTask {
         String message = pendingInbox.getMessage();
         message = message.substring(message.indexOf("{"), message.lastIndexOf("}") + 1);
         try {
+            boolean returnStatus= false;
             ILPerson iLPerson = mapper.readValue(message.toLowerCase(), ILPerson.class);
-            boolean returnStatus = getEMRILService().processCreatePatientRequest(iLPerson);
+            switch(iLPerson.getMessage_header().getMessage_type()){
+                case "ADT^A04":{
+                    returnStatus = getEMRILService().processCreatePatientRequest(iLPerson);
+                    break;
+                }
+                case "ADT^A08":{
+                    returnStatus = getEMRILService().processUpdatePatientRequest(iLPerson);
+                    break;
+                }
+                case "RDE^001":{
+                    returnStatus = getEMRILService().processPharmacyOrder(iLPerson);
+                    break;
+                }
+                case "RDS^O13":{
+                    returnStatus = getEMRILService().processPharmacyDispense(iLPerson);
+                    break;
+                }
+                case "SIU^S12":{
+                    returnStatus = getEMRILService().processAppointmentSchedule(iLPerson);
+                    break;
+                }
+                case "ORM^O01":{
+                    returnStatus = getEMRILService().processLabOrder(iLPerson);
+                    break;
+                }
+                case "ORU^R01":{
+                    returnStatus = getEMRILService().processObservationResult(iLPerson);
+                    break;
+                }
+                case "ORU^VL":{
+                    returnStatus = getEMRILService().processViralLoad(iLPerson);
+                    break;
+                }
+                default:{
+                    log.error(iLPerson.getMessage_header().getMessage_type() + " message type is not yet support");
+                    break;
+                }
+            }
+
 
             if(returnStatus){
 //                if the processing was ok, mark as retired so that it is not processed again;

@@ -156,4 +156,18 @@ public interface KenyaEMRILService extends OpenmrsService {
      * @return
      */
     boolean processCreatePatientRequest(ILPerson ilPerson);
+
+    boolean processUpdatePatientRequest(ILPerson iLPerson);
+
+    boolean processPharmacyOrder(ILPerson iLPerson);
+
+    boolean processPharmacyDispense(ILPerson iLPerson);
+
+    boolean processAppointmentSchedule(ILPerson iLPerson);
+
+    boolean processLabOrder(ILPerson iLPerson);
+
+    boolean processObservationResult(ILPerson iLPerson);
+
+    boolean processViralLoad(ILPerson iLPerson);
 }

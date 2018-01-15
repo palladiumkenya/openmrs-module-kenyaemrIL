@@ -28,6 +28,7 @@ import org.openmrs.module.kenyaemrIL.il.observation.ILObservation;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 
@@ -229,6 +230,41 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         return successful;
     }
 
+    @Override
+    public boolean processUpdatePatientRequest(ILPerson iLPerson) {
+        return processCreatePatientRequest(iLPerson);
+    }
+
+    @Override
+    public boolean processPharmacyOrder(ILPerson iLPerson) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public boolean processPharmacyDispense(ILPerson iLPerson) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public boolean processAppointmentSchedule(ILPerson iLPerson) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public boolean processLabOrder(ILPerson iLPerson) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public boolean processObservationResult(ILPerson iLPerson) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public boolean processViralLoad(ILPerson iLPerson) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
     private Patient wrapIlPerson(ILPerson ilPerson) {
         allPatientIdentifierTypes = Context.getPatientService().getAllPatientIdentifierTypes();
         for (PatientIdentifierType pit : allPatientIdentifierTypes) {
@@ -253,7 +289,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         String phoneNumber = patientIdentification.getPhone_number();
 //        TODO - process phone number as an attribute
 
-        patient.setGender(patientIdentification.getSex());
+        patient.setGender(patientIdentification.getSex().toUpperCase());
 
 //        Patient name processing
         PATIENT_NAME patientName = patientIdentification.getPatient_name();
@@ -266,23 +302,27 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         names.add(personName);
         patient.setNames(names);
 
-//        Process external patient id if exists
+        SortedSet<PatientIdentifier> patientIdentifiers = new PresortedSet();
+//        Process external patient id if it exists
         EXTERNAL_PATIENT_ID externalPatientId = patientIdentification.getExternal_patient_id();
-//        TODO - Process external ID
+        if (externalPatientId != null && !StringUtils.isEmpty(externalPatientId.getId())) {
+            PatientIdentifier patientIdentifier = new PatientIdentifier();
+            PatientIdentifierType idType = processIdentifierType(externalPatientId.getIdentifier_type());
+            if (idType != null) {
+                patientIdentifier.setIdentifierType(idType);
+                patientIdentifier.setIdentifier(externalPatientId.getId());
+            }
+            patientIdentifiers.add(patientIdentifier);
+        }
 
 //        Process internal patient IDs
         List<INTERNAL_PATIENT_ID> internalPatientIds = patientIdentification.getInternal_patient_id();
-//        Set<PatientIdentifier> patientIdentifiers = new HashSet<>();
-        SortedSet<PatientIdentifier> patientIdentifiers = new PresortedSet();
 
 //        Must set a preferred Identifier
         for (INTERNAL_PATIENT_ID internalPatientId : internalPatientIds) {
             PatientIdentifier patientIdentifier = new PatientIdentifier();
-            System.out.println("What we are about to process here:::::: " + internalPatientId.getIdentifier_type());
             PatientIdentifierType idType = processIdentifierType(internalPatientId.getIdentifier_type());
-            System.out.println("Patient Identifier Type: " + idType);
             if (idType != null) {
-                System.out.println("processing: " + idType.getName());
                 patientIdentifier.setIdentifierType(idType);
                 if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
                     patientIdentifier.setPreferred(true);
@@ -362,6 +402,10 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             }
             case "HDSS_ID": {
 //                TODO - provide appropriate initialization
+                break;
+            }
+            case "GODS_NUMBER": {
+                patientIdentifierType = identifiersMap.get("MPI GODS NUMBER");
                 break;
             }
             default: {
