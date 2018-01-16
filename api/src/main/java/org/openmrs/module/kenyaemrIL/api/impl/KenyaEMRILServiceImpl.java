@@ -193,7 +193,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 break;
             }
         }
-        if (StringUtils.isEmpty(cccNumber)) {
+        if (cccNumber != null) {
 //            no patient with the given ccc number, proceed to create a new patient with the received details
             return processCreatePatientRequest(ilMessage);
         } else {
@@ -296,7 +296,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         SortedSet<PatientIdentifier> patientIdentifiers = new PresortedSet();
 //        Process external patient id if it exists
         EXTERNAL_PATIENT_ID externalPatientId = patientIdentification.getExternal_patient_id();
-        if (externalPatientId != null && !StringUtils.isEmpty(externalPatientId.getId())) {
+        if (externalPatientId != null && externalPatientId != null) {
             PatientIdentifier patientIdentifier = new PatientIdentifier();
             PatientIdentifierType idType = processIdentifierType(externalPatientId.getIdentifier_type());
             if (idType != null) {
