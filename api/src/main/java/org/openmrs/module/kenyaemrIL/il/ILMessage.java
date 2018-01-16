@@ -1,38 +1,26 @@
 package org.openmrs.module.kenyaemrIL.il;
 
-import java.util.List;
-
 /**
  * @author Stanslaus Odhiambo
- *         Created on 21/11/2017.
+ *         Created on 08/01/2018.
  */
 public class ILMessage {
-    private MessageHeader messageHeader;
-    private PatientIdentification patientIdentification;
-    private List<NextOfKin> nextOfKins;
+    private MESSAGE_HEADER message_header;
+    private PATIENT_IDENTIFICATION patient_identification;
 
-    public MessageHeader getMessageHeader() {
-        return messageHeader;
+    public MESSAGE_HEADER getMessage_header() {
+        return message_header;
     }
 
-    public void setMessageHeader(MessageHeader messageHeader) {
-        this.messageHeader = messageHeader;
+    public void setMessage_header(MESSAGE_HEADER message_header) {
+        this.message_header = message_header;
     }
 
-    public PatientIdentification getPatientIdentification() {
-        return patientIdentification;
+    public PATIENT_IDENTIFICATION getPatient_identification() {
+        return patient_identification;
     }
 
-    public void setPatientIdentification(PatientIdentification patientIdentification) {
-        this.patientIdentification = patientIdentification;
-    }
-
-    public List<NextOfKin> getNextOfKins() {
-        return nextOfKins;
-    }
-
-    public void setNextOfKins(List<NextOfKin> nextOfKins) {
-        this.nextOfKins = nextOfKins;
+    public void setPatient_identification(PATIENT_IDENTIFICATION patient_identification) {
+        this.patient_identification = patient_identification;
     }
 }
-

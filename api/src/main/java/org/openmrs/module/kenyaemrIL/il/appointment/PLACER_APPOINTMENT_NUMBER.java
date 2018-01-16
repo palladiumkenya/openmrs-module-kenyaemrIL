@@ -1,10 +1,10 @@
-package org.openmrs.module.kenyaemrIL.il;
+package org.openmrs.module.kenyaemrIL.il.appointment;
 
 /**
  * @author Stanslaus Odhiambo
- *         Created on 21/11/2017.
+ *         Created on 15/01/2018.
  */
-public class PlacerAppointmentNumber {
+public class PLACER_APPOINTMENT_NUMBER {
     private String entity;
     private String number;
 
