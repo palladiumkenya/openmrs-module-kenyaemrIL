@@ -187,7 +187,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
     @Override
     public List<KenyaEMRILMessage> getKenyaEMRILOutboxes(Boolean includeRetired) {
-        return this.dao.getKenyaEMRILInboxes(includeRetired);
+        return this.dao.getKenyaEMRILOutboxes(includeRetired);
     }
 
     @Override
@@ -203,7 +203,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     @Override
     public boolean processCreatePatientRequest(ILMessage ilMessage) {
         boolean successful = false;
-        Patient patient = patientService.savePatient(wrapIlPerson((ILPerson) ilMessage));
+        Patient patient = patientService.savePatient(wrapIlPerson(ilMessage));
         if (patient != null) {
             successful = true;
         }
@@ -229,7 +229,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             List<Patient> patients = Context.getPatientService().getPatients(null, cccNumber, allPatientIdentifierTypes, true);
             if (patients.size() > 0) {
                 patient = patients.get(0);
-                patient = updatePatientDetails(patient, wrapIlPerson((ILPerson) ilMessage));
+                patient = updatePatientDetails(patient, wrapIlPerson(ilMessage));
             }
 
             Patient cPatient = patientService.savePatient(patient);
@@ -284,7 +284,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         throw new NotYetImplementedException("Not Yet Implemented");
     }
 
-    private Patient wrapIlPerson(ILPerson ilPerson) {
+    private Patient wrapIlPerson(ILMessage ilPerson) {
         allPatientIdentifierTypes = Context.getPatientService().getAllPatientIdentifierTypes();
         for (PatientIdentifierType pit : allPatientIdentifierTypes) {
             identifiersMap.put(pit.getName(), pit);
