@@ -13,6 +13,8 @@
  */
 package org.openmrs.module.kenyaemrIL.api.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thoughtworks.xstream.core.util.PresortedSet;
 import org.hibernate.cfg.NotYetImplementedException;
 import org.openmrs.*;
@@ -21,6 +23,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.openmrs.module.kenyaemrIL.api.ILMessageType;
 import org.openmrs.module.kenyaemrIL.il.*;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
@@ -28,6 +31,7 @@ import org.openmrs.module.kenyaemrIL.il.appointment.AppointmentMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
+import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 
@@ -86,7 +90,31 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
     @Override
     public boolean sendAddPersonRequest(ILPerson ilPerson) {
-        throw new NotYetImplementedException("Not Yet Implemented");
+        boolean isSuccessful;
+        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance();
+        messageHeader.setMessage_type("ADT^A04");
+        messageHeader.setMessage_datetime(String.valueOf(new Date()));
+        ilPerson.setMessage_header(messageHeader);
+        ObjectMapper mapper = new ObjectMapper();
+        KenyaEMRILMessage ilMessage = new KenyaEMRILMessage();
+        try {
+            String messageString = mapper.writeValueAsString(ilPerson);
+            ilMessage.setHl7Type("ADT^A04");
+            ilMessage.setMessage(messageString);
+            ilMessage.setDescription("");
+            ilMessage.setName("");
+            ilMessage.setMessageType(ILMessageType.OUTBOUND.getValue());
+            KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(ilMessage);
+            if (savedInstance != null) {
+                isSuccessful = true;
+            } else {
+                isSuccessful = false;
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            isSuccessful = false;
+        }
+        return isSuccessful;
     }
 
 
@@ -148,8 +176,8 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public KenyaEMRILMessage saveKenyaEMRILMessage(KenyaEMRILMessage delegate) {
-        return this.dao.createKenyaEMRILMessage(delegate);
+    public KenyaEMRILMessage saveKenyaEMRILMessage(KenyaEMRILMessage ilMessage) {
+        return this.dao.createKenyaEMRILMessage(ilMessage);
     }
 
     @Override
@@ -364,7 +392,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 break;
             }
             case "HTS_NUMBER": {
-//                TODO - provide appropriate initialization
+                patientIdentifierType = identifiersMap.get("HTS NUMBER");
                 break;
             }
             case "TB_NUMBER": {
@@ -372,15 +400,15 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 break;
             }
             case "ANC_NUMBER": {
-//                TODO - provide appropriate initialization
+                patientIdentifierType = identifiersMap.get("ANC NUMBER");
                 break;
             }
             case "PMTCT_NUMBER": {
-//                TODO - provide appropriate initialization
+                patientIdentifierType = identifiersMap.get("PMTCT NUMBER");
                 break;
             }
             case "OPD_NUMBER": {
-//                TODO - provide appropriate initialization
+                patientIdentifierType = identifiersMap.get("OPD NUMBER");
                 break;
             }
             case "NATIONAL_ID": {
@@ -388,7 +416,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 break;
             }
             case "NHIF": {
-//                TODO - provide appropriate initialization
+                patientIdentifierType = identifiersMap.get("National ID");
                 break;
             }
             case "HDSS_ID": {

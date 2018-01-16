@@ -78,7 +78,7 @@ public class ProcessInboxTask extends AbstractTask {
                     break;
                 }
                 default:{
-                    log.error(iLPerson.getMessage_header().getMessage_type() + " message type is not yet support");
+                    log.error(iLPerson.getMessage_header().getMessage_type() + " message type is not yet supported");
                     break;
                 }
             }
