@@ -86,7 +86,12 @@
             <!--<groupId>org.openmrs.module</groupId>-->
             <!--<artifactId>webservices.rest-api</artifactId>-->
         <!--</dependency>-->
-		
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>kenyaemr-api</artifactId>
+			<version>${kenyaemrVersion}</version>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 	
 	<build>
@@ -113,6 +118,7 @@
                 </configuration>
             </plugin>
         </plugins>
+
     </build>
 
 </project>

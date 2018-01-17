@@ -18,8 +18,10 @@
 	
 	<!-- Module Activator -->
 	<activator>${project.parent.groupId}.${project.parent.artifactId}.KenyaEMRILActivator</activator>
-	
-	
+	<require_modules>
+		<require_module version="${kenyaemrVersion}">org.openmrs.module.kenyaemr</require_module>
+		<require_module version="${metadatadeployVersion}">org.openmrs.module.metadatadeploy</require_module>
+	</require_modules>
 	<!-- Adds link to admin page -->
 	<extension>
 		<point>org.openmrs.admin.list</point>
