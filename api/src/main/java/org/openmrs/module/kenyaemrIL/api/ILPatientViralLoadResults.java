@@ -64,22 +64,22 @@ public class ILPatientViralLoadResults {
         for (Obs obs : lastLabResultsEncounter.getObs()) {
 
             if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set vl sample collection date
-                viral_load_Result.setSample_collection_datetime(String.valueOf(obs.getObsDatetime()));
+                viral_load_Result.setDate_sample_collected(String.valueOf(obs.getObsDatetime()));
             }
               else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl sample  collection date
-                viral_load_Result.setSample_collection_datetime(String.valueOf(obs.getObsDatetime()));
+                viral_load_Result.setDate_sample_collected(String.valueOf(obs.getObsDatetime()));
                  }
             if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set vl sample testing date
-                viral_load_Result.setSample_tested_datetime(String.valueOf(obs.getObsDatetime()));
+                viral_load_Result.setDate_sample_tested(String.valueOf(obs.getObsDatetime()));
             }
             else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl sample testing date
-                viral_load_Result.setSample_tested_datetime(String.valueOf(obs.getObsDatetime()));
+                viral_load_Result.setDate_sample_tested(String.valueOf(obs.getObsDatetime()));
             }
             if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set vl result
-                viral_load_Result.setVl_results(String.valueOf(obs.getValueNumeric()));
+                viral_load_Result.setVl_result(String.valueOf(obs.getValueNumeric()));
             }
             else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl result
-                viral_load_Result.setVl_results("LDL");
+                viral_load_Result.setVl_result("LDL");
             }
             if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set VL sample type
                 viral_load_Result.setSample_type("BLOOD SAMPLE");
