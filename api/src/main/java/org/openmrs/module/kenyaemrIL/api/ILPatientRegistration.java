@@ -17,7 +17,7 @@ import java.util.*;
 public class ILPatientRegistration {
 
     private final Log log = LogFactory.getLog(this.getClass());
-    ConceptService conceptService = Context.getConceptService();
+    static ConceptService conceptService = Context.getConceptService();
 
 
     public static ILPerson iLPatientWrapper(Patient patient) {
@@ -62,10 +62,10 @@ public class ILPatientRegistration {
         for (Obs obs : lastEnrollment.getObs()) {
             //set patient type
             if (obs.getConcept().getConceptId().equals(patientEnrollmentTypeConcept)) {    //get patient type
-               // patientVisit.setPatient_type(patientTypeConverter(obs.getValueCoded()));
+                patientVisit.setPatient_type(patientTypeConverter(obs.getValueCoded()));
             }
             if (obs.getConcept().getConceptId().equals(patientEnrollmentSourceConcept)) {    //get patient source
-               // patientVisit.setPatient_type(patientSourceConverter(obs.getValueCoded()));
+                patientVisit.setPatient_type(patientSourceConverter(obs.getValueCoded()));
             }
         }
 //set external identifier if available
@@ -178,15 +178,14 @@ public class ILPatientRegistration {
 
         return ilPerson;
     }
-    String patientTypeConverter (Concept key) {
+    static String patientTypeConverter(Concept key) {
         Map<Concept, String> patientTypeList = new HashMap<Concept, String>();
         patientTypeList.put(conceptService.getConcept(164144), "New");
         patientTypeList.put(conceptService.getConcept(160563), "Transfer In");
         patientTypeList.put(conceptService.getConcept(164931), "Transit");
-        patientTypeList.put(conceptService.getConcept(159833), "Reenrolled");
         return patientTypeList.get(key);
     }
-    String patientSourceConverter (Concept key) {
+    static String patientSourceConverter(Concept key) {
         Map<Concept, String> patientSourceList = new HashMap<Concept, String>();
         patientSourceList.put(conceptService.getConcept(159938), "hbtc");
         patientSourceList.put(conceptService.getConcept(160539), "vct_site");

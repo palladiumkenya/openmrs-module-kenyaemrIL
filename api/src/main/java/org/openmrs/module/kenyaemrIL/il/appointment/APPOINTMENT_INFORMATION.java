@@ -1,5 +1,7 @@
 package org.openmrs.module.kenyaemrIL.il.appointment;
 
+import java.util.Date;
+
 /**
  * @author Stanslaus Odhiambo
  *         Created on 15/01/2018.
@@ -39,7 +41,7 @@ public class APPOINTMENT_INFORMATION {
         this.appointment_placing_entity = appointment_placing_entity;
     }
 
-    public String getAppointment_location() {
+    public String getAppointment_location(String s) {
         return appointment_location;
     }
 
@@ -71,7 +73,7 @@ public class APPOINTMENT_INFORMATION {
         this.appointment_note = appointment_note;
     }
 
-    public String getAppointment_date() {
+    public String getAppointment_date(Date valueDate) {
         return appointment_date;
     }
 

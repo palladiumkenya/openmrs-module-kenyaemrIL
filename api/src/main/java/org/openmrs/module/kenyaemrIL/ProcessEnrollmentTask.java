@@ -25,7 +25,6 @@ public class ProcessEnrollmentTask extends AbstractTask {
     private static final Logger log = LoggerFactory.getLogger(ProcessEnrollmentTask.class);
     private ObjectMapper mapper = new ObjectMapper();
 
-
     /**
      * @see org.openmrs.scheduler.tasks.AbstractTask#execute()
      */
@@ -42,15 +41,13 @@ public class ProcessEnrollmentTask extends AbstractTask {
             Patient p = e.getPatient();
             registrationEvent(p);
         }
-
     }
 
     private List<Encounter> fetchPendingEnrollments(EncounterType encounterType, Date date) {
        // Context.getEncounterService().getEncounters()
-//        fetch encounters
+       // Fetch encounters
        throw new NotYetImplementedException("Not working yet");
     }
-
 
     private  void  registrationEvent(Patient patient){
         ILPerson ilPerson = ILPatientRegistration.iLPatientWrapper(patient);
