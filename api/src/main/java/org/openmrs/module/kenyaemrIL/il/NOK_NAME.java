@@ -5,8 +5,7 @@ import javax.json.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NOK_NAME
-{
+public class NOK_NAME {
     private String first_name;
 
     private String middle_name;
@@ -37,7 +36,7 @@ public class NOK_NAME
         this.last_name = last_name;
     }
 
-    public static NOK_NAME fill(JsonObject jsonobj){
+    public static NOK_NAME fill(JsonObject jsonobj) {
         NOK_NAME entity = new NOK_NAME();
         if (jsonobj.containsKey("FIRST_NAME")) {
             entity.setFirst_name(jsonobj.getString("FIRST_NAME"));
@@ -50,6 +49,7 @@ public class NOK_NAME
         }
         return entity;
     }
+
     public static List<NOK_NAME> fillList(JsonArray jsonarray) {
         if (jsonarray == null || jsonarray.size() == 0)
             return null;
@@ -62,10 +62,6 @@ public class NOK_NAME
 
     @Override
     public String toString() {
-        return "NOK_NAME{" +
-                "first_name='" + first_name + '\'' +
-                ", middle_name='" + middle_name + '\'' +
-                ", last_name='" + last_name + '\'' +
-                '}';
+        return first_name + middle_name + last_name;
     }
 }

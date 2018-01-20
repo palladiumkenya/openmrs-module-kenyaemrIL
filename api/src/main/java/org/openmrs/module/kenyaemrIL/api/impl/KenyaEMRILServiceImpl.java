@@ -35,6 +35,9 @@ import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -284,30 +287,65 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         throw new NotYetImplementedException("Not Yet Implemented");
     }
 
-    private Patient wrapIlPerson(ILMessage ilPerson) {
-        allPatientIdentifierTypes = Context.getPatientService().getAllPatientIdentifierTypes();
-        for (PatientIdentifierType pit : allPatientIdentifierTypes) {
-            identifiersMap.put(pit.getName(), pit);
-        }
+    @Override
+    public boolean process731Adx(ILMessage ilMessage) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
 
+    private Patient wrapIlPerson(ILMessage ilPerson) {
 
         Patient patient = new Patient();
 
-
+        allPatientIdentifierTypes = Context.getPatientService().getAllPatientIdentifierTypes();
+        for (PatientIdentifierType identiferType : allPatientIdentifierTypes) {
+            identifiersMap.put(identiferType.getName(), identiferType);
+        }
 //        Process Patient Identification details
         PATIENT_IDENTIFICATION patientIdentification = ilPerson.getPatient_identification();
 
+
 //        Process the general stuff here
-        String dateOfBirth = patientIdentification.getDate_of_birth();
-//        TODO - re-work to form an appropriate date
-//        patient.setBirthdate(new Date(dateOfBirth));
 
+
+//        Set the patient date of birth
+        String stringDateOfBirth = patientIdentification.getDate_of_birth();
+        if (stringDateOfBirth != null) {
+            Date dateOfBirth = null;
+            DateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+            try {
+                dateOfBirth = formatter.parse(stringDateOfBirth);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            patient.setBirthdate(dateOfBirth);
+        }
+
+//        Set the date of birth precision
+        String dateOfBirthPrecision = patientIdentification.getDate_of_birth_precision();
+        if (dateOfBirthPrecision != null) {
+            patient.setBirthdateEstimated(dateOfBirthPrecision.equalsIgnoreCase("estimated") ? true : false);
+        }
+
+
+//        Process the marital status
         String maritalStatus = patientIdentification.getMarital_status();
-//        TODO - Process the marital status thing
+        PersonAttribute maritalAttribute = new PersonAttribute();
+        PersonAttributeType maritalAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("8d871f2a-c2cc-11de-8d13-0010c6dffd0f");
+        maritalAttribute.setAttributeType(maritalAttributeType);
+        maritalAttribute.setValue(maritalStatus);
+        patient.addAttribute(maritalAttribute);
 
+
+//        Process phone number as an attribute
         String phoneNumber = patientIdentification.getPhone_number();
-//        TODO - process phone number as an attribute
+        PersonAttribute phoneAttribute = new PersonAttribute();
+        PersonAttributeType phoneAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("b2c38640-2603-4629-aebd-3b54f33f1e3a");
+        phoneAttribute.setAttributeType(phoneAttributeType);
+        phoneAttribute.setValue(phoneNumber);
+        patient.addAttribute(phoneAttribute);
 
+
+//        Set the gender
         patient.setGender(patientIdentification.getSex().toUpperCase());
 
 //        Patient name processing
@@ -358,14 +396,25 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
 //        Process mother name
         MOTHER_NAME motherName = patientIdentification.getMother_name();
-//        TODO - Process as an attribute
+        PersonAttribute motherNameAttribute = new PersonAttribute();
+        PersonAttributeType motherNameAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("8d871d18-c2cc-11de-8d13-0010c6dffd0f");
+        motherNameAttribute.setAttributeType(motherNameAttributeType);
+        patient.addAttribute(motherNameAttribute);
 
+
+        String motherNameString = motherName.getFirst_name() + motherName.getMiddle_name() + motherName.getLast_name();
+        motherNameAttribute.setValue(motherNameString);
 //        Process patient address if exists
         PATIENT_ADDRESS patientAddress = patientIdentification.getPatient_address();
+
+
 //        Set<PersonAddress> addresses = new HashSet<>();
         SortedSet<PersonAddress> addresses = new PresortedSet();
         PersonAddress personAddress = new PersonAddress();
         personAddress.setPreferred(true);
+        personAddress.setAddress6(patientAddress.getPhysical_address().getWard());
+        personAddress.setAddress2(patientAddress.getPhysical_address().getNearest_landmark());
+        personAddress.setAddress4(patientAddress.getPhysical_address().getSub_county());
         personAddress.setCityVillage(patientAddress.getPhysical_address().getVillage());
 //        personAddress.setCountry();
         personAddress.setCountyDistrict(patientAddress.getPhysical_address().getCounty());
@@ -376,6 +425,39 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
 //        Process Next of kin details
         NEXT_OF_KIN[] next_of_kin = ilPerson.getNext_of_kin();
+        if (next_of_kin.length > 0) {
+//            There is a next of kin thus process it
+            NEXT_OF_KIN nok = next_of_kin[0];
+//            Process the nok name
+            PersonAttribute nokNameAttribute = new PersonAttribute();
+            PersonAttributeType nokNameAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("830bef6d-b01f-449d-9f8d-ac0fede8dbd3");
+            nokNameAttribute.setAttributeType(nokNameAttributeType);
+            nokNameAttribute.setValue(nok.getNok_name().toString());
+            patient.addAttribute(nokNameAttribute);
+
+
+//            Process the nok contact
+            PersonAttribute nokContactAttribute = new PersonAttribute();
+            PersonAttributeType nokContactAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("342a1d39-c541-4b29-8818-930916f4c2dc");
+            nokContactAttribute.setAttributeType(nokContactAttributeType);
+            nokContactAttribute.setValue(nok.getPhone_number());
+            patient.addAttribute(nokContactAttribute);
+
+//            Process the nok address
+            PersonAttribute nokAddressAttribute = new PersonAttribute();
+            PersonAttributeType nokAddressAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("d0aa9fd1-2ac5-45d8-9c5e-4317c622c8f5");
+            nokAddressAttribute.setAttributeType(nokAddressAttributeType);
+            nokAddressAttribute.setValue(nok.getAddress());
+            patient.addAttribute(nokAddressAttribute);
+
+//            Process the nok relationship
+            PersonAttribute nokRealtionshipAttribute = new PersonAttribute();
+            PersonAttributeType nokRelationshipAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("d0aa9fd1-2ac5-45d8-9c5e-4317c622c8f5");
+            nokRealtionshipAttribute.setAttributeType(nokRelationshipAttributeType);
+            nokRealtionshipAttribute.setValue(nok.getRelationship());
+            patient.addAttribute(nokRealtionshipAttribute);
+
+        }
 
 
         return patient;
@@ -416,11 +498,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 break;
             }
             case "NHIF": {
-                patientIdentifierType = identifiersMap.get("National ID");
+                patientIdentifierType = identifiersMap.get("NHIF");
                 break;
             }
             case "HDSS_ID": {
-//                TODO - provide appropriate initialization
+                patientIdentifierType = identifiersMap.get("HDSS ID");
                 break;
             }
             case "GODS_NUMBER": {

@@ -119,4 +119,6 @@ public interface KenyaEMRILService extends OpenmrsService {
     boolean processObservationResult(ILMessage ilMessage);
 
     boolean processViralLoad(ILMessage ilMessage);
+
+    boolean process731Adx(ILMessage ilMessage);
 }
