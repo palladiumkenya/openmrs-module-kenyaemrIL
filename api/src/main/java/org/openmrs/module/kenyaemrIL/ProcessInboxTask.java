@@ -43,42 +43,46 @@ public class ProcessInboxTask extends AbstractTask {
         message = message.substring(message.indexOf("{"), message.lastIndexOf("}") + 1);
         try {
             boolean returnStatus= false;
-            ILMessage iLPerson = mapper.readValue(message.toLowerCase(), ILMessage.class);
-            switch(iLPerson.getMessage_header().getMessage_type().toUpperCase()){
+            ILMessage ilMessage = mapper.readValue(message.toLowerCase(), ILMessage.class);
+            switch(ilMessage.getMessage_header().getMessage_type().toUpperCase()){
                 case "ADT^A04":{
-                    returnStatus = getEMRILService().processCreatePatientRequest(iLPerson);
+                    returnStatus = getEMRILService().processCreatePatientRequest(ilMessage);
                     break;
                 }
                 case "ADT^A08":{
-                    returnStatus = getEMRILService().processUpdatePatientRequest(iLPerson);
+                    returnStatus = getEMRILService().processUpdatePatientRequest(ilMessage);
                     break;
                 }
                 case "RDE^001":{
-                    returnStatus = getEMRILService().processPharmacyOrder(iLPerson);
+                    returnStatus = getEMRILService().processPharmacyOrder(ilMessage);
                     break;
                 }
                 case "RDS^O13":{
-                    returnStatus = getEMRILService().processPharmacyDispense(iLPerson);
+                    returnStatus = getEMRILService().processPharmacyDispense(ilMessage);
                     break;
                 }
                 case "SIU^S12":{
-                    returnStatus = getEMRILService().processAppointmentSchedule(iLPerson);
+                    returnStatus = getEMRILService().processAppointmentSchedule(ilMessage);
                     break;
                 }
                 case "ORM^O01":{
-                    returnStatus = getEMRILService().processLabOrder(iLPerson);
+                    returnStatus = getEMRILService().processLabOrder(ilMessage);
                     break;
                 }
                 case "ORU^R01":{
-                    returnStatus = getEMRILService().processObservationResult(iLPerson);
+                    returnStatus = getEMRILService().processObservationResult(ilMessage);
+                    break;
+                }
+                case "MOH731^ADX":{
+                    returnStatus = getEMRILService().process731Adx(ilMessage);
                     break;
                 }
                 case "ORU^VL":{
-                    returnStatus = getEMRILService().processViralLoad(iLPerson);
+                    returnStatus = getEMRILService().processViralLoad(ilMessage);
                     break;
                 }
                 default:{
-                    log.error(iLPerson.getMessage_header().getMessage_type() + " message type is not yet supported");
+                    log.error(ilMessage.getMessage_header().getMessage_type() + " message type is not yet supported");
                     break;
                 }
             }
