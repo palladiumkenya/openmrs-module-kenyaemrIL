@@ -14,6 +14,7 @@ public class ILMessage {
     private NEXT_OF_KIN[] next_of_kin;
     private OBSERVATION_RESULT[] observation_result;
     private APPOINTMENT_INFORMATION[] appointment_information;
+    private VIRAL_LOAD_RESULT[] VIRAL_LOAD_RESULT;
 
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
@@ -61,5 +62,13 @@ public class ILMessage {
 
     public void setAppointment_information(APPOINTMENT_INFORMATION[] appointment_information) {
         this.appointment_information = appointment_information;
+    }
+
+    public org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT[] getVIRAL_LOAD_RESULT() {
+        return VIRAL_LOAD_RESULT;
+    }
+
+    public void setVIRAL_LOAD_RESULT(org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT[] VIRAL_LOAD_RESULT) {
+        this.VIRAL_LOAD_RESULT = VIRAL_LOAD_RESULT;
     }
 }

@@ -1,36 +1,37 @@
 package org.openmrs.module.kenyaemrIL.il.observation;
 
 public class VIRAL_LOAD_RESULT {
-    private String sample_collection_datetime;
-    private String sample_tested_datetime;
-    private String vl_results;
+    private String date_sample_collected;
+    private String date_sample_tested;
+    private String vl_result;
     private String sample_type;
     private String sample_rejection;
     private String justification;
     private String regimen;
     private String lab_tested_in;
 
-    public String getSample_collection_datetime() {
-        return sample_collection_datetime;
+    public String getDate_sample_collected() {
+        return date_sample_collected;
     }
 
-    public void setSample_collection_datetime(String sample_collection_datetime) {
-        this.sample_collection_datetime = sample_collection_datetime;
-    }
-    public String getSample_tested_datetime() {
-        return sample_tested_datetime;
+    public void setDate_sample_collected(String date_sample_collected) {
+        this.date_sample_collected = date_sample_collected;
     }
 
-    public void setSample_tested_datetime(String sample_tested_datetime) {
-        this.sample_tested_datetime = sample_tested_datetime;
+    public String getDate_sample_tested() {
+        return date_sample_tested;
     }
 
-    public String getVl_results() {
-        return vl_results;
+    public void setDate_sample_tested(String date_sample_tested) {
+        this.date_sample_tested = date_sample_tested;
     }
 
-    public void setVl_results(String vl_results) {
-        this.vl_results = vl_results;
+    public String getVl_result() {
+        return vl_result;
+    }
+
+    public void setVl_result(String vl_result) {
+        this.vl_result = vl_result;
     }
 
     public String getSample_type() {
