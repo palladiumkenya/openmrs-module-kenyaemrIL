@@ -19,7 +19,6 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.openmrs.*;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.kenyaemr.Dictionary;
 
 import java.util.*;
 
@@ -54,23 +53,23 @@ public class ILUtils {
 	 * @param c the WHO stage concept
 	 * @return the WHO stage number (null if the concept isn't a WHO stage)
 	 */
-	public static Integer whoStage(Concept c) {
-		if (c != null) {
-			if (c.equals(Dictionary.getConcept(Dictionary.WHO_STAGE_1_ADULT)) || c.equals(Dictionary.getConcept(Dictionary.WHO_STAGE_1_PEDS))) {
-				return 1;
-			}
-			if (c.equals(Dictionary.getConcept(Dictionary.WHO_STAGE_2_ADULT)) || c.equals(Dictionary.getConcept(Dictionary.WHO_STAGE_2_PEDS))) {
-				return 2;
-			}
-			if (c.equals(Dictionary.getConcept(Dictionary.WHO_STAGE_3_ADULT)) || c.equals(Dictionary.getConcept(Dictionary.WHO_STAGE_3_PEDS))) {
-				return 3;
-			}
-			if (c.equals(Dictionary.getConcept(Dictionary.WHO_STAGE_4_ADULT)) || c.equals(Dictionary.getConcept(Dictionary.WHO_STAGE_4_PEDS))) {
-				return 4;
-			}
-		}
-		return null;
-	}
+//	public static Integer whoStage(Concept c) {
+//		if (c != null) {
+//			if (c.equals(Dictionary.getConcept(Dictionary.WHO_STAGE_1_ADULT)) || c.equals(Dictionary.getConcept(Dictionary.WHO_STAGE_1_PEDS))) {
+//				return 1;
+//			}
+//			if (c.equals(Dictionary.getConcept(Dictionary.WHO_STAGE_2_ADULT)) || c.equals(Dictionary.getConcept(Dictionary.WHO_STAGE_2_PEDS))) {
+//				return 2;
+//			}
+//			if (c.equals(Dictionary.getConcept(Dictionary.WHO_STAGE_3_ADULT)) || c.equals(Dictionary.getConcept(Dictionary.WHO_STAGE_3_PEDS))) {
+//				return 3;
+//			}
+//			if (c.equals(Dictionary.getConcept(Dictionary.WHO_STAGE_4_ADULT)) || c.equals(Dictionary.getConcept(Dictionary.WHO_STAGE_4_PEDS))) {
+//				return 4;
+//			}
+//		}
+//		return null;
+//	}
 
 	/**
 	 * Parses a CSV list of strings, returning all trimmed non-empty values
@@ -95,20 +94,20 @@ public class ILUtils {
 	 * @param csv the CSV string
 	 * @return the concepts
 	 */
-	public static List<Concept> parseConcepts(String csv) {
-		List<String> identifiers = parseCsv(csv);
-		List<Concept> concepts = new ArrayList<Concept>();
-
-		for (String identifier : identifiers) {
-			if (StringUtils.isNumeric(identifier)) {
-				concepts.add(Context.getConceptService().getConcept(Integer.valueOf(identifier)));
-			}
-			else {
-				concepts.add(Dictionary.getConcept(identifier));
-			}
-		}
-		return concepts;
-	}
+//	public static List<Concept> parseConcepts(String csv) {
+//		List<String> identifiers = parseCsv(csv);
+//		List<Concept> concepts = new ArrayList<Concept>();
+//
+//		for (String identifier : identifiers) {
+//			if (StringUtils.isNumeric(identifier)) {
+//				concepts.add(Context.getConceptService().getConcept(Integer.valueOf(identifier)));
+//			}
+//			else {
+//				concepts.add(Dictionary.getConcept(identifier));
+//			}
+//		}
+//		return concepts;
+//	}
 
 	/**
 	 * Unlike in OpenMRS core, a user can only be one provider in KenyaEMR

@@ -53,7 +53,7 @@
 
     <globalProperty>
         <property>enrolmentTask.lastFetchDateAndTime</property>
-        <defaultValue>00000001012018</defaultValue>
+        <defaultValue>1516615053</defaultValue>
         <description>
             The last date and time that the last fetch was done for enrollment task
         </description>

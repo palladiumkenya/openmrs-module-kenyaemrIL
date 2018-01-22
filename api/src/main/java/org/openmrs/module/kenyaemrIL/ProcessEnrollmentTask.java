@@ -1,21 +1,19 @@
 package org.openmrs.module.kenyaemrIL;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import org.hibernate.cfg.NotYetImplementedException;
 import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
+import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.ILPatientRegistration;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
-import org.openmrs.module.kenyaemrIL.il.ILPerson;
+import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.scheduler.tasks.AbstractTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -37,31 +35,39 @@ public class ProcessEnrollmentTask extends AbstractTask {
 //        Fetch enrolment encounter
 //        Fetch the last date of fetch
         Date fetchDate = null;
-        String fetchDateString = Context.getAdministrationService().getGlobalProperty("enrolmentTask.lastFetchDateAndTime");
-        DateFormat formatter = new SimpleDateFormat("hhmmssyyyyMMdd");
+        GlobalProperty globalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("enrolmentTask.lastFetchDateAndTime");
+        String fetchID = Context.getAdministrationService().getGlobalProperty("enrolmentTask.lastFetchId");
+
+
         try {
-            fetchDate = formatter.parse(fetchDateString);
-        } catch (ParseException e) {
+            long ts = (long) globalPropertyObject.getValue();
+            fetchDate = new Date(ts);
+        } catch (Exception e) {
             e.printStackTrace();
         }
         EncounterType encounterTypeEnrollment = Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc");
         //Fetch all encounters
-        List<Encounter> pendingEnrollments = fetchPendingEnrollments(encounterTypeEnrollment, fetchDate);
+        List<EncounterType> encounterTypes = new ArrayList<>();
+        encounterTypes.add(encounterTypeEnrollment);
+        List<Encounter> pendingEnrollments = fetchPendingEnrollments(encounterTypes, fetchDate);
         for (Encounter e : pendingEnrollments) {
             Patient p = e.getPatient();
-            registrationEvent(p);
+            boolean b = registrationEvent(p);
         }
+        globalPropertyObject.setValue(new Date().getTime());
+        Context.getAdministrationService().saveGlobalProperty(globalPropertyObject);
+
     }
 
-    private List<Encounter> fetchPendingEnrollments(EncounterType encounterType, Date date) {
-//        TODO - fetch pending enrolments
-        throw new NotYetImplementedException("Not working yet");
+    private List<Encounter> fetchPendingEnrollments(List<EncounterType> encounterTypes, Date date) {
+        return Context.getEncounterService().getEncounters(null, null, date, null, null, encounterTypes, null, null, null, false);
+
     }
 
-    private void registrationEvent(Patient patient) {
-        ILPerson ilPerson = ILPatientRegistration.iLPatientWrapper(patient);
+    private boolean registrationEvent(Patient patient) {
+        ILMessage ilMessage = ILPatientRegistration.iLPatientWrapper(patient);
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
-        boolean b = service.sendAddPersonRequest(ilPerson);
+        return service.processCreatePatientRequest(ilMessage);
     }
 
     private KenyaEMRILService getEMRILService() {

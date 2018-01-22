@@ -13,27 +13,22 @@
  */
 package org.openmrs.module.kenyaemrIL.api.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thoughtworks.xstream.core.util.PresortedSet;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.hibernate.cfg.NotYetImplementedException;
 import org.openmrs.*;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.impl.BaseOpenmrsService;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.openmrs.module.kenyaemrIL.api.ILMessageType;
-import org.openmrs.module.kenyaemrIL.il.*;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
+import org.openmrs.module.kenyaemrIL.il.*;
 import org.openmrs.module.kenyaemrIL.il.appointment.AppointmentMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
-import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -70,55 +65,33 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         return dao;
     }
 
-    @Override
-    public List<ILPerson> getPersonList(boolean status) {
-        throw new NotYetImplementedException("Not Yet Implemented");
-    }
-
-    @Override
-    public List<ILPerson> getAddPersonList(boolean status) {
-        throw new NotYetImplementedException("Not Yet Implemented");
-
-    }
-
-    @Override
-    public List<ILPerson> getUpdatePersonList(boolean status) {
-        throw new NotYetImplementedException("Not Yet Implemented");
-    }
-
-    @Override
-    public boolean sendUpdateRequest(ILPerson ilPerson) {
-        throw new NotYetImplementedException("Not Yet Implemented");
-    }
-
-    @Override
-    public boolean sendAddPersonRequest(ILPerson ilPerson) {
-        boolean isSuccessful;
-        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance();
-        messageHeader.setMessage_type("ADT^A04");
-        messageHeader.setMessage_datetime(String.valueOf(new Date()));
-        ilPerson.setMessage_header(messageHeader);
-        ObjectMapper mapper = new ObjectMapper();
-        KenyaEMRILMessage ilMessage = new KenyaEMRILMessage();
-        try {
-            String messageString = mapper.writeValueAsString(ilPerson);
-            ilMessage.setHl7Type("ADT^A04");
-            ilMessage.setMessage(messageString);
-            ilMessage.setDescription("");
-            ilMessage.setName("");
-            ilMessage.setMessageType(ILMessageType.OUTBOUND.getValue());
-            KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(ilMessage);
-            if (savedInstance != null) {
-                isSuccessful = true;
-            } else {
-                isSuccessful = false;
-            }
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            isSuccessful = false;
-        }
-        return isSuccessful;
-    }
+//    public boolean sendAddPersonRequest(ILPerson ilPerson) {
+//        boolean isSuccessful;
+//        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance();
+//        messageHeader.setMessage_type("ADT^A04");
+//        messageHeader.setMessage_datetime(String.valueOf(new Date()));
+//        ilPerson.setMessage_header(messageHeader);
+//        ObjectMapper mapper = new ObjectMapper();
+//        KenyaEMRILMessage ilMessage = new KenyaEMRILMessage();
+//        try {
+//            String messageString = mapper.writeValueAsString(ilPerson);
+//            ilMessage.setHl7Type("ADT^A04");
+//            ilMessage.setMessage(messageString);
+//            ilMessage.setDescription("");
+//            ilMessage.setName("");
+//            ilMessage.setMessageType(ILMessageType.OUTBOUND.getValue());
+//            KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(ilMessage);
+//            if (savedInstance != null) {
+//                isSuccessful = true;
+//            } else {
+//                isSuccessful = false;
+//            }
+//        } catch (JsonProcessingException e) {
+//            e.printStackTrace();
+//            isSuccessful = false;
+//        }
+//        return isSuccessful;
+//    }
 
 
     @Override

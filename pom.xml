@@ -35,7 +35,7 @@
 
     <properties>
         <openMRSVersion>1.9.9</openMRSVersion>
-        <kenyaemrVersion>15.1.7</kenyaemrVersion>
+        <!--<kenyaemrVersion>15.1.7</kenyaemrVersion>-->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -134,14 +134,14 @@
             <dependency>
                 <groupId>org.openmrs.module</groupId>
                 <artifactId>webservices.rest-omod</artifactId>
-                <version>2.20.0</version>
+                <version>2.19.0</version>
                 <scope>provided</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.openmrs.module</groupId>
                 <artifactId>webservices.rest-omod-common</artifactId>
-                <version>2.20.0</version>
+                <version>2.19.0</version>
                 <classifier>tests</classifier>
                 <scope>test</scope>
             </dependency>
@@ -152,12 +152,12 @@
                 <artifactId>swagger-models</artifactId>
                 <version>2.0.0-rc2</version>
             </dependency>
-            <dependency>
-                <groupId>org.openmrs.module</groupId>
-                <artifactId>kenyaemr-api</artifactId>
-                <version>${kenyaemrVersion}</version>
-                <scope>provided</scope>
-            </dependency>
+            <!--<dependency>-->
+                <!--<groupId>org.openmrs.module</groupId>-->
+                <!--<artifactId>kenyaemr-api</artifactId>-->
+                <!--<version>${kenyaemrVersion}</version>-->
+                <!--<scope>provided</scope>-->
+            <!--</dependency>-->
 
         </dependencies>
     </dependencyManagement>

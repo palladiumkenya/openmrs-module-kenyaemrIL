@@ -20,8 +20,8 @@ public class ILPatientRegistration {
     static ConceptService conceptService = Context.getConceptService();
 
 
-    public static ILPerson iLPatientWrapper(Patient patient) {
-        ILPerson ilPerson = new ILPerson();
+    public static ILMessage iLPatientWrapper(Patient patient) {
+        ILMessage ilMessage = new ILMessage();
         List<INTERNAL_PATIENT_ID> internalPatientIds = new ArrayList<INTERNAL_PATIENT_ID>();
 
         PATIENT_IDENTIFICATION patientIdentification = new PATIENT_IDENTIFICATION();
@@ -154,7 +154,7 @@ public class ILPatientRegistration {
         if (patient.getAttribute(" Civil Status") != null) {
             patientIdentification.setMarital_status(patient.getAttribute("Civil Status").getValue());
         }
-        ilPerson.setPatient_identification(patientIdentification);
+        ilMessage.setPatient_identification(patientIdentification);
 
 //    Next of KIN
 
@@ -175,8 +175,9 @@ public class ILPatientRegistration {
 
         }
         patientKins.add(nok);
+        ilMessage.setNext_of_kin((NEXT_OF_KIN[]) patientKins.toArray());
 
-        return ilPerson;
+        return ilMessage;
     }
     static String patientTypeConverter(Concept key) {
         Map<Concept, String> patientTypeList = new HashMap<Concept, String>();

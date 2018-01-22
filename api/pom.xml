@@ -76,12 +76,12 @@
             <!--<groupId>org.openmrs.module</groupId>-->
             <!--<artifactId>webservices.rest-api</artifactId>-->
         <!--</dependency>-->
-		<dependency>
-			<groupId>org.openmrs.module</groupId>
-			<artifactId>kenyaemr-api</artifactId>
-			<version>${kenyaemrVersion}</version>
-			<scope>provided</scope>
-		</dependency>
+		<!--<dependency>-->
+			<!--<groupId>org.openmrs.module</groupId>-->
+			<!--<artifactId>kenyaemr-api</artifactId>-->
+			<!--&lt;!&ndash;<version>${kenyaemrVersion}</version>&ndash;&gt;-->
+			<!--<scope>provided</scope>-->
+		<!--</dependency>-->
 	</dependencies>
 	
 	<build>

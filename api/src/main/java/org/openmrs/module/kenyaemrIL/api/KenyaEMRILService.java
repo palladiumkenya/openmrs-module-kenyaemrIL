@@ -15,7 +15,6 @@ package org.openmrs.module.kenyaemrIL.api;
 
 import org.openmrs.api.OpenmrsService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
-import org.openmrs.module.kenyaemrIL.il.ILPerson;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
@@ -41,21 +40,6 @@ public interface KenyaEMRILService extends OpenmrsService {
 	 * 
 	 */
 
-    /**
-     * Processes and returns a list of available IL Person records received from the IL, typically ADTA04 and ADTA08
-     *
-     * @param status - boolean value showing whether or not to fetch records that have been processed
-     * @return a list of @{@link ILPerson} records satisfying the given criteria
-     */
-    List<ILPerson> getPersonList(boolean status);
-
-    List<ILPerson> getAddPersonList(boolean status);
-
-    List<ILPerson> getUpdatePersonList(boolean status);
-
-    boolean sendUpdateRequest(ILPerson ilPerson);
-
-    boolean sendAddPersonRequest(ILPerson ilPerson);
 
 
 
