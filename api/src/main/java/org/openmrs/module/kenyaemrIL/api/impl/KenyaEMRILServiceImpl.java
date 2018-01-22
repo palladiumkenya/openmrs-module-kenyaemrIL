@@ -304,10 +304,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         String maritalStatus = patientIdentification.getMarital_status();
         PersonAttribute maritalAttribute = new PersonAttribute();
         PersonAttributeType maritalAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("8d871f2a-c2cc-11de-8d13-0010c6dffd0f");
-        maritalAttribute.setAttributeType(maritalAttributeType);
-        maritalAttribute.setValue(maritalStatus);
-        patient.addAttribute(maritalAttribute);
-
+        if(maritalAttributeType !=null ) {
+            maritalAttribute.setAttributeType(maritalAttributeType);
+            maritalAttribute.setValue(maritalStatus);
+            patient.addAttribute(maritalAttribute);
+        }
 
 //        Process phone number as an attribute
         String phoneNumber = patientIdentification.getPhone_number();
@@ -367,33 +368,35 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         patient.setIdentifiers(patientIdentifiers);
 
 
-//        Process mother name
-        MOTHER_NAME motherName = patientIdentification.getMother_name();
-        PersonAttribute motherNameAttribute = new PersonAttribute();
-        PersonAttributeType motherNameAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("8d871d18-c2cc-11de-8d13-0010c6dffd0f");
-        motherNameAttribute.setAttributeType(motherNameAttributeType);
-        patient.addAttribute(motherNameAttribute);
-
-
-        String motherNameString = motherName.getFirst_name() + motherName.getMiddle_name() + motherName.getLast_name();
-        motherNameAttribute.setValue(motherNameString);
-//        Process patient address if exists
-        PATIENT_ADDRESS patientAddress = patientIdentification.getPatient_address();
-
-
-//        Set<PersonAddress> addresses = new HashSet<>();
-        SortedSet<PersonAddress> addresses = new PresortedSet();
-        PersonAddress personAddress = new PersonAddress();
-        personAddress.setPreferred(true);
-        personAddress.setAddress6(patientAddress.getPhysical_address().getWard());
-        personAddress.setAddress2(patientAddress.getPhysical_address().getNearest_landmark());
-        personAddress.setAddress4(patientAddress.getPhysical_address().getSub_county());
-        personAddress.setCityVillage(patientAddress.getPhysical_address().getVillage());
-//        personAddress.setCountry();
-        personAddress.setCountyDistrict(patientAddress.getPhysical_address().getCounty());
-        personAddress.setAddress1(patientAddress.getPostal_address());
-        addresses.add(personAddress);
-        patient.setAddresses(addresses);
+////        Process mother name
+//        MOTHER_NAME motherName = patientIdentification.getMother_name();
+//        PersonAttribute motherNameAttribute = new PersonAttribute();
+//        PersonAttributeType motherNameAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("8d871d18-c2cc-11de-8d13-0010c6dffd0f");
+//
+//        if(motherNameAttributeType != null) {
+//            motherNameAttribute.setAttributeType(motherNameAttributeType);
+//            patient.addAttribute(motherNameAttribute);
+//
+//            String motherNameString = motherName.getFirst_name() + motherName.getMiddle_name() + motherName.getLast_name();
+//            motherNameAttribute.setValue(motherNameString);
+//        }
+////        Process patient address if exists
+//        PATIENT_ADDRESS patientAddress = patientIdentification.getPatient_address();
+//
+//
+////        Set<PersonAddress> addresses = new HashSet<>();
+//        SortedSet<PersonAddress> addresses = new PresortedSet();
+//        PersonAddress personAddress = new PersonAddress();
+//        personAddress.setPreferred(true);
+//        personAddress.setAddress6(patientAddress.getPhysical_address().getWard());
+//        personAddress.setAddress2(patientAddress.getPhysical_address().getNearest_landmark());
+//        personAddress.setAddress4(patientAddress.getPhysical_address().getSub_county());
+//        personAddress.setCityVillage(patientAddress.getPhysical_address().getVillage());
+////        personAddress.setCountry();
+//        personAddress.setCountyDistrict(patientAddress.getPhysical_address().getCounty());
+//        personAddress.setAddress1(patientAddress.getPostal_address());
+//        addresses.add(personAddress);
+//        patient.setAddresses(addresses);
 
 
 //        Process Next of kin details
@@ -441,51 +444,54 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 //        TODO - Process the appropriate openmrs identifier types
 //        OpenMRS Identification Number
 //        Old Identification Number
-        switch (identifierType.toUpperCase()) {
-            case "CCC_NUMBER": {
-                patientIdentifierType = identifiersMap.get("Unique Patient Number");
-                break;
-            }
-            case "HTS_NUMBER": {
-                patientIdentifierType = identifiersMap.get("HTS NUMBER");
-                break;
-            }
-            case "TB_NUMBER": {
-                patientIdentifierType = identifiersMap.get("TB Treatment Number");
-                break;
-            }
-            case "ANC_NUMBER": {
-                patientIdentifierType = identifiersMap.get("ANC NUMBER");
-                break;
-            }
-            case "PMTCT_NUMBER": {
-                patientIdentifierType = identifiersMap.get("PMTCT NUMBER");
-                break;
-            }
-            case "OPD_NUMBER": {
-                patientIdentifierType = identifiersMap.get("OPD NUMBER");
-                break;
-            }
-            case "NATIONAL_ID": {
-                patientIdentifierType = identifiersMap.get("National ID");
-                break;
-            }
-            case "NHIF": {
-                patientIdentifierType = identifiersMap.get("NHIF");
-                break;
-            }
-            case "HDSS_ID": {
-                patientIdentifierType = identifiersMap.get("HDSS ID");
-                break;
-            }
-            case "GODS_NUMBER": {
-                patientIdentifierType = identifiersMap.get("MPI GODS NUMBER");
-                break;
-            }
-            default: {
+        if(patientIdentifierType != null) {
+
+            switch (identifierType.toUpperCase()) {
+                case "CCC_NUMBER": {
+                    patientIdentifierType = identifiersMap.get("Unique Patient Number");
+                    break;
+                }
+                case "HTS_NUMBER": {
+                    patientIdentifierType = identifiersMap.get("HTS NUMBER");
+                    break;
+                }
+                case "TB_NUMBER": {
+                    patientIdentifierType = identifiersMap.get("TB Treatment Number");
+                    break;
+                }
+                case "ANC_NUMBER": {
+                    patientIdentifierType = identifiersMap.get("ANC NUMBER");
+                    break;
+                }
+                case "PMTCT_NUMBER": {
+                    patientIdentifierType = identifiersMap.get("PMTCT NUMBER");
+                    break;
+                }
+                case "OPD_NUMBER": {
+                    patientIdentifierType = identifiersMap.get("OPD NUMBER");
+                    break;
+                }
+                case "NATIONAL_ID": {
+                    patientIdentifierType = identifiersMap.get("National ID");
+                    break;
+                }
+                case "NHIF": {
+                    patientIdentifierType = identifiersMap.get("NHIF");
+                    break;
+                }
+                case "HDSS_ID": {
+                    patientIdentifierType = identifiersMap.get("HDSS ID");
+                    break;
+                }
+                case "GODS_NUMBER": {
+                    patientIdentifierType = identifiersMap.get("MPI GODS NUMBER");
+                    break;
+                }
+                default: {
 //                nothing to process, set to null
-                patientIdentifierType = null;
-                break;
+                    patientIdentifierType = null;
+                    break;
+                }
             }
         }
         return patientIdentifierType;

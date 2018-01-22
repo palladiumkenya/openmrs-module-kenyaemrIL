@@ -36,7 +36,7 @@ public class ProcessEnrollmentTask extends AbstractTask {
 //        Fetch the last date of fetch
         Date fetchDate = null;
         GlobalProperty globalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("enrolmentTask.lastFetchDateAndTime");
-        String fetchID = Context.getAdministrationService().getGlobalProperty("enrolmentTask.lastFetchId");
+       // String fetchID = Context.getAdministrationService().getGlobalProperty("enrolmentTask.lastFetchId");
 
 
         try {

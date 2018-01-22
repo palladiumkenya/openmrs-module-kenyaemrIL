@@ -158,24 +158,24 @@ public class ILPatientRegistration {
 
 //    Next of KIN
 
-        List<NEXT_OF_KIN> patientKins = new ArrayList<NEXT_OF_KIN>();
-        NEXT_OF_KIN nok = new NEXT_OF_KIN();
-        if (patient.getAttribute("Next of kin name") != null) {
-            NOK_NAME fnok = new NOK_NAME();
-            fnok.setFirst_name(patient.getAttribute("Next of kin name").getValue());
-            nok.setNok_name(fnok);
-        }  if (patient.getAttribute("Next of kin contact") != null) {
-            nok.setPhone_number(patient.getAttribute("Next of kin contact").getValue());
-
-        }   if (patient.getAttribute("Next of kin relationship") != null) {
-            nok.setRelationship(patient.getAttribute("Next of kin relationship").getValue());
-
-        } if (patient.getAttribute("Next of kin address") != null) {
-            nok.setAddress(patient.getAttribute("Next of kin address").getValue());
-
-        }
-        patientKins.add(nok);
-        ilMessage.setNext_of_kin((NEXT_OF_KIN[]) patientKins.toArray());
+//        List<NEXT_OF_KIN> patientKins = new ArrayList<NEXT_OF_KIN>();
+//        NEXT_OF_KIN nok = new NEXT_OF_KIN();
+//        if (patient.getAttribute("Next of kin name") != null) {
+//            NOK_NAME fnok = new NOK_NAME();
+//            fnok.setFirst_name(patient.getAttribute("Next of kin name").getValue());
+//            nok.setNok_name(fnok);
+//        }  if (patient.getAttribute("Next of kin contact") != null) {
+//            nok.setPhone_number(patient.getAttribute("Next of kin contact").getValue());
+//
+//        }   if (patient.getAttribute("Next of kin relationship") != null) {
+//            nok.setRelationship(patient.getAttribute("Next of kin relationship").getValue());
+//
+//        } if (patient.getAttribute("Next of kin address") != null) {
+//            nok.setAddress(patient.getAttribute("Next of kin address").getValue());
+//
+//        }
+//        patientKins.add(nok);
+//        ilMessage.setNext_of_kin((NEXT_OF_KIN[]) patientKins.toArray);
 
         return ilMessage;
     }
