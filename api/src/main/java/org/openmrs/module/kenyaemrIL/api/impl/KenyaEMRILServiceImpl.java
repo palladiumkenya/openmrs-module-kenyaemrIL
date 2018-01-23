@@ -94,12 +94,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     public boolean sendAddPersonRequest(ILMessage ilMessage) {
         boolean isSuccessful;
         //Message Header
-        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance();
-        messageHeader.setMessage_type("ADT^A04");
-        String iLMessageDate = null;
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddhhmmss");
-        iLMessageDate = formatter.format(new Date());
-        messageHeader.setMessage_datetime(iLMessageDate);
+        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("ADT^A04");
         ilMessage.setMessage_header(messageHeader);
         ObjectMapper mapper = new ObjectMapper();
         KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
@@ -299,10 +294,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     public boolean logAppointmentSchedule(ILMessage ilMessage) {
         boolean isSuccessful;
         //Message Header
-        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance();
-        messageHeader.setMessage_type("SIU^S12");
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddhhmmss");
-        messageHeader.setMessage_datetime(formatter.format(new Date()));
+        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("SIU^S12");
         ilMessage.setMessage_header(messageHeader);
         ObjectMapper mapper = new ObjectMapper();
         KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
@@ -330,10 +322,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     public boolean logViralLoad(ILMessage ilMessage) {
         boolean isSuccessful;
         //Message Header
-        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance();
-        messageHeader.setMessage_type("ORU^VL");
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddhhmmss");
-        messageHeader.setMessage_datetime(formatter.format(new Date()));
+        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("ORU^VL");
         ilMessage.setMessage_header(messageHeader);
         ObjectMapper mapper = new ObjectMapper();
         KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
