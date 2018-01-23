@@ -140,4 +140,11 @@ public interface KenyaEMRILService extends OpenmrsService {
      * @return true or false - depending on the processing outcome
      */
     boolean logViralLoad(ILMessage ilMessage);
+
+    /**
+     *
+     * @param ilMessage -  the message to populate and send
+     * @return true or false - depending on the processing outcome
+     */
+    boolean logORUs(ILMessage ilMessage);
 }
