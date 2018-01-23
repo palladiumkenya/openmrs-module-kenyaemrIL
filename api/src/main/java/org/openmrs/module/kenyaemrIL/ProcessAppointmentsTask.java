@@ -68,7 +68,7 @@ public class ProcessAppointmentsTask extends AbstractTask {
     private boolean appointmentsEvent(Patient patient) {
         ILMessage ilMessage = ILPatientAppointments.iLPatientWrapper(patient);
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
-        return service.processAppointmentSchedule(ilMessage);
+        return service.logAppointmentSchedule(ilMessage);
     }
 
 

@@ -34,7 +34,8 @@ import java.util.List;
  */
 @Transactional
 public interface KenyaEMRILService extends OpenmrsService {
-     
+
+//    Process outgoing enrolments/updates
 	/*
      * Add service methods here
 	 * 
@@ -58,7 +59,7 @@ public interface KenyaEMRILService extends OpenmrsService {
 
 
 
-    /*    Pharmacy Orders     */
+    /*    Pharmacy Orders     - Outgoing  */
     List<ILPharmacyOrder> fetchAllPharmacyOrders();
 
     List<ILPharmacyOrder> fetchPharmacyOrders(boolean processed);
@@ -70,7 +71,7 @@ public interface KenyaEMRILService extends OpenmrsService {
     boolean deletePharmacyOrder(ILPharmacyOrder ilPharmacyOrder);
 
 
-    //    Pharmacy Dispense
+    //    Pharmacy Dispense - outgoing
     List<ILPharmacyDispense> fetchAllPharmacyDispenses();
 
     List<ILPharmacyDispense> fetchPharmacyDispenses(boolean processed);
@@ -94,6 +95,8 @@ public interface KenyaEMRILService extends OpenmrsService {
     void deleteKenyaEMRILMessage(KenyaEMRILMessage kenyaEMRILMessage);
 
     List<KenyaEMRILMessage> getAllKenyaEMRILMessages(Boolean includeAll);
+
+
 
 
 //    Process incoming IL requests
@@ -120,4 +123,21 @@ public interface KenyaEMRILService extends OpenmrsService {
     boolean processViralLoad(ILMessage ilMessage);
 
     boolean process731Adx(ILMessage ilMessage);
+
+
+//    Process KenyaEMR appointment
+
+    /**
+     *
+     * @param ilMessage -  the message to populate and send
+     * @return true or false - depending on the processing outcome
+     */
+    boolean logAppointmentSchedule(ILMessage ilMessage);
+
+    /**
+     *
+     * @param ilMessage -  the message to populate and send
+     * @return true or false - depending on the processing outcome
+     */
+    boolean logViralLoad(ILMessage ilMessage);
 }

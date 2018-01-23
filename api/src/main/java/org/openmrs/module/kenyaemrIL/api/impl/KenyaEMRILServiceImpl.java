@@ -295,6 +295,68 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         throw new NotYetImplementedException("Not Yet Implemented");
     }
 
+    @Override
+    public boolean logAppointmentSchedule(ILMessage ilMessage) {
+        boolean isSuccessful;
+        //Message Header
+        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance();
+        messageHeader.setMessage_type("SIU^S12");
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddhhmmss");
+        messageHeader.setMessage_datetime(formatter.format(new Date()));
+        ilMessage.setMessage_header(messageHeader);
+        ObjectMapper mapper = new ObjectMapper();
+        KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
+        try {
+            String messageString = mapper.writeValueAsString(ilMessage);
+            kenyaEMRILMessage.setHl7Type("SIU^S12");
+            kenyaEMRILMessage.setMessage(messageString);
+            kenyaEMRILMessage.setDescription("");
+            kenyaEMRILMessage.setName("");
+            kenyaEMRILMessage.setMessageType(ILMessageType.OUTBOUND.getValue());
+            KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
+            if (savedInstance != null) {
+                isSuccessful = true;
+            } else {
+                isSuccessful = false;
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            isSuccessful = false;
+        }
+        return isSuccessful;
+    }
+
+    @Override
+    public boolean logViralLoad(ILMessage ilMessage) {
+        boolean isSuccessful;
+        //Message Header
+        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance();
+        messageHeader.setMessage_type("ORU^VL");
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddhhmmss");
+        messageHeader.setMessage_datetime(formatter.format(new Date()));
+        ilMessage.setMessage_header(messageHeader);
+        ObjectMapper mapper = new ObjectMapper();
+        KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
+        try {
+            String messageString = mapper.writeValueAsString(ilMessage);
+            kenyaEMRILMessage.setHl7Type("ORU^VL");
+            kenyaEMRILMessage.setMessage(messageString);
+            kenyaEMRILMessage.setDescription("");
+            kenyaEMRILMessage.setName("");
+            kenyaEMRILMessage.setMessageType(ILMessageType.OUTBOUND.getValue());
+            KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
+            if (savedInstance != null) {
+                isSuccessful = true;
+            } else {
+                isSuccessful = false;
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            isSuccessful = false;
+        }
+        return isSuccessful;
+    }
+
     private Patient wrapIlPerson(ILMessage ilPerson) {
 
         Patient patient = new Patient();
