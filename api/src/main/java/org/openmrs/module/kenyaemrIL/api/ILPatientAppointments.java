@@ -7,6 +7,7 @@ import org.openmrs.api.ConceptService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.il.*;
 import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
+import org.openmrs.module.kenyaemrIL.il.appointment.PLACER_APPOINTMENT_NUMBER;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 
 import java.util.ArrayList;
@@ -75,6 +76,10 @@ public class ILPatientAppointments {
                 ipd.setAssigning_authority("NHIF");
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("NHIF");
+            }else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Patient Clinic Number")) {
+                ipd.setAssigning_authority("CLINIC");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("PATIENT CLINIC NUMBER");
             } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("MPI GODS NUMBER")) {
                 if (patientIdentifier.getIdentifierType().getName() != null) {
                     epd.setAssigning_authority("MPI");
@@ -88,6 +93,7 @@ public class ILPatientAppointments {
         }
 
         patientIdentification.setInternal_patient_id(internalPatientIds);
+        patientIdentification.setExternal_patient_id(epd);
 
         //Set the patient name
         PATIENT_NAME patientname = new PATIENT_NAME();
@@ -102,6 +108,7 @@ public class ILPatientAppointments {
 //set appointment information
         APPOINTMENT_INFORMATION appointments[] = new APPOINTMENT_INFORMATION[1];
         APPOINTMENT_INFORMATION appointmentInformation = new APPOINTMENT_INFORMATION();
+        PLACER_APPOINTMENT_NUMBER placerAppointmentNumber = new PLACER_APPOINTMENT_NUMBER();
 
         Encounter lastFollowUpEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e"));   //last greencard followup form
 
@@ -110,7 +117,11 @@ public class ILPatientAppointments {
         Integer patientTCAReasonConcept = 160288;
 
         for (Obs obs : lastFollowUpEncounter.getObs()) {
-            //set patient type
+
+            if (obs.getConcept().getConceptId().equals(patientTCAConcept)) {    //set placer appointment number
+                placerAppointmentNumber.setNumber(String.valueOf(obs.getId()));
+                placerAppointmentNumber.setEntity("Kenya EMR");
+            }
             if (obs.getConcept().getConceptId().equals(patientTCAConcept)) {    //set patient TCA
                 appointmentInformation.setAppointment_date(String.valueOf(obs.getValueDate()));
             }

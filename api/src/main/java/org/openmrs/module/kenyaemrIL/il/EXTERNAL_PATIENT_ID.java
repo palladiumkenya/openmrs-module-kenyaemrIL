@@ -14,6 +14,12 @@ public class EXTERNAL_PATIENT_ID
     private String identifier_type;
     private String assigning_authority;
 
+    public EXTERNAL_PATIENT_ID() {
+        id="";
+        identifier_type="";
+        assigning_authority="";
+    }
+
     public String getId() {
         return id;
     }

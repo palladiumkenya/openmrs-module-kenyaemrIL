@@ -40,6 +40,21 @@ public interface KenyaEMRILService extends OpenmrsService {
 	 * 
 	 */
 
+    /**
+     * Processes and returns a list of available IL Person records received from the IL, typically ADTA04 and ADTA08
+     *
+     * @param status - boolean value showing whether or not to fetch records that have been processed
+     * @return a list of @{@link ILMessage} records satisfying the given criteria
+     */
+    List<ILMessage> getPersonList(boolean status);
+
+    List<ILMessage> getAddPersonList(boolean status);
+
+    List<ILMessage> getUpdatePersonList(boolean status);
+
+    boolean sendUpdateRequest(ILMessage ilMessage);
+
+    boolean sendAddPersonRequest(ILMessage ilMessage);
 
 
 

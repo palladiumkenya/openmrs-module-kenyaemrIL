@@ -10,6 +10,7 @@ import org.openmrs.scheduler.tasks.AbstractTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.ConnectException;
 import java.util.Date;
 import java.util.List;
 
@@ -29,7 +30,7 @@ public class ProcessOutboxTask extends AbstractTask {
      */
     @Override
     public void execute() {
-        log.info("Executing task at " + new Date());
+        log.info("Executing process outbox task at " + new Date());
 //        Fetch non-processed inbox messages
         List<KenyaEMRILMessage> pendingOutboxes = fetchILOutboxes(false);
         for (KenyaEMRILMessage pendingOutbox : pendingOutboxes) {
@@ -39,19 +40,22 @@ public class ProcessOutboxTask extends AbstractTask {
 
     private void processFetchedRecord(KenyaEMRILMessage outbox) {
 //        Send to IL and mark as sent
-        Client restClient = Client.create();
-        WebResource webResource = restClient.resource(IL_URL);
-        ClientResponse resp = webResource.type("application/json")
-                .post(ClientResponse.class, outbox.getMessage());
+        try {
+            Client restClient = Client.create();
+            WebResource webResource = restClient.resource(IL_URL);
+            ClientResponse resp = webResource.type("application/json")
+                    .post(ClientResponse.class, outbox.getMessage());
 
-        System.out.println("The status received from the server: "+resp.getStatus());
-        if (resp.getStatus() != 200) {
-            System.err.println("Unable to connect to the server");
-        } else {
-            outbox.setRetired(true);
-            getEMRILService().saveKenyaEMRILMessage(outbox);
+            System.out.println("The status received from the server: " + resp.getStatus());
+            if (resp.getStatus() != 200) {
+                System.err.println("Unable to connect to the server");
+            } else {
+                outbox.setRetired(true);
+                getEMRILService().saveKenyaEMRILMessage(outbox);
+            }
+        }catch (Exception e){
+            log.error(e.getMessage());
         }
-
     }
 
     private List<KenyaEMRILMessage> fetchILOutboxes(boolean fetchRetired) {

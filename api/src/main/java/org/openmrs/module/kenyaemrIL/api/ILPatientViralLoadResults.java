@@ -8,10 +8,7 @@ import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.kenyaemrIL.il.EXTERNAL_PATIENT_ID;
-import org.openmrs.module.kenyaemrIL.il.ILPerson;
-import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
-import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
+import org.openmrs.module.kenyaemrIL.il.*;
 import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 
@@ -28,8 +25,8 @@ public class ILPatientViralLoadResults {
     static ConceptService conceptService = Context.getConceptService();
 
 
-    public static ILPerson iLPatientWrapper(Patient patient) {
-        ILPerson ilPerson = new ILPerson();
+    public static ILMessage iLPatientWrapper(Patient patient) {
+        ILMessage ilMessage = new ILMessage();
         PATIENT_IDENTIFICATION patientIdentification = new PATIENT_IDENTIFICATION();
         List<INTERNAL_PATIENT_ID> internalPatientIds = new ArrayList<INTERNAL_PATIENT_ID>();
         EXTERNAL_PATIENT_ID epd = new EXTERNAL_PATIENT_ID();
@@ -39,18 +36,68 @@ public class ILPatientViralLoadResults {
 //        Form the internal patient IDs
         for (PatientIdentifier patientIdentifier : patient.getIdentifiers()) {
             ipd = new INTERNAL_PATIENT_ID();
-            if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Unique Patient Number")) {
+            if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("OpenMRS ID")) {
+                ipd.setAssigning_authority("SOURCE_SYSTEM");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("SOURCE_SYSTEM_ID");
+            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Unique Patient Number")) {
                 ipd.setAssigning_authority("CCC");
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("CCC_NUMBER");
+            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("TB Treatment Number")) {
+                ipd.setAssigning_authority("TB");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("TB_NUMBER");
+            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("National ID")) {
+                ipd.setAssigning_authority("GOK");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("NATIONAL_ID");
+            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("HTS Number")) {
+                ipd.setAssigning_authority("HTS");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("HTS_NUMBER");
+            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("HDSS ID")) {
+                ipd.setAssigning_authority("HDSS");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("HDSS_ID");
+            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("ANC NUMBER")) {
+                ipd.setAssigning_authority("ANC");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("ANC_NUMBER");
+            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("OPD NUMBER")) {
+                ipd.setAssigning_authority("OPD");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("OPD_NUMBER");
+            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("PMTCT NUMBER")) {
+                ipd.setAssigning_authority("PMTCT");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("PMTCT_NUMBER");
+            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("NHIF NUMBER")) {
+                ipd.setAssigning_authority("NHIF");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("NHIF");
+            }else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Patient Clinic Number")) {
+                ipd.setAssigning_authority("CLINIC");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("PATIENT CLINIC NUMBER");
+            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("MPI GODS NUMBER")) {
+                if (patientIdentifier.getIdentifierType().getName() != null) {
+                    epd.setAssigning_authority("MPI");
+                    epd.setId(patientIdentifier.getIdentifier());
+                    epd.setIdentifier_type("GODS_NUMBER");
+                    patientIdentification.setExternal_patient_id(epd);
+                }
+                continue;
             }
-
             internalPatientIds.add(ipd);
         }
 
         patientIdentification.setInternal_patient_id(internalPatientIds);
+        patientIdentification.setExternal_patient_id(epd);
+
 
         //Set the patient viral load results
+        VIRAL_LOAD_RESULT vlTestResults[] = new VIRAL_LOAD_RESULT[1];
         VIRAL_LOAD_RESULT viral_load_Result = new VIRAL_LOAD_RESULT();
 
         Encounter lastLabResultsEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("17a381d1-7e29-406a-b782-aa903b963c28"));
@@ -113,8 +160,9 @@ public class ILPatientViralLoadResults {
                 viral_load_Result.setRegimen(obs.getValueText());
             }
         }
-
-        return ilPerson;
+        vlTestResults[0]=viral_load_Result;
+        ilMessage.setVIRAL_LOAD_RESULT(vlTestResults);
+        return ilMessage;
     }
 
 }

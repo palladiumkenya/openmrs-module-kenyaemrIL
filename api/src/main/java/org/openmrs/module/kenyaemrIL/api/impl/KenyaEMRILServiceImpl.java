@@ -13,6 +13,8 @@
  */
 package org.openmrs.module.kenyaemrIL.api.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thoughtworks.xstream.core.util.PresortedSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -21,6 +23,7 @@ import org.openmrs.*;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.impl.BaseOpenmrsService;
+import org.openmrs.module.kenyaemrIL.api.ILMessageType;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
 import org.openmrs.module.kenyaemrIL.il.*;
@@ -28,6 +31,7 @@ import org.openmrs.module.kenyaemrIL.il.appointment.AppointmentMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
+import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.text.DateFormat;
@@ -65,33 +69,59 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         return dao;
     }
 
-//    public boolean sendAddPersonRequest(ILPerson ilPerson) {
-//        boolean isSuccessful;
-//        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance();
-//        messageHeader.setMessage_type("ADT^A04");
-//        messageHeader.setMessage_datetime(String.valueOf(new Date()));
-//        ilPerson.setMessage_header(messageHeader);
-//        ObjectMapper mapper = new ObjectMapper();
-//        KenyaEMRILMessage ilMessage = new KenyaEMRILMessage();
-//        try {
-//            String messageString = mapper.writeValueAsString(ilPerson);
-//            ilMessage.setHl7Type("ADT^A04");
-//            ilMessage.setMessage(messageString);
-//            ilMessage.setDescription("");
-//            ilMessage.setName("");
-//            ilMessage.setMessageType(ILMessageType.OUTBOUND.getValue());
-//            KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(ilMessage);
-//            if (savedInstance != null) {
-//                isSuccessful = true;
-//            } else {
-//                isSuccessful = false;
-//            }
-//        } catch (JsonProcessingException e) {
-//            e.printStackTrace();
-//            isSuccessful = false;
-//        }
-//        return isSuccessful;
-//    }
+    @Override
+    public List<ILMessage> getPersonList(boolean status) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public List<ILMessage> getAddPersonList(boolean status) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+
+    }
+
+    @Override
+    public List<ILMessage> getUpdatePersonList(boolean status) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public boolean sendUpdateRequest(ILMessage ilMessage) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public boolean sendAddPersonRequest(ILMessage ilMessage) {
+        boolean isSuccessful;
+        //Message Header
+        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance();
+        messageHeader.setMessage_type("ADT^A04");
+        String iLMessageDate = null;
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddhhmmss");
+        iLMessageDate = formatter.format(new Date());
+        messageHeader.setMessage_datetime(iLMessageDate);
+        ilMessage.setMessage_header(messageHeader);
+        ObjectMapper mapper = new ObjectMapper();
+        KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
+        try {
+            String messageString = mapper.writeValueAsString(ilMessage);
+            kenyaEMRILMessage.setHl7Type("ADT^A04");
+            kenyaEMRILMessage.setMessage(messageString);
+            kenyaEMRILMessage.setDescription("");
+            kenyaEMRILMessage.setName("");
+            kenyaEMRILMessage.setMessageType(ILMessageType.OUTBOUND.getValue());
+            KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
+            if (savedInstance != null) {
+                isSuccessful = true;
+            } else {
+                isSuccessful = false;
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            isSuccessful = false;
+        }
+        return isSuccessful;
+    }
 
 
     @Override
@@ -287,10 +317,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             DateFormat formatter = new SimpleDateFormat("yyyyMMdd");
             try {
                 dateOfBirth = formatter.parse(stringDateOfBirth);
+                patient.setBirthdate(dateOfBirth);
             } catch (ParseException e) {
                 e.printStackTrace();
             }
-            patient.setBirthdate(dateOfBirth);
+
         }
 
 //        Set the date of birth precision
@@ -304,132 +335,149 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         String maritalStatus = patientIdentification.getMarital_status();
         PersonAttribute maritalAttribute = new PersonAttribute();
         PersonAttributeType maritalAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("8d871f2a-c2cc-11de-8d13-0010c6dffd0f");
-        maritalAttribute.setAttributeType(maritalAttributeType);
-        maritalAttribute.setValue(maritalStatus);
-        patient.addAttribute(maritalAttribute);
-
+        if (maritalAttributeType != null) {
+            maritalAttribute.setAttributeType(maritalAttributeType);
+            maritalAttribute.setValue(maritalStatus);
+            patient.addAttribute(maritalAttribute);
+        }
 
 //        Process phone number as an attribute
         String phoneNumber = patientIdentification.getPhone_number();
-        PersonAttribute phoneAttribute = new PersonAttribute();
-        PersonAttributeType phoneAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("b2c38640-2603-4629-aebd-3b54f33f1e3a");
-        phoneAttribute.setAttributeType(phoneAttributeType);
-        phoneAttribute.setValue(phoneNumber);
-        patient.addAttribute(phoneAttribute);
+        if (phoneNumber != null) {
+            PersonAttribute phoneAttribute = new PersonAttribute();
+            PersonAttributeType phoneAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("b2c38640-2603-4629-aebd-3b54f33f1e3a");
+            phoneAttribute.setAttributeType(phoneAttributeType);
+            phoneAttribute.setValue(phoneNumber);
+            patient.addAttribute(phoneAttribute);
+        }
 
 
 //        Set the gender
-        patient.setGender(patientIdentification.getSex().toUpperCase());
+        if (patientIdentification.getSex() != null) {
+            patient.setGender(patientIdentification.getSex().toUpperCase());
+        }
 
 //        Patient name processing
         PATIENT_NAME patientName = patientIdentification.getPatient_name();
 //        Set<PersonName> names = new HashSet<>();
-        SortedSet<PersonName> names = new PresortedSet();
-        PersonName personName = new PersonName();
-        personName.setGivenName(patientName.getFirst_name());
-        personName.setMiddleName(patientName.getMiddle_name());
-        personName.setFamilyName(patientName.getLast_name());
-        names.add(personName);
-        patient.setNames(names);
+        if (patientName != null) {
+            SortedSet<PersonName> names = new PresortedSet();
+            PersonName personName = new PersonName();
+            personName.setGivenName(patientName.getFirst_name() != null ? patientName.getFirst_name() : "");
+            personName.setMiddleName(patientName.getMiddle_name() != null ? patientName.getMiddle_name() : "");
+            personName.setFamilyName(patientName.getLast_name() != null ? patientName.getLast_name() : "");
+            names.add(personName);
+            patient.setNames(names);
+        }
 
         SortedSet<PatientIdentifier> patientIdentifiers = new PresortedSet();
 //        Process external patient id if it exists
         EXTERNAL_PATIENT_ID externalPatientId = patientIdentification.getExternal_patient_id();
-        if (externalPatientId != null && externalPatientId != null) {
+        if (externalPatientId != null) {
             PatientIdentifier patientIdentifier = new PatientIdentifier();
             PatientIdentifierType idType = processIdentifierType(externalPatientId.getIdentifier_type());
             if (idType != null) {
                 patientIdentifier.setIdentifierType(idType);
                 patientIdentifier.setIdentifier(externalPatientId.getId());
+                patientIdentifiers.add(patientIdentifier);
             }
-            patientIdentifiers.add(patientIdentifier);
         }
 
 //        Process internal patient IDs
         List<INTERNAL_PATIENT_ID> internalPatientIds = patientIdentification.getInternal_patient_id();
 
 //        Must set a preferred Identifier
-        for (INTERNAL_PATIENT_ID internalPatientId : internalPatientIds) {
-            PatientIdentifier patientIdentifier = new PatientIdentifier();
-            PatientIdentifierType idType = processIdentifierType(internalPatientId.getIdentifier_type());
-            if (idType != null) {
-                patientIdentifier.setIdentifierType(idType);
-                if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
-                    patientIdentifier.setPreferred(true);
+        if (internalPatientIds != null) {
+            for (INTERNAL_PATIENT_ID internalPatientId : internalPatientIds) {
+                PatientIdentifier patientIdentifier = new PatientIdentifier();
+                PatientIdentifierType idType = processIdentifierType(internalPatientId.getIdentifier_type());
+                if (idType != null) {
+                    patientIdentifier.setIdentifierType(idType);
+                    if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
+                        patientIdentifier.setPreferred(true);
+                    }
+                } else {
+                    continue;
                 }
-            } else {
-                continue;
-            }
-            patientIdentifier.setIdentifier(internalPatientId.getId());
+                patientIdentifier.setIdentifier(internalPatientId.getId());
 //            internalPatientId.getAssigning_authority();
-            patientIdentifiers.add(patientIdentifier);
+                patientIdentifiers.add(patientIdentifier);
+            }
         }
         patient.setIdentifiers(patientIdentifiers);
 
 
-//        Process mother name
+////        Process mother name
         MOTHER_NAME motherName = patientIdentification.getMother_name();
-        PersonAttribute motherNameAttribute = new PersonAttribute();
-        PersonAttributeType motherNameAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("8d871d18-c2cc-11de-8d13-0010c6dffd0f");
-        motherNameAttribute.setAttributeType(motherNameAttributeType);
-        patient.addAttribute(motherNameAttribute);
+        if (motherName != null) {
+            PersonAttribute motherNameAttribute = new PersonAttribute();
+            PersonAttributeType motherNameAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("8d871d18-c2cc-11de-8d13-0010c6dffd0f");
+            if (motherNameAttributeType != null) {
+                motherNameAttribute.setAttributeType(motherNameAttributeType);
+                patient.addAttribute(motherNameAttribute);
 
-
-        String motherNameString = motherName.getFirst_name() + motherName.getMiddle_name() + motherName.getLast_name();
-        motherNameAttribute.setValue(motherNameString);
+                String motherNameString = motherName.getFirst_name() + motherName.getMiddle_name() + motherName.getLast_name();
+                motherNameAttribute.setValue(motherNameString);
+            }
+        }
 //        Process patient address if exists
         PATIENT_ADDRESS patientAddress = patientIdentification.getPatient_address();
-
-
+        if (patientAddress != null) {
 //        Set<PersonAddress> addresses = new HashSet<>();
-        SortedSet<PersonAddress> addresses = new PresortedSet();
-        PersonAddress personAddress = new PersonAddress();
-        personAddress.setPreferred(true);
-        personAddress.setAddress6(patientAddress.getPhysical_address().getWard());
-        personAddress.setAddress2(patientAddress.getPhysical_address().getNearest_landmark());
-        personAddress.setAddress4(patientAddress.getPhysical_address().getSub_county());
-        personAddress.setCityVillage(patientAddress.getPhysical_address().getVillage());
+            SortedSet<PersonAddress> addresses = new PresortedSet();
+            PersonAddress personAddress = new PersonAddress();
+            personAddress.setPreferred(true);
+            personAddress.setAddress6(patientAddress.getPhysical_address() != null ? patientAddress.getPhysical_address().getWard() : "");
+            personAddress.setAddress2(patientAddress.getPhysical_address() != null ? patientAddress.getPhysical_address().getNearest_landmark() : "");
+            personAddress.setAddress4(patientAddress.getPhysical_address() != null ? patientAddress.getPhysical_address().getSub_county() : "");
+            personAddress.setCityVillage(patientAddress.getPhysical_address() != null ? patientAddress.getPhysical_address().getVillage() : "");
 //        personAddress.setCountry();
-        personAddress.setCountyDistrict(patientAddress.getPhysical_address().getCounty());
-        personAddress.setAddress1(patientAddress.getPostal_address());
-        addresses.add(personAddress);
-        patient.setAddresses(addresses);
-
+            personAddress.setCountyDistrict(patientAddress.getPhysical_address() != null ? patientAddress.getPhysical_address().getCounty() : "");
+            personAddress.setAddress1(patientAddress.getPostal_address() != null ? patientAddress.getPostal_address() : "");
+            addresses.add(personAddress);
+            patient.setAddresses(addresses);
+        }
 
 //        Process Next of kin details
         NEXT_OF_KIN[] next_of_kin = ilPerson.getNext_of_kin();
-        if (next_of_kin.length > 0) {
+        if (next_of_kin.length > 0 && next_of_kin != null) {
 //            There is a next of kin thus process it
             NEXT_OF_KIN nok = next_of_kin[0];
 //            Process the nok name
-            PersonAttribute nokNameAttribute = new PersonAttribute();
-            PersonAttributeType nokNameAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("830bef6d-b01f-449d-9f8d-ac0fede8dbd3");
-            nokNameAttribute.setAttributeType(nokNameAttributeType);
-            nokNameAttribute.setValue(nok.getNok_name().toString());
-            patient.addAttribute(nokNameAttribute);
-
+            if (nok.getNok_name() != null) {
+                PersonAttribute nokNameAttribute = new PersonAttribute();
+                PersonAttributeType nokNameAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("830bef6d-b01f-449d-9f8d-ac0fede8dbd3");
+                nokNameAttribute.setAttributeType(nokNameAttributeType);
+                nokNameAttribute.setValue(nok.getNok_name().toString());
+                patient.addAttribute(nokNameAttribute);
+            }
 
 //            Process the nok contact
-            PersonAttribute nokContactAttribute = new PersonAttribute();
-            PersonAttributeType nokContactAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("342a1d39-c541-4b29-8818-930916f4c2dc");
-            nokContactAttribute.setAttributeType(nokContactAttributeType);
-            nokContactAttribute.setValue(nok.getPhone_number());
-            patient.addAttribute(nokContactAttribute);
+            if (nok.getPhone_number() != null) {
+                PersonAttribute nokContactAttribute = new PersonAttribute();
+                PersonAttributeType nokContactAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("342a1d39-c541-4b29-8818-930916f4c2dc");
+                nokContactAttribute.setAttributeType(nokContactAttributeType);
+                nokContactAttribute.setValue(nok.getPhone_number());
+                patient.addAttribute(nokContactAttribute);
+            }
 
 //            Process the nok address
-            PersonAttribute nokAddressAttribute = new PersonAttribute();
-            PersonAttributeType nokAddressAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("d0aa9fd1-2ac5-45d8-9c5e-4317c622c8f5");
-            nokAddressAttribute.setAttributeType(nokAddressAttributeType);
-            nokAddressAttribute.setValue(nok.getAddress());
-            patient.addAttribute(nokAddressAttribute);
+            if (nok.getAddress() != null) {
+                PersonAttribute nokAddressAttribute = new PersonAttribute();
+                PersonAttributeType nokAddressAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("d0aa9fd1-2ac5-45d8-9c5e-4317c622c8f5");
+                nokAddressAttribute.setAttributeType(nokAddressAttributeType);
+                nokAddressAttribute.setValue(nok.getAddress());
+                patient.addAttribute(nokAddressAttribute);
+            }
 
 //            Process the nok relationship
-            PersonAttribute nokRealtionshipAttribute = new PersonAttribute();
-            PersonAttributeType nokRelationshipAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("d0aa9fd1-2ac5-45d8-9c5e-4317c622c8f5");
-            nokRealtionshipAttribute.setAttributeType(nokRelationshipAttributeType);
-            nokRealtionshipAttribute.setValue(nok.getRelationship());
-            patient.addAttribute(nokRealtionshipAttribute);
-
+            if (nok.getRelationship() != null) {
+                PersonAttribute nokRealtionshipAttribute = new PersonAttribute();
+                PersonAttributeType nokRelationshipAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("d0aa9fd1-2ac5-45d8-9c5e-4317c622c8f5");
+                nokRealtionshipAttribute.setAttributeType(nokRelationshipAttributeType);
+                nokRealtionshipAttribute.setValue(nok.getRelationship());
+                patient.addAttribute(nokRealtionshipAttribute);
+            }
         }
 
 
@@ -441,51 +489,54 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 //        TODO - Process the appropriate openmrs identifier types
 //        OpenMRS Identification Number
 //        Old Identification Number
-        switch (identifierType.toUpperCase()) {
-            case "CCC_NUMBER": {
-                patientIdentifierType = identifiersMap.get("Unique Patient Number");
-                break;
-            }
-            case "HTS_NUMBER": {
-                patientIdentifierType = identifiersMap.get("HTS NUMBER");
-                break;
-            }
-            case "TB_NUMBER": {
-                patientIdentifierType = identifiersMap.get("TB Treatment Number");
-                break;
-            }
-            case "ANC_NUMBER": {
-                patientIdentifierType = identifiersMap.get("ANC NUMBER");
-                break;
-            }
-            case "PMTCT_NUMBER": {
-                patientIdentifierType = identifiersMap.get("PMTCT NUMBER");
-                break;
-            }
-            case "OPD_NUMBER": {
-                patientIdentifierType = identifiersMap.get("OPD NUMBER");
-                break;
-            }
-            case "NATIONAL_ID": {
-                patientIdentifierType = identifiersMap.get("National ID");
-                break;
-            }
-            case "NHIF": {
-                patientIdentifierType = identifiersMap.get("NHIF");
-                break;
-            }
-            case "HDSS_ID": {
-                patientIdentifierType = identifiersMap.get("HDSS ID");
-                break;
-            }
-            case "GODS_NUMBER": {
-                patientIdentifierType = identifiersMap.get("MPI GODS NUMBER");
-                break;
-            }
-            default: {
+        if (patientIdentifierType != null) {
+
+            switch (identifierType.toUpperCase()) {
+                case "CCC_NUMBER": {
+                    patientIdentifierType = identifiersMap.get("Unique Patient Number");
+                    break;
+                }
+                case "HTS_NUMBER": {
+                    patientIdentifierType = identifiersMap.get("HTS NUMBER");
+                    break;
+                }
+                case "TB_NUMBER": {
+                    patientIdentifierType = identifiersMap.get("TB Treatment Number");
+                    break;
+                }
+                case "ANC_NUMBER": {
+                    patientIdentifierType = identifiersMap.get("ANC NUMBER");
+                    break;
+                }
+                case "PMTCT_NUMBER": {
+                    patientIdentifierType = identifiersMap.get("PMTCT NUMBER");
+                    break;
+                }
+                case "OPD_NUMBER": {
+                    patientIdentifierType = identifiersMap.get("OPD NUMBER");
+                    break;
+                }
+                case "NATIONAL_ID": {
+                    patientIdentifierType = identifiersMap.get("National ID");
+                    break;
+                }
+                case "NHIF": {
+                    patientIdentifierType = identifiersMap.get("NHIF");
+                    break;
+                }
+                case "HDSS_ID": {
+                    patientIdentifierType = identifiersMap.get("HDSS ID");
+                    break;
+                }
+                case "GODS_NUMBER": {
+                    patientIdentifierType = identifiersMap.get("MPI GODS NUMBER");
+                    break;
+                }
+                default: {
 //                nothing to process, set to null
-                patientIdentifierType = null;
-                break;
+                    patientIdentifierType = null;
+                    break;
+                }
             }
         }
         return patientIdentifierType;

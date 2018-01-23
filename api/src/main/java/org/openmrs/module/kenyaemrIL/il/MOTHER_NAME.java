@@ -8,6 +8,12 @@ public class MOTHER_NAME {
     private String middle_name;
     private String last_name;
 
+    public MOTHER_NAME() {
+        this.first_name = "";
+        this.middle_name = "";
+        this.last_name = "";
+    }
+
     public String getFirst_name() {
         return first_name;
     }
