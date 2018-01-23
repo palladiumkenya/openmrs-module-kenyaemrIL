@@ -69,7 +69,7 @@
     <!-- /Internationalization -->
 
     <require_modules>
-        <require_module version="2.20.0">org.openmrs.module.webservices.rest</require_module>
+        <require_module version="2.19.0">org.openmrs.module.webservices.rest</require_module>
     </require_modules>
 
 </module>
