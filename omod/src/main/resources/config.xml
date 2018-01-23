@@ -51,15 +51,27 @@
         <lang>es</lang>
         <file>messages_es.properties</file>
     </messages>
-
     <globalProperty>
         <property>enrolmentTask.lastFetchDateAndTime</property>
-        <defaultValue>1516615053</defaultValue>
+        <defaultValue>20180122120000</defaultValue>
         <description>
             The last date and time that the last fetch was done for enrollment task
         </description>
     </globalProperty>
-
+    <globalProperty>
+        <property>appointmentTask.lastFetchDateAndTime</property>
+        <defaultValue>20180123120000</defaultValue>
+        <description>
+            The last date and time that the last fetch was done for appointment task
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <property>virallaodTask.lastFetchDateAndTime</property>
+        <defaultValue>20180123120000</defaultValue>
+        <description>
+            The last date and time that the last fetch was done for viral load task
+        </description>
+    </globalProperty>
     <globalProperty>
         <property>enrolmentTask.lastFetchId</property>
         <defaultValue>1</defaultValue>
