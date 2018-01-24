@@ -376,7 +376,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         if (externalPatientId != null) {
             PatientIdentifier patientIdentifier = new PatientIdentifier();
             PatientIdentifierType idType = processIdentifierType(externalPatientId.getIdentifier_type());
-            if (idType != null) {
+            if (idType != null && patientIdentifier !=null) {
                 patientIdentifier.setIdentifierType(idType);
                 patientIdentifier.setIdentifier(externalPatientId.getId());
                 patientIdentifiers.add(patientIdentifier);
