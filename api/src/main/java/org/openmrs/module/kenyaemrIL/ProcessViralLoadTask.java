@@ -68,7 +68,7 @@ public class ProcessViralLoadTask extends AbstractTask {
     private boolean viralLoadEvent(Patient patient) {
         ILMessage ilMessage = ILPatientViralLoadResults.iLPatientWrapper(patient);
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
-        return service.processViralLoad(ilMessage);
+        return service.logViralLoad(ilMessage);
     }
 
 

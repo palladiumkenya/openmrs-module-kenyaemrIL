@@ -16,6 +16,7 @@ package org.openmrs.module.kenyaemrIL.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.hibernate.cfg.NotYetImplementedException;
 import org.openmrs.*;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
@@ -171,5 +172,9 @@ public class ILUtils {
 						false
 				);
 		return encounters.size() > 0 ? encounters.get(encounters.size() - 1) : null;
+	}
+
+	public static List<Encounter> getAllEncountersOfInterest() {
+		throw new NotYetImplementedException("Not Yet Implemented - @Patrick and Anto");
 	}
 }
