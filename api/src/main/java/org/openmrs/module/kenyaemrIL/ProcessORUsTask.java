@@ -6,7 +6,7 @@ import org.openmrs.EncounterType;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.kenyaemrIL.api.ILPatientViralLoadResults;
+import org.openmrs.module.kenyaemrIL.api.ILPatientUnsolicitedObservationResults;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.scheduler.tasks.AbstractTask;
@@ -69,7 +69,7 @@ public class ProcessORUsTask extends AbstractTask {
     }
 
     private boolean oruEvent(Patient patient) {
-        ILMessage ilMessage = ILPatientViralLoadResults.iLPatientWrapper(patient);
+        ILMessage ilMessage = ILPatientUnsolicitedObservationResults.iLPatientWrapper(patient);
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
         return service.logORUs(ilMessage);
     }
