@@ -2,16 +2,10 @@ package org.openmrs.module.kenyaemrIL.api;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.openmrs.Encounter;
-import org.openmrs.Obs;
-import org.openmrs.Patient;
-import org.openmrs.PatientIdentifier;
+import org.openmrs.*;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.kenyaemrIL.il.EXTERNAL_PATIENT_ID;
-import org.openmrs.module.kenyaemrIL.il.ILMessage;
-import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
-import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
+import org.openmrs.module.kenyaemrIL.il.*;
 import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 
@@ -19,8 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by codehub on 10/30/15.
- * A fragment controller for an IL Appointment Scheduling
+ * Created by codehub on 01/25/18.
+ * A fragment controller for an IL Observation Result Unsolicited Message
  */
 public class ILPatientUnsolicitedObservationResults {
 
@@ -98,80 +92,262 @@ public class ILPatientUnsolicitedObservationResults {
         patientIdentification.setInternal_patient_id(internalPatientIds);
         patientIdentification.setExternal_patient_id(epd);
 
+        //Set the patient name
+        PATIENT_NAME patientname = new PATIENT_NAME();
+        PersonName personName = patient.getPersonName();
+        patientname.setFirst_name(personName.getGivenName());
+        patientname.setMiddle_name(personName.getMiddleName());
+        patientname.setLast_name(personName.getFamilyName());
+        patientIdentification.setPatient_name(patientname);
 
         //Set the patient observation results
         List<OBSERVATION_RESULT> observationResults = new ArrayList<>();
         OBSERVATION_RESULT observationResult = null;
+        observationResult = new OBSERVATION_RESULT();
 
+       // List<EncounterType> encounterTypes = ILUtils.getAllEncounterTypesOfInterest(); //TODO @stance consider consolidating all encounters
+        //EncounterType mchMotherEncounter = Context.getEncounterService().getEncounterTypeByUuid("3ee036d8-7c13-4393-b5d6-036f2fe45126");  //mch mother enrollment
 
-//        TODO -- Check out the observations of interest - I would recommend that we do this out of the code, given the
-//        TODO list of observations will increase with time yet we don't have to be rebuilding just do add the processing for a
-//        TODO single observation - I would suggest maybe a table for this so that we can add the concept IDs for the new observations of
-//        TODO interest - @Patrick check this one out
-        List<Encounter> allEncountersOfInterest = ILUtils.getAllEncountersOfInterest();
-        Encounter lastDrugOrderEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3"));
+        Encounter hivGreencardEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e"));   //last greencard followup
+        Encounter hivEnrollmentEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc"));  //hiv enrollment
+        Encounter drugOrderEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3"));  //last drug order
+        Encounter mchMotherEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("3ee036d8-7c13-4393-b5d6-036f2fe45126"));  //mch mother enrollment
+        Encounter labResultEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("17a381d1-7e29-406a-b782-aa903b963c28"));  //lab results
 
-        Integer latestVLConcept = 856;
-        Integer LDLQuestionConcept = 1305;
-        Integer LDLAnswerConcept = 1302;
+        Integer HeightConcept = 5090;
+        Integer WeightConcept = 5089;
+        Integer HivDiagnosisDateConcept = 160554;
+        Integer HivCareInitiationDateConcept = 160555;
+        Integer ARTInitiationDateConcept = 159599;
+        Integer IspregnantConcept = 5272;
+        Integer EDDConcept = 5596;
+        Integer DateOfDeliveryConcept = 5599;
         Integer ARVConcept = 1085;
-        for (Encounter encounter : allEncountersOfInterest) {
-            for (Obs obs : encounter.getObs()) {
-                observationResult = new OBSERVATION_RESULT();
+        Integer SmokerConcept = 155600;
+        Integer AlcoholUseConcept = 159449;
+        Integer CTXStartConcept = 162229;
+        Integer TestsOrderedConcept = 1271;
+        Integer CD4Concept =5497;
+        Integer CD4PercentConcept =730;
+        Integer TBdiagnosisDateConcept =1662;
+        Integer TBTreatmentStartDateConcept =1113;
+        Integer TBTreatmentCompleteDateConcept =164384;
+        Integer WhoStageConcept =5356;
+        Integer YesConcept = 1065;
+        Integer NoConcept = 1066;
+        //Enrollment encounter
+        if (hivEnrollmentEncounter != null) {
+            for (Obs obs : hivEnrollmentEncounter.getObs()) {
+                if (obs.getConcept().getConceptId().equals(HeightConcept)) {          //start height
+                    observationResult.setObservation_identifier("START_HEIGHT");
+                    observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
+                    observationResult.setCoding_system("");
+                    observationResult.setValue_type("NM");
+                    observationResult.setObservation_value(String.valueOf(obs.getValueNumeric()));
+                    observationResult.setUnits("CM");
+                    observationResult.setObservation_result_status("F");
+                    observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                    observationResult.setAbnormal_flags("N");
+                }
+                if (obs.getConcept().getConceptId().equals(WeightConcept)) {     // start weight
+                    observationResult.setObservation_identifier("START_WEIGHT");
+                    observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
+                    observationResult.setCoding_system("");
+                    observationResult.setValue_type("NM");
+                    observationResult.setObservation_value(String.valueOf(obs.getValueNumeric()));
+                    observationResult.setUnits("KG");
+                    observationResult.setObservation_result_status("F");
+                    observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                    observationResult.setAbnormal_flags("N");
+                }
+                if (obs.getConcept().getConceptId().equals(HivDiagnosisDateConcept)) {     // diagnosis date
+                    observationResult.setObservation_identifier("HIV_DIAGNOSIS");
+                    observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
+                    observationResult.setCoding_system("");
+                    observationResult.setValue_type("DT");
+                    observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                    observationResult.setUnits("");
+                    observationResult.setObservation_result_status("F");
+                    observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                    observationResult.setAbnormal_flags("N");
+                }
+                if (obs.getConcept().getConceptId().equals(HivCareInitiationDateConcept)) {     // hiv care initiation date
+                    observationResult.setObservation_identifier("HIV_CARE_INITIATION");
+                    observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
+                    observationResult.setCoding_system("");
+                    observationResult.setValue_type("DT");
+                    observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                    observationResult.setUnits("");
+                    observationResult.setObservation_result_status("F");
+                    observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                    observationResult.setAbnormal_flags("N");
+                }
+            }
+        }
+            //Greencard encounter
+            if (hivGreencardEncounter != null) {
+                for (Obs obs : hivGreencardEncounter.getObs()) {
+                    if (obs.getConcept().getConceptId().equals(IspregnantConcept) && obs.getValueCoded().equals(YesConcept)) {          //is pregnant
+                        observationResult.setObservation_identifier("IS_PREGNANT");
+                        observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
+                        observationResult.setCoding_system("");
+                        observationResult.setValue_type("CE");
+                        observationResult.setObservation_value(String.valueOf(obs.getValueCoded()));
+                        observationResult.setUnits("YES/NO");
+                        observationResult.setObservation_result_status("F");
+                        observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                        observationResult.setAbnormal_flags("N");
+                    }
+                    if (obs.getConcept().getConceptId().equals(EDDConcept)) {                                                      // EDD
+                        observationResult.setObservation_identifier("PRENGANT_EDD");
+                        observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
+                        observationResult.setCoding_system("");
+                        observationResult.setValue_type("DT");
+                        observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                        observationResult.setUnits("");
+                        observationResult.setObservation_result_status("F");
+                        observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                        observationResult.setAbnormal_flags("N");
+                    }
+                    if (obs.getConcept().getConceptId().equals(CTXStartConcept) && obs.getValueCoded().equals(YesConcept)) {  // CTX start date
+                        observationResult.setObservation_identifier("COTRIMOXAZOLE_START");
+                        observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
+                        observationResult.setCoding_system("");
+                        observationResult.setValue_type("DT");
+                        observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                        observationResult.setUnits("");
+                        observationResult.setObservation_result_status("F");
+                        observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                        observationResult.setAbnormal_flags("N");
+                    }
+                    if (obs.getConcept().getConceptId().equals(TBdiagnosisDateConcept)) {     // tb diagnosis date
+                        observationResult.setObservation_identifier("TB_DIAGNOSIS_DATE");
+                        observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
+                        observationResult.setCoding_system("");
+                        observationResult.setValue_type("DT");
+                        observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                        observationResult.setUnits("");
+                        observationResult.setObservation_result_status("F");
+                        observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                        observationResult.setAbnormal_flags("N");
+                    }
+                    if (obs.getConcept().getConceptId().equals(TBTreatmentStartDateConcept)) {     // tb treatment start date
+                        observationResult.setObservation_identifier("TB_TREATMENT_START_DATE");
+                        observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
+                        observationResult.setCoding_system("");
+                        observationResult.setValue_type("DT");
+                        observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                        observationResult.setUnits("");
+                        observationResult.setObservation_result_status("F");
+                        observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                        observationResult.setAbnormal_flags("N");
+                    }
+                    if (obs.getConcept().getConceptId().equals(TBTreatmentCompleteDateConcept)) {     // tb treatment complete date
+                        observationResult.setObservation_identifier("TB_TREATMENT_COMPLETE_DATE");
+                        observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
+                        observationResult.setCoding_system("");
+                        observationResult.setValue_type("DT");
+                        observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                        observationResult.setUnits("");
+                        observationResult.setObservation_result_status("F");
+                        observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                        observationResult.setAbnormal_flags("N");
+                    }
+                    //Greencard encounter
+                    if (obs.getConcept().getConceptId().equals(WhoStageConcept)) {                       //  current who stage
+                        observationResult.setObservation_identifier("WHO_STAGE");
+                        observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
+                        observationResult.setCoding_system("");
+                        observationResult.setValue_type("NM");
+                        observationResult.setObservation_value(String.valueOf(obs.getValueNumeric()));
+                        observationResult.setUnits("");
+                        observationResult.setObservation_result_status("F");
+                        observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                        observationResult.setAbnormal_flags("N");
+                    }
+                }
+            }
+                //Drug order encounter
+                if (drugOrderEncounter != null) {
+                    for (Obs obs : drugOrderEncounter.getObs()) {
+                        if (obs.getConcept().getConceptId().equals(ARVConcept)) {    //set current regimen
+                            observationResult.setObservation_identifier("CURRENT_REGIMEN");
+                            observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
+                            observationResult.setCoding_system("NASCOP_CODES");
+                            observationResult.setValue_type("CE");
+                            observationResult.setObservation_value(String.valueOf(obs.getValueText()));
+                            observationResult.setUnits("");
+                            observationResult.setObservation_result_status("F");
+                            observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                            observationResult.setAbnormal_flags("N");
+                        }
+                        if (obs.getConcept().getConceptId().equals(ARTInitiationDateConcept)) {     // art start date
+                            observationResult.setObservation_identifier("ART_START");
+                            observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
+                            observationResult.setCoding_system("");
+                            observationResult.setValue_type("DT");
+                            observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                            observationResult.setUnits("");
+                            observationResult.setObservation_result_status("F");
+                            observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                            observationResult.setAbnormal_flags("N");
+                        }
+                    }
+                }
+                //MCH mother  encounter
+                if (mchMotherEncounter != null) {
+                    for (Obs obs : mchMotherEncounter.getObs()) {
+                        observationResult.setObservation_identifier("PMTCT_INITIATION");          // PMTCT initiation
+                        observationResult.setObservation_sub_id(String.valueOf(mchMotherEncounter.getEncounterId()));
+                        observationResult.setCoding_system("");
+                        observationResult.setValue_type("DT");
+                        observationResult.setObservation_value(String.valueOf(mchMotherEncounter.getEncounterDatetime()));
+                        observationResult.setUnits("");
+                        observationResult.setObservation_result_status("F");
+                        observationResult.setObservation_datetime(String.valueOf(mchMotherEncounter.getEncounterDatetime()));
+                        observationResult.setAbnormal_flags("N");
 
-//            if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set vl sample collection date
-//                observationResult.setDate_sample_collected(String.valueOf(obs.getObsDatetime()));
-//            }
-//              else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl sample  collection date
-//                observationResult.setDate_sample_collected(String.valueOf(obs.getObsDatetime()));
-//                 }
-//            if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set vl sample testing date
-//                observationResult.setDate_sample_tested(String.valueOf(obs.getObsDatetime()));
-//            }
-//            else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl sample testing date
-//                observationResult.setDate_sample_tested(String.valueOf(obs.getObsDatetime()));
-//            }
-//            if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set vl result
-//                observationResult.setVl_result(String.valueOf(obs.getValueNumeric()));
-//            }
-//            else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl result
-//                observationResult.setVl_result("LDL");
-//            }
-//            if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set VL sample type
-//                observationResult.setSample_type("BLOOD SAMPLE");
-//            }
-//            else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl sample type
-//                observationResult.setSample_type("BLOOD SAMPLE");
-//            }
-//            if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set VL sample rejection
-//                observationResult.setSample_rejection("");
-//            }
-//            else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl sample rejection
-//                observationResult.setSample_rejection("");
-//            }
-//            if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set VL justification
-//                observationResult.setJustification("");
-//            }
-//            else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set  justification
-//                observationResult.setJustification("");
-//            }
-//            if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set vl Lab Tested In
-//                observationResult.setJustification("KEMRI LAB SIAYA");
-//            }
-//            else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl Lab Tested In
-//                observationResult.setJustification("KEMRI LAB SIAYA");
-//            }
+                        if (obs.getConcept().getConceptId().equals(DateOfDeliveryConcept)) {          // Childbirth
+                            observationResult.setObservation_identifier("CHILD_BIRTH");
+                            observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
+                            observationResult.setCoding_system("");
+                            observationResult.setValue_type("DT");
+                            observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                            observationResult.setUnits("");
+                            observationResult.setObservation_result_status("F");
+                            observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                            observationResult.setAbnormal_flags("N");
+                        }
+                    }
+                }
+        //lab result encounter
+                if (labResultEncounter != null) {
+                    for (Obs obs : labResultEncounter.getObs()) {
+                        if (obs.getConcept().getConceptId().equals(CD4Concept)) {     // cd4 count
+                            observationResult.setObservation_identifier("CD4_COUNT");
+                            observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
+                            observationResult.setCoding_system("");
+                            observationResult.setValue_type("NM");
+                            observationResult.setObservation_value(String.valueOf(obs.getValueNumeric()));
+                            observationResult.setUnits("n/dl");
+                            observationResult.setObservation_result_status("F");
+                            observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                            observationResult.setAbnormal_flags("N");
+                        }
+                        if (obs.getConcept().getConceptId().equals(CD4PercentConcept)) {     // cd4  percent count
+                            observationResult.setObservation_identifier("CD4_PERCENT");
+                            observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
+                            observationResult.setCoding_system("");
+                            observationResult.setValue_type("NM");
+                            observationResult.setObservation_value(String.valueOf(obs.getValueNumeric()));
+                            observationResult.setUnits("%");
+                            observationResult.setObservation_result_status("F");
+                            observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                            observationResult.setAbnormal_flags("N");
+                        }
+                    }
             }
             observationResults.add(observationResult);
-        }
-        for (Obs obs : lastDrugOrderEncounter.getObs()) {
-
-
-//            if (obs.getConcept().getConceptId().equals(ARVConcept)) {    //set current regimen
-//                observationResult.setRegimen(obs.getValueText());
-//            }
-        }
-
 
         ilMessage.setObservation_result(observationResults.toArray(new OBSERVATION_RESULT[observationResults.size()]));
         return ilMessage;

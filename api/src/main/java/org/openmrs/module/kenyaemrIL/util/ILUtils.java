@@ -16,7 +16,6 @@ package org.openmrs.module.kenyaemrIL.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.hibernate.cfg.NotYetImplementedException;
 import org.openmrs.*;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
@@ -174,7 +173,20 @@ public class ILUtils {
 		return encounters.size() > 0 ? encounters.get(encounters.size() - 1) : null;
 	}
 
-	public static List<Encounter> getAllEncountersOfInterest() {
-		throw new NotYetImplementedException("Not Yet Implemented - @Patrick and Anto");
+	public static List<EncounterType> getAllEncounterTypesOfInterest() {
+		List<EncounterType> encounterTypes = new ArrayList<>();
+
+		EncounterType greencardEncounter = Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e");   //last greencard followup
+		EncounterType hivEnrollmentEncounter = Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc");  //hiv enrollment
+		EncounterType drugOrderEncounter = Context.getEncounterService().getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3");  //last drug order
+		EncounterType mchMotherEncounter = Context.getEncounterService().getEncounterTypeByUuid("3ee036d8-7c13-4393-b5d6-036f2fe45126");  //mch mother enrollment
+		//Fetch all encounters
+
+		encounterTypes.add(hivEnrollmentEncounter);
+		encounterTypes.add(greencardEncounter);
+		encounterTypes.add(drugOrderEncounter);
+		encounterTypes.add(mchMotherEncounter);
+
+		return encounterTypes;
 	}
 }

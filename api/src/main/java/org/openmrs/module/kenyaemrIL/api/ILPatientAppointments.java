@@ -115,9 +115,9 @@ public class ILPatientAppointments {
         Integer patientTCAConcept = 5096;
         Integer patientTCAReasonConcept = 160288;
         if (lastFollowUpEncounter != null) {
-            for (Obs obs : lastFollowUpEncounter.getObs()) {
+                        for (Obs obs : lastFollowUpEncounter.getObs()) {
 
-                if (obs.getConcept().getConceptId().equals(patientTCAConcept)) {
+                            if (obs.getConcept().getConceptId().equals(patientTCAConcept)) {
 
                     placerAppointmentNumber.setNumber(String.valueOf(obs.getObsId()));                      //set placer appointment number
                     placerAppointmentNumber.setEntity("KENYA EMR");                                      //set Entity
