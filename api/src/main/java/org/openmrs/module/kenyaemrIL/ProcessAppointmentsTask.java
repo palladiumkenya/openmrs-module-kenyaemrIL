@@ -19,7 +19,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Implementation of a task that processes enrollments tasks and marks the for sending to IL.
+ * Implementation of a task that processes appointment tasks and marks them for sending to IL.
  */
 public class ProcessAppointmentsTask extends AbstractTask {
 
@@ -32,9 +32,9 @@ public class ProcessAppointmentsTask extends AbstractTask {
      */
     @Override
     public void execute() {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddhhmmss");
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         log.info("Executing appointments task at " + new Date());
-//        Fetch enrolment encounter
+//        Fetch greencard encounter
 //        Fetch the last date of fetch
         Date fetchDate = null;
         GlobalProperty globalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("appointmentTask.lastFetchDateAndTime");
@@ -45,10 +45,10 @@ public class ProcessAppointmentsTask extends AbstractTask {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        EncounterType encounterTypeAppointment = Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e");
+        EncounterType encounterTypeGreencard = Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e");
         //Fetch all encounters
         List<EncounterType> encounterTypes = new ArrayList<>();
-        encounterTypes.add(encounterTypeAppointment);
+        encounterTypes.add(encounterTypeGreencard);
         List<Encounter> pendingAppointments = fetchPendingAppointments(encounterTypes, fetchDate);
         for (Encounter e : pendingAppointments) {
             Patient p = e.getPatient();
@@ -68,6 +68,7 @@ public class ProcessAppointmentsTask extends AbstractTask {
     private boolean appointmentsEvent(Patient patient) {
         ILMessage ilMessage = ILPatientAppointments.iLPatientWrapper(patient);
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
+        //System.out.println("Appointment message ==>"+ilMessage);
         return service.logAppointmentSchedule(ilMessage);
     }
 

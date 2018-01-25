@@ -19,7 +19,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Implementation of a task that processes enrollments tasks and marks the for sending to IL.
+ * Implementation of a task that processes enrollments tasks and marks them for sending to IL.
  */
 public class ProcessEnrollmentTask extends AbstractTask {
 
@@ -32,7 +32,7 @@ public class ProcessEnrollmentTask extends AbstractTask {
      */
     @Override
     public void execute() {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddhhmmss");
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
 //        Fetch enrolment encounter
 //        Fetch the last date of fetch
         Date fetchDate = null;

@@ -76,7 +76,7 @@ public class ILPatientViralLoadResults {
                 ipd.setAssigning_authority("NHIF");
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("NHIF");
-            }else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Patient Clinic Number")) {
+            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Patient Clinic Number")) {
                 ipd.setAssigning_authority("CLINIC");
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("PATIENT CLINIC NUMBER");
@@ -107,60 +107,56 @@ public class ILPatientViralLoadResults {
         Integer LDLQuestionConcept = 1305;
         Integer LDLAnswerConcept = 1302;
         Integer ARVConcept = 1085;
-
-        for (Obs obs : lastLabResultsEncounter.getObs()) {
-
-            if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set vl sample collection date
-                viral_load_Result.setDate_sample_collected(String.valueOf(obs.getObsDatetime()));
-            }
-              else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl sample  collection date
-                viral_load_Result.setDate_sample_collected(String.valueOf(obs.getObsDatetime()));
-                 }
-            if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set vl sample testing date
-                viral_load_Result.setDate_sample_tested(String.valueOf(obs.getObsDatetime()));
-            }
-            else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl sample testing date
-                viral_load_Result.setDate_sample_tested(String.valueOf(obs.getObsDatetime()));
-            }
-            if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set vl result
-                viral_load_Result.setVl_result(String.valueOf(obs.getValueNumeric()));
-            }
-            else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl result
-                viral_load_Result.setVl_result("LDL");
-            }
-            if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set VL sample type
-                viral_load_Result.setSample_type("BLOOD SAMPLE");
-            }
-            else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl sample type
-                viral_load_Result.setSample_type("BLOOD SAMPLE");
-            }
-            if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set VL sample rejection
-                viral_load_Result.setSample_rejection("");
-            }
-            else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl sample rejection
-                viral_load_Result.setSample_rejection("");
-            }
-            if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set VL justification
-                viral_load_Result.setJustification("");
-            }
-            else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set  justification
-                viral_load_Result.setJustification("");
-            }
-            if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set vl Lab Tested In
-                viral_load_Result.setJustification("KEMRI LAB SIAYA");
-            }
-            else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl Lab Tested In
-                viral_load_Result.setJustification("KEMRI LAB SIAYA");
+        if(lastLabResultsEncounter != null) {
+            for (Obs obs : lastLabResultsEncounter.getObs()) {
+                if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set vl sample collection date
+                    viral_load_Result.setDate_sample_collected(String.valueOf(obs.getObsDatetime()));
+                } else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl sample  collection date
+                    viral_load_Result.setDate_sample_collected(String.valueOf(obs.getObsDatetime()));
+                }
+                if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set vl sample testing date
+                    viral_load_Result.setDate_sample_tested(String.valueOf(obs.getObsDatetime()));
+                } else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl sample testing date
+                    viral_load_Result.setDate_sample_tested(String.valueOf(obs.getObsDatetime()));
+                }
+                if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set vl result
+                    viral_load_Result.setVl_result(String.valueOf(obs.getValueNumeric()));
+                } else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl result
+                    viral_load_Result.setVl_result("LDL");
+                }
+                if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set VL sample type
+                    viral_load_Result.setSample_type("BLOOD SAMPLE");
+                } else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl sample type
+                    viral_load_Result.setSample_type("BLOOD SAMPLE");
+                }
+                if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set VL sample rejection
+                    viral_load_Result.setSample_rejection("");
+                } else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl sample rejection
+                    viral_load_Result.setSample_rejection("");
+                }
+                if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set VL justification
+                    viral_load_Result.setJustification("");
+                } else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set  justification
+                    viral_load_Result.setJustification("");
+                }
+                if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set vl Lab Tested In
+                    viral_load_Result.setJustification("KEMRI LAB SIAYA");
+                } else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl Lab Tested In
+                    viral_load_Result.setJustification("KEMRI LAB SIAYA");
+                }
             }
         }
-        for (Obs obs : lastDrugOrderEncounter.getObs()) {
+        if (lastDrugOrderEncounter != null) {
+            for (Obs obs : lastDrugOrderEncounter.getObs()) {
+                if (obs != null) {
 
-
-            if (obs.getConcept().getConceptId().equals(ARVConcept)) {    //set current regimen
-                viral_load_Result.setRegimen(obs.getValueText());
+                    if (obs.getConcept().getConceptId().equals(ARVConcept)) {    //set current regimen
+                        viral_load_Result.setRegimen(obs.getValueText());
+                    }
+                }
             }
         }
-        vlTestResults[0]=viral_load_Result;
+        vlTestResults[0] = viral_load_Result;
         ilMessage.setVIRAL_LOAD_RESULT(vlTestResults);
         return ilMessage;
     }

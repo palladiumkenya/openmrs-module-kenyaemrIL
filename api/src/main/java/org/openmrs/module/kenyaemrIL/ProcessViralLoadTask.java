@@ -32,7 +32,7 @@ public class ProcessViralLoadTask extends AbstractTask {
      */
     @Override
     public void execute() {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddhhmmss");
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         log.info("Executing vl results task at " + new Date());
 //        Fetch lab results encounter
 //        Fetch the last date of fetch

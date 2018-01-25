@@ -76,7 +76,7 @@ public class ILPatientAppointments {
                 ipd.setAssigning_authority("NHIF");
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("NHIF");
-            }else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Patient Clinic Number")) {
+            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Patient Clinic Number")) {
                 ipd.setAssigning_authority("CLINIC");
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("PATIENT CLINIC NUMBER");
@@ -112,46 +112,35 @@ public class ILPatientAppointments {
 
         Encounter lastFollowUpEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e"));   //last greencard followup form
 
-
         Integer patientTCAConcept = 5096;
         Integer patientTCAReasonConcept = 160288;
+        if (lastFollowUpEncounter != null) {
+            for (Obs obs : lastFollowUpEncounter.getObs()) {
 
-        for (Obs obs : lastFollowUpEncounter.getObs()) {
+                if (obs.getConcept().getConceptId().equals(patientTCAConcept)) {
 
-            if (obs.getConcept().getConceptId().equals(patientTCAConcept)) {    //set placer appointment number
-                placerAppointmentNumber.setNumber(String.valueOf(obs.getId()));
-                placerAppointmentNumber.setEntity("Kenya EMR");
-            }
-            if (obs.getConcept().getConceptId().equals(patientTCAConcept)) {    //set patient TCA
-                appointmentInformation.setAppointment_date(String.valueOf(obs.getValueDate()));
-            }
-            if (obs.getConcept().getConceptId().equals(patientTCAReasonConcept)) {    //set appointment reason
-                appointmentInformation.setAppointment_reason(appointmentReasonConverter(obs.getValueCoded()));
+                    placerAppointmentNumber.setNumber(String.valueOf(obs.getObsId()));                      //set placer appointment number
+                    placerAppointmentNumber.setEntity("KENYA EMR");                                      //set Entity
+                    appointmentInformation.setAppointment_date(String.valueOf(obs.getValueDate()));      //set patient TCA
+                    appointmentInformation.setAction_code("A");                                          //set action code
+                    appointmentInformation.setAppointment_note("N/A");                                   //set appointment note
+                    appointmentInformation.setAppointment_status("PENDING");                             //set appointment status
+                    appointmentInformation.setAppointment_placing_entity("KENYA EMR");                    //set appointment placing entity
 
-            }
-            if (obs.getConcept().getConceptId().equals(patientTCAReasonConcept)) {    //set appointment type
-                appointmentInformation.setAppointment_type(appointmentTypeConverter(obs.getValueCoded()));
+                }
+                if (obs.getConcept().getConceptId().equals(patientTCAReasonConcept)) {
+                    appointmentInformation.setAppointment_reason(appointmentReasonConverter(obs.getValueCoded()));    //set appointment reason
+                    appointmentInformation.setAppointment_type(appointmentTypeConverter(obs.getValueCoded()));         //set appointment type
+                    appointmentInformation.setAppointment_location(appointmentLocationConverter(obs.getValueCoded()));   //set appointment location
+                }
 
-            }
-            if (obs.getConcept().getConceptId().equals(patientTCAReasonConcept)) {    //set appointment location
-                appointmentInformation.setAppointment_location(appointmentLocationConverter(obs.getValueCoded()));
-
-            }
-            if (obs.getConcept().getConceptId().equals(patientTCAConcept)) {    //set action code
-                appointmentInformation.setAction_code("A");
-            }
-            if (obs.getConcept().getConceptId().equals(patientTCAConcept)) {    //set action code
-                appointmentInformation.setAppointment_note("N/A");
-            }
-            if (obs.getConcept().getConceptId().equals(patientTCAConcept)) {    //set action code
-                appointmentInformation.setAppointment_status("PENDING");
-            }
+              }
+           }
+            appointments[0] = appointmentInformation;
+            ilMessage.setAppointment_information(appointments);
+            return ilMessage;
         }
 
-        appointments[0]=appointmentInformation;
-        ilMessage.setAppointment_information(appointments);
-        return ilMessage;
-    }
 
 
     static String appointmentReasonConverter(Concept key) {
