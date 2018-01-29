@@ -32,9 +32,8 @@ public class ProcessORUsTask extends AbstractTask {
      */
     @Override
     public void execute() {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddhhmmss");
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         log.info("Executing ORU task at " + new Date());
-//        Fetch lab results encounter
 //        Fetch the last date of fetch
         Date fetchDate = null;
         GlobalProperty globalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("oruTask.lastFetchDateAndTime");
@@ -46,14 +45,24 @@ public class ProcessORUsTask extends AbstractTask {
             e.printStackTrace();
         }
 
-//        TODO - check the list of encounter types of interest.
-        EncounterType encounterType = Context.getEncounterService().getEncounterTypeByUuid("17a381d1-7e29-406a-b782-aa903b963c28");      //Get encounters of interest
+//       list of encounter types of interest.
+        EncounterType hivGreencardEncounterType = Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e");   //last greencard followup
+        EncounterType hivEnrollmentEncounterType = Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc");  //hiv enrollment
+        EncounterType drugOrderEncounterType = Context.getEncounterService().getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3");  //last drug order
+        EncounterType mchMotherEncounterType = Context.getEncounterService().getEncounterTypeByUuid("3ee036d8-7c13-4393-b5d6-036f2fe45126");  //mch mother enrollment
+        EncounterType labResultEncounterType = Context.getEncounterService().getEncounterTypeByUuid("17a381d1-7e29-406a-b782-aa903b963c28");  //lab results
         //Fetch encounters
         List<EncounterType> encounterTypes = new ArrayList<>();
-//        TODO - Add all the encoutners of interest
-        encounterTypes.add(encounterType);
-        List<Encounter> pendingViralLoads = fetchPendingViralLoads(encounterTypes, fetchDate);
-        for (Encounter e : pendingViralLoads) {
+//       Add all the encoutners of interest
+        encounterTypes.add(hivGreencardEncounterType);
+        encounterTypes.add(hivEnrollmentEncounterType);
+        encounterTypes.add(drugOrderEncounterType);
+        encounterTypes.add(mchMotherEncounterType);
+        encounterTypes.add(labResultEncounterType);
+
+
+        List<Encounter> pendingObservations = fetchPendingObservations(encounterTypes, fetchDate);
+        for (Encounter e : pendingObservations) {
             Patient p = e.getPatient();
             boolean b = oruEvent(p);
         }
@@ -63,7 +72,7 @@ public class ProcessORUsTask extends AbstractTask {
 
     }
 
-    private List<Encounter> fetchPendingViralLoads(List<EncounterType> encounterTypes, Date date) {
+    private List<Encounter> fetchPendingObservations(List<EncounterType> encounterTypes, Date date) {
         return Context.getEncounterService().getEncounters(null, null, date, null, null, encounterTypes, null, null, null, false);
 
     }

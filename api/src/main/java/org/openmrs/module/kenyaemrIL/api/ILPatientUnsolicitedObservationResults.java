@@ -9,6 +9,7 @@ import org.openmrs.module.kenyaemrIL.il.*;
 import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +25,7 @@ public class ILPatientUnsolicitedObservationResults {
 
     public static ILMessage iLPatientWrapper(Patient patient) {
         ILMessage ilMessage = new ILMessage();
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         PATIENT_IDENTIFICATION patientIdentification = new PATIENT_IDENTIFICATION();
         List<INTERNAL_PATIENT_ID> internalPatientIds = new ArrayList<INTERNAL_PATIENT_ID>();
         EXTERNAL_PATIENT_ID epd = new EXTERNAL_PATIENT_ID();
@@ -138,7 +140,7 @@ public class ILPatientUnsolicitedObservationResults {
         //Enrollment encounter
         if (hivEnrollmentEncounter != null) {
             for (Obs obs : hivEnrollmentEncounter.getObs()) {
-                if (obs.getConcept().getConceptId().equals(HeightConcept)) {          //start height
+                if (obs.getConcept().getConceptId().equals(HeightConcept)) {          // height
                     observationResult.setObservation_identifier("START_HEIGHT");
                     observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
                     observationResult.setCoding_system("");
@@ -146,10 +148,11 @@ public class ILPatientUnsolicitedObservationResults {
                     observationResult.setObservation_value(String.valueOf(obs.getValueNumeric()));
                     observationResult.setUnits("CM");
                     observationResult.setObservation_result_status("F");
-                    observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                    String ts = formatter.format(obs.getObsDatetime());
+                    observationResult.setObservation_datetime(ts);
                     observationResult.setAbnormal_flags("N");
                 }
-                if (obs.getConcept().getConceptId().equals(WeightConcept)) {     // start weight
+                if (obs.getConcept().getConceptId().equals(WeightConcept)) {     //  weight
                     observationResult.setObservation_identifier("START_WEIGHT");
                     observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
                     observationResult.setCoding_system("");
@@ -157,7 +160,8 @@ public class ILPatientUnsolicitedObservationResults {
                     observationResult.setObservation_value(String.valueOf(obs.getValueNumeric()));
                     observationResult.setUnits("KG");
                     observationResult.setObservation_result_status("F");
-                    observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                    String ts = formatter.format(obs.getObsDatetime());
+                    observationResult.setObservation_datetime(ts);
                     observationResult.setAbnormal_flags("N");
                 }
                 if (obs.getConcept().getConceptId().equals(HivDiagnosisDateConcept)) {     // diagnosis date
@@ -165,10 +169,12 @@ public class ILPatientUnsolicitedObservationResults {
                     observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
                     observationResult.setCoding_system("");
                     observationResult.setValue_type("DT");
-                    observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                    String dd = formatter.format(obs.getValueDatetime());
+                    observationResult.setObservation_value(dd);
                     observationResult.setUnits("");
                     observationResult.setObservation_result_status("F");
-                    observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                    String ts = formatter.format(obs.getObsDatetime());
+                    observationResult.setObservation_datetime(ts);
                     observationResult.setAbnormal_flags("N");
                 }
                 if (obs.getConcept().getConceptId().equals(HivCareInitiationDateConcept)) {     // hiv care initiation date
@@ -176,10 +182,12 @@ public class ILPatientUnsolicitedObservationResults {
                     observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
                     observationResult.setCoding_system("");
                     observationResult.setValue_type("DT");
-                    observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                    String ivd = formatter.format(obs.getValueDatetime());
+                    observationResult.setObservation_value(ivd);
                     observationResult.setUnits("");
                     observationResult.setObservation_result_status("F");
-                    observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                    String ts = formatter.format(obs.getObsDatetime());
+                    observationResult.setObservation_datetime(ts);
                     observationResult.setAbnormal_flags("N");
                 }
             }
@@ -195,7 +203,8 @@ public class ILPatientUnsolicitedObservationResults {
                         observationResult.setObservation_value(String.valueOf(obs.getValueCoded()));
                         observationResult.setUnits("YES/NO");
                         observationResult.setObservation_result_status("F");
-                        observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                        String ts = formatter.format(obs.getObsDatetime());
+                        observationResult.setObservation_datetime(ts);
                         observationResult.setAbnormal_flags("N");
                     }
                     if (obs.getConcept().getConceptId().equals(EDDConcept)) {                                                      // EDD
@@ -203,10 +212,12 @@ public class ILPatientUnsolicitedObservationResults {
                         observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
                         observationResult.setCoding_system("");
                         observationResult.setValue_type("DT");
-                        observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                        String edd = formatter.format(obs.getValueDatetime());
+                        observationResult.setObservation_value(edd);
                         observationResult.setUnits("");
                         observationResult.setObservation_result_status("F");
-                        observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                        String ts = formatter.format(obs.getObsDatetime());
+                        observationResult.setObservation_datetime(ts);
                         observationResult.setAbnormal_flags("N");
                     }
                     if (obs.getConcept().getConceptId().equals(CTXStartConcept) && obs.getValueCoded().equals(YesConcept)) {  // CTX start date
@@ -214,10 +225,12 @@ public class ILPatientUnsolicitedObservationResults {
                         observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
                         observationResult.setCoding_system("");
                         observationResult.setValue_type("DT");
-                        observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                        String tsv = formatter.format(obs.getValueDatetime());
+                        observationResult.setObservation_value(tsv);
                         observationResult.setUnits("");
                         observationResult.setObservation_result_status("F");
-                        observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                        String ts = formatter.format(obs.getObsDatetime());
+                        observationResult.setObservation_datetime(ts);
                         observationResult.setAbnormal_flags("N");
                     }
                     if (obs.getConcept().getConceptId().equals(TBdiagnosisDateConcept)) {     // tb diagnosis date
@@ -225,10 +238,12 @@ public class ILPatientUnsolicitedObservationResults {
                         observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
                         observationResult.setCoding_system("");
                         observationResult.setValue_type("DT");
-                        observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                        String tsv= formatter.format(obs.getValueDatetime());
+                        observationResult.setObservation_value(tsv);
                         observationResult.setUnits("");
                         observationResult.setObservation_result_status("F");
-                        observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                        String ts = formatter.format(obs.getObsDatetime());
+                        observationResult.setObservation_datetime(ts);
                         observationResult.setAbnormal_flags("N");
                     }
                     if (obs.getConcept().getConceptId().equals(TBTreatmentStartDateConcept)) {     // tb treatment start date
@@ -236,10 +251,12 @@ public class ILPatientUnsolicitedObservationResults {
                         observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
                         observationResult.setCoding_system("");
                         observationResult.setValue_type("DT");
-                        observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                        String tsv= formatter.format(obs.getValueDatetime());
+                        observationResult.setObservation_value(tsv);
                         observationResult.setUnits("");
                         observationResult.setObservation_result_status("F");
-                        observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                        String ts = formatter.format(obs.getObsDatetime());
+                        observationResult.setObservation_datetime(ts);
                         observationResult.setAbnormal_flags("N");
                     }
                     if (obs.getConcept().getConceptId().equals(TBTreatmentCompleteDateConcept)) {     // tb treatment complete date
@@ -247,10 +264,12 @@ public class ILPatientUnsolicitedObservationResults {
                         observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
                         observationResult.setCoding_system("");
                         observationResult.setValue_type("DT");
-                        observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                        String tsv= formatter.format(obs.getValueDatetime());
+                        observationResult.setObservation_value(tsv);
                         observationResult.setUnits("");
                         observationResult.setObservation_result_status("F");
-                        observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                        String ts = formatter.format(obs.getObsDatetime());
+                        observationResult.setObservation_datetime(ts);
                         observationResult.setAbnormal_flags("N");
                     }
                     //Greencard encounter
@@ -262,7 +281,8 @@ public class ILPatientUnsolicitedObservationResults {
                         observationResult.setObservation_value(String.valueOf(obs.getValueNumeric()));
                         observationResult.setUnits("");
                         observationResult.setObservation_result_status("F");
-                        observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                        String ts = formatter.format(obs.getObsDatetime());
+                        observationResult.setObservation_datetime(ts);
                         observationResult.setAbnormal_flags("N");
                     }
                 }
@@ -278,7 +298,8 @@ public class ILPatientUnsolicitedObservationResults {
                             observationResult.setObservation_value(String.valueOf(obs.getValueText()));
                             observationResult.setUnits("");
                             observationResult.setObservation_result_status("F");
-                            observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                            String ts = formatter.format(obs.getObsDatetime());
+                            observationResult.setObservation_datetime(ts);
                             observationResult.setAbnormal_flags("N");
                         }
                         if (obs.getConcept().getConceptId().equals(ARTInitiationDateConcept)) {     // art start date
@@ -286,10 +307,12 @@ public class ILPatientUnsolicitedObservationResults {
                             observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
                             observationResult.setCoding_system("");
                             observationResult.setValue_type("DT");
-                            observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                            String tsv= formatter.format(obs.getValueDatetime());
+                            observationResult.setObservation_value(tsv);
                             observationResult.setUnits("");
                             observationResult.setObservation_result_status("F");
-                            observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                            String ts = formatter.format(obs.getObsDatetime());
+                            observationResult.setObservation_datetime(ts);
                             observationResult.setAbnormal_flags("N");
                         }
                     }
@@ -301,10 +324,12 @@ public class ILPatientUnsolicitedObservationResults {
                         observationResult.setObservation_sub_id(String.valueOf(mchMotherEncounter.getEncounterId()));
                         observationResult.setCoding_system("");
                         observationResult.setValue_type("DT");
-                        observationResult.setObservation_value(String.valueOf(mchMotherEncounter.getEncounterDatetime()));
+                        String tsv= formatter.format(mchMotherEncounter.getEncounterDatetime());
+                        observationResult.setObservation_value(tsv);
                         observationResult.setUnits("");
                         observationResult.setObservation_result_status("F");
-                        observationResult.setObservation_datetime(String.valueOf(mchMotherEncounter.getEncounterDatetime()));
+                        String ts = formatter.format(obs.getObsDatetime());
+                        observationResult.setObservation_datetime(ts);
                         observationResult.setAbnormal_flags("N");
 
                         if (obs.getConcept().getConceptId().equals(DateOfDeliveryConcept)) {          // Childbirth
@@ -312,10 +337,12 @@ public class ILPatientUnsolicitedObservationResults {
                             observationResult.setObservation_sub_id(String.valueOf(obs.getObsId()));
                             observationResult.setCoding_system("");
                             observationResult.setValue_type("DT");
-                            observationResult.setObservation_value(String.valueOf(obs.getValueDatetime()));
+                            String tsc= formatter.format(obs.getValueDatetime());
+                            observationResult.setObservation_value(tsc);
                             observationResult.setUnits("");
                             observationResult.setObservation_result_status("F");
-                            observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                            String tsk = formatter.format(obs.getObsDatetime());
+                            observationResult.setObservation_datetime(tsk);
                             observationResult.setAbnormal_flags("N");
                         }
                     }
@@ -331,7 +358,8 @@ public class ILPatientUnsolicitedObservationResults {
                             observationResult.setObservation_value(String.valueOf(obs.getValueNumeric()));
                             observationResult.setUnits("n/dl");
                             observationResult.setObservation_result_status("F");
-                            observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                            String ts = formatter.format(obs.getObsDatetime());
+                            observationResult.setObservation_datetime(ts);
                             observationResult.setAbnormal_flags("N");
                         }
                         if (obs.getConcept().getConceptId().equals(CD4PercentConcept)) {     // cd4  percent count
@@ -342,7 +370,8 @@ public class ILPatientUnsolicitedObservationResults {
                             observationResult.setObservation_value(String.valueOf(obs.getValueNumeric()));
                             observationResult.setUnits("%");
                             observationResult.setObservation_result_status("F");
-                            observationResult.setObservation_datetime(String.valueOf(obs.getObsDatetime()));
+                            String ts = formatter.format(obs.getObsDatetime());
+                            observationResult.setObservation_datetime(ts);
                             observationResult.setAbnormal_flags("N");
                         }
                     }
