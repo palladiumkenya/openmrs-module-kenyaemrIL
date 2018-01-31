@@ -23,6 +23,9 @@ import org.openmrs.*;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.impl.BaseOpenmrsService;
+import org.openmrs.module.idgen.service.IdentifierSourceService;
+import org.openmrs.module.kenyaemr.api.KenyaEmrService;
+import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemrIL.api.ILMessageType;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
@@ -32,6 +35,7 @@ import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
+import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.text.DateFormat;
@@ -56,6 +60,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     @Autowired
     PatientService patientService;
 
+    @Autowired
+    private KenyaEmrService kenyaEmrService;
+
+    @Autowired
+    private IdentifierSourceService idgenService;
     /**
      * @param dao the dao to set
      */
@@ -374,6 +383,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     private Patient wrapIlPerson(ILMessage ilPerson) {
 
         Patient patient = new Patient();
+        Location defaultLocation = kenyaEmrService.getDefaultLocation();
 
         allPatientIdentifierTypes = Context.getPatientService().getAllPatientIdentifierTypes();
         for (PatientIdentifierType identiferType : allPatientIdentifierTypes) {
@@ -452,7 +462,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         if (externalPatientId != null) {
             PatientIdentifier patientIdentifier = new PatientIdentifier();
             PatientIdentifierType idType = processIdentifierType(externalPatientId.getIdentifier_type());
-            if (idType != null && patientIdentifier !=null) {
+            if (idType != null && patientIdentifier != null) {
                 patientIdentifier.setIdentifierType(idType);
                 patientIdentifier.setIdentifier(externalPatientId.getId());
                 patientIdentifiers.add(patientIdentifier);
@@ -463,23 +473,61 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         List<INTERNAL_PATIENT_ID> internalPatientIds = patientIdentification.getInternal_patient_id();
 
 //        Must set a preferred Identifier
-        if (internalPatientIds != null) {
+        System.out.println("Internal PIDs================================");
+        System.out.println(internalPatientIds);
+        System.out.println(internalPatientIds.size());
+        if (internalPatientIds.size() > 0) {
+
+//            PatientIdentifierType openmrsIdType = MetadataUtils.existing(PatientIdentifierType.class, CommonMetadata._PatientIdentifierType.OPENMRS_ID);
+//            IdentifierSource openmrsIdSource = idgenService.getAutoGenerationOption(openmrsIdType).getSource();
+
             for (INTERNAL_PATIENT_ID internalPatientId : internalPatientIds) {
                 PatientIdentifier patientIdentifier = new PatientIdentifier();
                 PatientIdentifierType idType = processIdentifierType(internalPatientId.getIdentifier_type());
+                int missingOpenMRSId = 0;
                 if (idType != null) {
                     patientIdentifier.setIdentifierType(idType);
+
                     if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
                         patientIdentifier.setPreferred(true);
+                        String ccc = internalPatientId.getId();
+                        ccc = deleteCharacter(ccc, "-");
+                        patientIdentifier.setIdentifier(ccc);
+                        patientIdentifiers.add(patientIdentifier);
+                        continue;
                     }
+//                    if (internalPatientId.getIdentifier_type().equalsIgnoreCase("SOURCE_SYSTEM")) {
+//                        //Generate openmrsID
+//                        PatientIdentifier openmrsId = null;
+//                        String generated = Context.getService(IdentifierSourceService.class).generateIdentifier(openmrsIdType, "Registration");
+//                        openmrsId = new PatientIdentifier(generated, openmrsIdType, defaultLocation);
+//
+//                        System.out.println("Openmrs ID================================>");
+//                        System.out.println(openmrsId);
+//
+//                        patientIdentifier.setIdentifier(String.valueOf(openmrsId));
+//                        patientIdentifiers.add(patientIdentifier);
+//                        continue;
+//                    }
                 } else {
                     continue;
                 }
                 patientIdentifier.setIdentifier(internalPatientId.getId());
 //            internalPatientId.getAssigning_authority();
-                patientIdentifiers.add(patientIdentifier);
             }
+//            //Generate openmrsID
+            PatientIdentifierType openmrsIdType = MetadataUtils.existing(PatientIdentifierType.class, CommonMetadata._PatientIdentifierType.OPENMRS_ID);
+            PatientIdentifier openmrsId = patient.getPatientIdentifier(openmrsIdType);
+            String generated = Context.getService(IdentifierSourceService.class).generateIdentifier(openmrsIdType, "Registration");
+            openmrsId = new PatientIdentifier(generated, openmrsIdType, defaultLocation);
+
+
+            System.out.println("Openmrs ID================================>");
+           System.out.println(openmrsId);
+
+            patientIdentifiers.add(openmrsId);
         }
+
         patient.setIdentifiers(patientIdentifiers);
 
 
@@ -565,7 +613,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 //        TODO - Process the appropriate openmrs identifier types
 //        OpenMRS Identification Number
 //        Old Identification Number
-        if (patientIdentifierType != null) {
+        if (identifierType != null) {
 
             switch (identifierType.toUpperCase()) {
                 case "CCC_NUMBER": {
@@ -616,6 +664,19 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             }
         }
         return patientIdentifierType;
+    }
+
+
+    //    TODO - review after discussion on the standard format
+    private static String deleteCharacter(String string, String index) {
+        return string.replaceAll(index, "");
+    }
+
+    public String deleteCharacter(String string, Object... arguments) {
+        for (Object argument : arguments) {
+            string = string.replaceAll(String.valueOf(argument), "");
+        }
+        return string;
     }
 
 }
