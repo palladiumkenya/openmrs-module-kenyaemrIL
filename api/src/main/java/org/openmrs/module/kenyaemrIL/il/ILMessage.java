@@ -1,6 +1,7 @@
 package org.openmrs.module.kenyaemrIL.il;
 
 import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
+import org.openmrs.module.kenyaemrIL.il.appointment.AppointmentMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.*;
 
 /**
@@ -79,5 +80,13 @@ public class ILMessage {
         ilPerson.setNext_of_kin(this.next_of_kin);
         ilPerson.setPatient_visit(this.getPatient_visit());
         return ilPerson;
+    }
+
+    public AppointmentMessage extractAppointmentMessage() {
+        AppointmentMessage appointmentMessage = new AppointmentMessage();
+        appointmentMessage.setMessage_header(this.getMessage_header());
+        appointmentMessage.setPatient_identification(this.getPatient_identification());
+        appointmentMessage.setAppointment_information(this.getAppointment_information());
+        return appointmentMessage;
     }
 }

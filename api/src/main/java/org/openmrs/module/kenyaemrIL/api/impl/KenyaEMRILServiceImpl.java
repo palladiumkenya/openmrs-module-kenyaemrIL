@@ -68,6 +68,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
     @Autowired
     private IdentifierSourceService idgenService;
+
     /**
      * @param dao the dao to set
      */
@@ -109,7 +110,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         //Message Header
         MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("ADT^A04");
         ilMessage.setMessage_header(messageHeader);
-        ILPerson ilPerson =  ilMessage.extractILRegistration();
+        ILPerson ilPerson = ilMessage.extractILRegistration();
         KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
         try {
             String messageString = mapper.writeValueAsString(ilPerson);
@@ -412,17 +413,17 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             NOK_NAME fnok = new NOK_NAME();
             String nextOfKinName = patientToUpdate.getAttribute("Next of kin name").getValue();
             String[] split = nextOfKinName.split(" ");
-            switch (split.length){
-                case 1:{
+            switch (split.length) {
+                case 1: {
                     fnok.setFirst_name(split[0]);
                     break;
                 }
-                case 2:{
+                case 2: {
                     fnok.setFirst_name(split[0]);
                     fnok.setMiddle_name(split[1]);
                     break;
                 }
-                case 3:{
+                case 3: {
                     fnok.setFirst_name(split[0]);
                     fnok.setMiddle_name(split[1]);
                     fnok.setLast_name(split[2]);
@@ -431,7 +432,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             }
 
             nok.setNok_name(fnok);
-        }else{
+        } else {
 
         }
         nok.setPhone_number(patientToUpdate.getAttribute("Next of kin contact") != null ? patientToUpdate.getAttribute("Next of kin contact").getValue() : "");
@@ -459,10 +460,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     @Override
     public boolean processAppointmentSchedule(ILMessage ilMessage) {
         boolean success = false;
-//        TODO - process an appointment
-        AppointmentMessage message = (AppointmentMessage) ilMessage;
-
-
+//        TODO - process an incoming appointment
         return success;
     }
 
@@ -497,7 +495,8 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         ilMessage.setMessage_header(messageHeader);
         KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
         try {
-            String messageString = mapper.writeValueAsString(ilMessage);
+            AppointmentMessage appointmentMessage = ilMessage.extractAppointmentMessage();
+            String messageString = mapper.writeValueAsString(appointmentMessage);
             kenyaEMRILMessage.setHl7Type("SIU^S12");
             kenyaEMRILMessage.setMessage(messageString);
             kenyaEMRILMessage.setDescription("");
@@ -844,6 +843,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         }
         return string;
     }
+
     static String patientTypeConverter(Concept key) {
         Map<Concept, String> patientTypeList = new HashMap<Concept, String>();
         patientTypeList.put(conceptService.getConcept(164144), "New");
