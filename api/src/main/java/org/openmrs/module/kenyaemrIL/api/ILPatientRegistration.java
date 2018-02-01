@@ -18,7 +18,7 @@ import java.util.*;
 public class ILPatientRegistration {
 
     private final Log log = LogFactory.getLog(this.getClass());
-    static ConceptService conceptService = Context.getConceptService();
+    public static ConceptService conceptService = Context.getConceptService();
 
 
     public static ILMessage iLPatientWrapper(Patient patient) {
