@@ -3,6 +3,7 @@ package org.openmrs.module.kenyaemrIL.il;
 import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
 import org.openmrs.module.kenyaemrIL.il.appointment.AppointmentMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.*;
+import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 
 /**
  * @author Stanslaus Odhiambo
@@ -90,11 +91,19 @@ public class ILMessage {
         return appointmentMessage;
     }
 
-    public ObservationMessage extractORUMEssage() {
+    public ObservationMessage extractORUMessage() {
         ObservationMessage observationMessage = new ObservationMessage();
         observationMessage.setMessage_header(this.message_header);
         observationMessage.setPatient_identification(this.getPatient_identification());
         observationMessage.setObservation_result(this.observation_result);
         return observationMessage;
+    }
+
+    public ViralLoadMessage extractViralLoadMessage() {
+        ViralLoadMessage viralLoadMessage = new ViralLoadMessage();
+        viralLoadMessage.setMessage_header(getMessage_header());
+        viralLoadMessage.setPatient_identification(getPatient_identification());
+        viralLoadMessage.setVIRAL_LOAD_RESULT(getVIRAL_LOAD_RESULT());
+        return viralLoadMessage;
     }
 }

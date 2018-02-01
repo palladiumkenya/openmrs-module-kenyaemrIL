@@ -35,6 +35,7 @@ import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
+import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -522,7 +523,8 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         ilMessage.setMessage_header(messageHeader);
         KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
         try {
-            String messageString = mapper.writeValueAsString(ilMessage);
+            ViralLoadMessage viralLoadMessage =  ilMessage.extractViralLoadMessage();
+            String messageString = mapper.writeValueAsString(viralLoadMessage);
             kenyaEMRILMessage.setHl7Type("ORU^VL");
             kenyaEMRILMessage.setMessage(messageString);
             kenyaEMRILMessage.setDescription("");
@@ -549,7 +551,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         ilMessage.setMessage_header(messageHeader);
         KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
         try {
-            ObservationMessage observationMessage = ilMessage.extractORUMEssage();
+            ObservationMessage observationMessage = ilMessage.extractORUMessage();
             String messageString = mapper.writeValueAsString(observationMessage);
             kenyaEMRILMessage.setHl7Type("ORU^R01");
             kenyaEMRILMessage.setMessage(messageString);
