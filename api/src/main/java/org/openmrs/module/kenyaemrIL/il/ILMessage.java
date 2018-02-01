@@ -89,4 +89,12 @@ public class ILMessage {
         appointmentMessage.setAppointment_information(this.getAppointment_information());
         return appointmentMessage;
     }
+
+    public ObservationMessage extractORUMEssage() {
+        ObservationMessage observationMessage = new ObservationMessage();
+        observationMessage.setMessage_header(this.message_header);
+        observationMessage.setPatient_identification(this.getPatient_identification());
+        observationMessage.setObservation_result(this.observation_result);
+        return observationMessage;
+    }
 }

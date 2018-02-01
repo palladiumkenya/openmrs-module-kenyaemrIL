@@ -472,8 +472,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     @Override
     public boolean processObservationResult(ILMessage ilMessage) {
         boolean success = false;
-        ObservationMessage observationMessage = (ObservationMessage) ilMessage;
-//        TODO - Process ORUs
+//        TODO - Process incoming ORUs
         return success;
     }
 
@@ -550,7 +549,8 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         ilMessage.setMessage_header(messageHeader);
         KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
         try {
-            String messageString = mapper.writeValueAsString(ilMessage);
+            ObservationMessage observationMessage = ilMessage.extractORUMEssage();
+            String messageString = mapper.writeValueAsString(observationMessage);
             kenyaEMRILMessage.setHl7Type("ORU^R01");
             kenyaEMRILMessage.setMessage(messageString);
             kenyaEMRILMessage.setDescription("");

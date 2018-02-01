@@ -25,7 +25,6 @@ public class ProcessORUsTask extends AbstractTask {
 
     // Logger
     private static final Logger log = LoggerFactory.getLogger(ProcessORUsTask.class);
-    private ObjectMapper mapper = new ObjectMapper();
 
     /**
      * @see AbstractTask#execute()
