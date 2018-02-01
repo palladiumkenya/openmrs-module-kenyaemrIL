@@ -109,9 +109,10 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         //Message Header
         MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("ADT^A04");
         ilMessage.setMessage_header(messageHeader);
+        ILPerson ilPerson =  ilMessage.extractILRegistration();
         KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
         try {
-            String messageString = mapper.writeValueAsString(ilMessage);
+            String messageString = mapper.writeValueAsString(ilPerson);
             kenyaEMRILMessage.setHl7Type("ADT^A04");
             kenyaEMRILMessage.setMessage(messageString);
             kenyaEMRILMessage.setDescription("");

@@ -5,7 +5,7 @@ import org.openmrs.module.kenyaemrIL.il.observation.*;
 
 /**
  * @author Stanslaus Odhiambo
- *         Created on 08/01/2018.
+ * Created on 08/01/2018.
  */
 public class ILMessage {
     private MESSAGE_HEADER message_header;
@@ -70,5 +70,14 @@ public class ILMessage {
 
     public void setVIRAL_LOAD_RESULT(org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT[] VIRAL_LOAD_RESULT) {
         this.VIRAL_LOAD_RESULT = VIRAL_LOAD_RESULT;
+    }
+
+    public ILPerson extractILRegistration() {
+        ILPerson ilPerson = new ILPerson();
+        ilPerson.setMessage_header(this.message_header);
+        ilPerson.setPatient_identification(this.patient_identification);
+        ilPerson.setNext_of_kin(this.next_of_kin);
+        ilPerson.setPatient_visit(this.getPatient_visit());
+        return ilPerson;
     }
 }
