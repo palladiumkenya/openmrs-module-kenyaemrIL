@@ -253,6 +253,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
     private Patient updatePatientDetails(Patient patientToUpdate, Patient newPatientDetails) {
 //        TODO - Do the over writing of details right here
+
         return patientToUpdate;
     }
 
@@ -473,13 +474,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         List<INTERNAL_PATIENT_ID> internalPatientIds = patientIdentification.getInternal_patient_id();
 
 //        Must set a preferred Identifier
-        System.out.println("Internal PIDs================================");
-        System.out.println(internalPatientIds);
-        System.out.println(internalPatientIds.size());
         if (internalPatientIds.size() > 0) {
-
-//            PatientIdentifierType openmrsIdType = MetadataUtils.existing(PatientIdentifierType.class, CommonMetadata._PatientIdentifierType.OPENMRS_ID);
-//            IdentifierSource openmrsIdSource = idgenService.getAutoGenerationOption(openmrsIdType).getSource();
 
             for (INTERNAL_PATIENT_ID internalPatientId : internalPatientIds) {
                 PatientIdentifier patientIdentifier = new PatientIdentifier();
@@ -496,19 +491,6 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                         patientIdentifiers.add(patientIdentifier);
                         continue;
                     }
-//                    if (internalPatientId.getIdentifier_type().equalsIgnoreCase("SOURCE_SYSTEM")) {
-//                        //Generate openmrsID
-//                        PatientIdentifier openmrsId = null;
-//                        String generated = Context.getService(IdentifierSourceService.class).generateIdentifier(openmrsIdType, "Registration");
-//                        openmrsId = new PatientIdentifier(generated, openmrsIdType, defaultLocation);
-//
-//                        System.out.println("Openmrs ID================================>");
-//                        System.out.println(openmrsId);
-//
-//                        patientIdentifier.setIdentifier(String.valueOf(openmrsId));
-//                        patientIdentifiers.add(patientIdentifier);
-//                        continue;
-//                    }
                 } else {
                     continue;
                 }
@@ -520,11 +502,6 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             PatientIdentifier openmrsId = patient.getPatientIdentifier(openmrsIdType);
             String generated = Context.getService(IdentifierSourceService.class).generateIdentifier(openmrsIdType, "Registration");
             openmrsId = new PatientIdentifier(generated, openmrsIdType, defaultLocation);
-
-
-            System.out.println("Openmrs ID================================>");
-           System.out.println(openmrsId);
-
             patientIdentifiers.add(openmrsId);
         }
 

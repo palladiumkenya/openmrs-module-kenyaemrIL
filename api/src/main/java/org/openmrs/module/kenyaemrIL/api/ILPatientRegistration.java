@@ -37,6 +37,9 @@ public class ILPatientRegistration {
         if (patient.isDead()) {
             patientIdentification.setDeath_date(String.valueOf(patient.getDeathDate()));
             patientIdentification.setDeath_indicator(String.valueOf(patient.isDead()));
+        } else {
+            patientIdentification.setDeath_date("");
+            patientIdentification.setDeath_indicator("");
         }
 
         //set patient address
@@ -49,7 +52,9 @@ public class ILPatientRegistration {
         physicalAddress.setNearest_landmark(personAddress.getAddress2());
         physicalAddress.setSub_county(personAddress.getAddress4());
         physicalAddress.setVillage(personAddress.getCityVillage());
+        physicalAddress.setGps_location("");
         pAddress.setPhysical_address(physicalAddress);
+
         pAddress.setPostal_address(personAddress.getAddress1());
         patientIdentification.setPatient_address(pAddress);
 
@@ -120,7 +125,7 @@ public class ILPatientRegistration {
                 ipd.setAssigning_authority("NHIF");
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("NHIF");
-            }else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Patient Clinic Number")) {
+            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Patient Clinic Number")) {
                 ipd.setAssigning_authority("CLINIC");
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("PATIENT CLINIC NUMBER");
@@ -147,23 +152,21 @@ public class ILPatientRegistration {
         patientname.setLast_name(personName.getFamilyName());
         patientIdentification.setPatient_name(patientname);
         //Set the patient mothers name
+        MOTHER_NAME motherName = new MOTHER_NAME();
         if (patient.getAttribute("Mother's Name") != null) {
-            MOTHER_NAME motherName = new MOTHER_NAME();
-            motherName.setFirst_name(patient.getAttribute("Mother Name") != null ? patient.getAttribute("Mother Name").getValue(): "");
+            motherName.setFirst_name(patient.getAttribute("Mother Name") != null ? patient.getAttribute("Mother Name").getValue() : "");
             patientIdentification.setMother_name(motherName);
         }
 //        Set the Gender
         patientIdentification.setSex(patient.getGender());
 
+
 //        Set the phone number
-        if (patient.getAttribute("Telephone contact") != null) {
-            patientIdentification.setPhone_number(patient.getAttribute("Telephone contact") !=null ? patient.getAttribute("Telephone contact").getValue() : "");
-        }
+        patientIdentification.setPhone_number(patient.getAttribute("Telephone contact") != null ? patient.getAttribute("Telephone contact").getValue() : "");
+
 
 //        Get the marital status
-        if (patient.getAttribute(" Civil Status") != null) {
-            patientIdentification.setMarital_status(patient.getAttribute("Civil Status") !=null ? patient.getAttribute("Civil Status").getValue() : "");
-        }
+        patientIdentification.setMarital_status(patient.getAttribute("Civil Status") != null ? patient.getAttribute("Civil Status").getValue() : "");
         ilMessage.setPatient_identification(patientIdentification);
 
 //    Next of KIN
@@ -172,21 +175,36 @@ public class ILPatientRegistration {
         NEXT_OF_KIN nok = new NEXT_OF_KIN();
         if (patient.getAttribute("Next of kin name") != null) {
             NOK_NAME fnok = new NOK_NAME();
-            fnok.setFirst_name(patient.getAttribute("Next of kin name") !=null ? patient.getAttribute("Next of kin name").getValue() : "");
+            String nextOfKinName = patient.getAttribute("Next of kin name").getValue();
+            String[] split = nextOfKinName.split(" ");
+            switch (split.length){
+                case 1:{
+                    fnok.setFirst_name(split[0]);
+                    break;
+                }
+                case 2:{
+                    fnok.setFirst_name(split[0]);
+                    fnok.setMiddle_name(split[1]);
+                    break;
+                }
+                case 3:{
+                    fnok.setFirst_name(split[0]);
+                    fnok.setMiddle_name(split[1]);
+                    fnok.setLast_name(split[2]);
+                    break;
+                }
+            }
+
             nok.setNok_name(fnok);
-        }
-        if (patient.getAttribute("Next of kin contact") != null) {
-            nok.setPhone_number(patient.getAttribute("Next of kin contact") !=null ? patient.getAttribute("Next of kin contact").getValue() : "" );
+        }else{
 
         }
-        if (patient.getAttribute("Next of kin relationship") != null) {
-            nok.setRelationship(patient.getAttribute("Next of kin relationship") !=null ? patient.getAttribute("Next of kin relationship").getValue() : "");
-
-        }
-        if (patient.getAttribute("Next of kin address") != null) {
-            nok.setAddress(patient.getAttribute("Next of kin address") !=null ? patient.getAttribute("Next of kin address").getValue() : "");
-
-        }
+        nok.setPhone_number(patient.getAttribute("Next of kin contact") != null ? patient.getAttribute("Next of kin contact").getValue() : "");
+        nok.setRelationship(patient.getAttribute("Next of kin relationship") != null ? patient.getAttribute("Next of kin relationship").getValue() : "");
+        nok.setAddress(patient.getAttribute("Next of kin address") != null ? patient.getAttribute("Next of kin address").getValue() : "");
+        nok.setSex("");
+        nok.setDate_of_birth("");
+        nok.setContact_role("");
         patientKins[0] = nok;
         ilMessage.setNext_of_kin(patientKins);
 

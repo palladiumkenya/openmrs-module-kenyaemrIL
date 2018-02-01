@@ -17,6 +17,15 @@ public class NEXT_OF_KIN {
     private String date_of_birth;
     private String contact_role;
 
+    public NEXT_OF_KIN() {
+        this.nok_name = new NOK_NAME();
+        this.relationship = "";
+        this.address = "";
+        this.phone_number = "";
+        this.sex = "";
+        this.date_of_birth = "";
+        this.contact_role = "";
+    }
 
     public NOK_NAME getNok_name() {
         return nok_name;
