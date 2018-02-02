@@ -16,7 +16,7 @@ public class ILMessage {
     private NEXT_OF_KIN[] next_of_kin;
     private OBSERVATION_RESULT[] observation_result;
     private APPOINTMENT_INFORMATION[] appointment_information;
-    private VIRAL_LOAD_RESULT[] VIRAL_LOAD_RESULT;
+    private VIRAL_LOAD_RESULT[] viral_load_result;
 
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
@@ -66,12 +66,12 @@ public class ILMessage {
         this.appointment_information = appointment_information;
     }
 
-    public org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT[] getVIRAL_LOAD_RESULT() {
-        return VIRAL_LOAD_RESULT;
+    public VIRAL_LOAD_RESULT[] getViral_load_result() {
+        return viral_load_result;
     }
 
-    public void setVIRAL_LOAD_RESULT(org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT[] VIRAL_LOAD_RESULT) {
-        this.VIRAL_LOAD_RESULT = VIRAL_LOAD_RESULT;
+    public void setViral_load_result(VIRAL_LOAD_RESULT[] viral_load_result) {
+        this.viral_load_result = viral_load_result;
     }
 
     public ILPerson extractILRegistration() {
@@ -103,7 +103,7 @@ public class ILMessage {
         ViralLoadMessage viralLoadMessage = new ViralLoadMessage();
         viralLoadMessage.setMessage_header(getMessage_header());
         viralLoadMessage.setPatient_identification(getPatient_identification());
-        viralLoadMessage.setVIRAL_LOAD_RESULT(getVIRAL_LOAD_RESULT());
+        viralLoadMessage.setViral_load_result(getViral_load_result());
         return viralLoadMessage;
     }
 }

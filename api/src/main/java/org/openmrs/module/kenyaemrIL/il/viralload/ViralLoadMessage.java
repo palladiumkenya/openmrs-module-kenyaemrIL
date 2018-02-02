@@ -12,7 +12,7 @@ public class ViralLoadMessage {
 
     private MESSAGE_HEADER message_header;
     private PATIENT_IDENTIFICATION patient_identification;
-    private VIRAL_LOAD_RESULT[] VIRAL_LOAD_RESULT;
+    private VIRAL_LOAD_RESULT[] viral_load_result;
 
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
@@ -30,11 +30,11 @@ public class ViralLoadMessage {
         this.patient_identification = patient_identification;
     }
 
-    public org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT[] getVIRAL_LOAD_RESULT() {
-        return VIRAL_LOAD_RESULT;
+    public VIRAL_LOAD_RESULT[] getViral_load_result() {
+        return viral_load_result;
     }
 
-    public void setVIRAL_LOAD_RESULT(org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT[] VIRAL_LOAD_RESULT) {
-        this.VIRAL_LOAD_RESULT = VIRAL_LOAD_RESULT;
+    public void setViral_load_result(VIRAL_LOAD_RESULT[] viral_load_result) {
+        this.viral_load_result = viral_load_result;
     }
 }
