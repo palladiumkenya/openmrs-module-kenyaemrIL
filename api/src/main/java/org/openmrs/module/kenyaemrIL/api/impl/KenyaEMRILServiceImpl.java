@@ -30,7 +30,9 @@ import org.openmrs.module.kenyaemrIL.api.ILMessageType;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
 import org.openmrs.module.kenyaemrIL.il.*;
+import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
 import org.openmrs.module.kenyaemrIL.il.appointment.AppointmentMessage;
+import org.openmrs.module.kenyaemrIL.il.appointment.PLACER_APPOINTMENT_NUMBER;
 import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
@@ -237,8 +239,9 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 break;
             }
         }
-        if (cccNumber != null) {
+        if (cccNumber == null) {
 //            no patient with the given ccc number, proceed to create a new patient with the received details
+
             return processCreatePatientRequest(ilMessage);
         } else {
 //            fetch the patient
@@ -257,195 +260,87 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         }
     }
 
-    private Patient updatePatientDetails(Patient patientToUpdate, Patient newPatientDetails) {
-//        TODO - Do the over writing of details right here
-        ILMessage ilMessage = new ILMessage();
-        List<INTERNAL_PATIENT_ID> internalPatientIds = new ArrayList<INTERNAL_PATIENT_ID>();
+    private Patient updatePatientDetails(Patient oldPatientToUpdate, Patient newPatientDetails) {
+//    Update patient identification - names and identifiers
+        //Update person address
+        PersonAddress nPersonAddress = newPatientDetails.getPersonAddress();
+        PersonAddress oPersonAddress = oldPatientToUpdate.getPersonAddress();
 
-        PATIENT_IDENTIFICATION patientIdentification = new PATIENT_IDENTIFICATION();
-        //Set date of birth
-        String iLDob = null;
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddhhmmss");
-        iLDob = formatter.format(patientToUpdate.getBirthdate());
-        patientIdentification.setDate_of_birth(iLDob);
-        //set dob precision
-        patientIdentification.setDate_of_birth_precision(patientToUpdate.getBirthdateEstimated() == true ? "ESTIMATED" : "EXACT");
-        //set death date and indicator
-        if (patientToUpdate.isDead()) {
-            patientIdentification.setDeath_date(String.valueOf(patientToUpdate.getDeathDate()));
-            patientIdentification.setDeath_indicator(String.valueOf(patientToUpdate.isDead()));
-        } else {
-            patientIdentification.setDeath_date("");
-            patientIdentification.setDeath_indicator("");
-        }
+        oPersonAddress.setAddress1(nPersonAddress.getAddress1() != null ? nPersonAddress.getAddress1() : oPersonAddress.getAddress1());
+        oPersonAddress.setAddress2(nPersonAddress.getAddress2() != null ? nPersonAddress.getAddress2() : oPersonAddress.getAddress2());
+        oPersonAddress.setAddress3(nPersonAddress.getAddress3() != null ? nPersonAddress.getAddress3() : oPersonAddress.getAddress3());
+        oPersonAddress.setAddress4(nPersonAddress.getAddress4() != null ? nPersonAddress.getAddress4() : oPersonAddress.getAddress4());
+        oPersonAddress.setAddress5(nPersonAddress.getAddress5() != null ? nPersonAddress.getAddress5() : oPersonAddress.getAddress5());
+        oPersonAddress.setCityVillage(nPersonAddress.getCityVillage() != null ? nPersonAddress.getCityVillage() : oPersonAddress.getCityVillage());
+        oPersonAddress.setCountyDistrict(nPersonAddress.getCountyDistrict() != null ? nPersonAddress.getCountyDistrict() : oPersonAddress.getCountyDistrict());
+        oPersonAddress.setStateProvince(nPersonAddress.getStateProvince() != null ? nPersonAddress.getStateProvince() : oPersonAddress.getStateProvince());
+        oPersonAddress.setCountry(nPersonAddress.getCountry() != null ? nPersonAddress.getCountry() : oPersonAddress.getCountry());
+        oPersonAddress.setPostalCode(nPersonAddress.getPostalCode() != null ? nPersonAddress.getPostalCode() : oPersonAddress.getPostalCode());
 
-        //set patient address
-//        TODO - confirm address mappings
-        PersonAddress personAddress = patientToUpdate.getPersonAddress();
-        PATIENT_ADDRESS pAddress = new PATIENT_ADDRESS();
-        PHYSICAL_ADDRESS physicalAddress = new PHYSICAL_ADDRESS();
-        physicalAddress.setWard(personAddress.getAddress6());
-        physicalAddress.setCounty(personAddress.getCountyDistrict());
-        physicalAddress.setNearest_landmark(personAddress.getAddress2());
-        physicalAddress.setSub_county(personAddress.getAddress4());
-        physicalAddress.setVillage(personAddress.getCityVillage());
-        physicalAddress.setGps_location("");
-        pAddress.setPhysical_address(physicalAddress);
+        Set<PersonAddress> addresses = new PresortedSet();
+        addresses.add(oPersonAddress);
+        oldPatientToUpdate.setAddresses(addresses);
 
-        pAddress.setPostal_address(personAddress.getAddress1());
-        patientIdentification.setPatient_address(pAddress);
+        //Update person name
+        PersonName nPersonName = newPatientDetails.getPersonName();
+        PersonName oPersonName = oldPatientToUpdate.getPersonName();
 
-//set patient visit
-        PATIENT_VISIT patientVisit = new PATIENT_VISIT();
-        // get enrollment Date
+        oPersonName.setGivenName(nPersonName.getGivenName() != null ? nPersonName.getGivenName() : oPersonName.getGivenName());
+        oPersonName.setMiddleName(nPersonName.getMiddleName() != null ? nPersonName.getMiddleName() : oPersonName.getMiddleName());
+        oPersonName.setFamilyName(nPersonName.getFamilyName() != null ? nPersonName.getFamilyName() : oPersonName.getFamilyName());
 
-        Encounter lastEnrollment = ILUtils.lastEncounter(patientToUpdate, Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc"));
-        Date lastEnrollmentDate = lastEnrollment.getEncounterDatetime();
-        patientVisit.setVisit_date(String.valueOf(lastEnrollmentDate));
-        patientVisit.setHiv_care_enrollment_date(String.valueOf(lastEnrollmentDate));
+        Set<PersonName> names = new PresortedSet();
+        names.add(oPersonName);
+        oldPatientToUpdate.setNames(names);
 
-        Integer patientEnrollmentTypeConcept = 164932;
-        Integer patientEnrollmentSourceConcept = 160540;
-
-        for (Obs obs : lastEnrollment.getObs()) {
-            //set patient type
-            if (obs.getConcept().getConceptId().equals(patientEnrollmentTypeConcept)) {    //get patient type
-                patientVisit.setPatient_type(patientTypeConverter(obs.getValueCoded()));
+//    Update identifiers
+        Set<PatientIdentifier> oldIds = oldPatientToUpdate.getIdentifiers();
+        for (PatientIdentifier patientIdentifier : newPatientDetails.getIdentifiers()) {
+            PatientIdentifierType identifierType = patientIdentifier.getIdentifierType();
+            PatientIdentifier fetchedId = oldPatientToUpdate.getPatientIdentifier(identifierType);
+            if (fetchedId != null) {
+                fetchedId.setIdentifier(patientIdentifier.getIdentifier());
+                fetchedId.setPreferred(patientIdentifier.getPreferred());
+            } else {
+                fetchedId = new PatientIdentifier();
+                fetchedId.setPreferred(patientIdentifier.getPreferred());
+                fetchedId.setIdentifier(patientIdentifier.getIdentifier());
+                fetchedId.setIdentifierType(identifierType);
             }
-            if (obs.getConcept().getConceptId().equals(patientEnrollmentSourceConcept)) {    //get patient source
-                patientVisit.setPatient_type(patientSourceConverter(obs.getValueCoded()));
+            oldIds.add(fetchedId);
+        }
+        oldPatientToUpdate.setIdentifiers(oldIds);
+//Update person attributes
+
+        Set<PersonAttribute> personAttributes = newPatientDetails.getAttributes();
+        for (PersonAttribute personAttribute : personAttributes) {
+            if (personAttribute.getValue() != null) {
+                PersonAttributeType attributeType = personAttribute.getAttributeType();
+                PersonAttribute attribute = oldPatientToUpdate.getAttribute(attributeType);
+                if (attribute != null) {
+                    attribute.setValue(personAttribute.getValue());
+                } else {
+                    attribute = new PersonAttribute();
+                    attribute.setValue(personAttribute.getValue());
+                    attribute.setAttributeType(attributeType);
+                }
+                oldPatientToUpdate.addAttribute(attribute);
             }
         }
-//set external identifier if available
-        EXTERNAL_PATIENT_ID epd = new EXTERNAL_PATIENT_ID();
-        INTERNAL_PATIENT_ID ipd;
-//        Form the internal patient IDs
-        for (PatientIdentifier patientIdentifier : patientToUpdate.getIdentifiers()) {
-            ipd = new INTERNAL_PATIENT_ID();
-            if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("OpenMRS ID")) {
-                ipd.setAssigning_authority("SOURCE_SYSTEM");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("SOURCE_SYSTEM_ID");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Unique Patient Number")) {
-                ipd.setAssigning_authority("CCC");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("CCC_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("TB Treatment Number")) {
-                ipd.setAssigning_authority("TB");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("TB_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("National ID")) {
-                ipd.setAssigning_authority("GOK");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("NATIONAL_ID");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("HTS Number")) {
-                ipd.setAssigning_authority("HTS");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("HTS_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("HDSS ID")) {
-                ipd.setAssigning_authority("HDSS");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("HDSS_ID");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("ANC NUMBER")) {
-                ipd.setAssigning_authority("ANC");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("ANC_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("OPD NUMBER")) {
-                ipd.setAssigning_authority("OPD");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("OPD_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("PMTCT NUMBER")) {
-                ipd.setAssigning_authority("PMTCT");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("PMTCT_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("NHIF NUMBER")) {
-                ipd.setAssigning_authority("NHIF");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("NHIF");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Patient Clinic Number")) {
-                ipd.setAssigning_authority("CLINIC");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("PATIENT CLINIC NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("MPI GODS NUMBER")) {
-                if (patientIdentifier.getIdentifierType().getName() != null) {
-                    epd.setAssigning_authority("MPI");
-                    epd.setId(patientIdentifier.getIdentifier());
-                    epd.setIdentifier_type("GODS_NUMBER");
-                    patientIdentification.setExternal_patient_id(epd);
-                }
-                continue;
-            }
-            internalPatientIds.add(ipd);
-        }
 
-        patientIdentification.setInternal_patient_id(internalPatientIds);
-        patientIdentification.setExternal_patient_id(epd);
+        //Update gender
+        oldPatientToUpdate.setGender(newPatientDetails.getGender() != null ? newPatientDetails.getGender() : oldPatientToUpdate.getGender());
+        // Update birthdate
+        oldPatientToUpdate.setBirthdate(newPatientDetails.getBirthdate() != null ? newPatientDetails.getBirthdate() : oldPatientToUpdate.getBirthdate());
+        // Update birthdate Estimated
+        oldPatientToUpdate.setBirthdateEstimated(newPatientDetails.getBirthdateEstimated() != null ? newPatientDetails.getBirthdateEstimated() : oldPatientToUpdate.getBirthdateEstimated());
+        // Update if dead
+        oldPatientToUpdate.setDead(newPatientDetails.getDead() != null ? newPatientDetails.getDead() : oldPatientToUpdate.getDead());
+        // Update if death date
+        oldPatientToUpdate.setDeathDate(newPatientDetails.getDeathDate() != null ? newPatientDetails.getDeathDate() : oldPatientToUpdate.getDeathDate());
+// Update patient attributes
 
-        //Set the patient name
-        PATIENT_NAME patientname = new PATIENT_NAME();
-        PersonName personName = patientToUpdate.getPersonName();
-        patientname.setFirst_name(personName.getGivenName());
-        patientname.setMiddle_name(personName.getMiddleName());
-        patientname.setLast_name(personName.getFamilyName());
-        patientIdentification.setPatient_name(patientname);
-        //Set the patient mothers name
-        MOTHER_NAME motherName = new MOTHER_NAME();
-        if (patientToUpdate.getAttribute("Mother's Name") != null) {
-            motherName.setFirst_name(patientToUpdate.getAttribute("Mother Name") != null ? patientToUpdate.getAttribute("Mother Name").getValue() : "");
-            patientIdentification.setMother_name(motherName);
-        }
-//        Set the Gender
-        patientIdentification.setSex(patientToUpdate.getGender());
-
-
-//        Set the phone number
-        patientIdentification.setPhone_number(patientToUpdate.getAttribute("Telephone contact") != null ? patientToUpdate.getAttribute("Telephone contact").getValue() : "");
-
-
-//        Get the marital status
-        patientIdentification.setMarital_status(patientToUpdate.getAttribute("Civil Status") != null ? patientToUpdate.getAttribute("Civil Status").getValue() : "");
-        ilMessage.setPatient_identification(patientIdentification);
-
-//    Next of KIN
-
-        NEXT_OF_KIN patientKins[] = new NEXT_OF_KIN[1];
-        NEXT_OF_KIN nok = new NEXT_OF_KIN();
-        if (patientToUpdate.getAttribute("Next of kin name") != null) {
-            NOK_NAME fnok = new NOK_NAME();
-            String nextOfKinName = patientToUpdate.getAttribute("Next of kin name").getValue();
-            String[] split = nextOfKinName.split(" ");
-            switch (split.length) {
-                case 1: {
-                    fnok.setFirst_name(split[0]);
-                    break;
-                }
-                case 2: {
-                    fnok.setFirst_name(split[0]);
-                    fnok.setMiddle_name(split[1]);
-                    break;
-                }
-                case 3: {
-                    fnok.setFirst_name(split[0]);
-                    fnok.setMiddle_name(split[1]);
-                    fnok.setLast_name(split[2]);
-                    break;
-                }
-            }
-
-            nok.setNok_name(fnok);
-        } else {
-
-        }
-        nok.setPhone_number(patientToUpdate.getAttribute("Next of kin contact") != null ? patientToUpdate.getAttribute("Next of kin contact").getValue() : "");
-        nok.setRelationship(patientToUpdate.getAttribute("Next of kin relationship") != null ? patientToUpdate.getAttribute("Next of kin relationship").getValue() : "");
-        nok.setAddress(patientToUpdate.getAttribute("Next of kin address") != null ? patientToUpdate.getAttribute("Next of kin address").getValue() : "");
-        nok.setSex("");
-        nok.setDate_of_birth("");
-        nok.setContact_role("");
-        patientKins[0] = nok;
-        ilMessage.setNext_of_kin(patientKins);
-
-        return patientToUpdate;
+        return oldPatientToUpdate;
     }
 
     @Override
@@ -461,7 +356,56 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     @Override
     public boolean processAppointmentSchedule(ILMessage ilMessage) {
         boolean success = false;
-//        TODO - process an incoming appointment
+        String cccNumber = null;
+//        1. Fetch the person to update using the CCC number
+        for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
+            if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
+                cccNumber = internalPatientId.getId();
+                break;
+            }
+        }
+        if (cccNumber == null) {
+//            no patient with the given ccc number, proceed to create a new patient with the received details
+            success = false;
+        } else {
+//            fetch the patient
+            List<Patient> patients = Context.getPatientService().getPatients(null, cccNumber, allPatientIdentifierTypes, true);
+            Patient patient;
+            if (patients.size() > 0) {
+                patient = patients.get(0);
+
+                //Save the appointment
+                AppointmentMessage appointmentMessage = ilMessage.extractAppointmentMessage();
+                APPOINTMENT_INFORMATION[] appointmentInformation = appointmentMessage.getAppointment_information();
+                Encounter lastFollowUpEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e"));   //last greencard followup form
+                Integer patientTCAConcept = 5096;
+                Integer patientTCAReasonConcept = 160288;
+                for (APPOINTMENT_INFORMATION appInfo : appointmentInformation) {
+                    PLACER_APPOINTMENT_NUMBER placerAppointmentNumber = appInfo.getPlacer_appointment_number();
+                    String appointmentStatus = appInfo.getAppointment_status();
+                    String appointmentReason = appInfo.getAppointment_reason();
+                    String action_code = appInfo.getAction_code();
+                    String appointment_note = appInfo.getAppointment_note();
+                    String appointmentDate = appInfo.getAppointment_date();
+                    String placerAppointmentNumberNumber = placerAppointmentNumber.getNumber();
+                    String entity = placerAppointmentNumber.getEntity();
+
+                    Obs appointmentObs = new Obs();
+                    appointmentObs.setComment(placerAppointmentNumberNumber + "" + appointment_note + "" + appointmentStatus + "" + appointmentReason);
+                    appointmentObs.setConcept(Context.getConceptService().getConcept(patientTCAConcept));
+                    appointmentObs.setValueText(appointmentDate);
+                    appointmentObs.setObsDatetime(new Date());
+
+                    lastFollowUpEncounter.addObs(appointmentObs);
+                }
+                Context.getEncounterService().saveEncounter(lastFollowUpEncounter);
+
+            }
+
+
+        }
+
+
         return success;
     }
 
@@ -523,7 +467,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         ilMessage.setMessage_header(messageHeader);
         KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
         try {
-            ViralLoadMessage viralLoadMessage =  ilMessage.extractViralLoadMessage();
+            ViralLoadMessage viralLoadMessage = ilMessage.extractViralLoadMessage();
             String messageString = mapper.writeValueAsString(viralLoadMessage);
             kenyaEMRILMessage.setHl7Type("ORU^VL");
             kenyaEMRILMessage.setMessage(messageString);

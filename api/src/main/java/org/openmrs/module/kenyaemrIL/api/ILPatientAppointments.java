@@ -115,10 +115,8 @@ public class ILPatientAppointments {
         Integer patientTCAConcept = 5096;
         Integer patientTCAReasonConcept = 160288;
         if (lastFollowUpEncounter != null) {
-                        for (Obs obs : lastFollowUpEncounter.getObs()) {
-
-                            if (obs.getConcept().getConceptId().equals(patientTCAConcept)) {
-
+            for (Obs obs : lastFollowUpEncounter.getObs()) {
+                if (obs.getConcept().getConceptId().equals(patientTCAConcept)) {
                     placerAppointmentNumber.setNumber(String.valueOf(obs.getObsId()));                      //set placer appointment number
                     placerAppointmentNumber.setEntity("KENYA EMR");                                      //set Entity
                     appointmentInformation.setAppointment_date(String.valueOf(obs.getValueDate()));      //set patient TCA
@@ -134,13 +132,12 @@ public class ILPatientAppointments {
                     appointmentInformation.setAppointment_location(appointmentLocationConverter(obs.getValueCoded()));   //set appointment location
                 }
 
-              }
-           }
-            appointments[0] = appointmentInformation;
-            ilMessage.setAppointment_information(appointments);
-            return ilMessage;
+            }
         }
-
+        appointments[0] = appointmentInformation;
+        ilMessage.setAppointment_information(appointments);
+        return ilMessage;
+    }
 
 
     static String appointmentReasonConverter(Concept key) {
