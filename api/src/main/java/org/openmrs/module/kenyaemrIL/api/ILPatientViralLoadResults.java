@@ -157,7 +157,8 @@ public class ILPatientViralLoadResults {
             }
         }
         vlTestResults[0] = viral_load_Result;
-        ilMessage.setVIRAL_LOAD_RESULT(vlTestResults);
+        ilMessage.setViral_load_result(vlTestResults);
+       // ilMessage.setVIRAL_LOAD_RESULT(vlTestResults);
         return ilMessage;
     }
 

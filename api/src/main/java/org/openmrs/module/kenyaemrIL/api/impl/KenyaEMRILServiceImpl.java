@@ -34,6 +34,7 @@ import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
 import org.openmrs.module.kenyaemrIL.il.appointment.AppointmentMessage;
 import org.openmrs.module.kenyaemrIL.il.appointment.PLACER_APPOINTMENT_NUMBER;
 import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
+import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
@@ -423,7 +424,67 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
     @Override
     public boolean processViralLoad(ILMessage ilMessage) {
-        throw new NotYetImplementedException("Not Yet Implemented");
+        boolean success = false;
+        String cccNumber = null;
+//        1. Fetch the person to update using the CCC number
+        for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
+            if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
+                cccNumber = internalPatientId.getId();
+                break;
+            }
+        }
+        if (cccNumber == null) {
+//            no patient with the given ccc number, proceed to create a new patient with the received details
+            success = false;
+        } else {
+//            fetch the patient
+            List<Patient> patients = Context.getPatientService().getPatients(null, cccNumber, allPatientIdentifierTypes, true);
+            Patient patient;
+            if (patients.size() > 0) {
+                patient = patients.get(0);
+
+                //Save the viral load results
+                ViralLoadMessage viralLoadMessage = ilMessage.extractViralLoadMessage();
+                VIRAL_LOAD_RESULT [] viralLoadResult = viralLoadMessage.getViral_load_result();
+                Encounter lastLabResultsEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("17a381d1-7e29-406a-b782-aa903b963c28"));   //last lab results followup form
+                Integer vLConcept = 856;
+                Integer LDLQuestionConcept = 1305;
+                Integer LDLAnswerConcept = 1302;
+                Integer ARVConcept = 1085;
+
+                for (VIRAL_LOAD_RESULT labInfo : viralLoadResult) {
+                    String dateSampleCollected = labInfo.getDate_sample_collected();
+                    String dateSampleTested = labInfo.getDate_sample_tested();
+                    String vlResult = labInfo.getVl_result();
+                    String sampleType = labInfo.getSample_type();
+                    String sampleRejection = labInfo.getSample_rejection();
+                    String justification = labInfo.getJustification();
+                    String regimen = labInfo.getRegimen();
+                    String labTested = labInfo.getLab_tested_in();
+
+                    Obs labsObs = new Obs();
+                    labsObs.setComment(dateSampleCollected + "" + dateSampleTested + "" + sampleType + "" + sampleRejection+ "" + justification + "" + regimen + "" + labTested);
+                   //Check to
+                    if(vlResult != null ) {
+                        String vl = vlResult.replaceAll("\\D+", "");
+                        if (vl !="") {
+                            labsObs.setConcept(Context.getConceptService().getConcept(vLConcept));       //add viral load concept
+                            double viralResultNumeric = Double.parseDouble(vlResult);
+                            labsObs.setValueNumeric(viralResultNumeric);
+                        } else {
+                            labsObs.setConcept(Context.getConceptService().getConcept(LDLQuestionConcept));       //add ldl concept
+                            labsObs.setValueText(vlResult);
+                        }
+                    }
+
+                    labsObs.setObsDatetime(new Date());
+                    lastLabResultsEncounter.addObs(labsObs);
+                }
+                Context.getEncounterService().saveEncounter(lastLabResultsEncounter);
+            }
+        }
+
+        return success;
     }
 
     @Override
@@ -812,4 +873,5 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         patientSourceList.put(conceptService.getConcept(5622), "other");
         return patientSourceList.get(key);
     }
+
 }
