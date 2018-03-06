@@ -33,6 +33,7 @@ import org.openmrs.module.kenyaemrIL.il.*;
 import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
 import org.openmrs.module.kenyaemrIL.il.appointment.AppointmentMessage;
 import org.openmrs.module.kenyaemrIL.il.appointment.PLACER_APPOINTMENT_NUMBER;
+import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
 import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
@@ -418,7 +419,294 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     @Override
     public boolean processObservationResult(ILMessage ilMessage) {
         boolean success = false;
-//        TODO - Process incoming ORUs
+        String cccNumber = null;
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+//        1. Fetch the person to update using the CCC number
+        for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
+            if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
+                cccNumber = internalPatientId.getId();
+                break;
+            }
+        }
+        if (cccNumber == null) {
+//            no patient with the given ccc number, proceed to create a new patient with the received details
+            success = false;
+        } else {
+//            fetch the patient
+            List<Patient> patients = Context.getPatientService().getPatients(null, cccNumber, allPatientIdentifierTypes, true);
+            Patient patient;
+            if (patients.size() > 0) {
+                patient = patients.get(0);
+
+                //Save the observation
+                ObservationMessage observationMessage = ilMessage.extractORUMessage();
+                OBSERVATION_RESULT[] observationInformation = observationMessage.getObservation_result();
+                //GEt the encounters to append ORUs
+                Encounter hivGreencardEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e"));   //last greencard followup
+                Encounter hivEnrollmentEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc"));  //hiv enrollment
+                Encounter drugOrderEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3"));  //last drug order
+                Encounter mchMotherEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("3ee036d8-7c13-4393-b5d6-036f2fe45126"));  //mch mother enrollment
+                Encounter labResultEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("17a381d1-7e29-406a-b782-aa903b963c28"));  //lab results
+                //Obs for consideration   - not complete list
+                Integer HeightConcept = 5090;
+                Integer WeightConcept = 5089;
+                Integer HivDiagnosisDateConcept = 160554;
+                Integer HivCareInitiationDateConcept = 160555;
+                Integer ARTInitiationDateConcept = 159599;
+                Integer IspregnantConcept = 5272;
+                Integer EDDConcept = 5596;
+                Integer DateOfDeliveryConcept = 5599;
+                Integer ARVConcept = 1085;    //TODO: Implement incoming regimen
+                Integer SmokerConcept = 155600;
+                Integer AlcoholUseConcept = 159449;
+                Integer CTXStartConcept = 162229;
+                Integer TestsOrderedConcept = 1271;
+                Integer CD4Concept = 5497;
+                Integer CD4PercentConcept = 730;
+                Integer TBdiagnosisDateConcept = 1662;
+                Integer TBTreatmentStartDateConcept = 1113;
+                Integer TBTreatmentCompleteDateConcept = 164384;
+                Integer WhoStageConcept = 5356;
+                Integer YesConcept = 1065;
+                Integer NoConcept = 1066;
+
+                for (OBSERVATION_RESULT obsInfo : observationInformation) {
+
+                    String observationSubId = obsInfo.getObservation_sub_id();
+                    String observationCodingSystem = obsInfo.getCoding_system();
+                    String observationValueType = obsInfo.getValue_type();
+                    String observationUnits = obsInfo.getUnits();
+                    String observationResultStatus = obsInfo.getObservation_result_status();
+                    String observationAbnormalFlags = obsInfo.getAbnormal_flags();
+                    Obs observationObs = new Obs();
+                    //observationObs.setComment(placerAppointmentNumberNumber + "" + appointment_note + "" + appointmentStatus + "" + appointmentReason);
+
+
+                    if (obsInfo.getObservation_identifier() == "START_HEIGHT") {             //Start Height
+                        observationObs.setValueNumeric(Double.parseDouble(obsInfo.getObservation_value()));
+                        observationObs.setConcept(Context.getConceptService().getConcept(HeightConcept));
+                        try {
+                            observationObs.setObsDatetime(formatter.parse(obsInfo.getObservation_datetime()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        hivEnrollmentEncounter.addObs(observationObs);
+                        Context.getEncounterService().saveEncounter(hivEnrollmentEncounter);
+                    }
+
+
+                    if (obsInfo.getObservation_identifier() == "START_WEIGHT") {             //Start Weight
+
+                        observationObs.setValueNumeric(Double.parseDouble(obsInfo.getObservation_value()));
+                        observationObs.setConcept(Context.getConceptService().getConcept(WeightConcept));
+                        try {
+                            observationObs.setObsDatetime(formatter.parse(obsInfo.getObservation_datetime()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        hivEnrollmentEncounter.addObs(observationObs);
+                        Context.getEncounterService().saveEncounter(hivEnrollmentEncounter);
+                    }
+
+                    if (obsInfo.getObservation_identifier() == "HIV_DIAGNOSIS") {             //HIV Diagnosis date
+                        observationObs.setConcept(Context.getConceptService().getConcept(HivDiagnosisDateConcept));
+                        try {
+                            observationObs.setValueDatetime(formatter.parse(obsInfo.getObservation_value()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            observationObs.setObsDatetime(formatter.parse(obsInfo.getObservation_datetime()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+
+                        hivEnrollmentEncounter.addObs(observationObs);
+                        Context.getEncounterService().saveEncounter(hivEnrollmentEncounter);
+                    }
+
+
+                    if (obsInfo.getObservation_identifier() == "HIV_CARE_INITIATION") {             // hiv care initiation date
+                        observationObs.setConcept(Context.getConceptService().getConcept(HivCareInitiationDateConcept));
+                        try {
+                            observationObs.setValueDatetime(formatter.parse(obsInfo.getObservation_value()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            observationObs.setObsDatetime(formatter.parse(obsInfo.getObservation_datetime()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        hivEnrollmentEncounter.addObs(observationObs);
+                        Context.getEncounterService().saveEncounter(hivEnrollmentEncounter);
+                    }
+
+                    if (obsInfo.getObservation_identifier() == "IS_PREGNANT") {             // Is pregnant
+                        observationObs.setConcept(Context.getConceptService().getConcept(IspregnantConcept));
+                        observationObs.setValueCoded(Context.getConceptService().getConcept(YesConcept));
+                        try {
+                            observationObs.setObsDatetime(formatter.parse(obsInfo.getObservation_datetime()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        hivGreencardEncounter.addObs(observationObs);
+                        Context.getEncounterService().saveEncounter(hivGreencardEncounter);
+                    }
+
+                    if (obsInfo.getObservation_identifier() == "PRENGANT_EDD") {             // EDD
+                        observationObs.setConcept(Context.getConceptService().getConcept(EDDConcept));
+                        try {
+                            observationObs.setValueDatetime(formatter.parse(obsInfo.getObservation_value()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            observationObs.setObsDatetime(formatter.parse(obsInfo.getObservation_datetime()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        hivGreencardEncounter.addObs(observationObs);
+                        Context.getEncounterService().saveEncounter(hivGreencardEncounter);
+                    }
+                    if (obsInfo.getObservation_identifier() == "COTRIMOXAZOLE_START") {             // CTX start date
+                        observationObs.setConcept(Context.getConceptService().getConcept(CTXStartConcept));
+                        observationObs.setValueCoded(Context.getConceptService().getConcept(YesConcept));
+                        try {
+                            observationObs.setValueDatetime(formatter.parse(obsInfo.getObservation_value()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            observationObs.setObsDatetime(formatter.parse(obsInfo.getObservation_datetime()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        hivGreencardEncounter.addObs(observationObs);
+                        Context.getEncounterService().saveEncounter(hivGreencardEncounter);
+                    }
+                    if (obsInfo.getObservation_identifier() == "TB_DIAGNOSIS_DATE") {             // TB diagnosis  date
+                        observationObs.setConcept(Context.getConceptService().getConcept(TBdiagnosisDateConcept));
+                        try {
+                            observationObs.setValueDatetime(formatter.parse(obsInfo.getObservation_value()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            observationObs.setObsDatetime(formatter.parse(obsInfo.getObservation_datetime()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        hivGreencardEncounter.addObs(observationObs);
+                        Context.getEncounterService().saveEncounter(hivGreencardEncounter);
+                    }
+                    if (obsInfo.getObservation_identifier() == "TB_TREATMENT_START_DATE") {             // TB treatment start  date
+                        observationObs.setConcept(Context.getConceptService().getConcept(TBTreatmentStartDateConcept));
+                        try {
+                            observationObs.setValueDatetime(formatter.parse(obsInfo.getObservation_value()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            observationObs.setObsDatetime(formatter.parse(obsInfo.getObservation_datetime()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        hivGreencardEncounter.addObs(observationObs);
+                        Context.getEncounterService().saveEncounter(hivGreencardEncounter);
+                    }
+                    if (obsInfo.getObservation_identifier() == "TB_TREATMENT_COMPLETE_DATE") {             // TB treatment complete  date
+                        observationObs.setConcept(Context.getConceptService().getConcept(TBTreatmentCompleteDateConcept));
+                        try {
+                            observationObs.setValueDatetime(formatter.parse(obsInfo.getObservation_value()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            observationObs.setObsDatetime(formatter.parse(obsInfo.getObservation_datetime()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        hivGreencardEncounter.addObs(observationObs);
+                        Context.getEncounterService().saveEncounter(hivGreencardEncounter);
+                    }
+                    if (obsInfo.getObservation_identifier() == "WHO_STAGE") {             // WHO stage
+                        observationObs.setConcept(Context.getConceptService().getConcept(WhoStageConcept));
+                        observationObs.setValueNumeric(Double.parseDouble(obsInfo.getObservation_value()));
+                        try {
+                            observationObs.setObsDatetime(formatter.parse(obsInfo.getObservation_datetime()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        hivGreencardEncounter.addObs(observationObs);
+                        Context.getEncounterService().saveEncounter(hivGreencardEncounter);
+                    }
+                    if (obsInfo.getObservation_identifier() == "ART_START") {             // art start date
+                        observationObs.setConcept(Context.getConceptService().getConcept(ARTInitiationDateConcept));
+                        try {
+                            observationObs.setValueDatetime(formatter.parse(obsInfo.getObservation_value()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            observationObs.setObsDatetime(formatter.parse(obsInfo.getObservation_datetime()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        hivGreencardEncounter.addObs(observationObs);
+                        Context.getEncounterService().saveEncounter(hivGreencardEncounter);
+                    }
+                    if (obsInfo.getObservation_identifier() == "PMTCT_INITIATION") {          // pmtct initiation date
+                        if (mchMotherEncounter != null) {
+                            try {
+                                observationObs.setValueDatetime(formatter.parse(obsInfo.getObservation_value()));
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+                            observationObs.setObsDatetime(mchMotherEncounter.getEncounterDatetime());
+                            mchMotherEncounter.addObs(observationObs);
+                            Context.getEncounterService().saveEncounter(mchMotherEncounter);
+                        }
+                    }
+                    if (obsInfo.getObservation_identifier() == "CHILD_BIRTH") {        // delivery date
+                        if (mchMotherEncounter != null) {
+                            observationObs.setConcept(Context.getConceptService().getConcept(DateOfDeliveryConcept));
+                            try {
+                                observationObs.setValueDatetime(formatter.parse(obsInfo.getObservation_value()));
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+                            observationObs.setObsDatetime(mchMotherEncounter.getEncounterDatetime());
+                            mchMotherEncounter.addObs(observationObs);
+                            Context.getEncounterService().saveEncounter(mchMotherEncounter);
+                        }
+                    }
+                    if (obsInfo.getObservation_identifier() == "CD4_COUNT") {             // CD4 Count
+                        observationObs.setConcept(Context.getConceptService().getConcept(CD4Concept));
+                        observationObs.setValueNumeric(Double.parseDouble(obsInfo.getObservation_value()));
+                        try {
+                            observationObs.setObsDatetime(formatter.parse(obsInfo.getObservation_datetime()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        labResultEncounter.addObs(observationObs);
+                        Context.getEncounterService().saveEncounter(labResultEncounter);
+                    }
+                    if (obsInfo.getObservation_identifier() == "CD4_PERCENT") {             // CD4 Percent
+                        observationObs.setConcept(Context.getConceptService().getConcept(CD4PercentConcept));
+                        observationObs.setValueNumeric(Double.parseDouble(obsInfo.getObservation_value()));
+                        try {
+                            observationObs.setObsDatetime(formatter.parse(obsInfo.getObservation_datetime()));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        labResultEncounter.addObs(observationObs);
+                        Context.getEncounterService().saveEncounter(labResultEncounter);
+                    }
+                }
+
+            }
+        }
         return success;
     }
 
