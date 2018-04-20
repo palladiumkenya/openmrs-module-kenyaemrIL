@@ -45,18 +45,22 @@ public class ILPatientRegistration {
         //set patient address
 //        TODO - confirm address mappings
         PersonAddress personAddress = patient.getPersonAddress();
-        PATIENT_ADDRESS pAddress = new PATIENT_ADDRESS();
-        PHYSICAL_ADDRESS physicalAddress = new PHYSICAL_ADDRESS();
-        physicalAddress.setWard(personAddress.getAddress6());
-        physicalAddress.setCounty(personAddress.getCountyDistrict());
-        physicalAddress.setNearest_landmark(personAddress.getAddress2());
-        physicalAddress.setSub_county(personAddress.getAddress4());
-        physicalAddress.setVillage(personAddress.getCityVillage());
-        physicalAddress.setGps_location("");
-        pAddress.setPhysical_address(physicalAddress);
+        if(personAddress != null) {
 
-        pAddress.setPostal_address(personAddress.getAddress1());
-        patientIdentification.setPatient_address(pAddress);
+            PATIENT_ADDRESS pAddress = new PATIENT_ADDRESS();
+            PHYSICAL_ADDRESS physicalAddress = new PHYSICAL_ADDRESS();
+
+            physicalAddress.setWard(personAddress.getAddress6() != null ? personAddress.getAddress6() : "");
+            physicalAddress.setCounty(personAddress.getCountyDistrict() != null ? personAddress.getCountyDistrict() : "");
+            physicalAddress.setNearest_landmark(personAddress.getAddress2() != null ? personAddress.getAddress2() : "");
+            physicalAddress.setSub_county(personAddress.getAddress4() != null ? personAddress.getAddress4() : "");
+            physicalAddress.setVillage(personAddress.getCityVillage() != null ? personAddress.getCityVillage() : "");
+            physicalAddress.setGps_location("");
+            pAddress.setPhysical_address(physicalAddress);
+
+            pAddress.setPostal_address(personAddress.getAddress1());
+            patientIdentification.setPatient_address(pAddress);
+        }
 
 //set patient visit
         PATIENT_VISIT patientVisit = new PATIENT_VISIT();
