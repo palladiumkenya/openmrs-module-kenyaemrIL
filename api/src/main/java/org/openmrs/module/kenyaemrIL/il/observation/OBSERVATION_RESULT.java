@@ -5,6 +5,7 @@ package org.openmrs.module.kenyaemrIL.il.observation;
  *         Created on 08/01/2018.
  */
 public class OBSERVATION_RESULT {
+    private String set_id;
     private String units;
     private String value_type;
     private String observation_value;
@@ -14,6 +15,14 @@ public class OBSERVATION_RESULT {
     private String observation_result_status;
     private String observation_sub_id;
     private String observation_identifier;
+
+    public String getSet_id() {
+        return set_id;
+    }
+
+    public void setSet_id(String set_id) {
+        this.set_id = set_id;
+    }
 
     public String getUnits() {
         return units;
