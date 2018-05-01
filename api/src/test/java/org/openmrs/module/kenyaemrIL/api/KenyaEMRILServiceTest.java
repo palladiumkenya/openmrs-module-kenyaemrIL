@@ -14,6 +14,8 @@
 package org.openmrs.module.kenyaemrIL.api;
 
 import static org.junit.Assert.*;
+
+import org.junit.Ignore;
 import org.junit.Test;
 import org.openmrs.api.context.Context;
 import org.openmrs.test.BaseModuleContextSensitiveTest;
@@ -21,6 +23,7 @@ import org.openmrs.test.BaseModuleContextSensitiveTest;
 /**
  * Tests {@link ${KenyaEMRILService}}.
  */
+@Ignore
 public class  KenyaEMRILServiceTest extends BaseModuleContextSensitiveTest {
 	
 	@Test

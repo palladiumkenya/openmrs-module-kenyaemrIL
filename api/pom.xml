@@ -15,16 +15,6 @@
 
 	<dependencies>
 	
-		<!-- 
-		Add other dependencies from parent's pom:
-		<dependency>
-			<groupId>org.other.library</groupId> 
-			<artifactId>library-name</artifactId>
-		</dependency> 
-		-->
-
-		
-		
 
 		<!-- Begin OpenMRS core -->
 		
@@ -73,14 +63,28 @@
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
-		
+
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>idgen-api</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>org.openmrs.test</groupId>
 			<artifactId>openmrs-test</artifactId>
 			<type>pom</type>
 			<scope>test</scope>
 		</dependency>
-				
+
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>metadatadeploy-api</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>metadatasharing-api</artifactId>
+		</dependency>
 		<!-- End OpenMRS core -->
         <!--<dependency>-->
             <!--<groupId>org.openmrs.module</groupId>-->
@@ -89,7 +93,7 @@
 		<dependency>
 			<groupId>org.openmrs.module</groupId>
 			<artifactId>kenyaemr-api</artifactId>
-			<version>${kenyaemrVersion}</version>
+			<!--<version>${kenyaemrVersion}</version>-->
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>

@@ -5,7 +5,6 @@ package org.openmrs.module.kenyaemrIL.il.observation;
  *         Created on 08/01/2018.
  */
 public class OBSERVATION_RESULT {
-    private String set_id;
     private String units;
     private String value_type;
     private String observation_value;
@@ -13,17 +12,14 @@ public class OBSERVATION_RESULT {
     private String coding_system;
     private String abnormal_flags;
     private String observation_result_status;
-    private String observation_sub_id;
+    private String set_id;
     private String observation_identifier;
 
     public String getSet_id() {
         return set_id;
     }
-
-    public void setSet_id(String set_id) {
-        this.set_id = set_id;
+    public void setSet_id(String set_id) { this.set_id = set_id;
     }
-
     public String getUnits() {
         return units;
     }
@@ -80,14 +76,6 @@ public class OBSERVATION_RESULT {
         this.observation_result_status = observation_result_status;
     }
 
-    public String getObservation_sub_id() {
-        return observation_sub_id;
-    }
-
-    public void setObservation_sub_id(String observation_sub_id) {
-        this.observation_sub_id = observation_sub_id;
-    }
-
     public String getObservation_identifier() {
         return observation_identifier;
     }
@@ -95,4 +83,63 @@ public class OBSERVATION_RESULT {
     public void setObservation_identifier(String observation_identifier) {
         this.observation_identifier = observation_identifier;
     }
+
+//    public static OBSERVATION_RESULT fill(JsonObject jsonobj) throws IOException {
+//        OBSERVATION_RESULT entity = new OBSERVATION_RESULT();
+//
+//        if (jsonobj.containsKey("SET_ID")) {
+//            entity.setSet_id(jsonobj.getString("SET_ID"));
+//        }
+//        if (jsonobj.containsKey("OBSERVATION_IDENTIFIER")) {
+//            entity.setObservation_identifier(jsonobj.getString("OBSERVATION_IDENTIFIER"));
+//        }
+//        if (jsonobj.containsKey("CODING_SYSTEM")) {
+//            entity.setCoding_system(jsonobj.getString("CODING_SYSTEM"));
+//        }
+//        if (jsonobj.containsKey("VALUE_TYPE")) {
+//            entity.setValue_type(jsonobj.getString("VALUE_TYPE"));
+//        }
+//        if (jsonobj.containsKey("OBSERVATION_VALUE")) {
+//            entity.setObservation_value(jsonobj.getString("OBSERVATION_VALUE"));
+//        }
+//        if (jsonobj.containsKey("UNITS")) {
+//            entity.setUnits(jsonobj.getString("UNITS"));
+//        }
+//        if (jsonobj.containsKey("OBSERVATION_RESULT_STATUS")) {
+//            entity.setObservation_result_status(jsonobj.getString("OBSERVATION_RESULT_STATUS"));
+//        }
+//        if (jsonobj.containsKey("OBSERVATION_DATETIME")) {
+//            entity.setObservation_datetime(jsonobj.getString("OBSERVATION_DATETIME"));
+//        }
+//        if (jsonobj.containsKey("ABNORMAL_FLAGS")) {
+//            entity.setAbnormal_flags(jsonobj.getString("ABNORMAL_FLAGS"));
+//        }
+//        return entity;
+//    }
+//
+//    public static List<OBSERVATION_RESULT> fillList(JsonArray jsonarray) throws IOException {
+//        if (jsonarray == null || jsonarray.size() == 0)
+//            return null;
+//        List<OBSERVATION_RESULT> olist = new ArrayList<OBSERVATION_RESULT>();
+//        for (int i = 0; i < jsonarray.size(); i++) {
+//            olist.add(fill(jsonarray.getJsonObject(i)));
+//        }
+//        return olist;
+//    }
+//
+//    @Override
+//    public String toString() {
+//        return "OBSERVATION_RESULT{" +
+//                "units=" + units +
+//                ", value_type='" + value_type + '\'' +
+//                ", observation_value='" + observation_value + '\'' +
+//                ", observation_datetime='" + observation_datetime + '\'' +
+//                ", coding_system='" + coding_system + '\'' +
+//                ", abnormal_flags='" + abnormal_flags + '\'' +
+//                ", observation_result_status='" + observation_result_status + '\'' +
+//                ", set_id='" + set_id + '\'' +
+//                ", observation_identifier='" + observation_identifier + '\'' +
+//                '}';
+//    }
+
 }

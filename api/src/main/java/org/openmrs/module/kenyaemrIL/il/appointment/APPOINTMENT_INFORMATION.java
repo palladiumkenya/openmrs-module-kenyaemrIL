@@ -39,7 +39,7 @@ public class APPOINTMENT_INFORMATION {
         this.appointment_placing_entity = appointment_placing_entity;
     }
 
-    public String getAppointment_location() {
+    public String getAppointment_location(String s) {
         return appointment_location;
     }
 

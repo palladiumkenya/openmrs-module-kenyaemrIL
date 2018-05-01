@@ -15,7 +15,6 @@ package org.openmrs.module.kenyaemrIL.api;
 
 import org.openmrs.api.OpenmrsService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
-import org.openmrs.module.kenyaemrIL.il.ILPerson;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
@@ -35,7 +34,8 @@ import java.util.List;
  */
 @Transactional
 public interface KenyaEMRILService extends OpenmrsService {
-     
+
+//    Process outgoing enrolments/updates
 	/*
      * Add service methods here
 	 * 
@@ -45,21 +45,21 @@ public interface KenyaEMRILService extends OpenmrsService {
      * Processes and returns a list of available IL Person records received from the IL, typically ADTA04 and ADTA08
      *
      * @param status - boolean value showing whether or not to fetch records that have been processed
-     * @return a list of @{@link ILPerson} records satisfying the given criteria
+     * @return a list of @{@link ILMessage} records satisfying the given criteria
      */
-    List<ILPerson> getPersonList(boolean status);
+    List<ILMessage> getPersonList(boolean status);
 
-    List<ILPerson> getAddPersonList(boolean status);
+    List<ILMessage> getAddPersonList(boolean status);
 
-    List<ILPerson> getUpdatePersonList(boolean status);
+    List<ILMessage> getUpdatePersonList(boolean status);
 
-    boolean sendUpdateRequest(ILPerson ilPerson);
+    boolean sendUpdateRequest(ILMessage ilMessage);
 
-    boolean sendAddPersonRequest(ILPerson ilPerson);
+    boolean sendAddPersonRequest(ILMessage ilMessage);
 
 
 
-    /*    Pharmacy Orders     */
+    /*    Pharmacy Orders     - Outgoing  */
     List<ILPharmacyOrder> fetchAllPharmacyOrders();
 
     List<ILPharmacyOrder> fetchPharmacyOrders(boolean processed);
@@ -71,7 +71,7 @@ public interface KenyaEMRILService extends OpenmrsService {
     boolean deletePharmacyOrder(ILPharmacyOrder ilPharmacyOrder);
 
 
-    //    Pharmacy Dispense
+    //    Pharmacy Dispense - outgoing
     List<ILPharmacyDispense> fetchAllPharmacyDispenses();
 
     List<ILPharmacyDispense> fetchPharmacyDispenses(boolean processed);
@@ -95,6 +95,8 @@ public interface KenyaEMRILService extends OpenmrsService {
     void deleteKenyaEMRILMessage(KenyaEMRILMessage kenyaEMRILMessage);
 
     List<KenyaEMRILMessage> getAllKenyaEMRILMessages(Boolean includeAll);
+
+
 
 
 //    Process incoming IL requests
@@ -121,4 +123,28 @@ public interface KenyaEMRILService extends OpenmrsService {
     boolean processViralLoad(ILMessage ilMessage);
 
     boolean process731Adx(ILMessage ilMessage);
+
+
+//    Process KenyaEMR appointment
+
+    /**
+     *
+     * @param ilMessage -  the message to populate and send
+     * @return true or false - depending on the processing outcome
+     */
+    boolean logAppointmentSchedule(ILMessage ilMessage);
+
+    /**
+     *
+     * @param ilMessage -  the message to populate and send
+     * @return true or false - depending on the processing outcome
+     */
+    boolean logViralLoad(ILMessage ilMessage);
+
+    /**
+     *
+     * @param ilMessage -  the message to populate and send
+     * @return true or false - depending on the processing outcome
+     */
+    boolean logORUs(ILMessage ilMessage);
 }

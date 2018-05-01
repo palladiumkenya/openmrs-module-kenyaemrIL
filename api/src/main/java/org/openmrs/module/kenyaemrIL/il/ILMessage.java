@@ -1,11 +1,13 @@
 package org.openmrs.module.kenyaemrIL.il;
 
 import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
+import org.openmrs.module.kenyaemrIL.il.appointment.AppointmentMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.*;
+import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 
 /**
  * @author Stanslaus Odhiambo
- *         Created on 08/01/2018.
+ * Created on 08/01/2018.
  */
 public class ILMessage {
     private MESSAGE_HEADER message_header;
@@ -14,6 +16,7 @@ public class ILMessage {
     private NEXT_OF_KIN[] next_of_kin;
     private OBSERVATION_RESULT[] observation_result;
     private APPOINTMENT_INFORMATION[] appointment_information;
+    private VIRAL_LOAD_RESULT[] viral_load_result;
 
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
@@ -61,5 +64,46 @@ public class ILMessage {
 
     public void setAppointment_information(APPOINTMENT_INFORMATION[] appointment_information) {
         this.appointment_information = appointment_information;
+    }
+
+    public VIRAL_LOAD_RESULT[] getViral_load_result() {
+        return viral_load_result;
+    }
+
+    public void setViral_load_result(VIRAL_LOAD_RESULT[] viral_load_result) {
+        this.viral_load_result = viral_load_result;
+    }
+
+    public ILPerson extractILRegistration() {
+        ILPerson ilPerson = new ILPerson();
+        ilPerson.setMessage_header(this.message_header);
+        ilPerson.setPatient_identification(this.patient_identification);
+        ilPerson.setNext_of_kin(this.next_of_kin);
+        ilPerson.setPatient_visit(this.getPatient_visit());
+        return ilPerson;
+    }
+
+    public AppointmentMessage extractAppointmentMessage() {
+        AppointmentMessage appointmentMessage = new AppointmentMessage();
+        appointmentMessage.setMessage_header(this.getMessage_header());
+        appointmentMessage.setPatient_identification(this.getPatient_identification());
+        appointmentMessage.setAppointment_information(this.getAppointment_information());
+        return appointmentMessage;
+    }
+
+    public ObservationMessage extractORUMessage() {
+        ObservationMessage observationMessage = new ObservationMessage();
+        observationMessage.setMessage_header(this.message_header);
+        observationMessage.setPatient_identification(this.getPatient_identification());
+        observationMessage.setObservation_result(this.observation_result);
+        return observationMessage;
+    }
+
+    public ViralLoadMessage extractViralLoadMessage() {
+        ViralLoadMessage viralLoadMessage = new ViralLoadMessage();
+        viralLoadMessage.setMessage_header(getMessage_header());
+        viralLoadMessage.setPatient_identification(getPatient_identification());
+        viralLoadMessage.setViral_load_result(getViral_load_result());
+        return viralLoadMessage;
     }
 }

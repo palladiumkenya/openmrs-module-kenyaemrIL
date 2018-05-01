@@ -4,6 +4,9 @@ package org.openmrs.module.kenyaemrIL.il;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
+import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
+import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
@@ -14,10 +17,28 @@ import java.util.List;
  * @author Stanslaus Odhiambo
  *         Created on 08/01/2018.
  */
-public class ILPerson extends ILMessage{
+public class ILPerson{
 
-    private PATIENT_VISIT patient_visit;
+    private MESSAGE_HEADER message_header;
+    private PATIENT_IDENTIFICATION patient_identification;
     private NEXT_OF_KIN[] next_of_kin;
+    private PATIENT_VISIT patient_visit;
+
+    public MESSAGE_HEADER getMessage_header() {
+        return message_header;
+    }
+
+    public void setMessage_header(MESSAGE_HEADER message_header) {
+        this.message_header = message_header;
+    }
+
+    public PATIENT_IDENTIFICATION getPatient_identification() {
+        return patient_identification;
+    }
+
+    public void setPatient_identification(PATIENT_IDENTIFICATION patient_identification) {
+        this.patient_identification = patient_identification;
+    }
 
     public NEXT_OF_KIN[] getNext_of_kin() {
         return next_of_kin;
@@ -34,7 +55,6 @@ public class ILPerson extends ILMessage{
     public void setPatient_visit(PATIENT_VISIT patient_visit) {
         this.patient_visit = patient_visit;
     }
-
 
     public static ILPerson fill(JsonObject jsonobj) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();

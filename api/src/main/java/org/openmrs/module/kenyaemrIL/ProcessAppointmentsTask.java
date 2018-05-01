@@ -6,7 +6,7 @@ import org.openmrs.EncounterType;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.kenyaemrIL.api.ILPatientRegistration;
+import org.openmrs.module.kenyaemrIL.api.ILPatientAppointments;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.scheduler.tasks.AbstractTask;
@@ -19,25 +19,25 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Implementation of a task that processes enrollments tasks and marks them for sending to IL.
+ * Implementation of a task that processes appointment tasks and marks them for sending to IL.
  */
-public class ProcessEnrollmentTask extends AbstractTask {
+public class ProcessAppointmentsTask extends AbstractTask {
 
     // Logger
-    private static final Logger log = LoggerFactory.getLogger(ProcessEnrollmentTask.class);
+    private static final Logger log = LoggerFactory.getLogger(ProcessAppointmentsTask.class);
     private ObjectMapper mapper = new ObjectMapper();
 
     /**
-     * @see org.openmrs.scheduler.tasks.AbstractTask#execute()
+     * @see AbstractTask#execute()
      */
     @Override
     public void execute() {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-//        Fetch enrolment encounter
+        log.info("Executing appointments task at " + new Date());
+//        Fetch greencard encounter
 //        Fetch the last date of fetch
         Date fetchDate = null;
-        GlobalProperty globalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("enrolmentTask.lastFetchDateAndTime");
-        String fetchID = Context.getAdministrationService().getGlobalProperty("enrolmentTask.lastFetchId");
+        GlobalProperty globalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("appointmentTask.lastFetchDateAndTime");
 
         try {
             String ts = globalPropertyObject.getValue().toString();
@@ -45,14 +45,14 @@ public class ProcessEnrollmentTask extends AbstractTask {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        EncounterType encounterTypeEnrollment = Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc");
+        EncounterType encounterTypeGreencard = Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e");
         //Fetch all encounters
         List<EncounterType> encounterTypes = new ArrayList<>();
-        encounterTypes.add(encounterTypeEnrollment);
-        List<Encounter> pendingEnrollments = fetchPendingEnrollments(encounterTypes, fetchDate);
-        for (Encounter e : pendingEnrollments) {
+        encounterTypes.add(encounterTypeGreencard);
+        List<Encounter> pendingAppointments = fetchPendingAppointments(encounterTypes, fetchDate);
+        for (Encounter e : pendingAppointments) {
             Patient p = e.getPatient();
-            boolean b = registrationEvent(p);
+            boolean b = appointmentsEvent(p);
         }
         Date nextProcessingDate = new Date();
         globalPropertyObject.setPropertyValue(formatter.format(nextProcessingDate));
@@ -60,15 +60,15 @@ public class ProcessEnrollmentTask extends AbstractTask {
 
     }
 
-    private List<Encounter> fetchPendingEnrollments(List<EncounterType> encounterTypes, Date date) {
+    private List<Encounter> fetchPendingAppointments(List<EncounterType> encounterTypes, Date date) {
         return Context.getEncounterService().getEncounters(null, null, date, null, null, encounterTypes, null, null, null, false);
 
     }
 
-    private boolean registrationEvent(Patient patient) {
-        ILMessage ilMessage = ILPatientRegistration.iLPatientWrapper(patient);
+    private boolean appointmentsEvent(Patient patient) {
+        ILMessage ilMessage = ILPatientAppointments.iLPatientWrapper(patient);
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
-        return service.sendAddPersonRequest(ilMessage);
+        return service.logAppointmentSchedule(ilMessage);
     }
 
 

@@ -6,7 +6,7 @@ import org.openmrs.EncounterType;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.kenyaemrIL.api.ILPatientRegistration;
+import org.openmrs.module.kenyaemrIL.api.ILPatientViralLoadResults;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.scheduler.tasks.AbstractTask;
@@ -19,25 +19,25 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Implementation of a task that processes enrollments tasks and marks them for sending to IL.
+ * Implementation of a task that processes lab results- viral load tasks and marks the for sending to IL.
  */
-public class ProcessEnrollmentTask extends AbstractTask {
+public class ProcessViralLoadTask extends AbstractTask {
 
     // Logger
-    private static final Logger log = LoggerFactory.getLogger(ProcessEnrollmentTask.class);
+    private static final Logger log = LoggerFactory.getLogger(ProcessViralLoadTask.class);
     private ObjectMapper mapper = new ObjectMapper();
 
     /**
-     * @see org.openmrs.scheduler.tasks.AbstractTask#execute()
+     * @see AbstractTask#execute()
      */
     @Override
     public void execute() {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-//        Fetch enrolment encounter
+        log.info("Executing vl results task at " + new Date());
+//        Fetch lab results encounter
 //        Fetch the last date of fetch
         Date fetchDate = null;
-        GlobalProperty globalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("enrolmentTask.lastFetchDateAndTime");
-        String fetchID = Context.getAdministrationService().getGlobalProperty("enrolmentTask.lastFetchId");
+        GlobalProperty globalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("virallaodTask.lastFetchDateAndTime");
 
         try {
             String ts = globalPropertyObject.getValue().toString();
@@ -45,14 +45,14 @@ public class ProcessEnrollmentTask extends AbstractTask {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        EncounterType encounterTypeEnrollment = Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc");
-        //Fetch all encounters
+        EncounterType encounterTypeLabResults = Context.getEncounterService().getEncounterTypeByUuid("17a381d1-7e29-406a-b782-aa903b963c28");      //Get lab results encounter
+        //Fetch all lab rsults encounters
         List<EncounterType> encounterTypes = new ArrayList<>();
-        encounterTypes.add(encounterTypeEnrollment);
-        List<Encounter> pendingEnrollments = fetchPendingEnrollments(encounterTypes, fetchDate);
-        for (Encounter e : pendingEnrollments) {
+        encounterTypes.add(encounterTypeLabResults);
+        List<Encounter> pendingViralLoads = fetchPendingViralLoads(encounterTypes, fetchDate);
+        for (Encounter e : pendingViralLoads) {
             Patient p = e.getPatient();
-            boolean b = registrationEvent(p);
+            boolean b = viralLoadEvent(p);
         }
         Date nextProcessingDate = new Date();
         globalPropertyObject.setPropertyValue(formatter.format(nextProcessingDate));
@@ -60,15 +60,15 @@ public class ProcessEnrollmentTask extends AbstractTask {
 
     }
 
-    private List<Encounter> fetchPendingEnrollments(List<EncounterType> encounterTypes, Date date) {
+    private List<Encounter> fetchPendingViralLoads(List<EncounterType> encounterTypes, Date date) {
         return Context.getEncounterService().getEncounters(null, null, date, null, null, encounterTypes, null, null, null, false);
 
     }
 
-    private boolean registrationEvent(Patient patient) {
-        ILMessage ilMessage = ILPatientRegistration.iLPatientWrapper(patient);
+    private boolean viralLoadEvent(Patient patient) {
+        ILMessage ilMessage = ILPatientViralLoadResults.iLPatientWrapper(patient);
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
-        return service.sendAddPersonRequest(ilMessage);
+        return service.logViralLoad(ilMessage);
     }
 
 

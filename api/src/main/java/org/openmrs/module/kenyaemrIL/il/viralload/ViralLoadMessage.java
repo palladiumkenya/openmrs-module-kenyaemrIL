@@ -1,17 +1,18 @@
-package org.openmrs.module.kenyaemrIL.il.appointment;
+package org.openmrs.module.kenyaemrIL.il.viralload;
 
 import org.openmrs.module.kenyaemrIL.il.MESSAGE_HEADER;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
+import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
 
 /**
  * @author Stanslaus Odhiambo
- *         Created on 15/01/2018.
+ * Created on 01/02/2018.
  */
-public class AppointmentMessage {
+public class ViralLoadMessage {
+
     private MESSAGE_HEADER message_header;
     private PATIENT_IDENTIFICATION patient_identification;
-    private APPOINTMENT_INFORMATION[] appointment_information;
-
+    private VIRAL_LOAD_RESULT[] viral_load_result;
 
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
@@ -29,12 +30,11 @@ public class AppointmentMessage {
         this.patient_identification = patient_identification;
     }
 
-    public APPOINTMENT_INFORMATION[] getAppointment_information() {
-        return appointment_information;
+    public VIRAL_LOAD_RESULT[] getViral_load_result() {
+        return viral_load_result;
     }
 
-    public void setAppointment_information(APPOINTMENT_INFORMATION[] appointment_information) {
-        this.appointment_information = appointment_information;
+    public void setViral_load_result(VIRAL_LOAD_RESULT[] viral_load_result) {
+        this.viral_load_result = viral_load_result;
     }
-
 }

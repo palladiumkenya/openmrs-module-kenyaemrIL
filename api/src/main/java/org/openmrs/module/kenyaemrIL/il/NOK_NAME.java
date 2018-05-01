@@ -12,6 +12,12 @@ public class NOK_NAME {
 
     private String last_name;
 
+    public NOK_NAME() {
+        this.first_name = "";
+        this.middle_name = "";
+        this.last_name = "";
+    }
+
     public String getFirst_name() {
         return first_name;
     }

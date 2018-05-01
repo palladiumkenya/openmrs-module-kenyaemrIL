@@ -15,7 +15,6 @@
 package org.openmrs.module.kenyaemrIL.util;
 
 import org.openmrs.api.context.Context;
-import org.openmrs.module.kenyaemr.util.BuildProperties;
 import org.openmrs.util.OpenmrsConstants;
 
 import java.util.LinkedHashMap;
