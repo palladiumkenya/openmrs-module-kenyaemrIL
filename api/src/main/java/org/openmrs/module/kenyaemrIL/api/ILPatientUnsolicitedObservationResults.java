@@ -377,7 +377,7 @@ public class ILPatientUnsolicitedObservationResults {
                     }
             }
             observationResults.add(observationResult);
-
+        ilMessage.setPatient_identification(patientIdentification);
         ilMessage.setObservation_result(observationResults.toArray(new OBSERVATION_RESULT[observationResults.size()]));
         return ilMessage;
     }

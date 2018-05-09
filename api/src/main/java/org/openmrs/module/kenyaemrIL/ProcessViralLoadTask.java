@@ -27,13 +27,14 @@ public class ProcessViralLoadTask extends AbstractTask {
     private static final Logger log = LoggerFactory.getLogger(ProcessViralLoadTask.class);
     private ObjectMapper mapper = new ObjectMapper();
 
-    /**
+    /**git
      * @see AbstractTask#execute()
      */
     @Override
     public void execute() {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         log.info("Executing vl results task at " + new Date());
+        System.out.println("Executing vl results task at " + new Date());
 //        Fetch lab results encounter
 //        Fetch the last date of fetch
         Date fetchDate = null;
@@ -49,7 +50,10 @@ public class ProcessViralLoadTask extends AbstractTask {
         //Fetch all lab rsults encounters
         List<EncounterType> encounterTypes = new ArrayList<>();
         encounterTypes.add(encounterTypeLabResults);
+        System.out.println("Encounter types"+encounterTypes);
+        System.out.println("FetchDate"+fetchDate);
         List<Encounter> pendingViralLoads = fetchPendingViralLoads(encounterTypes, fetchDate);
+        System.out.println("Fetched VL encounters"+pendingViralLoads);
         for (Encounter e : pendingViralLoads) {
             Patient p = e.getPatient();
             boolean b = viralLoadEvent(p);

@@ -1,9 +1,8 @@
 package org.openmrs.module.kenyaemrIL.il.observation;
 
-import org.openmrs.module.kenyaemrIL.il.MESSAGE_HEADER;
-
 public class VIRAL_LOAD_RESULT {
-    private MESSAGE_HEADER message_header;
+    //Outbox
+//    private MESSAGE_HEADER message_header;
     private String date_sample_collected;
     private String date_sample_tested;
     private String vl_result;
@@ -20,13 +19,13 @@ public class VIRAL_LOAD_RESULT {
     public void setDate_sample_collected(String date_sample_collected) {
         this.date_sample_collected = date_sample_collected;
     }
-    public MESSAGE_HEADER getMessage_header() {
-        return message_header;
-    }
-
-    public void setMessage_header(MESSAGE_HEADER message_header) {
-        this.message_header = message_header;
-    }
+//    public MESSAGE_HEADER getMessage_header() {
+//        return message_header;
+//    }
+//
+//    public void setMessage_header(MESSAGE_HEADER message_header) {
+//        this.message_header = message_header;
+//    }
 
     public String getDate_sample_tested() {
         return date_sample_tested;

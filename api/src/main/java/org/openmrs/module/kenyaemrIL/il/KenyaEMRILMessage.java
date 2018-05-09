@@ -22,6 +22,18 @@ public class KenyaEMRILMessage extends BaseOpenmrsMetadata implements Serializab
         this.messageId = messageId;
     }
 
+    public static long getSerialVersionUID() {
+        return serialVersionUID;
+    }
+
+    public Integer getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(Integer messageId) {
+        this.messageId = messageId;
+    }
+
     public Integer getMessageType() {
         return messageType;
     }
@@ -38,12 +50,12 @@ public class KenyaEMRILMessage extends BaseOpenmrsMetadata implements Serializab
         this.hl7Type = hl7Type;
     }
 
-    public Integer getMessageId() {
-        return messageId;
+    public String getMessage() {
+        return message;
     }
 
-    public void setMessageId(Integer messageId) {
-        this.messageId = messageId;
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     public Integer getId() {
@@ -54,11 +66,5 @@ public class KenyaEMRILMessage extends BaseOpenmrsMetadata implements Serializab
         this.setMessageId(id);
     }
 
-    public String getMessage() {
-        return message;
-    }
 
-    public void setMessage(String message) {
-        this.message = message;
-    }
 }

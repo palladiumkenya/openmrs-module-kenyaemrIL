@@ -2,10 +2,7 @@ package org.openmrs.module.kenyaemrIL.api;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.openmrs.Encounter;
-import org.openmrs.Obs;
-import org.openmrs.Patient;
-import org.openmrs.PatientIdentifier;
+import org.openmrs.*;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.il.*;
@@ -34,6 +31,7 @@ public class ILPatientViralLoadResults {
 //set external identifier if available
 
 //        Form the internal patient IDs
+        System.out.println("Available Identifiers"+patient.getIdentifiers());
         for (PatientIdentifier patientIdentifier : patient.getIdentifiers()) {
             ipd = new INTERNAL_PATIENT_ID();
             if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("OpenMRS ID")) {
@@ -91,7 +89,30 @@ public class ILPatientViralLoadResults {
             }
             internalPatientIds.add(ipd);
         }
+        //Set the patient name
+        PATIENT_NAME patientname = new PATIENT_NAME();
+        PersonName personName = patient.getPersonName();
+        patientname.setFirst_name(personName.getGivenName());
+        patientname.setMiddle_name(personName.getMiddleName());
+        patientname.setLast_name(personName.getFamilyName());
+        // Set to empty string unwanted patient details for viral load
+        patientIdentification.setSex("");   //        Set the Gender, phone number and marital status
+        patientIdentification.setPhone_number("");
+        patientIdentification.setMarital_status("");
+        patientIdentification.setDate_of_birth("");
+        patientIdentification.setDate_of_birth_precision("");
+        patientIdentification.setDeath_date("");
+        patientIdentification.setDeath_indicator("");
 
+        PATIENT_ADDRESS patientAddress = new PATIENT_ADDRESS();
+        patientAddress.setPostal_address("");
+        patientAddress.setPhysical_address(new PHYSICAL_ADDRESS());
+        patientIdentification.setPatient_address(patientAddress);
+
+        //Set mothers name
+        patientIdentification.setMother_name(new MOTHER_NAME());
+
+        patientIdentification.setPatient_name(patientname);
         patientIdentification.setInternal_patient_id(internalPatientIds);
         patientIdentification.setExternal_patient_id(epd);
 
@@ -139,10 +160,15 @@ public class ILPatientViralLoadResults {
                 } else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set  justification
                     viral_load_Result.setJustification("");
                 }
+                if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set regimen
+                    viral_load_Result.setRegimen("");
+                } else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set regimen
+                    viral_load_Result.setRegimen("");
+                }
                 if (obs.getConcept().getConceptId().equals(latestVLConcept)) {    //set vl Lab Tested In
-                    viral_load_Result.setJustification("KEMRI LAB SIAYA");
+                    viral_load_Result.setLab_tested_in("");
                 } else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {    //set ldl Lab Tested In
-                    viral_load_Result.setJustification("KEMRI LAB SIAYA");
+                    viral_load_Result.setLab_tested_in("");
                 }
             }
         }
@@ -156,9 +182,11 @@ public class ILPatientViralLoadResults {
                 }
             }
         }
+
         vlTestResults[0] = viral_load_Result;
+        ilMessage.setPatient_identification(patientIdentification);
         ilMessage.setViral_load_result(vlTestResults);
-       // ilMessage.setVIRAL_LOAD_RESULT(vlTestResults);
+
         return ilMessage;
     }
 

@@ -103,6 +103,22 @@ public class ILPatientAppointments {
         patientname.setLast_name(personName.getFamilyName());
 
         patientIdentification.setPatient_name(patientname);
+        // Set to empty strings unwanted patient details for viral load
+        patientIdentification.setSex("");   //        Set the Gender, phone number and marital status
+        patientIdentification.setPhone_number("");
+        patientIdentification.setMarital_status("");
+        patientIdentification.setDate_of_birth("");
+        patientIdentification.setDate_of_birth_precision("");
+        patientIdentification.setDeath_date("");
+        patientIdentification.setDeath_indicator("");
+
+        PATIENT_ADDRESS patientAddress = new PATIENT_ADDRESS();
+        patientAddress.setPostal_address("");
+        patientAddress.setPhysical_address(new PHYSICAL_ADDRESS());
+        patientIdentification.setPatient_address(patientAddress);
+
+        //Set mothers name
+        patientIdentification.setMother_name(new MOTHER_NAME());
 
         ilMessage.setPatient_identification(patientIdentification);
 //set appointment information

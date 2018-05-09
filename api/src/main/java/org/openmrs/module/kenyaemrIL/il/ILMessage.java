@@ -101,9 +101,9 @@ public class ILMessage {
 
     public ViralLoadMessage extractViralLoadMessage() {
         ViralLoadMessage viralLoadMessage = new ViralLoadMessage();
-        viralLoadMessage.setMessage_header(getMessage_header());
-        viralLoadMessage.setPatient_identification(getPatient_identification());
-        viralLoadMessage.setViral_load_result(getViral_load_result());
+        viralLoadMessage.setMessage_header(this.message_header);
+        viralLoadMessage.setPatient_identification(this.getPatient_identification());
+        viralLoadMessage.setViral_load_result(this.getViral_load_result());
         return viralLoadMessage;
     }
 }

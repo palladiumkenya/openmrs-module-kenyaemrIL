@@ -49,7 +49,10 @@ public class ProcessAppointmentsTask extends AbstractTask {
         //Fetch all encounters
         List<EncounterType> encounterTypes = new ArrayList<>();
         encounterTypes.add(encounterTypeGreencard);
+        System.out.println("Encounter types"+encounterTypes);
+        System.out.println("FetchDate"+fetchDate);
         List<Encounter> pendingAppointments = fetchPendingAppointments(encounterTypes, fetchDate);
+        System.out.println("Fetched GC appointment encounters"+pendingAppointments);
         for (Encounter e : pendingAppointments) {
             Patient p = e.getPatient();
             boolean b = appointmentsEvent(p);

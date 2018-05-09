@@ -13,6 +13,15 @@ public class PHYSICAL_ADDRESS {
     private String gps_location;
     private String nearest_landmark;
 
+    public PHYSICAL_ADDRESS() {
+        this.village = "";
+        this.ward = "";
+        this.sub_county = "";
+        this.county = "";
+        this.gps_location = "";
+        this.nearest_landmark = "";
+    }
+
     public String getVillage() {
         return village;
     }

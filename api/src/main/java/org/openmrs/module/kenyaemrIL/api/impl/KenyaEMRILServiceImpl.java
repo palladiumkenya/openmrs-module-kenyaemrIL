@@ -1188,6 +1188,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
     @Override
     public boolean logAppointmentSchedule(ILMessage ilMessage) {
+        System.out.println("Outbox appmnt message");
         boolean isSuccessful;
         //Message Header
         MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("SIU^S12");
@@ -1196,6 +1197,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         try {
             AppointmentMessage appointmentMessage = ilMessage.extractAppointmentMessage();
             String messageString = mapper.writeValueAsString(appointmentMessage);
+            System.out.println("Outbox appmnt message==>"+messageString);
             kenyaEMRILMessage.setHl7Type("SIU^S12");
             kenyaEMRILMessage.setMessage(messageString);
             kenyaEMRILMessage.setDescription("");
@@ -1216,6 +1218,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
     @Override
     public boolean logViralLoad(ILMessage ilMessage) {
+        System.out.println("Outbox vl message");
         boolean isSuccessful;
         //Message Header
         MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("ORU^VL");
