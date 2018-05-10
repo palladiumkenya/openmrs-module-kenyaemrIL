@@ -76,7 +76,7 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     @Override
     public List<KenyaEMRILMessage> getKenyaEMRILInboxes(Boolean includeRetired) {
         Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
-        crit.add(Restrictions.eq("messageType", 1));
+        crit.add(Restrictions.eq("message_type", 1));
         crit.add(Restrictions.eq("retired", includeRetired));
         return crit.list();
     }
@@ -84,7 +84,7 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     @Override
     public List<KenyaEMRILMessage> getKenyaEMRILOutboxes(Boolean includeRetired) {
         Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
-        crit.add(Restrictions.eq("messageType", 2));
+        crit.add(Restrictions.eq("message_type", 2));
         crit.add(Restrictions.eq("retired", includeRetired));
         return crit.list();
     }

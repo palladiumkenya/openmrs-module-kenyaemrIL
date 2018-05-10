@@ -119,11 +119,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
         try {
             String messageString = mapper.writeValueAsString(ilPerson);
-            kenyaEMRILMessage.setHl7Type("ADT^A04");
+            kenyaEMRILMessage.setHl7_type("ADT^A04");
             kenyaEMRILMessage.setMessage(messageString);
             kenyaEMRILMessage.setDescription("");
             kenyaEMRILMessage.setName("");
-            kenyaEMRILMessage.setMessageType(ILMessageType.OUTBOUND.getValue());
+            kenyaEMRILMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
             KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
             if (savedInstance != null) {
                 isSuccessful = true;
@@ -1198,11 +1198,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             AppointmentMessage appointmentMessage = ilMessage.extractAppointmentMessage();
             String messageString = mapper.writeValueAsString(appointmentMessage);
             System.out.println("Outbox appmnt message==>"+messageString);
-            kenyaEMRILMessage.setHl7Type("SIU^S12");
+            kenyaEMRILMessage.setHl7_type("SIU^S12");
             kenyaEMRILMessage.setMessage(messageString);
             kenyaEMRILMessage.setDescription("");
             kenyaEMRILMessage.setName("");
-            kenyaEMRILMessage.setMessageType(ILMessageType.OUTBOUND.getValue());
+            kenyaEMRILMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
             KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
             if (savedInstance != null) {
                 isSuccessful = true;
@@ -1227,11 +1227,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         try {
             ViralLoadMessage viralLoadMessage = ilMessage.extractViralLoadMessage();
             String messageString = mapper.writeValueAsString(viralLoadMessage);
-            kenyaEMRILMessage.setHl7Type("ORU^VL");
+            kenyaEMRILMessage.setHl7_type("ORU^VL");
             kenyaEMRILMessage.setMessage(messageString);
             kenyaEMRILMessage.setDescription("");
             kenyaEMRILMessage.setName("");
-            kenyaEMRILMessage.setMessageType(ILMessageType.OUTBOUND.getValue());
+            kenyaEMRILMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
             KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
             if (savedInstance != null) {
                 isSuccessful = true;
@@ -1255,11 +1255,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         try {
             ObservationMessage observationMessage = ilMessage.extractORUMessage();
             String messageString = mapper.writeValueAsString(observationMessage);
-            kenyaEMRILMessage.setHl7Type("ORU^R01");
+            kenyaEMRILMessage.setHl7_type("ORU^R01");
             kenyaEMRILMessage.setMessage(messageString);
             kenyaEMRILMessage.setDescription("");
             kenyaEMRILMessage.setName("");
-            kenyaEMRILMessage.setMessageType(ILMessageType.OUTBOUND.getValue());
+            kenyaEMRILMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
             KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
             if (savedInstance != null) {
                 isSuccessful = true;

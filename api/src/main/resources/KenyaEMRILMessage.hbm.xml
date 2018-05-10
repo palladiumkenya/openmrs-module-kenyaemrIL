@@ -17,7 +17,7 @@
 
     <class name="org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage" table="il_message">
 
-        <id name="messageId" type="int" column="message_id" unsaved-value="0">
+        <id name="message_id" type="int" column="message_id" unsaved-value="0">
             <generator class="native">
                 <param name="sequence">il_message_message_id_seq</param>
             </generator>
@@ -41,10 +41,10 @@
         <property name="retired" type="boolean" column="retired"
                   length="1" not-null="true"/>
 
-        <property name="messageType" type="int" column="message_type"
+        <property name="message_type" type="int" column="message_type"
                   length="1" not-null="true"/>
 
-        <property name="hl7Type" type="java.lang.String" column="hl7_type"
+        <property name="hl7_type" type="java.lang.String" column="hl7_type"
                   length="10"/>
     </class>
 </hibernate-mapping>

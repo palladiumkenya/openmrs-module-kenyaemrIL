@@ -57,8 +57,8 @@ public class KenyaEMRILMessageResource extends MetadataDelegatingCrudResource<Ke
         DelegatingResourceDescription description = new DelegatingResourceDescription();
         //description is set as optional on the superclass, we need to over ride that
         description.addRequiredProperty("message");
-        description.addRequiredProperty("messageType");
-        description.addRequiredProperty("hl7Type");
+        description.addRequiredProperty("message_type");
+        description.addRequiredProperty("hl7_type");
         description.addRequiredProperty("retired");
 
         return description;
@@ -91,7 +91,7 @@ public class KenyaEMRILMessageResource extends MetadataDelegatingCrudResource<Ke
         } else {
             delegate.setCreator(new User(1));
         }
-        delegate.setMessageType(ILMessageType.INBOUND.getValue());
+        delegate.setMessage_type(ILMessageType.INBOUND.getValue());
         return Context.getService(KenyaEMRILService.class).saveKenyaEMRILMessage(delegate);
     }
 

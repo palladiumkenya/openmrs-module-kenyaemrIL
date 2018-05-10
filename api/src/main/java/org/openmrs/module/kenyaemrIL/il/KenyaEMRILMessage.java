@@ -10,44 +10,44 @@ import java.io.Serializable;
  */
 public class KenyaEMRILMessage extends BaseOpenmrsMetadata implements Serializable {
     private static final long serialVersionUID = 3062136520728193223L;
-    private Integer messageId;
-    private Integer messageType;
-    private String hl7Type;
+    private Integer message_id;
+    private Integer message_type;
+    private String hl7_type;
     private String message;
 
     public KenyaEMRILMessage() {
     }
 
     public KenyaEMRILMessage(Integer messageId) {
-        this.messageId = messageId;
+        this.message_id = messageId;
     }
 
     public static long getSerialVersionUID() {
         return serialVersionUID;
     }
 
-    public Integer getMessageId() {
-        return messageId;
+    public Integer getMessage_id() {
+        return message_id;
     }
 
-    public void setMessageId(Integer messageId) {
-        this.messageId = messageId;
+    public void setMessage_id(Integer message_id) {
+        this.message_id = message_id;
     }
 
-    public Integer getMessageType() {
-        return messageType;
+    public Integer getMessage_type() {
+        return message_type;
     }
 
-    public void setMessageType(Integer messageType) {
-        this.messageType = messageType;
+    public void setMessage_type(Integer message_type) {
+        this.message_type = message_type;
     }
 
-    public String getHl7Type() {
-        return hl7Type;
+    public String getHl7_type() {
+        return hl7_type;
     }
 
-    public void setHl7Type(String hl7Type) {
-        this.hl7Type = hl7Type;
+    public void setHl7_type(String hl7_type) {
+        this.hl7_type = hl7_type;
     }
 
     public String getMessage() {
@@ -59,11 +59,11 @@ public class KenyaEMRILMessage extends BaseOpenmrsMetadata implements Serializab
     }
 
     public Integer getId() {
-        return this.getMessageId();
+        return this.getMessage_id();
     }
 
     public void setId(Integer id) {
-        this.setMessageId(id);
+        this.setMessage_id(id);
     }
 
 
