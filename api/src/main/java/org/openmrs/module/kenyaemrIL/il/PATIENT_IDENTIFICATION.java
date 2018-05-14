@@ -24,6 +24,17 @@ public class PATIENT_IDENTIFICATION {
     private String death_indicator;
     private String date_of_birth_precision;
 
+    public PATIENT_IDENTIFICATION() {
+
+        this.date_of_birth = "";
+        this.sex = "";
+        this.phone_number = "";
+        this.marital_status = "";
+        this.death_date = "";
+        this.death_indicator = "";
+        this.date_of_birth_precision = "";
+    }
+
     public EXTERNAL_PATIENT_ID getExternal_patient_id() {
         return external_patient_id;
     }

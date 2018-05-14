@@ -12,6 +12,12 @@ public class PATIENT_NAME
     private String middle_name;
     private String last_name;
 
+    public PATIENT_NAME() {
+        this.first_name = "";
+        this.middle_name = "";
+        this.last_name = "";
+    }
+
     public String getFirst_name() {
         return first_name;
     }

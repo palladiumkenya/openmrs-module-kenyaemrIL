@@ -45,9 +45,12 @@ public class ProcessOutboxTask extends AbstractTask {
                     .post(ClientResponse.class, outbox.getMessage());
 
             System.out.println("The status received from the server: " + resp.getStatus());
+            log.info("The status received from the server: " + resp.getStatus());
             if (resp.getStatus() != 200) {
                 System.err.println("Unable to connect to the server");
+                log.info("Unable to connect to the server");
             } else {
+                log.info("Succefull sent message to IL");
                 outbox.setRetired(true);
                 getEMRILService().saveKenyaEMRILMessage(outbox);
             }

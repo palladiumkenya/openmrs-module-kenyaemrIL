@@ -15,6 +15,11 @@ public class PATIENT_ADDRESS {
     private PHYSICAL_ADDRESS physical_address;
     private String postal_address;
 
+    public PATIENT_ADDRESS() {
+
+        this.postal_address = "";
+    }
+
     public PHYSICAL_ADDRESS getPhysical_address() {
         return physical_address;
     }

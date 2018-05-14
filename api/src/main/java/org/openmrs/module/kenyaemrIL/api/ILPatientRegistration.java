@@ -139,6 +139,9 @@ public class ILPatientRegistration {
             motherName.setFirst_name(patient.getAttribute("Mother Name") != null ? patient.getAttribute("Mother Name").getValue() : "");
             patientIdentification.setMother_name(motherName);
         }
+        //Set mothers name
+      //  patientIdentification.setMother_name(new MOTHER_NAME());
+
         patientIdentification.setSex(patient.getGender());   //        Set the Gender, phone number and marital status
         patientIdentification.setPhone_number(patient.getAttribute("Telephone contact") != null ? patient.getAttribute("Telephone contact").getValue() : "");
         patientIdentification.setMarital_status(patient.getAttribute("Civil Status") != null ? patient.getAttribute("Civil Status").getValue() : "");

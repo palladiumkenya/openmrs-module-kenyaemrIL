@@ -48,6 +48,8 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.openmrs.module.kenyaemrIL.api.ILPatientRegistration.conceptService;
 
@@ -224,12 +226,17 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     public boolean processCreatePatientRequest(ILMessage ilMessage) {
         boolean successful = false;
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-        Patient patient = patientService.savePatient(wrapIlPerson(ilMessage));
-
-        if (patient != null) {
-              //TODO: Patient Enrollment - Suspend entill further discussions - this is critical as some systems like ADT hard code entry point to NEW distorting reports
-            // Generate encounter and enrollment form
-            //Define encounter
+        try {
+            Patient ilPerson = wrapIlPerson(ilMessage);
+            PatientIdentifier uniquePatientNumber = ilPerson.getPatientIdentifier("Unique Patient Number");
+            Pattern p = Pattern.compile("^[0-9]{10,11}$");
+            Matcher m = p.matcher(uniquePatientNumber.getIdentifier());
+            if(m.find()){
+                Patient patient = patientService.savePatient(ilPerson);
+                if (patient != null) {
+                    //TODO: Patient Enrollment - Suspend entill further discussions - this is critical as some systems like ADT hard code entry point to NEW distorting reports
+                    // Generate encounter and enrollment form
+                    //Define encounter
 //            Encounter enc = new Encounter();
 //            Location location = Utils.getDefaultLocation();
 //            enc.setLocation(location);
@@ -281,7 +288,20 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 //            enc.addObs(o2);
 //            Context.getEncounterService().saveEncounter(enc);
 //            patientService.savePatient(patient);
-            successful = true;
+                    successful = true;
+                }
+            }else{
+                log.error("Cannot register reason CCC number format does not match:");
+                successful = false;
+            }
+
+
+
+
+
+        }catch (Exception e){
+            log.error("Cannot register reason :"+e.getMessage());
+            successful = false;
         }
         return successful;
     }

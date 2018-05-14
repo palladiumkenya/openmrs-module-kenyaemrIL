@@ -12,6 +12,9 @@ public class INTERNAL_PATIENT_ID
     private String assigning_authority;
 
     public INTERNAL_PATIENT_ID() {
+        this.id="";
+        this.identifier_type="";
+        this.assigning_authority="";
     }
 
     public INTERNAL_PATIENT_ID(String id, String identifier_type, String assigning_authority) {

@@ -91,9 +91,18 @@ public class ProcessInboxTask extends AbstractTask {
 //                if the processing was ok, mark as retired so that it is not processed again;
                 pendingInbox.setRetired(returnStatus);
                 getEMRILService().saveKenyaEMRILMessage(pendingInbox);
-           }
+           }else{
+                log.error("Cannot process message ");
+                pendingInbox.setRetired(true);
+                pendingInbox.setMessage(pendingInbox.getMessage()+"- CANNOT_PROCESS");
+                getEMRILService().saveKenyaEMRILMessage(pendingInbox);
+            }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Cannot process message due to "+e.getMessage());
+            pendingInbox.setRetired(true);
+            pendingInbox.setMessage(pendingInbox.getMessage()+"- CANNOT_PROCESS");
+            getEMRILService().saveKenyaEMRILMessage(pendingInbox);
+            //e.printStackTrace();
         }
 
 
