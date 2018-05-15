@@ -134,12 +134,12 @@ public class ILPatientAppointments {
             for (Obs obs : lastFollowUpEncounter.getObs()) {
                 if (obs.getConcept().getConceptId().equals(patientTCAConcept)) {
                     placerAppointmentNumber.setNumber(String.valueOf(obs.getObsId()));                   //set placer appointment number
-                    placerAppointmentNumber.setEntity("KENYA EMR");                                      //set Entity
+                    placerAppointmentNumber.setEntity("KENYAEMR");                                      //set Entity
                     appointmentInformation.setAppointment_date(String.valueOf(obs.getValueDate()));      //set patient TCA
                     appointmentInformation.setAction_code("A");                                          //set action code
                     appointmentInformation.setAppointment_note("N/A");                                   //set appointment note
                     appointmentInformation.setAppointment_status("PENDING");                             //set appointment status
-                    appointmentInformation.setAppointment_placing_entity("KENYA EMR");                    //set appointment placing entity
+                    appointmentInformation.setAppointment_placing_entity("KENYAEMR");                    //set appointment placing entity
 
                 }
                 if (obs.getConcept().getConceptId().equals(patientTCAReasonConcept)) {

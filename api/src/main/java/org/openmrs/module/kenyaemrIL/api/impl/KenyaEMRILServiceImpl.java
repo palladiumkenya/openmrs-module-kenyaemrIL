@@ -295,10 +295,6 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 successful = false;
             }
 
-
-
-
-
         }catch (Exception e){
             log.error("Cannot register reason :"+e.getMessage());
             successful = false;

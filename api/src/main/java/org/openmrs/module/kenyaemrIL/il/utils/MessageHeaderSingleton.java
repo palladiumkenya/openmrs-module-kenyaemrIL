@@ -18,7 +18,7 @@ public class MessageHeaderSingleton {
     }
 
     public static MESSAGE_HEADER getMessageHeaderInstance(String messageType) {
-        messageHeader.setSending_application("KENYA EMR");
+        messageHeader.setSending_application("KENYAEMR");
 
         GlobalProperty globalPropertyObject = org.openmrs.api.context.Context.getAdministrationService().getGlobalPropertyObject("facility.mflcode");
         messageHeader.setSending_facility(globalPropertyObject.getValue().toString());

@@ -41,8 +41,9 @@ public class ProcessOutboxTask extends AbstractTask {
         try {
             Client restClient = Client.create();
             WebResource webResource = restClient.resource(IL_URL);
+            log.info(outbox.getMessage().toUpperCase());
             ClientResponse resp = webResource.type("application/json")
-                    .post(ClientResponse.class, outbox.getMessage());
+                    .post(ClientResponse.class, outbox.getMessage().toUpperCase());
 
             System.out.println("The status received from the server: " + resp.getStatus());
             log.info("The status received from the server: " + resp.getStatus());

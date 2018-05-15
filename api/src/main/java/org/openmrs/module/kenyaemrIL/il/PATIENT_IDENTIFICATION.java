@@ -24,8 +24,11 @@ public class PATIENT_IDENTIFICATION {
     private String death_indicator;
     private String date_of_birth_precision;
 
-    public PATIENT_IDENTIFICATION() {
-
+    public PATIENT_IDENTIFICATION( ) {
+        this.external_patient_id = new EXTERNAL_PATIENT_ID();
+        this.internal_patient_id = new ArrayList<>();
+        this.patient_name = new PATIENT_NAME();
+        this.mother_name = new MOTHER_NAME();
         this.date_of_birth = "";
         this.sex = "";
         this.phone_number = "";
@@ -33,6 +36,7 @@ public class PATIENT_IDENTIFICATION {
         this.death_date = "";
         this.death_indicator = "";
         this.date_of_birth_precision = "";
+        this.patient_address = new PATIENT_ADDRESS();
     }
 
     public EXTERNAL_PATIENT_ID getExternal_patient_id() {

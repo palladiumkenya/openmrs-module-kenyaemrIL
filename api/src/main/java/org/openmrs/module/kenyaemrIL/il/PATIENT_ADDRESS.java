@@ -16,7 +16,7 @@ public class PATIENT_ADDRESS {
     private String postal_address;
 
     public PATIENT_ADDRESS() {
-
+        this.physical_address = new PHYSICAL_ADDRESS();
         this.postal_address = "";
     }
 
