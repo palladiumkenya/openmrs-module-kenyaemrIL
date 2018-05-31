@@ -230,68 +230,24 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             Patient ilPerson = wrapIlPerson(ilMessage);
             PatientIdentifier uniquePatientNumber = ilPerson.getPatientIdentifier("Unique Patient Number");
             Pattern p = Pattern.compile("^[0-9]{10,11}$");
-            Matcher m = p.matcher(uniquePatientNumber.getIdentifier());
+            String cccNumber = uniquePatientNumber.getIdentifier();
+            Matcher m = p.matcher(cccNumber);
             if(m.find()){
-                Patient patient = patientService.savePatient(ilPerson);
-                if (patient != null) {
-                    //TODO: Patient Enrollment - Suspend entill further discussions - this is critical as some systems like ADT hard code entry point to NEW distorting reports
-                    // Generate encounter and enrollment form
-                    //Define encounter
-//            Encounter enc = new Encounter();
-//            Location location = Utils.getDefaultLocation();
-//            enc.setLocation(location);
-//            enc.setEncounterType(Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc"));     // enc = HIV enrollment
-//            enc.setEncounterDatetime(new Date ());
-//            enc.setPatient(patient);
-//            enc.addProvider(Context.getEncounterService().getEncounterRole(1), Context.getProviderService().getProvider(1));
-//            enc.setForm(Context.getFormService().getFormByUuid("e4b506c1-7379-42b6-a374-284469cba8da"));    //form= HIV enrollment
-//
-//
-//            Integer patientEnrollmentTypeConcept = 164932;
-//            Integer patientEnrollmentSourceConcept = 160540;
-//            Integer NewClientConcept = 164144;
-//            Integer NewClientSourceCCC =162050;
-//            Integer HivCareInitiationDateConcept = 160555;
-//
-//            //Set observations
-//            //Patient type obs
-//            Obs o = new Obs();
-//            o.setConcept(Context.getConceptService().getConcept(patientEnrollmentTypeConcept));
-//            o.setValueCoded(Context.getConceptService().getConcept(NewClientConcept));
-//            o.setDateCreated(new Date());
-//            o.setCreator(Context.getUserService().getUser(1));
-//            o.setLocation(enc.getLocation());
-//            o.setObsDatetime(enc.getEncounterDatetime());
-//            o.setPerson(patient);
-//            //Patient source obs
-//            Obs o1 = new Obs();
-//            o1.setConcept(Context.getConceptService().getConcept(patientEnrollmentSourceConcept));
-//            o1.setValueCoded(Context.getConceptService().getConcept(NewClientSourceCCC));
-//            o1.setDateCreated(new Date());
-//            o1.setCreator(Context.getUserService().getUser(1));
-//            o1.setLocation(enc.getLocation());
-//            o1.setObsDatetime(enc.getEncounterDatetime());
-//            o1.setPerson(patient);
-//
-//            //Patient enrollment date obs
-//            Obs o2 = new Obs();
-//            o2.setConcept(Context.getConceptService().getConcept(HivCareInitiationDateConcept));
-//            o2.setValueDatetime(new Date ());
-//            o2.setDateCreated(new Date());
-//            o2.setCreator(Context.getUserService().getUser(1));
-//            o2.setLocation(enc.getLocation());
-//            o2.setObsDatetime(enc.getEncounterDatetime());
-//            o2.setPerson(patient);
-//
-//            enc.addObs(o);
-//            enc.addObs(o1);
-//            enc.addObs(o2);
-//            Context.getEncounterService().saveEncounter(enc);
-//            patientService.savePatient(patient);
-                    successful = true;
-                }
+                    // Check to see a patient with similar upn number exists
+                List<Patient> patients = Context.getPatientService().getPatients(null, cccNumber, allPatientIdentifierTypes, true);
+                if (patients.size() < 1) {
+                    //Register patient
+                    Patient patient = patientService.savePatient(ilPerson);
+                    if (patient != null) {
+                        //TODO: Patient Enrollment - Suspend entill further discussions - this is critical as some systems like ADT hard code entry point to NEW distorting reports
+                        successful = true;
+                    }
+                }else{
+                            log.error("Cannot register: Patient with similar UPN exists:");
+                            successful = false;
+                        }
             }else{
-                log.error("Cannot register reason CCC number format does not match:");
+                log.error("Cannot register: CCC number format does not match:");
                 successful = false;
             }
 

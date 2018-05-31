@@ -42,6 +42,7 @@ public class ProcessOutboxTask extends AbstractTask {
             Client restClient = Client.create();
             WebResource webResource = restClient.resource(IL_URL);
             log.info(outbox.getMessage().toUpperCase());
+            System.out.println(outbox.getMessage().toUpperCase());
             ClientResponse resp = webResource.type("application/json")
                     .post(ClientResponse.class, outbox.getMessage().toUpperCase());
 
@@ -51,7 +52,7 @@ public class ProcessOutboxTask extends AbstractTask {
                 System.err.println("Unable to connect to the server");
                 log.info("Unable to connect to the server");
             } else {
-                log.info("Succefull sent message to IL");
+                log.info("Successfull sent message to IL");
                 outbox.setRetired(true);
                 getEMRILService().saveKenyaEMRILMessage(outbox);
             }
