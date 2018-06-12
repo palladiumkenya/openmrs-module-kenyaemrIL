@@ -14,7 +14,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Implementation of a task that processes the IL inbox every one minute .
+ * Implementation of a task that processes the IL outbox every one minute .
  */
 public class ProcessOutboxTask extends AbstractTask {
     private final String IL_URL = "http://52.178.24.227:9721/api/";
@@ -41,8 +41,8 @@ public class ProcessOutboxTask extends AbstractTask {
         try {
             Client restClient = Client.create();
             WebResource webResource = restClient.resource(IL_URL);
-            log.info(outbox.getMessage().toUpperCase());
-            System.out.println(outbox.getMessage().toUpperCase());
+            log.info("log info"+outbox.getMessage().toUpperCase());
+            System.out.println("cout"+outbox.getMessage().toUpperCase());
             ClientResponse resp = webResource.type("application/json")
                     .post(ClientResponse.class, outbox.getMessage().toUpperCase());
 
