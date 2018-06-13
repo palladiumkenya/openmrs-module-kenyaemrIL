@@ -51,12 +51,12 @@
 			</list>
 		</property>
 	</bean>
-	<bean id="kenyaemrIL.app.iladmin" factory-bean="kenyacore.appFactoryBean" factory-method="createInstance">
-		<constructor-arg value="interopManagerHome.home" />
-		<constructor-arg value="IL Admin" />
-		<constructor-arg value="kenyaemrIL/interopManagerHome.page" />
-		<constructor-arg value="kenyaemrIL:apps/il_admin.png" />
-		<constructor-arg value="530" />
-	</bean>
+	<!--<bean id="kenyaemrIL.app.iladmin" factory-bean="kenyacore.appFactoryBean" factory-method="createInstance">-->
+		<!--<constructor-arg value="interopManagerHome.home" />-->
+		<!--<constructor-arg value="IL Admin" />-->
+		<!--<constructor-arg value="kenyaemrIL/interopManagerHome.page" />-->
+		<!--<constructor-arg value="kenyaemrIL:apps/il_admin.png" />-->
+		<!--<constructor-arg value="530" />-->
+	<!--</bean>-->
 	
 </beans>

@@ -86,6 +86,13 @@
             The last id indicting if an encounter is a new one or not.
         </description>
     </globalProperty>
+    <globalProperty>
+        <property>ilServer.address</property>
+        <defaultValue>127.0.0.1:5000</defaultValue>
+        <description>
+            This is where IL Outbox messages will be routed to
+        </description>
+    </globalProperty>
     <!-- /Internationalization -->
     <require_modules>
         <require_module version="2.19.0">org.openmrs.module.webservices.rest</require_module>

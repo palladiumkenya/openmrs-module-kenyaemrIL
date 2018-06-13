@@ -476,7 +476,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                                                 } catch (Exception e) {
                                                     e.printStackTrace();
                                                 }
-                        List<Encounter> followUpEncounters =  Context.getEncounterService().getEncounters(null, null, ilMsgDate, null, null, encounterTypes, null, null, null, false);
+                        List<Encounter> followUpEncounters =  Context.getEncounterService().getEncounters(patient, null, ilMsgDate, null, null, encounterTypes, null, null, null, false);
                         if (followUpEncounters.size() > 0) {
                                         appEncounter = followUpEncounters.get(0);
                                         Obs o = new Obs();
@@ -1087,7 +1087,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                                 e.printStackTrace();
                             }
 
-                        List<Encounter> labResultEncounters =  Context.getEncounterService().getEncounters(null, null, ilMsgDate, null, null, encounterTypes, null, null, null, false);
+                        List<Encounter> labResultEncounters =  Context.getEncounterService().getEncounters(patient, null, ilMsgDate, null, null, encounterTypes, null, null, null, false);
                         if (labResultEncounters.size() > 0) {
                             labEncounter = labResultEncounters.get(0);
                                 Obs o = new Obs();
@@ -1112,7 +1112,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                                 success = true;
                             } else {
 
-                                //Define encountetr
+                                //Define new encountetr
                                 Encounter enc = new Encounter();
                                 Location location = Utils.getDefaultLocation();
                                 enc.setLocation(location);
