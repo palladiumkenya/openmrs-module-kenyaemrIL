@@ -44,6 +44,9 @@
         <property name="message_type" type="int" column="message_type"
                   length="1" not-null="true"/>
 
+        <property name="status" type="int" column="status"
+                  length="1" not-null="true"/>
+
         <property name="hl7_type" type="java.lang.String" column="hl7_type"
                   length="10"/>
     </class>

@@ -96,6 +96,8 @@ public interface KenyaEMRILService extends OpenmrsService {
 
     List<KenyaEMRILMessage> getAllKenyaEMRILMessages(Boolean includeAll);
 
+    List<KenyaEMRILMessage> getKenyaEMRILStatus(Integer status);
+
 
 
 

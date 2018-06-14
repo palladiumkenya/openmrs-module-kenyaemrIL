@@ -89,4 +89,12 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         return crit.list();
     }
 
+    @Override
+    public List<KenyaEMRILMessage> getKenyaEMRILStatus(Integer status) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
+        crit.add(Restrictions.eq("message_type", 1));
+        crit.add(Restrictions.eq("status", status));
+        return crit.list();
+    }
+
 }

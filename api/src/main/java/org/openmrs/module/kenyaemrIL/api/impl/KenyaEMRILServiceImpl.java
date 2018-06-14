@@ -193,7 +193,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     @Override
     public KenyaEMRILMessage getKenyaEMRILMessageByUuid(String uniqueId) {
         KenyaEMRILMessage kenyaEMRILMessage = this.dao.getKenyaEMRILMessageByUuid(uniqueId);
-        System.out.println("What is it htat was returned: " + kenyaEMRILMessage);
+        System.out.println("What is it that was returned: " + kenyaEMRILMessage);
         return kenyaEMRILMessage;
     }
 
@@ -220,6 +220,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     @Override
     public List<KenyaEMRILMessage> getAllKenyaEMRILMessages(Boolean includeAll) {
         return this.dao.getAllKenyaEMRILMessages(includeAll);
+    }
+
+    @Override
+    public List<KenyaEMRILMessage> getKenyaEMRILStatus(Integer status) {
+        return this.dao.getKenyaEMRILStatus(status);
     }
 
     @Override
@@ -271,8 +276,8 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         }
         if (cccNumber == null) {
 //            no patient with the given ccc number, proceed to create a new patient with the received details
-
-            return processCreatePatientRequest(ilMessage);
+            return false;
+            //return processCreatePatientRequest(ilMessage);
         } else {
 //            fetch the patient
             List<Patient> patients = Context.getPatientService().getPatients(null, cccNumber, allPatientIdentifierTypes, true);

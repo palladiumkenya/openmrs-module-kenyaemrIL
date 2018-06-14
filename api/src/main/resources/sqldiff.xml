@@ -27,6 +27,7 @@
             `message_type` int(1) NOT NULL ,
             `hl7_type` char(10),
             `retired` tinyint(1) NOT NULL DEFAULT '0',
+            `status` int(1) NOT NULL DEFAULT '0',
             `date_created` datetime NOT NULL,
             `uuid` char(38) NOT NULL,
             PRIMARY KEY (`message_id`),

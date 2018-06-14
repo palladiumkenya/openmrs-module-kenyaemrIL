@@ -37,4 +37,6 @@ public interface KenyaEMRILDAO {
     List<KenyaEMRILMessage> getKenyaEMRILOutboxes(Boolean includeRetired);
 
     List<KenyaEMRILMessage> getAllKenyaEMRILMessages(Boolean includeAll);
+
+    List<KenyaEMRILMessage> getKenyaEMRILStatus(Integer status);
 }
