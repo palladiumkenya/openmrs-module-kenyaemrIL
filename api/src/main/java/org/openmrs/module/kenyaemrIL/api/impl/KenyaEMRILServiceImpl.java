@@ -1070,7 +1070,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 //        1. Fetch the person to update using the CCC number
         for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
             if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
-                cccNumber = internalPatientId.getId().replaceAll("\\D", "");;
+                cccNumber = internalPatientId.getId().replaceAll("\\D", "");
                 break;
             }
         }
@@ -1126,16 +1126,15 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                             labEncounter = labResultEncounters.get(0);
                                 Obs o = new Obs();
                                 o.setComment(dateSampleCollected + "" + dateSampleTested + "" + sampleType + "" + sampleRejection + "" + justification + "" + regimen + "" + labTested);
-                                isLDL = vlResult.contains("ldl");
-                                if (!isLDL) {
-                                    o.setConcept(Context.getConceptService().getConcept(vLConcept));       //add viral load concept
-                                    double viralResultNumeric = Double.parseDouble(vlResult);
-                                    o.setValueNumeric(viralResultNumeric);
-                                } else {
-                                    o.setConcept(Context.getConceptService().getConcept(LDLQuestionConcept));       //add ldl concept
-                                    o.setValueCoded(Context.getConceptService().getConcept(LDLAnswerConcept));
-                                }
-
+                            isLDL = vlResult.toLowerCase().contains("ldl");
+                            if (!isLDL) {
+                                o.setConcept(Context.getConceptService().getConcept(vLConcept));       //add viral load concept
+                                double viralResultNumeric = Double.parseDouble(vlResult.replaceAll("\\D", ""));
+                                o.setValueNumeric(viralResultNumeric);
+                            } else {
+                                o.setConcept(Context.getConceptService().getConcept(LDLQuestionConcept));       //add ldl concept
+                                o.setValueCoded(Context.getConceptService().getConcept(LDLAnswerConcept));
+                            }
                                 o.setDateCreated(new Date());
                                 o.setCreator(Context.getUserService().getUser(1));
                                 o.setLocation(labEncounter.getLocation());
@@ -1160,10 +1159,10 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                                 Obs o = new Obs();
                                 o.setComment(dateSampleCollected + "" + dateSampleTested + "" + sampleType + "" + sampleRejection + "" + justification + "" + regimen + "" + labTested);
 
-                                isLDL = vlResult.contains("ldl");
+                                isLDL = vlResult.toLowerCase().contains("ldl");
                                 if (!isLDL) {
                                     o.setConcept(Context.getConceptService().getConcept(vLConcept));       //add viral load concept
-                                    double viralResultNumeric = Double.parseDouble(vlResult);
+                                    double viralResultNumeric = Double.parseDouble(vlResult.replaceAll("\\D", ""));
                                     o.setValueNumeric(viralResultNumeric);
                                 } else {
                                     o.setConcept(Context.getConceptService().getConcept(LDLQuestionConcept));       //add ldl concept
@@ -1598,6 +1597,16 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             i += 1;
         }
         return i;
+    }
+
+    public static int getNumber(String str) {
+        Pattern pattern = Pattern.compile("\\d+");
+        Matcher matcher = pattern.matcher(str);
+        int number = 0;
+        while (matcher.find()) {
+            number = Integer.parseInt(matcher.group(1));
+        }
+        return number;
     }
 
 }

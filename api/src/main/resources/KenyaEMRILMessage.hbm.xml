@@ -47,6 +47,9 @@
         <property name="status" type="java.lang.String" column="status"
                   length="100" not-null="true" insert="false" />
 
+        <property name="source" type="java.lang.String" column="source"
+                  length="50" not-null="true" insert="false" />
+
         <property name="hl7_type" type="java.lang.String" column="hl7_type"
                   length="10"/>
     </class>
