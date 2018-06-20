@@ -13,7 +13,7 @@ public class KenyaEMRILMessage extends BaseOpenmrsMetadata implements Serializab
     private Integer message_id;
     private Integer message_type;
     private String hl7_type;
-    private Integer status;
+    private String status;
     private String message;
 
     public KenyaEMRILMessage() {
@@ -67,11 +67,11 @@ public class KenyaEMRILMessage extends BaseOpenmrsMetadata implements Serializab
         this.setMessage_id(id);
     }
 
-    public Integer getStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(Integer status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 }

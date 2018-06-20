@@ -53,28 +53,28 @@
     </messages>
     <globalProperty>
         <property>enrolmentTask.lastFetchDateAndTime</property>
-        <defaultValue>20180122120000</defaultValue>
+        <defaultValue>20180619120000</defaultValue>
         <description>
             The last date and time that the last fetch was done for enrollment task
         </description>
     </globalProperty>
     <globalProperty>
         <property>appointmentTask.lastFetchDateAndTime</property>
-        <defaultValue>20180123120000</defaultValue>
+        <defaultValue>20180619120000</defaultValue>
         <description>
             The last date and time that the last fetch was done for appointment task
         </description>
     </globalProperty>
     <globalProperty>
         <property>virallaodTask.lastFetchDateAndTime</property>
-        <defaultValue>20180123120000</defaultValue>
+        <defaultValue>20180619120000</defaultValue>
         <description>
             The last date and time that the last fetch was done for viral load task
         </description>
     </globalProperty>
     <globalProperty>
         <property>oruTask.lastFetchDateAndTime</property>
-        <defaultValue>20180123120000</defaultValue>
+        <defaultValue>20180619120000</defaultValue>
         <description>
             The last date and time that the last fetch was done for unsolicited results task
         </description>

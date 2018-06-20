@@ -96,7 +96,7 @@ public interface KenyaEMRILService extends OpenmrsService {
 
     List<KenyaEMRILMessage> getAllKenyaEMRILMessages(Boolean includeAll);
 
-    List<KenyaEMRILMessage> getKenyaEMRILStatus(Integer status);
+    List<KenyaEMRILMessage> getKenyaEMRILStatus(String status);
 
 
 
@@ -108,21 +108,21 @@ public interface KenyaEMRILService extends OpenmrsService {
      * @param ilMessage
      * @return
      */
-    boolean processCreatePatientRequest(ILMessage ilMessage);
+    boolean processCreatePatientRequest(ILMessage ilMessage, String messsageUUID);
 
-    boolean processUpdatePatientRequest(ILMessage ilMessage);
+    boolean processUpdatePatientRequest(ILMessage ilMessage,  String messsageUUID);
 
     boolean processPharmacyOrder(ILMessage ilMessage);
 
     boolean processPharmacyDispense(ILMessage ilMessage);
 
-    boolean processAppointmentSchedule(ILMessage ilMessage);
+    boolean processAppointmentSchedule(ILMessage ilMessage,String messsageUUID);
 
     boolean processLabOrder(ILMessage ilMessage);
 
-    boolean processObservationResult(ILMessage ilMessage);
+    boolean processObservationResult(ILMessage ilMessage,String messsageUUID);
 
-    boolean processViralLoad(ILMessage ilMessage);
+    boolean processViralLoad(ILMessage ilMessage,String messsageUUID);
 
     boolean process731Adx(ILMessage ilMessage);
 

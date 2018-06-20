@@ -39,17 +39,18 @@ public class ProcessInboxTask extends AbstractTask {
     private void processFetchedRecord(KenyaEMRILMessage pendingInbox) {
 //        Process each message and mark as processed
         String message = pendingInbox.getMessage();
+        String messsageUUID = pendingInbox.getUuid();
         message = message.substring(message.indexOf("{"), message.lastIndexOf("}") + 1);
         try {
             boolean returnStatus= false;
             ILMessage ilMessage = mapper.readValue(message.toLowerCase(), ILMessage.class);
             switch(ilMessage.getMessage_header().getMessage_type().toUpperCase()){
                 case "ADT^A04":{
-                    returnStatus = getEMRILService().processCreatePatientRequest(ilMessage);
+                    returnStatus = getEMRILService().processCreatePatientRequest(ilMessage,messsageUUID);
                     break;
                 }
                 case "ADT^A08":{
-                    returnStatus = getEMRILService().processUpdatePatientRequest(ilMessage);
+                    returnStatus = getEMRILService().processUpdatePatientRequest(ilMessage,messsageUUID);
                     break;
                 }
                 case "RDE^001":{
@@ -61,7 +62,7 @@ public class ProcessInboxTask extends AbstractTask {
                     break;
                 }
                 case "SIU^S12":{
-                    returnStatus = getEMRILService().processAppointmentSchedule(ilMessage);
+                    returnStatus = getEMRILService().processAppointmentSchedule(ilMessage,messsageUUID);
                     break;
                 }
                 case "ORM^O01":{
@@ -69,7 +70,7 @@ public class ProcessInboxTask extends AbstractTask {
                     break;
                 }
                 case "ORU^R01":{
-                    returnStatus = getEMRILService().processObservationResult(ilMessage);
+                    returnStatus = getEMRILService().processObservationResult(ilMessage,messsageUUID);
                     break;
                 }
                 case "MOH731^ADX":{
@@ -77,7 +78,7 @@ public class ProcessInboxTask extends AbstractTask {
                     break;
                 }
                 case "ORU^VL":{
-                    returnStatus = getEMRILService().processViralLoad(ilMessage);
+                    returnStatus = getEMRILService().processViralLoad(ilMessage,messsageUUID);
                     break;
                 }
                 default:{
@@ -93,12 +94,14 @@ public class ProcessInboxTask extends AbstractTask {
                 getEMRILService().saveKenyaEMRILMessage(pendingInbox);
            }else{
                 log.error("Cannot process message ");
+                pendingInbox.setStatus("Unknown Error");
                 pendingInbox.setRetired(true);
                 pendingInbox.setMessage(pendingInbox.getMessage()+"- CANNOT_PROCESS");
                 getEMRILService().saveKenyaEMRILMessage(pendingInbox);
             }
         } catch (IOException e) {
             log.error("Cannot process message due to "+e.getMessage());
+            pendingInbox.setStatus("Message in wrong format");
             pendingInbox.setRetired(true);
             pendingInbox.setMessage(pendingInbox.getMessage()+"- CANNOT_PROCESS");
             getEMRILService().saveKenyaEMRILMessage(pendingInbox);

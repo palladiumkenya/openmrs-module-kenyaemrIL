@@ -38,5 +38,5 @@ public interface KenyaEMRILDAO {
 
     List<KenyaEMRILMessage> getAllKenyaEMRILMessages(Boolean includeAll);
 
-    List<KenyaEMRILMessage> getKenyaEMRILStatus(Integer status);
+    List<KenyaEMRILMessage> getKenyaEMRILStatus(String status);
 }

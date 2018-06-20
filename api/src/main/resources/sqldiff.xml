@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE sqldiff PUBLIC "-//OpenMRS//DTD OpenMRS SQL Diff Config 1.0//EN"
-        "http://resources.openmrs.org/doctype/sqldiff-1.0.dtd">
+<!DOCTYPE sqldiff PUBLIC "-//OpenMRS//DTD OpenMRS SQL Diff Config 1.0//EN" "http://resources.openmrs.org/doctype/sqldiff-1.0.dtd">
 
 <sqldiff version="1.0">
     <help>
@@ -14,30 +13,14 @@
         calling this script
     </help>
 
-    <diff>
-        <version>1.0-SNAPSHOT</version>
-        <author>Stanslaus Odhiambo</author>
-        <date>Nov 21st 2017</date>
-        <description>Create IL Interop tables</description>
-        <sql>
-            CREATE TABLE `il_message` (
-            `message_id` int(11) NOT NULL AUTO_INCREMENT,
-            `message` text,
-            `creator` int(11) NOT NULL DEFAULT '0',
-            `message_type` int(1) NOT NULL ,
-            `hl7_type` char(10),
-            `retired` tinyint(1) NOT NULL DEFAULT '0',
-            `status` int(1) NOT NULL DEFAULT '0',
-            `date_created` datetime NOT NULL,
-            `uuid` char(38) NOT NULL,
-            PRIMARY KEY (`message_id`),
-            UNIQUE KEY `il_message_uuid_index` (`uuid`),
-            KEY `user_who_created_il_message` (`creator`),
-            CONSTRAINT `user_who_created_il_message` FOREIGN KEY (`creator`) REFERENCES `users` (`user_id`)
-            ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
-
-        </sql>
-    </diff>
-
+    <!--
+        <diff>
+            <version>1.0-SNAPSHOT</version>
+            <author>Palladium Developers</author>
+            <date></date>
+            <description></description>
+            <sql></sql>
+        </diff>
+     -->
 
 </sqldiff>

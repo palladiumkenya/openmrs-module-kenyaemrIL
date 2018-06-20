@@ -223,50 +223,61 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public List<KenyaEMRILMessage> getKenyaEMRILStatus(Integer status) {
+    public List<KenyaEMRILMessage> getKenyaEMRILStatus(String status) {
         return this.dao.getKenyaEMRILStatus(status);
     }
 
     @Override
-    public boolean processCreatePatientRequest(ILMessage ilMessage) {
+    public boolean processCreatePatientRequest(ILMessage ilMessage, String messsageUUID) {
         boolean successful = false;
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        KenyaEMRILMessage kenyaEMRILMessage = getKenyaEMRILMessageByUuid(messsageUUID);
         try {
             Patient ilPerson = wrapIlPerson(ilMessage);
             PatientIdentifier uniquePatientNumber = ilPerson.getPatientIdentifier("Unique Patient Number");
             Pattern p = Pattern.compile("^[0-9]{10,11}$");
             String cccNumber = uniquePatientNumber.getIdentifier();
-            Matcher m = p.matcher(cccNumber);
-            if(m.find()){
-                    // Check to see a patient with similar upn number exists
-                List<Patient> patients = Context.getPatientService().getPatients(null, cccNumber, allPatientIdentifierTypes, true);
-                if (patients.size() < 1) {
-                    //Register patient
-                    Patient patient = patientService.savePatient(ilPerson);
-                    if (patient != null) {
-                        //TODO: Patient Enrollment - Suspend entill further discussions - this is critical as some systems like ADT hard code entry point to NEW distorting reports
-                        successful = true;
-                    }
-                }else{
-                            log.error("Cannot register: Patient with similar UPN exists:");
-                            successful = false;
-                        }
-            }else{
-                log.error("Cannot register: CCC number format does not match:");
+            if (cccNumber == null) {
+                kenyaEMRILMessage.setStatus("Missing CCC Number");
                 successful = false;
+            }else {
+                Matcher m = p.matcher(cccNumber);
+                if (m.find()) {
+                    // Check to see a patient with similar upn number exists
+                    List<Patient> patients = Context.getPatientService().getPatients(null, cccNumber, allPatientIdentifierTypes, true);
+                    if (patients.size() < 1) {
+                        //Register patient
+                        Patient patient = patientService.savePatient(ilPerson);
+                        if (patient != null) {
+                            //TODO: Patient Enrollment - Suspend entill further discussions - this is critical as some systems like ADT hard code entry point to NEW distorting report
+                            kenyaEMRILMessage.setStatus("Success");
+                            successful = true;
+                        }
+                    } else {
+                        log.error("Cannot register: Patient with similar UPN exists:");
+                        kenyaEMRILMessage.setStatus("Duplicate CCC Number");
+                        successful = false;
+                    }
+                } else {
+                    log.error("Cannot register: CCC number format does not match:");
+                    kenyaEMRILMessage.setStatus("CCC Number in wrong format");
+                    successful = false;
+                }
             }
 
         }catch (Exception e){
             log.error("Cannot register reason :"+e.getMessage());
+            kenyaEMRILMessage.setStatus("Unknown Error");
             successful = false;
         }
         return successful;
     }
 
     @Override
-    public boolean processUpdatePatientRequest(ILMessage ilMessage) {
+    public boolean processUpdatePatientRequest(ILMessage ilMessage, String messsageUUID) {
         Patient patient = null;
         String cccNumber = null;
+        KenyaEMRILMessage kenyaEMRILMessage = getKenyaEMRILMessageByUuid(messsageUUID);
 //        1. Fetch the person to update using the CCC number
         for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
             if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
@@ -275,7 +286,8 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             }
         }
         if (cccNumber == null) {
-//            no patient with the given ccc number, proceed to create a new patient with the received details
+//           patient without CCC Number - discard
+            kenyaEMRILMessage.setStatus("Missing CCC Number");
             return false;
             //return processCreatePatientRequest(ilMessage);
         } else {
@@ -290,6 +302,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             if (cPatient != null) {
                 return true;
             } else {
+                kenyaEMRILMessage.setStatus("Unknown Error");
                 return false;
             }
         }
@@ -429,10 +442,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public boolean processAppointmentSchedule(ILMessage ilMessage) {
+    public boolean processAppointmentSchedule(ILMessage ilMessage, String messsageUUID) {
         boolean success = false;
         String cccNumber = null;
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+        KenyaEMRILMessage kenyaEMRILMessage = getKenyaEMRILMessageByUuid(messsageUUID);
 //        1. Fetch the person to update using the CCC number
         for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
             if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
@@ -443,6 +457,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         if (cccNumber == null) {
               // no patient with the given ccc number, proceed to create a new patient with the received details
             //TODO:this is wrong we should discard this message  so do nothing
+            kenyaEMRILMessage.setStatus("Missing CCC Number");
             success = false;
             log.info("Appointment message without CCC Number discarded " + new Date());
         } else {
@@ -496,6 +511,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                                         o.setPerson(patient);
                                         appEncounter.addObs(o);
                                         Context.getEncounterService().saveEncounter(appEncounter);
+                                        kenyaEMRILMessage.setStatus("Success");
                                         success = true;
 
                             } else {
@@ -525,12 +541,17 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
                                 enc.addObs(o);
                                 Context.getEncounterService().saveEncounter(enc);
+                                kenyaEMRILMessage.setStatus("Success");
                                 success = true;
                            }
 
                     }
                 }
 
+            }else {
+                log.error("Cannot schedule appnmt: CCC number format does not match:");
+                kenyaEMRILMessage.setStatus("Could not find a match");
+                success = false;
             }
 
         }
@@ -542,10 +563,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
       //TODO: Lab orders not yet implemented
     @Override
-    public boolean processObservationResult(ILMessage ilMessage) {
+    public boolean processObservationResult(ILMessage ilMessage, String messsageUUID) {
         boolean success = false;
         String cccNumber = null;
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        KenyaEMRILMessage kenyaEMRILMessage = getKenyaEMRILMessageByUuid(messsageUUID);
 //        1. Fetch the person to update using the CCC number
      for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
                if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
@@ -1030,15 +1052,21 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                        }
                    }
 
+               }else {
+                   kenyaEMRILMessage.setStatus("Could not find a match");
+                   success = false;
                }
+
+
            }
             return success;
       }
     @Override
-    public boolean processViralLoad(ILMessage ilMessage) {
+    public boolean processViralLoad(ILMessage ilMessage, String messsageUUID) {
         boolean success = false;
         String cccNumber = null;
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        KenyaEMRILMessage kenyaEMRILMessage = getKenyaEMRILMessageByUuid(messsageUUID);
 //        1. Fetch the person to update using the CCC number
         for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
             if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
@@ -1048,6 +1076,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         }
         if (cccNumber == null) {
 //            no patient with the given ccc number, proceed to create a new patient with the received details
+            kenyaEMRILMessage.setStatus("Missing CCC Number");
             success = false;
         } else {
 
@@ -1114,6 +1143,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                                 o.setPerson(patient);
                                   labEncounter.addObs(o);
                                 Context.getEncounterService().saveEncounter(labEncounter);
+                                kenyaEMRILMessage.setStatus("Success");
                                 success = true;
                             } else {
 
@@ -1148,11 +1178,16 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
                                 enc.addObs(o);
                                 Context.getEncounterService().saveEncounter(enc);
+                                kenyaEMRILMessage.setStatus("Success");
                                 success = true;
                             }
                     }
                 }
+            }else {
+                kenyaEMRILMessage.setStatus("Could not find a match");
+                success = false;
             }
+
         }
 
         return success;
