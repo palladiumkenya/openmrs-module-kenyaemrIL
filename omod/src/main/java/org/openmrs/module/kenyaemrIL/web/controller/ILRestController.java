@@ -56,7 +56,7 @@ public class ILRestController extends BaseRestController {
 				kenyaEMRILMessage.setHl7_type(hel7Type);
 				kenyaEMRILMessage.setSource(source);
 				kenyaEMRILMessage.setMessage_type(1);
-				//save th
+				//save the model
 				Context.getService(KenyaEMRILService.class).saveKenyaEMRILMessage(kenyaEMRILMessage);
 			}
 			response = "success";

@@ -122,6 +122,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         try {
             String messageString = mapper.writeValueAsString(ilPerson);
             kenyaEMRILMessage.setHl7_type("ADT^A04");
+            kenyaEMRILMessage.setSource("KENYAEMR");
             kenyaEMRILMessage.setMessage(messageString);
             kenyaEMRILMessage.setDescription("");
             kenyaEMRILMessage.setName("");
@@ -311,7 +312,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     private Patient updatePatientDetails(Patient oldPatientToUpdate, Patient newPatientDetails) {
         //Update patient identification - names and identifiers
         PersonAddress nPersonAddress = newPatientDetails.getPersonAddress();
-        String postaladdress = nPersonAddress.getPostalCode();
+        String postaladdress = "";
         String cOUNTY = nPersonAddress.getCountry();
         String sUBCOUNTY = nPersonAddress.getStateProvince();
         String vILLAGE = nPersonAddress.getCityVillage();
@@ -502,7 +503,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                                         Obs o = new Obs();
                                         o.setComment(placerAppointmentNumberNumber + "" + appointment_note + "" + appointmentStatus + "" + appointmentReason);
                                         o.setConcept(Context.getConceptService().getConcept(patientTCAConcept));
-                                        o.setValueText(appointmentDate);
+                                        try {
+                                            o.setValueDatetime(formatter.parse(appointmentDate));
+                                        } catch (ParseException e) {
+                                            e.printStackTrace();
+                                        }
                                         o.setObsDatetime(new Date());
                                         o.setDateCreated(new Date());
                                         o.setCreator(Context.getUserService().getUser(1));
@@ -1066,6 +1071,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         boolean success = false;
         String cccNumber = null;
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyyMMdd");
         KenyaEMRILMessage kenyaEMRILMessage = getKenyaEMRILMessageByUuid(messsageUUID);
 //        1. Fetch the person to update using the CCC number
         for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
@@ -1127,9 +1133,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                                 Obs o = new Obs();
                                 o.setComment(dateSampleCollected + "" + dateSampleTested + "" + sampleType + "" + sampleRejection + "" + justification + "" + regimen + "" + labTested);
                             isLDL = vlResult.toLowerCase().contains("ldl");
-                            if (!isLDL) {
+                            if (!isLDL && !vlResult.trim().equals("")) {
                                 o.setConcept(Context.getConceptService().getConcept(vLConcept));       //add viral load concept
-                                double viralResultNumeric = Double.parseDouble(vlResult.replaceAll("\\D", ""));
+                                String vlStr = vlResult.replaceAll("\\D", "");
+                                System.out.println("vlStr: "+vlStr);
+                                double viralResultNumeric = Double.parseDouble(vlStr.equals("") ? "0" : vlStr );
                                 o.setValueNumeric(viralResultNumeric);
                             } else {
                                 o.setConcept(Context.getConceptService().getConcept(LDLQuestionConcept));       //add ldl concept
@@ -1138,7 +1146,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                                 o.setDateCreated(new Date());
                                 o.setCreator(Context.getUserService().getUser(1));
                                 o.setLocation(labEncounter.getLocation());
-                                o.setObsDatetime(labEncounter.getEncounterDatetime());
+                            try {
+                                o.setObsDatetime(dateFormatter.parse(labInfo.getDate_sample_collected()));
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
                                 o.setPerson(patient);
                                   labEncounter.addObs(o);
                                 Context.getEncounterService().saveEncounter(labEncounter);
@@ -1160,9 +1172,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                                 o.setComment(dateSampleCollected + "" + dateSampleTested + "" + sampleType + "" + sampleRejection + "" + justification + "" + regimen + "" + labTested);
 
                                 isLDL = vlResult.toLowerCase().contains("ldl");
-                                if (!isLDL) {
+                                if (!isLDL && !vlResult.trim().equals("")) {
                                     o.setConcept(Context.getConceptService().getConcept(vLConcept));       //add viral load concept
-                                    double viralResultNumeric = Double.parseDouble(vlResult.replaceAll("\\D", ""));
+                                    String vlStr = vlResult.replaceAll("\\D", "");
+                                    System.out.println("vlStr: "+vlStr);
+                                    double viralResultNumeric = Double.parseDouble(vlStr.equals("") ? "0" : vlStr );
                                     o.setValueNumeric(viralResultNumeric);
                                 } else {
                                     o.setConcept(Context.getConceptService().getConcept(LDLQuestionConcept));       //add ldl concept
@@ -1172,7 +1186,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                                 o.setDateCreated(new Date());
                                 o.setCreator(Context.getUserService().getUser(1));
                                 o.setLocation(enc.getLocation());
-                                o.setObsDatetime(enc.getEncounterDatetime());
+                            try {
+                                o.setObsDatetime(dateFormatter.parse(labInfo.getDate_sample_collected()));
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
                                 o.setPerson(patient);
 
                                 enc.addObs(o);
@@ -1210,6 +1228,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             String messageString = mapper.writeValueAsString(appointmentMessage);
             System.out.println("Outbox appmnt message==>"+messageString);
             kenyaEMRILMessage.setHl7_type("SIU^S12");
+            kenyaEMRILMessage.setSource("KENYAEMR");
             kenyaEMRILMessage.setMessage(messageString);
             kenyaEMRILMessage.setDescription("");
             kenyaEMRILMessage.setName("");
@@ -1239,6 +1258,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             ViralLoadMessage viralLoadMessage = ilMessage.extractViralLoadMessage();
             String messageString = mapper.writeValueAsString(viralLoadMessage);
             kenyaEMRILMessage.setHl7_type("ORU^VL");
+            kenyaEMRILMessage.setSource("KENYAEMR");
             kenyaEMRILMessage.setMessage(messageString);
             kenyaEMRILMessage.setDescription("");
             kenyaEMRILMessage.setName("");
@@ -1267,6 +1287,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             ObservationMessage observationMessage = ilMessage.extractORUMessage();
             String messageString = mapper.writeValueAsString(observationMessage);
             kenyaEMRILMessage.setHl7_type("ORU^R01");
+            kenyaEMRILMessage.setSource("KENYAEMR");
             kenyaEMRILMessage.setMessage(messageString);
             kenyaEMRILMessage.setDescription("");
             kenyaEMRILMessage.setName("");
@@ -1426,7 +1447,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             personAddress.setCityVillage(patientAddress.getPhysical_address() != null ? patientAddress.getPhysical_address().getVillage() : "");
 //        personAddress.setCountry();
             personAddress.setCountyDistrict(patientAddress.getPhysical_address() != null ? patientAddress.getPhysical_address().getCounty() : "");
-            personAddress.setAddress1(patientAddress.getPostal_address() != null ? patientAddress.getPostal_address() : "");
+            personAddress.setAddress1("");
             addresses.add(personAddress);
             patient.setAddresses(addresses);
         }
@@ -1598,15 +1619,4 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         }
         return i;
     }
-
-    public static int getNumber(String str) {
-        Pattern pattern = Pattern.compile("\\d+");
-        Matcher matcher = pattern.matcher(str);
-        int number = 0;
-        while (matcher.find()) {
-            number = Integer.parseInt(matcher.group(1));
-        }
-        return number;
-    }
-
 }

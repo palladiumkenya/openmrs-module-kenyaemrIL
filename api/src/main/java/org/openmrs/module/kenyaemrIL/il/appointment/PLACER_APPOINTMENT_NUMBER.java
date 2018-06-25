@@ -8,6 +8,11 @@ public class PLACER_APPOINTMENT_NUMBER {
     private String entity;
     private String number;
 
+    public PLACER_APPOINTMENT_NUMBER(){
+        this.entity = "KENYAEMR";
+        this.number = ""; //TODO: should be set to the obs id
+    }
+
     public String getEntity() {
         return entity;
     }

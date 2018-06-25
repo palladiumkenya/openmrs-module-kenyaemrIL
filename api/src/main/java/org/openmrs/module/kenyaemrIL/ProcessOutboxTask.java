@@ -43,8 +43,9 @@ public class ProcessOutboxTask extends AbstractTask {
         try {
             Client restClient = Client.create();
             WebResource webResource = restClient.resource(IL_URL.getPropertyValue());
-            log.info("log info"+outbox.getMessage().toUpperCase());
-            //System.out.println("cout"+outbox.getMessage().toUpperCase());
+           // log.info("log info"+outbox.getMessage().toUpperCase());
+            //System.out.println("IL URL ==>"+IL_URL.getPropertyValue());
+           // System.out.println("Outbox message ==>"+outbox.getMessage().toUpperCase());
             ClientResponse resp = webResource.type("application/json")
                     .post(ClientResponse.class, outbox.getMessage().toUpperCase());
 
@@ -59,7 +60,7 @@ public class ProcessOutboxTask extends AbstractTask {
                 getEMRILService().saveKenyaEMRILMessage(outbox);
             }
         }catch (Exception e){
-           //e.printStackTrace();
+            e.printStackTrace();
             log.error(e.getMessage());
         }
     }

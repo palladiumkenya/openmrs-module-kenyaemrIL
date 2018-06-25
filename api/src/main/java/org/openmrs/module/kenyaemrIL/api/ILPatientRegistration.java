@@ -58,7 +58,7 @@ public class ILPatientRegistration {
             physicalAddress.setGps_location("");
             pAddress.setPhysical_address(physicalAddress);
 
-            pAddress.setPostal_address(personAddress.getAddress1());
+            pAddress.setPostal_address("");
             patientIdentification.setPatient_address(pAddress);
         }
 //set external identifier if available
@@ -67,50 +67,11 @@ public class ILPatientRegistration {
 //        Form the internal patient IDs
         for (PatientIdentifier patientIdentifier : patient.getIdentifiers()) {
             ipd = new INTERNAL_PATIENT_ID();
-            if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("OpenMRS ID")) {
-                ipd.setAssigning_authority("SOURCE_SYSTEM");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("SOURCE_SYSTEM_ID");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Unique Patient Number")) {
+            if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Unique Patient Number")) {
                 ipd.setAssigning_authority("CCC");
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("CCC_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("TB Treatment Number")) {
-                ipd.setAssigning_authority("TB");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("TB_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("National ID")) {
-                ipd.setAssigning_authority("GOK");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("NATIONAL_ID");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("HTS Number")) {
-                ipd.setAssigning_authority("HTS");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("HTS_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("HDSS ID")) {
-                ipd.setAssigning_authority("HDSS");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("HDSS_ID");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("ANC NUMBER")) {
-                ipd.setAssigning_authority("ANC");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("ANC_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("OPD NUMBER")) {
-                ipd.setAssigning_authority("OPD");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("OPD_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("PMTCT NUMBER")) {
-                ipd.setAssigning_authority("PMTCT");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("PMTCT_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("NHIF NUMBER")) {
-                ipd.setAssigning_authority("NHIF");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("NHIF");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Patient Clinic Number")) {
-                ipd.setAssigning_authority("CLINIC");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("PATIENT CLINIC NUMBER");
+                internalPatientIds.add(ipd);
             } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("MPI GODS NUMBER")) {
                 if (patientIdentifier.getIdentifierType().getName() != null) {
                     epd.setAssigning_authority("MPI");
@@ -120,8 +81,8 @@ public class ILPatientRegistration {
                 }
                 continue;
             }
-            internalPatientIds.add(ipd);
         }
+
 
         patientIdentification.setInternal_patient_id(internalPatientIds);
         patientIdentification.setExternal_patient_id(epd);
