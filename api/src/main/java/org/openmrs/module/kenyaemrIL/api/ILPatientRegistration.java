@@ -90,9 +90,9 @@ public class ILPatientRegistration {
         //Set the patient name
         PATIENT_NAME patientname = new PATIENT_NAME();
         PersonName personName = patient.getPersonName();
-        patientname.setFirst_name(personName.getGivenName());
-        patientname.setMiddle_name(personName.getMiddleName());
-        patientname.setLast_name(personName.getFamilyName());
+        patientname.setFirst_name(personName.getGivenName() != null ? personName.getGivenName() : "");
+        patientname.setMiddle_name(personName.getMiddleName() != null ? personName.getMiddleName() : "");
+        patientname.setLast_name(personName.getFamilyName() != null ? personName.getFamilyName() : "");
         patientIdentification.setPatient_name(patientname);
         //Set the patient mothers name
         MOTHER_NAME motherName = new MOTHER_NAME();
