@@ -29,7 +29,7 @@
 	<bean class="org.openmrs.ui.framework.StandardModuleUiConfiguration">
 		<property name="moduleId" value="kenyaemrIL"/>
 	</bean>
-	
+
 	<context:component-scan base-package="org.openmrs.module.kenyaemrIL.web.controller" />
  
 		

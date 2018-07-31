@@ -266,8 +266,10 @@
                 <groupId>org.openmrs.module</groupId>
                 <artifactId>uiframework-api</artifactId>
                 <version>${uiframeworkVersion}</version>
+                <type>jar</type>
                 <scope>provided</scope>
             </dependency>
+
             <dependency>
                 <groupId>org.openmrs.test</groupId>
                 <artifactId>openmrs-test</artifactId>

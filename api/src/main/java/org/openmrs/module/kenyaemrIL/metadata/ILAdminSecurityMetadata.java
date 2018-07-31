@@ -14,7 +14,7 @@ import static org.openmrs.module.metadatadeploy.bundle.CoreConstructors.*;
 public class ILAdminSecurityMetadata extends AbstractMetadataBundle{
 
     public static class _Privilege {
-        public static final String APP_IL_ADMIN = "App: interopManagerHome.home";
+        public static final String APP_IL_ADMIN = "App: kenyaemrilladmin.home";
     }
 
     public static final class _Role {

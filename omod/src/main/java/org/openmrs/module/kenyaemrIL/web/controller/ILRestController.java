@@ -31,7 +31,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
 /**
- * http://localhost:8080/rest/v1/interop/processhl7il
+ * http://localhost:8080/openmrs/ws/rest/v1/interop/processhl7il
+ *
  * The main controller.
  */
 @Controller

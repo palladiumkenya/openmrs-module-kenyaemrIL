@@ -33,7 +33,7 @@ public class ProcessEnrollmentTask extends AbstractTask {
     @Override
     public void execute() {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-//        Fetch enrolment encounter
+//        Fetch enrollment encounter
 //        Fetch the last date of fetch
         Date fetchDate = null;
         GlobalProperty globalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("enrolmentTask.lastFetchDateAndTime");
