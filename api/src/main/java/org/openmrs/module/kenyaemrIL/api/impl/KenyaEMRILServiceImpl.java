@@ -1413,7 +1413,8 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 //            internalPatientId.getAssigning_authority();
             }
 //            //Generate openmrsID
-            PatientIdentifierType openmrsIdType = MetadataUtils.existing(PatientIdentifierType.class, CommonMetadata._PatientIdentifierType.OPENMRS_ID);
+            String OPENMRS_ID = "dfacd928-0370-4315-99d7-6ec1c9f7ae76";
+            PatientIdentifierType openmrsIdType = MetadataUtils.existing(PatientIdentifierType.class, OPENMRS_ID);
             PatientIdentifier openmrsId = patient.getPatientIdentifier(openmrsIdType);
             String generated = Context.getService(IdentifierSourceService.class).generateIdentifier(openmrsIdType, "Registration");
             openmrsId = new PatientIdentifier(generated, openmrsIdType, defaultLocation);
