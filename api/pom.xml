@@ -14,7 +14,11 @@
 	<description>API project for KenyaEMRIL</description>
 
 	<dependencies>
-	
+
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>kenyaemr-api</artifactId>
+		</dependency>
 
 		<!-- Begin OpenMRS core -->
 		<dependency>
@@ -110,13 +114,6 @@
 			<groupId>org.openmrs.module</groupId>
 			<artifactId>kenyacore-test</artifactId>
 			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.openmrs.module</groupId>
-			<artifactId>kenyaemr-api</artifactId>
-			<!--<version>${kenyaemrVersion}</version>-->
-			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
