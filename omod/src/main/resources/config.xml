@@ -21,7 +21,7 @@
     <require_modules>
         <require_module version="${kenyaemrVersion}">org.openmrs.module.kenyaemr</require_module>
         <require_module version="2.19.0">org.openmrs.module.webservices.rest</require_module>
-        <require_module>org.openmrs.module.uiframework</require_module>
+        <require_module version="3.2.2">org.openmrs.module.uiframework</require_module>
         <!--<require_module version="${metadatadeployVersion}">org.openmrs.module.metadatadeploy</require_module>-->
     </require_modules>
     <!-- Adds link to admin page -->

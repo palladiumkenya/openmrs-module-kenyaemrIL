@@ -52,7 +52,7 @@
 		</property>
 	</bean>
 
-	<bean id="kenyaemr.app.iladmin" factory-bean="kenyacore.appFactoryBean" factory-method="createInstance">
+	<bean id="kenyaemr.il.iladmin" factory-bean="kenyacore.appFactoryBean" factory-method="createInstance">
 		<constructor-arg value="kenyaemrilladmin.home" />
 		<constructor-arg value="IL Admin" />
 		<constructor-arg value="kenyaemrIL/interopManagerHome.page" />
