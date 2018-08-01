@@ -1,7 +1,6 @@
 package org.openmrs.module.kenyaemrIL.metadata;
 
 import org.openmrs.module.metadatadeploy.bundle.AbstractMetadataBundle;
-import org.openmrs.module.metadatadeploy.bundle.Requires;
 import org.springframework.stereotype.Component;
 
 import static org.openmrs.module.metadatadeploy.bundle.CoreConstructors.*;
@@ -10,7 +9,6 @@ import static org.openmrs.module.metadatadeploy.bundle.CoreConstructors.*;
  * Implementation of access control to the app.
  */
 @Component
-@Requires(org.openmrs.module.kenyaemr.metadata.SecurityMetadata.class)
 public class ILAdminSecurityMetadata extends AbstractMetadataBundle{
 
     public static class _Privilege {
@@ -19,6 +17,7 @@ public class ILAdminSecurityMetadata extends AbstractMetadataBundle{
 
     public static final class _Role {
         public static final String APPLICATION_IL_ADMIN = "IL Administration";
+        public static final String API_PRIVILEGES_VIEW_AND_EDIT = "API Privileges (View and Edit)";
     }
 
     /**
@@ -29,7 +28,7 @@ public class ILAdminSecurityMetadata extends AbstractMetadataBundle{
 
         install(privilege(_Privilege.APP_IL_ADMIN, "Able to refresh IL Messages"));
         install(role(_Role.APPLICATION_IL_ADMIN, "Can access IL Admin app", idSet(
-                org.openmrs.module.kenyaemr.metadata.SecurityMetadata._Role.API_PRIVILEGES_VIEW_AND_EDIT
+                _Role.API_PRIVILEGES_VIEW_AND_EDIT
         ), idSet(
                 _Privilege.APP_IL_ADMIN
         )));
