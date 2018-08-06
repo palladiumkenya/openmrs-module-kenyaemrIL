@@ -32,7 +32,7 @@
     </createTable>
 </changeSet>
     <!--Adding scheduled task :Set the outbox task-->
-    <changeSet id="${project.parent.artifactId}-20171212-1744" author="pwangoo">
+    <changeSet id="${project.parent.artifactId}-20161212-1044" author="pwangoo">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
                 SELECT COUNT(*) FROM scheduler_task_config
@@ -49,12 +49,14 @@
             <column name="start_time" valueDate="2017-11-28T23:59:59" />
             <column name="repeat_interval" value="7200" />
             <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
-            <column name="created_by" value="0" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="1" />
+            <column name="started" value="0" />
             <column name="uuid" value="649ddcae-d8d8-49b8-9394-ad7f42a0fad8" />
         </insert>
     </changeSet>
     <!--Adding scheduled task :Set the inbox task-->
-    <changeSet id="${project.parent.artifactId}-20171212-1744" author="pwangoo">
+    <changeSet id="${project.parent.artifactId}-20161210-1244" author="pwangoo">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
                 SELECT COUNT(*) FROM scheduler_task_config
@@ -71,12 +73,14 @@
             <column name="start_time" valueDate="2017-11-28T23:59:59" />
             <column name="repeat_interval" value="7200" />
             <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
-            <column name="created_by" value="0" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="1" />
+            <column name="started" value="0" />
             <column name="uuid" value="9ee3eb6a-533f-4ff8-9891-2bf97e71bab3" />
         </insert>
     </changeSet>
     <!--Adding scheduled task :Set the enrollment task-->
-    <changeSet id="${project.parent.artifactId}-20171212-1744" author="pwangoo">
+    <changeSet id="${project.parent.artifactId}-20161211-1144" author="pwangoo">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
                 SELECT COUNT(*) FROM scheduler_task_config
@@ -93,12 +97,14 @@
             <column name="start_time" valueDate="2017-11-28T23:59:59" />
             <column name="repeat_interval" value="7200" />
             <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
-            <column name="created_by" value="0" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="1" />
+            <column name="started" value="0" />
             <column name="uuid" value="c852007f-d1ab-4bf7-8fea-18e4d29e94cc" />
         </insert>
     </changeSet>
     <!--Adding scheduled task :Set the appointment task-->
-    <changeSet id="${project.parent.artifactId}-20171212-1744" author="pwangoo">
+    <changeSet id="${project.parent.artifactId}-20161212-1344" author="pwangoo">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
                 SELECT COUNT(*) FROM scheduler_task_config
@@ -115,12 +121,14 @@
             <column name="start_time" valueDate="2017-11-28T23:59:59" />
             <column name="repeat_interval" value="7200" />
             <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
-            <column name="created_by" value="0" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="1" />
+            <column name="started" value="0" />
             <column name="uuid" value="726932a0-1b04-4a72-99c3-74a25d0e77c3" />
         </insert>
     </changeSet>
     <!--Adding scheduled task :Set the ORU task-->
-    <changeSet id="${project.parent.artifactId}-20171212-1744" author="pwangoo">
+    <changeSet id="${project.parent.artifactId}-20161212-1444" author="pwangoo">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
                 SELECT COUNT(*) FROM scheduler_task_config
@@ -137,7 +145,9 @@
             <column name="start_time" valueDate="2017-11-28T23:59:59" />
             <column name="repeat_interval" value="7200" />
             <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
-            <column name="created_by" value="0" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="1" />
+            <column name="started" value="0" />
             <column name="uuid" value="e31bf937-6550-438a-82ed-f5b1a4bc167e" />
         </insert>
     </changeSet>
