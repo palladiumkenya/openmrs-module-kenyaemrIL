@@ -59,11 +59,13 @@ public class ILPatientAppointments {
         //Set the patient name
         PATIENT_NAME patientname = new PATIENT_NAME();
         PersonName personName = patient.getPersonName();
-        patientname.setFirst_name(personName.getGivenName());
-        patientname.setMiddle_name(personName.getMiddleName());
-        patientname.setLast_name(personName.getFamilyName());
-
+        patientname.setFirst_name(personName.getGivenName() != null ? personName.getGivenName() : "");
+        patientname.setMiddle_name(personName.getMiddleName() != null ? personName.getMiddleName() : "");
+        patientname.setLast_name(personName.getFamilyName() != null ? personName.getFamilyName() : "");
         patientIdentification.setPatient_name(patientname);
+
+
+
         // Set to empty strings unwanted patient details for viral load
         patientIdentification.setSex("");   //        Set the Gender, phone number and marital status
         patientIdentification.setPhone_number("");

@@ -25,7 +25,6 @@ import org.openmrs.api.context.Context;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.idgen.service.IdentifierSourceService;
 import org.openmrs.module.kenyaemr.api.KenyaEmrService;
-import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemrIL.api.ILMessageType;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
@@ -717,7 +716,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                                success = true;
                            }
                        }
-                       if (obsInfo.getObservation_identifier().equalsIgnoreCase("HIV_CARE_INITIATION")) {             // hiv care initiation date  HivCareInitiationDateConcept
+                       if (obsInfo.getObservation_identifier().equalsIgnoreCase("HIV_CARE_INITIATION")) {             // hiv care initiation date
                            if (obsInfo.getObservation_value() != null) {
                                //Define encounter
                                Encounter enc = new Encounter();
@@ -748,62 +747,6 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                            }
                        }
 
-                       if (obsInfo.getObservation_identifier().equalsIgnoreCase("IS_PREGNANT")) {             // Is pregnant
-                           if (obsInfo.getObservation_value() != null && obsInfo.getObservation_value() == "Y") {
-                               //Define encounter
-                               Encounter enc = new Encounter();
-                               Location location = Utils.getDefaultLocation();
-                               enc.setLocation(location);
-                               enc.setEncounterType(Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e"));    // enc = HIV Greencard
-                               enc.setEncounterDatetime(new Date ());
-                               enc.setPatient(patient);
-                               enc.addProvider(Context.getEncounterService().getEncounterRole(1), Context.getProviderService().getProvider(1));
-                               enc.setForm(Context.getFormService().getFormByUuid("22c68f86-bbf0-49ba-b2d1-23fa7ccf0259"));           //form= HIV Greencard
-                               //Set observations
-                               Obs o = new Obs();
-                               o.setConcept(Context.getConceptService().getConcept(IspregnantConcept));
-                               o.setValueCoded(Context.getConceptService().getConcept(YesConcept));
-                               o.setDateCreated(new Date());
-                               o.setCreator(Context.getUserService().getUser(1));
-                               o.setLocation(enc.getLocation());
-                               o.setObsDatetime(enc.getEncounterDatetime());
-                               o.setPerson(patient);
-
-                               enc.addObs(o);
-                               Context.getEncounterService().saveEncounter(enc);
-                               success = true;
-                           }
-                       }
-                       if (obsInfo.getObservation_identifier().equalsIgnoreCase( "PRENGANT_EDD")) {             // EDD
-                           if (obsInfo.getObservation_value() != null) {
-                               //Define encounter
-                               Encounter enc = new Encounter();
-                               Location location = Utils.getDefaultLocation();
-                               enc.setLocation(location);
-                               enc.setEncounterType(Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e"));    // enc = HIV Greencard
-                               enc.setEncounterDatetime(new Date ());
-                               enc.setPatient(patient);
-                               enc.addProvider(Context.getEncounterService().getEncounterRole(1), Context.getProviderService().getProvider(1));
-                               enc.setForm(Context.getFormService().getFormByUuid("22c68f86-bbf0-49ba-b2d1-23fa7ccf0259"));           //form= HIV Greencard
-                               //Set observations
-                               Obs o = new Obs();
-                               o.setConcept(Context.getConceptService().getConcept(EDDConcept));
-                               try {
-                                   o.setValueDatetime(formatter.parse(obsInfo.getObservation_value()));
-                               } catch (ParseException e) {
-                                   e.printStackTrace();
-                               }
-                               o.setDateCreated(new Date());
-                               o.setCreator(Context.getUserService().getUser(1));
-                               o.setLocation(enc.getLocation());
-                               o.setObsDatetime(enc.getEncounterDatetime());
-                               o.setPerson(patient);
-
-                               enc.addObs(o);
-                               Context.getEncounterService().saveEncounter(enc);
-                               success = true;
-                           }
-                       }
                        if (obsInfo.getObservation_identifier().equalsIgnoreCase("COTRIMOXAZOLE_START")) {             // CTX start date
                            if (obsInfo.getObservation_value() != null) {
                                //Define encounter
@@ -925,54 +868,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                                success = true;
                            }
                        }
-                       if (obsInfo.getObservation_identifier().equalsIgnoreCase( "WHO_STAGE")) {             // WHO stage
-                           if (obsInfo.getObservation_value() != null) {
-                               //Define encounter
-                               Encounter enc = new Encounter();
-                               Location location = Utils.getDefaultLocation();
-                               enc.setLocation(location);
-                               enc.setEncounterType(Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e"));    // enc = HIV Greencard
-                               enc.setEncounterDatetime(new Date ());
-                               enc.setPatient(patient);
-                               enc.addProvider(Context.getEncounterService().getEncounterRole(1), Context.getProviderService().getProvider(1));
-                               enc.setForm(Context.getFormService().getFormByUuid("22c68f86-bbf0-49ba-b2d1-23fa7ccf0259"));           //form= HIV Greencard
-                               //Set observations
-                               Obs o = new Obs();
-                               o.setConcept(Context.getConceptService().getConcept(WhoStageConcept));
-                                       Date dob = patient.getBirthdate();
-                                       Integer age = calculateAge(dob);
-                                       if (age >= 14) {
-                                           if (obsInfo.getObservation_value() == "1") {
-                                               o.setValueCoded(Context.getConceptService().getConcept(AdultWhoStage1Concept));
-                                           } else if (obsInfo.getObservation_value() == "2") {
-                                               o.setValueCoded(Context.getConceptService().getConcept(AdultWhoStage2Concept));
-                                           } else if (obsInfo.getObservation_value() == "3") {
-                                               o.setValueCoded(Context.getConceptService().getConcept(AdultWhoStage3Concept));
-                                           } else if (obsInfo.getObservation_value() == "4") {
-                                               o.setValueCoded(Context.getConceptService().getConcept(AdultWhoStage4Concept));
-                                           }
-                                       } else {
-                                           if (obsInfo.getObservation_value() == "1") {
-                                               o.setValueCoded(Context.getConceptService().getConcept(PedWhoStage1Concept));
-                                           } else if (obsInfo.getObservation_value() == "2") {
-                                               o.setValueCoded(Context.getConceptService().getConcept(PedWhoStage2Concept));
-                                           } else if (obsInfo.getObservation_value() == "3") {
-                                               o.setValueCoded(Context.getConceptService().getConcept(PedWhoStage3Concept));
-                                           } else if (obsInfo.getObservation_value() == "4") {
-                                               o.setValueCoded(Context.getConceptService().getConcept(PedWhoStage4Concept));
-                                           }
-                                          }
-                               o.setDateCreated(new Date());
-                               o.setCreator(Context.getUserService().getUser(1));
-                               o.setLocation(enc.getLocation());
-                               o.setObsDatetime(enc.getEncounterDatetime());
-                               o.setPerson(patient);
 
-                               enc.addObs(o);
-                               Context.getEncounterService().saveEncounter(enc);
-                               success = true;
-                           }
-                       }
                        if (obsInfo.getObservation_identifier().equalsIgnoreCase( "ART_START")) {             // art start date
                            if (obsInfo.getObservation_value() != null) {
                                //Define encounter
@@ -1055,6 +951,123 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                                success = true;
                            }
                        }
+               /*    Commented WHO stage, pregnancy and EDD
+                         if (obsInfo.getObservation_identifier().equalsIgnoreCase( "WHO_STAGE")) {             // WHO stage
+                           if (obsInfo.getObservation_value() != null ) {
+                               String whoStage = obsInfo.getObservation_value();
+                               if(whoStage.equals("1") || whoStage.equals("2") || whoStage.equals("3") || whoStage.equals("4")) {
+                                   //Define encounter
+                                   Encounter enc = new Encounter();
+                                   Location location = Utils.getDefaultLocation();
+                                   enc.setLocation(location);
+                                   enc.setEncounterType(Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e"));    // enc = HIV Greencard
+                                   enc.setEncounterDatetime(new Date());
+                                   enc.setPatient(patient);
+                                   enc.addProvider(Context.getEncounterService().getEncounterRole(1), Context.getProviderService().getProvider(1));
+                                   enc.setForm(Context.getFormService().getFormByUuid("22c68f86-bbf0-49ba-b2d1-23fa7ccf0259"));           //form= HIV Greencard
+                                   //Set observations
+                                   Obs o = new Obs();
+                                   o.setConcept(Context.getConceptService().getConcept(WhoStageConcept));
+                                   Date dob = patient.getBirthdate();
+                                   Integer age = calculateAge(dob);
+
+                                   o.setValueCoded(Context.getConceptService().getConcept(PedWhoStage1Concept));
+                                   if (age >= 14) {
+                                       if (obsInfo.getObservation_value() == "1") {
+                                           o.setValueCoded(Context.getConceptService().getConcept(AdultWhoStage1Concept));
+                                       } else if (obsInfo.getObservation_value() == "2") {
+                                           o.setValueCoded(Context.getConceptService().getConcept(AdultWhoStage2Concept));
+                                       } else if (obsInfo.getObservation_value() == "3") {
+                                           o.setValueCoded(Context.getConceptService().getConcept(AdultWhoStage3Concept));
+                                       } else if (obsInfo.getObservation_value() == "4") {
+                                           o.setValueCoded(Context.getConceptService().getConcept(AdultWhoStage4Concept));
+                                       }
+                                   } else {
+                                       if (obsInfo.getObservation_value() == "1") {
+                                           o.setValueCoded(Context.getConceptService().getConcept(PedWhoStage1Concept));
+                                       } else if (obsInfo.getObservation_value() == "2") {
+                                           o.setValueCoded(Context.getConceptService().getConcept(PedWhoStage2Concept));
+                                       } else if (obsInfo.getObservation_value() == "3") {
+                                           o.setValueCoded(Context.getConceptService().getConcept(PedWhoStage3Concept));
+                                       } else if (obsInfo.getObservation_value() == "4") {
+                                           o.setValueCoded(Context.getConceptService().getConcept(PedWhoStage4Concept));
+                                       }
+                                   }
+                                   o.setDateCreated(new Date());
+                                   o.setCreator(Context.getUserService().getUser(1));
+                                   o.setLocation(enc.getLocation());
+                                   o.setObsDatetime(enc.getEncounterDatetime());
+                                   o.setPerson(patient);
+
+                                   Concept whoConcept = Context.getConceptService().getConcept(AdultWhoStage1Concept);
+
+                                   System.out.println("WHO stage ==>"+o.getValueCoded().getConceptId());
+                                   System.out.println("WHO concept ==>"+whoConcept.getConceptId());
+
+                                   enc.addObs(o);
+                                   Context.getEncounterService().saveEncounter(enc);
+                                   success = true;
+                               }
+                           }
+                       }
+
+                       if (obsInfo.getObservation_identifier().equalsIgnoreCase("IS_PREGNANT")) {             // Is pregnant
+                           if (obsInfo.getObservation_value() != null && obsInfo.getObservation_value() == "Y") {
+                               //Define encounter
+                               Encounter enc = new Encounter();
+                               Location location = Utils.getDefaultLocation();
+                               enc.setLocation(location);
+                               enc.setEncounterType(Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e"));    // enc = HIV Greencard
+                               enc.setEncounterDatetime(new Date ());
+                               enc.setPatient(patient);
+                               enc.addProvider(Context.getEncounterService().getEncounterRole(1), Context.getProviderService().getProvider(1));
+                               enc.setForm(Context.getFormService().getFormByUuid("22c68f86-bbf0-49ba-b2d1-23fa7ccf0259"));           //form= HIV Greencard
+                               //Set observations
+                               Obs o = new Obs();
+                               o.setConcept(Context.getConceptService().getConcept(IspregnantConcept));
+                               o.setValueCoded(Context.getConceptService().getConcept(YesConcept));
+                               o.setDateCreated(new Date());
+                               o.setCreator(Context.getUserService().getUser(1));
+                               o.setLocation(enc.getLocation());
+                               o.setObsDatetime(enc.getEncounterDatetime());
+                               o.setPerson(patient);
+
+                               enc.addObs(o);
+                               Context.getEncounterService().saveEncounter(enc);
+                               success = true;
+                           }
+                       }
+                       if (obsInfo.getObservation_identifier().equalsIgnoreCase( "PREGNANT_EDD")) {             // EDD
+                           if (obsInfo.getObservation_value() != null) {
+                               //Define encounter
+                               Encounter enc = new Encounter();
+                               Location location = Utils.getDefaultLocation();
+                               enc.setLocation(location);
+                               enc.setEncounterType(Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e"));    // enc = HIV Greencard
+                               enc.setEncounterDatetime(new Date ());
+                               enc.setPatient(patient);
+                               enc.addProvider(Context.getEncounterService().getEncounterRole(1), Context.getProviderService().getProvider(1));
+                               enc.setForm(Context.getFormService().getFormByUuid("22c68f86-bbf0-49ba-b2d1-23fa7ccf0259"));           //form= HIV Greencard
+                               //Set observations
+                               Obs o = new Obs();
+                               o.setConcept(Context.getConceptService().getConcept(EDDConcept));
+                               try {
+                                   o.setValueDatetime(formatter.parse(obsInfo.getObservation_value()));
+                               } catch (ParseException e) {
+                                   e.printStackTrace();
+                               }
+                               o.setDateCreated(new Date());
+                               o.setCreator(Context.getUserService().getUser(1));
+                               o.setLocation(enc.getLocation());
+                               o.setObsDatetime(enc.getEncounterDatetime());
+                               o.setPerson(patient);
+
+                               enc.addObs(o);
+                               Context.getEncounterService().saveEncounter(enc);
+                               success = true;
+                           }
+                       }
+           */
                    }
 
                }else {
@@ -1226,7 +1239,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         try {
             AppointmentMessage appointmentMessage = ilMessage.extractAppointmentMessage();
             String messageString = mapper.writeValueAsString(appointmentMessage);
-            System.out.println("Outbox appmnt message==>"+messageString);
+//            System.out.println("Outbox appmnt message==>"+messageString);
             kenyaEMRILMessage.setHl7_type("SIU^S12");
             kenyaEMRILMessage.setSource("KENYAEMR");
             kenyaEMRILMessage.setMessage(messageString);
