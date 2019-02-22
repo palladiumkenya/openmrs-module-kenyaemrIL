@@ -60,6 +60,7 @@ public class KenyaEMRILMessageResource extends MetadataDelegatingCrudResource<Ke
         description.addRequiredProperty("message_type");
         description.addRequiredProperty("hl7_type");
         description.addRequiredProperty("retired");
+        description.addRequiredProperty("status");
 
         return description;
     }

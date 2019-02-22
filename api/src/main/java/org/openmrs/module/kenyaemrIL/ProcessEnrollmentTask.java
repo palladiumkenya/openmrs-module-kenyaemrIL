@@ -5,6 +5,7 @@ import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
+import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.ILPatientRegistration;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
@@ -33,7 +34,7 @@ public class ProcessEnrollmentTask extends AbstractTask {
     @Override
     public void execute() {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-//        Fetch enrolment encounter
+//        Fetch enrollment encounter
 //        Fetch the last date of fetch
         Date fetchDate = null;
         GlobalProperty globalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("enrolmentTask.lastFetchDateAndTime");
@@ -61,7 +62,25 @@ public class ProcessEnrollmentTask extends AbstractTask {
     }
 
     private List<Encounter> fetchPendingEnrollments(List<EncounterType> encounterTypes, Date date) {
-        return Context.getEncounterService().getEncounters(null, null, date, null, null, encounterTypes, null, null, null, false);
+        // return Context.getEncounterService().getEncounters(null, null, date, null, null, encounterTypes, null, null, null, false);
+
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        String effectiveDate = sd.format(date);
+        StringBuilder q = new StringBuilder();
+        q.append("select e.encounter_id ");
+        q.append("from encounter e ");
+        q.append("where e.date_created >= '" + effectiveDate + "' ");
+        q.append(" and e.voided = 0  ");
+
+        List<Encounter> encounters = new ArrayList<>();
+        EncounterService encounterService = Context.getEncounterService();
+        List<List<Object>> queryData = Context.getAdministrationService().executeSQL(q.toString(), true);
+        for (List<Object> row : queryData) {
+            Integer encounterId = (Integer) row.get(0);
+            Encounter e = encounterService.getEncounter(encounterId);
+            encounters.add(e);
+        }
+        return encounters;
 
     }
 

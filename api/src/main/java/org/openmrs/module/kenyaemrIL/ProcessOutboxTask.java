@@ -3,6 +3,7 @@ package org.openmrs.module.kenyaemrIL;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
+import org.openmrs.GlobalProperty;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
@@ -17,7 +18,7 @@ import java.util.List;
  * Implementation of a task that processes the IL outbox every one minute .
  */
 public class ProcessOutboxTask extends AbstractTask {
-    private final String IL_URL = "http://52.178.24.227:9721/api/";
+    //private final String IL_URL = "http://52.178.24.227:9721/api/";
 
     // Logger
     private static final Logger log = LoggerFactory.getLogger(ProcessOutboxTask.class);
@@ -38,11 +39,13 @@ public class ProcessOutboxTask extends AbstractTask {
 
     private void processFetchedRecord(KenyaEMRILMessage outbox) {
 //        Send to IL and mark as sent
+        GlobalProperty IL_URL = Context.getAdministrationService().getGlobalPropertyObject("ilServer.address");
         try {
             Client restClient = Client.create();
-            WebResource webResource = restClient.resource(IL_URL);
-            log.info("log info"+outbox.getMessage().toUpperCase());
-            System.out.println("cout"+outbox.getMessage().toUpperCase());
+            WebResource webResource = restClient.resource(IL_URL.getPropertyValue());
+           // log.info("log info"+outbox.getMessage().toUpperCase());
+            //System.out.println("IL URL ==>"+IL_URL.getPropertyValue());
+           // System.out.println("Outbox message ==>"+outbox.getMessage().toUpperCase());
             ClientResponse resp = webResource.type("application/json")
                     .post(ClientResponse.class, outbox.getMessage().toUpperCase());
 
@@ -57,6 +60,7 @@ public class ProcessOutboxTask extends AbstractTask {
                 getEMRILService().saveKenyaEMRILMessage(outbox);
             }
         }catch (Exception e){
+            e.printStackTrace();
             log.error(e.getMessage());
         }
     }

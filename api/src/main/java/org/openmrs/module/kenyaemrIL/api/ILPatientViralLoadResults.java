@@ -31,53 +31,13 @@ public class ILPatientViralLoadResults {
 //set external identifier if available
 
 //        Form the internal patient IDs
-        System.out.println("Available Identifiers"+patient.getIdentifiers());
         for (PatientIdentifier patientIdentifier : patient.getIdentifiers()) {
             ipd = new INTERNAL_PATIENT_ID();
-            if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("OpenMRS ID")) {
-                ipd.setAssigning_authority("SOURCE_SYSTEM");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("SOURCE_SYSTEM_ID");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Unique Patient Number")) {
+            if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Unique Patient Number")) {
                 ipd.setAssigning_authority("CCC");
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("CCC_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("TB Treatment Number")) {
-                ipd.setAssigning_authority("TB");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("TB_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("National ID")) {
-                ipd.setAssigning_authority("GOK");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("NATIONAL_ID");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("HTS Number")) {
-                ipd.setAssigning_authority("HTS");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("HTS_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("HDSS ID")) {
-                ipd.setAssigning_authority("HDSS");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("HDSS_ID");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("ANC NUMBER")) {
-                ipd.setAssigning_authority("ANC");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("ANC_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("OPD NUMBER")) {
-                ipd.setAssigning_authority("OPD");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("OPD_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("PMTCT NUMBER")) {
-                ipd.setAssigning_authority("PMTCT");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("PMTCT_NUMBER");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("NHIF NUMBER")) {
-                ipd.setAssigning_authority("NHIF");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("NHIF");
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Patient Clinic Number")) {
-                ipd.setAssigning_authority("CLINIC");
-                ipd.setId(patientIdentifier.getIdentifier());
-                ipd.setIdentifier_type("PATIENT CLINIC NUMBER");
+                internalPatientIds.add(ipd);
             } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("MPI GODS NUMBER")) {
                 if (patientIdentifier.getIdentifierType().getName() != null) {
                     epd.setAssigning_authority("MPI");
@@ -87,14 +47,15 @@ public class ILPatientViralLoadResults {
                 }
                 continue;
             }
-            internalPatientIds.add(ipd);
         }
         //Set the patient name
         PATIENT_NAME patientname = new PATIENT_NAME();
         PersonName personName = patient.getPersonName();
-        patientname.setFirst_name(personName.getGivenName());
-        patientname.setMiddle_name(personName.getMiddleName());
-        patientname.setLast_name(personName.getFamilyName());
+        patientname.setFirst_name(personName.getGivenName() != null ? personName.getGivenName() : "");
+        patientname.setMiddle_name(personName.getMiddleName() != null ? personName.getMiddleName() : "");
+        patientname.setLast_name(personName.getFamilyName() != null ? personName.getFamilyName() : "");
+        patientIdentification.setPatient_name(patientname);
+
         // Set to empty string unwanted patient details for viral load
         patientIdentification.setSex("");   //        Set the Gender, phone number and marital status
         patientIdentification.setPhone_number("");

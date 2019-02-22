@@ -24,16 +24,17 @@
 		-->
 
 		<!-- Begin OpenMRS modules -->
-
+		<!-- Depends on uiframework module -->
 		<dependency>
 			<groupId>${project.parent.groupId}</groupId>
 			<artifactId>${project.parent.artifactId}-api</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
-		<!-- End OpenMRS modules -->
 
-
-		<!-- Begin OpenMRS core -->
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>webservices.rest-omod-1.8</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>org.openmrs.api</groupId>
@@ -77,11 +78,6 @@
 			<groupId>org.openmrs.module</groupId>
 			<artifactId>uiframework-api</artifactId>
 		</dependency>
-
-        <dependency>
-            <groupId>org.openmrs.module</groupId>
-            <artifactId>webservices.rest-omod</artifactId>
-        </dependency>
 
 		<!-- https://mvnrepository.com/artifact/io.swagger/swagger-models -->
 		<dependency>

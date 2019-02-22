@@ -49,7 +49,7 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     public KenyaEMRILMessage getKenyaEMRILMessageByUuid(String uniqueId) {
         System.out.println("About to test this one here " + uniqueId);
         Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
-        crit.add(Restrictions.eq("name", uniqueId));
+        crit.add(Restrictions.eq("uuid", uniqueId));
         KenyaEMRILMessage kenyaEMRILMessage = (KenyaEMRILMessage) crit.uniqueResult();
         System.out.println("Just before the return: " + kenyaEMRILMessage);
         return kenyaEMRILMessage;
@@ -86,6 +86,13 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
         crit.add(Restrictions.eq("message_type", 2));
         crit.add(Restrictions.eq("retired", includeRetired));
+        return crit.list();
+    }
+
+    @Override
+    public List<KenyaEMRILMessage> getKenyaEMRILStatus(String status) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
+        crit.add(Restrictions.eq("status", status));
         return crit.list();
     }
 

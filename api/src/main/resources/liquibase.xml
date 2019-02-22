@@ -1,12 +1,154 @@
 <?xml version="1.0" encoding="UTF-8"?>
- 
+
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog/1.9"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9
                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
-    <!--
-        See http://www.liquibase.org/manual/home#available_database_refactorings
-        for a list of supported elements and attributes
-    -->
-    
+<!--
+    See http://www.liquibase.org/manual/home#available_database_refactorings
+    for a list of supported elements and attributes
+-->
+
+<changeSet id="${project.parent.artifactId}-20160511-1056" author="pwangoo">
+    <preConditions onFail="MARK_RAN">
+        <not><tableExists tableName="il_message" /></not>
+    </preConditions>
+    <comment>
+        Create table for il messages
+    </comment>
+    <createTable tableName="il_message">
+        <column name="message_id" autoIncrement="true" type="int">
+            <constraints nullable="false" primaryKey="true" />
+        </column>
+        <column name="message" type="text"></column>
+        <column name="creator" type="int"></column>
+        <column name="message_type" type="int"></column>
+        <column name="hl7_type" type="varchar(20)"></column>
+        <column name="retired" type="int"></column>
+        <column name="status" type="varchar(100)" defaultValue="Success" ></column>
+        <column name="source" type="varchar(50)" ></column>
+        <column name="date_created" type="datetime"></column>
+        <column name="uuid" type="varchar(38)"></column>
+    </createTable>
+</changeSet>
+    <!--Adding scheduled task :Set the outbox task-->
+    <changeSet id="${project.parent.artifactId}-20161212-1044" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.ProcessOutboxTask'
+                And name = 'Process Outbox Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Inserting Process Outbox Task into 'schedule_task_config' table</comment>
+        <insert tableName="scheduler_task_config">
+            <column name="name" value="Process Outbox Task" />
+            <column name="description" value="Periodically Process Outbox Task" />
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.ProcessOutboxTask" />
+            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
+            <column name="start_time" valueDate="2017-11-28T23:59:59" />
+            <column name="repeat_interval" value="7200" />
+            <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="1" />
+            <column name="started" value="0" />
+            <column name="uuid" value="649ddcae-d8d8-49b8-9394-ad7f42a0fad8" />
+        </insert>
+    </changeSet>
+    <!--Adding scheduled task :Set the inbox task-->
+    <changeSet id="${project.parent.artifactId}-20161210-1244" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.ProcessInboxTask'
+                And name = 'Process Inbox Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Inserting Process Inbox Task into 'schedule_task_config' table</comment>
+        <insert tableName="scheduler_task_config">
+            <column name="name" value="Process Inbox Task" />
+            <column name="description" value="Periodically Process Inbox Task" />
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.ProcessInboxTask" />
+            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
+            <column name="start_time" valueDate="2017-11-28T23:59:59" />
+            <column name="repeat_interval" value="7200" />
+            <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="1" />
+            <column name="started" value="0" />
+            <column name="uuid" value="9ee3eb6a-533f-4ff8-9891-2bf97e71bab3" />
+        </insert>
+    </changeSet>
+    <!--Adding scheduled task :Set the enrollment task-->
+    <changeSet id="${project.parent.artifactId}-20161211-1144" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.ProcessEnrollmentTask'
+                And name = 'Enrollment Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Inserting Enrollment Task into 'schedule_task_config' table</comment>
+        <insert tableName="scheduler_task_config">
+            <column name="name" value="Enrollment Task" />
+            <column name="description" value="Periodically Process Enrollment Task" />
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.ProcessEnrollmentTask" />
+            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
+            <column name="start_time" valueDate="2017-11-28T23:59:59" />
+            <column name="repeat_interval" value="7200" />
+            <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="1" />
+            <column name="started" value="0" />
+            <column name="uuid" value="c852007f-d1ab-4bf7-8fea-18e4d29e94cc" />
+        </insert>
+    </changeSet>
+    <!--Adding scheduled task :Set the appointment task-->
+    <changeSet id="${project.parent.artifactId}-20161212-1344" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.ProcessAppointmentsTask'
+                And name = 'Appointment Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Inserting Appointment Task into 'schedule_task_config' table</comment>
+        <insert tableName="scheduler_task_config">
+            <column name="name" value="Appointment Task" />
+            <column name="description" value="Periodically Process Appointment Task" />
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.ProcessAppointmentsTask" />
+            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
+            <column name="start_time" valueDate="2017-11-28T23:59:59" />
+            <column name="repeat_interval" value="7200" />
+            <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="1" />
+            <column name="started" value="0" />
+            <column name="uuid" value="726932a0-1b04-4a72-99c3-74a25d0e77c3" />
+        </insert>
+    </changeSet>
+    <!--Adding scheduled task :Set the ORU task-->
+    <changeSet id="${project.parent.artifactId}-20161212-1444" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.ProcessORUsTask'
+                And name = 'Process ORU Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Inserting Process ORU Task into 'schedule_task_config' table</comment>
+        <insert tableName="scheduler_task_config">
+            <column name="name" value="Process ORU Task" />
+            <column name="description" value="Periodically Process ORU Task" />
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.ProcessORUsTask" />
+            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
+            <column name="start_time" valueDate="2017-11-28T23:59:59" />
+            <column name="repeat_interval" value="7200" />
+            <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="1" />
+            <column name="started" value="0" />
+            <column name="uuid" value="e31bf937-6550-438a-82ed-f5b1a4bc167e" />
+        </insert>
+    </changeSet>
 </databaseChangeLog>

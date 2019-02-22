@@ -14,6 +14,13 @@ public class PATIENT_VISIT {
 
     private String patient_type;
 
+    public PATIENT_VISIT() {
+        this.visit_date = "";
+        this.patient_source = "";
+        this.hiv_care_enrollment_date = "";
+        this.patient_type = "";
+    }
+
     public String getVisit_date() {
         return visit_date;
     }

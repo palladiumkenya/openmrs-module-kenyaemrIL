@@ -15,6 +15,11 @@ public class APPOINTMENT_INFORMATION {
     private String  appointment_date;
     private PLACER_APPOINTMENT_NUMBER  placer_appointment_number;
 
+    public APPOINTMENT_INFORMATION() {
+        this.placer_appointment_number = new PLACER_APPOINTMENT_NUMBER();
+
+    }
+
     public String getAppointment_reason() {
         return appointment_reason;
     }

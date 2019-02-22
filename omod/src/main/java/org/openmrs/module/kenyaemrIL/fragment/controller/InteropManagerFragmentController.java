@@ -25,7 +25,7 @@ public class InteropManagerFragmentController {
     public void controller(FragmentModel model){
         DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
 
-        final String sqlSelectQuery = "SELECT date_created, hl7_type, retired FROM openmrs.il_message order by date_created desc limit 10;";
+        final String sqlSelectQuery = "SELECT date_created, hl7_type, source, retired, status FROM openmrs.il_message order by date_created desc limit 10;";
         final List<SimpleObject> ret = new ArrayList<SimpleObject>();
 
         try {
@@ -46,9 +46,11 @@ public class InteropManagerFragmentController {
                                     row[i - 1] = resultSet.getObject(i);
                                 }
                                 ret.add(SimpleObject.create(
-                                        "date_created", row[0] != null ? row[1].toString() : "",
-                                        "message_type", row[1] != null? row[2].toString() : "",
-                                        "status", row[2] != null? "Pending": "Success"
+                                        "date_created", row[0] != null ? row[0].toString() : "",
+                                        "message_type", row[1] != null? row[1].toString() : "",
+                                        "source", row[2] != null ? row[2].toString() : "",
+                                        "status", row[3].toString().equals("1") ? "Processed": "Pending",
+                                        "error", row[4] != null ? row[4].toString() : ""
                                 ));
                             }
                         }
@@ -81,7 +83,7 @@ public class InteropManagerFragmentController {
 
         DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
 
-        final String sqlSelectQuery = "SELECT date_created, hl7_type, retired FROM openmrs.il_message order by date_created desc limit 10;";
+        final String sqlSelectQuery = "SELECT date_created, hl7_type, source, retired, status FROM openmrs.il_message order by date_created desc limit 10;";
         final List<SimpleObject> ret = new ArrayList<SimpleObject>();
         Transaction tx = null;
         try {
@@ -106,9 +108,66 @@ public class InteropManagerFragmentController {
                                 }
 
                                 ret.add(SimpleObject.create(
-                                        "date_created", row[0] != null ? row[1].toString() : "",
-                                        "message_type", row[1] != null? row[2].toString() : "",
-                                        "status", row[2] != null? "Pending": "Success"
+                                        "date_created", row[0] != null ? row[0].toString() : "",
+                                        "message_type", row[1] != null? row[1].toString() : "",
+                                        "source", row[2] != null ? row[2].toString() : "",
+                                        "status", row[3].toString().equals("1") ? "Processed": "Pending",
+                                        "error", row[4] != null ? row[4].toString() : ""
+                                ));
+                            }
+                        }
+                        finalTx.commit();
+                    }
+                    finally {
+                        try {
+                            if (statement != null) {
+                                statement.close();
+                            }
+                        }
+                        catch (Exception e) {}
+                    }
+                }
+            });
+        }
+        catch (Exception e) {
+            throw new IllegalArgumentException("Unable to execute query", e);
+        }
+
+        return ret;
+    }
+    public List<SimpleObject> errorMessages(UiUtils ui) {
+
+        DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
+
+        final String sqlSelectQuery = "SELECT date_created, hl7_type, source, retired, status FROM openmrs.il_message where message_type = 1 and status <> 'Success' order by date_created desc limit 10;";
+        final List<SimpleObject> ret = new ArrayList<SimpleObject>();
+        Transaction tx = null;
+        try {
+
+            tx = sf.getHibernateSessionFactory().getCurrentSession().beginTransaction();
+            final Transaction finalTx = tx;
+            sf.getCurrentSession().doWork(new Work() {
+
+                @Override
+                public void execute(Connection connection) throws SQLException {
+                    PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
+                    try {
+
+                        ResultSet resultSet = statement.executeQuery();
+                        if (resultSet != null) {
+                            ResultSetMetaData metaData = resultSet.getMetaData();
+
+                            while (resultSet.next()) {
+                                Object[] row = new Object[metaData.getColumnCount()];
+                                for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                                    row[i - 1] = resultSet.getObject(i);
+                                }
+                                ret.add(SimpleObject.create(
+                                        "date_created", row[0] != null ? row[0].toString() : "",
+                                        "message_type", row[1] != null? row[1].toString() : "",
+                                        "source", row[2] != null ? row[2].toString() : "",
+                                        "status", row[3].toString().equals("1") ? "Processed": "Pending",
+                                        "error", row[4] != null ? row[4].toString() : ""
                                 ));
                             }
                         }
