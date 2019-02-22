@@ -113,11 +113,14 @@ public class ILPatientRegistration {
         PATIENT_VISIT patientVisit = new PATIENT_VISIT();
         // get enrollment Date
         Encounter lastEnrollment = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc"));
-        Date lastEnrollmentDate = lastEnrollment.getEncounterDatetime();
-
-        patientVisit.setVisit_date(formatter.format(lastEnrollmentDate));      //hiv_care_enrollment date
-        patientVisit.setHiv_care_enrollment_date(formatter.format(lastEnrollmentDate));        //hiv_care_enrollment date
-
+        if(lastEnrollment != null) {
+            Date lastEnrollmentDate = lastEnrollment.getEncounterDatetime();
+            patientVisit.setVisit_date(formatter.format(lastEnrollmentDate));      //hiv_care_enrollment date
+            patientVisit.setHiv_care_enrollment_date(formatter.format(lastEnrollmentDate));        //hiv_care_enrollment date
+        }else{
+            patientVisit.setVisit_date("");      //hiv_care_enrollment date
+            patientVisit.setHiv_care_enrollment_date("");        //hiv_care_enrollment date
+        }
         Integer patientEnrollmentTypeConcept = 164932;
         Integer patientEnrollmentSourceConcept = 160540;
 

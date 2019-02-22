@@ -1,10 +1,10 @@
 package org.openmrs.module.kenyaemrIL;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
+import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.ILPatientUnsolicitedObservationResults;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
@@ -72,7 +72,25 @@ public class ProcessORUsTask extends AbstractTask {
     }
 
     private List<Encounter> fetchPendingObservations(List<EncounterType> encounterTypes, Date date) {
-        return Context.getEncounterService().getEncounters(null, null, date, null, null, encounterTypes, null, null, null, false);
+        // return Context.getEncounterService().getEncounters(null, null, date, null, null, encounterTypes, null, null, null, false);
+
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        String effectiveDate = sd.format(date);
+        StringBuilder q = new StringBuilder();
+        q.append("select e.encounter_id ");
+        q.append("from encounter e ");
+        q.append("where e.date_created >= '" + effectiveDate + "' ");
+        q.append(" and e.voided = 0  ");
+
+        List<Encounter> encounters = new ArrayList<>();
+        EncounterService encounterService = Context.getEncounterService();
+        List<List<Object>> queryData = Context.getAdministrationService().executeSQL(q.toString(), true);
+        for (List<Object> row : queryData) {
+            Integer encounterId = (Integer) row.get(0);
+            Encounter e = encounterService.getEncounter(encounterId);
+            encounters.add(e);
+        }
+        return encounters;
 
     }
 
