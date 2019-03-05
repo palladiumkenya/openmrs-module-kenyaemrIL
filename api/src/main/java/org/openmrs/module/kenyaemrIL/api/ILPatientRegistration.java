@@ -113,26 +113,28 @@ public class ILPatientRegistration {
         PATIENT_VISIT patientVisit = new PATIENT_VISIT();
         // get enrollment Date
         Encounter lastEnrollment = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc"));
+        Integer patientEnrollmentTypeConcept = 164932;
+        Integer patientEnrollmentSourceConcept = 160540;
         if(lastEnrollment != null) {
             Date lastEnrollmentDate = lastEnrollment.getEncounterDatetime();
             patientVisit.setVisit_date(formatter.format(lastEnrollmentDate));      //hiv_care_enrollment date
             patientVisit.setHiv_care_enrollment_date(formatter.format(lastEnrollmentDate));        //hiv_care_enrollment date
+            for (Obs obs : lastEnrollment.getObs()) {
+                //set patient type
+                if (obs.getConcept().getConceptId().equals(patientEnrollmentTypeConcept)) {    //get patient type
+                    patientVisit.setPatient_type(patientTypeConverter(obs.getValueCoded()));
+                }
+                if (obs.getConcept().getConceptId().equals(patientEnrollmentSourceConcept)) {    //get patient source
+                    patientVisit.setPatient_source(patientSourceConverter(obs.getValueCoded()));
+                }
+            }
         }else{
             patientVisit.setVisit_date("");      //hiv_care_enrollment date
             patientVisit.setHiv_care_enrollment_date("");        //hiv_care_enrollment date
+            patientVisit.setPatient_type("");
+            patientVisit.setPatient_source("");
         }
-        Integer patientEnrollmentTypeConcept = 164932;
-        Integer patientEnrollmentSourceConcept = 160540;
 
-        for (Obs obs : lastEnrollment.getObs()) {
-            //set patient type
-            if (obs.getConcept().getConceptId().equals(patientEnrollmentTypeConcept)) {    //get patient type
-                patientVisit.setPatient_type(patientTypeConverter(obs.getValueCoded()));
-            }
-            if (obs.getConcept().getConceptId().equals(patientEnrollmentSourceConcept)) {    //get patient source
-                patientVisit.setPatient_source(patientSourceConverter(obs.getValueCoded()));
-            }
-        }
       //add patientVisit to IL message
         ilMessage.setPatient_visit(patientVisit);
 

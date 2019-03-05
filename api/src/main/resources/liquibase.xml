@@ -30,6 +30,9 @@
         <column name="date_created" type="datetime"></column>
         <column name="uuid" type="varchar(38)"></column>
     </createTable>
+    <modifySql dbms="mysql">
+        <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_unicode_ci"/>
+    </modifySql>
 </changeSet>
     <!--Adding scheduled task :Set the outbox task-->
     <changeSet id="${project.parent.artifactId}-20161212-1044" author="pwangoo">
