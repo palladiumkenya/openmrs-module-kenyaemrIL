@@ -72,15 +72,15 @@ public class Utils {
 
     public static Location getDefaultLocation() {
         try {
-            Context.addProxyPrivilege(PrivilegeConstants.VIEW_LOCATIONS);
-            Context.addProxyPrivilege(PrivilegeConstants.VIEW_GLOBAL_PROPERTIES);
+            Context.addProxyPrivilege(PrivilegeConstants.GET_LOCATIONS);
+            Context.addProxyPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
             String GP_DEFAULT_LOCATION = "kenyaemr.defaultLocation";
             GlobalProperty gp = Context.getAdministrationService().getGlobalPropertyObject(GP_DEFAULT_LOCATION);
             return gp != null ? ((Location) gp.getValue()) : null;
         }
         finally {
-            Context.removeProxyPrivilege(PrivilegeConstants.VIEW_LOCATIONS);
-            Context.removeProxyPrivilege(PrivilegeConstants.VIEW_GLOBAL_PROPERTIES);
+            Context.removeProxyPrivilege(PrivilegeConstants.GET_LOCATIONS);
+            Context.removeProxyPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
         }
 
     }
@@ -92,16 +92,16 @@ public class Utils {
             location = getDefaultLocation();
         }
         try {
-            Context.addProxyPrivilege(PrivilegeConstants.VIEW_LOCATIONS);
-            Context.addProxyPrivilege(PrivilegeConstants.VIEW_GLOBAL_PROPERTIES);
+            Context.addProxyPrivilege(PrivilegeConstants.GET_LOCATIONS);
+            Context.addProxyPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
             for (LocationAttribute attr : location.getAttributes()) {
                 if (attr.getAttributeType().getUuid().equals(MASTER_FACILITY_CODE) && !attr.isVoided()) {
                     return attr.getValueReference();
                 }
             }
         } finally {
-            Context.removeProxyPrivilege(PrivilegeConstants.VIEW_LOCATIONS);
-            Context.removeProxyPrivilege(PrivilegeConstants.VIEW_GLOBAL_PROPERTIES);
+            Context.removeProxyPrivilege(PrivilegeConstants.GET_LOCATIONS);
+            Context.removeProxyPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
         }
         return null;
     }
@@ -112,8 +112,8 @@ public class Utils {
         String MASTER_FACILITY_CODE = "8a845a89-6aa5-4111-81d3-0af31c45c002";
 
         try {
-            Context.addProxyPrivilege(PrivilegeConstants.VIEW_LOCATIONS);
-            Context.addProxyPrivilege(PrivilegeConstants.VIEW_GLOBAL_PROPERTIES);
+            Context.addProxyPrivilege(PrivilegeConstants.GET_LOCATIONS);
+            Context.addProxyPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
             LocationAttributeType facilityMflCode = Context.getLocationService().getLocationAttributeTypeByUuid(MASTER_FACILITY_CODE);
             Map<LocationAttributeType, Object> mflCodeMap = new HashMap<LocationAttributeType, Object>();
             mflCodeMap.put(facilityMflCode, mflCode);
@@ -123,8 +123,8 @@ public class Utils {
             return locationForMfl.size() > 0 ? locationForMfl.get(0) : getDefaultLocation();
         }
         finally {
-            Context.removeProxyPrivilege(PrivilegeConstants.VIEW_LOCATIONS);
-            Context.removeProxyPrivilege(PrivilegeConstants.VIEW_GLOBAL_PROPERTIES);
+            Context.removeProxyPrivilege(PrivilegeConstants.GET_LOCATIONS);
+            Context.removeProxyPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
         }
     }
 
