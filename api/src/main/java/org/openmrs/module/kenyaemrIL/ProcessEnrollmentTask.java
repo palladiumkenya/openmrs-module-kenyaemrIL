@@ -68,8 +68,11 @@ public class ProcessEnrollmentTask extends AbstractTask {
         String effectiveDate = sd.format(date);
         StringBuilder q = new StringBuilder();
         q.append("select e.encounter_id ");
-        q.append("from encounter e ");
-        q.append("where e.date_created >= '" + effectiveDate + "' ");
+        q.append("from encounter e inner join " +
+                "( " +
+                " select encounter_type_id, uuid, name from encounter_type where uuid ='de78a6be-bfc5-4634-adc3-5f1a280455cc' " +
+                " ) et on et.encounter_type_id=e.encounter_type ");
+        q.append("where e.date_created >= '" + effectiveDate + "' or e.date_changed >= '" + effectiveDate + "'");
         q.append(" and e.voided = 0  ");
 
         List<Encounter> encounters = new ArrayList<>();

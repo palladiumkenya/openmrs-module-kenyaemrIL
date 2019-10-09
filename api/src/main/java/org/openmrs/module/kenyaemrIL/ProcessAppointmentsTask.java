@@ -65,14 +65,18 @@ public class ProcessAppointmentsTask extends AbstractTask {
     }
 
     private List<Encounter> fetchPendingAppointments(List<EncounterType> encounterTypes, Date date) {
-        // return Context.getEncounterService().getEncounters(null, null, date, null, null, encounterTypes, null, null, null, false);
 
         SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
         String effectiveDate = sd.format(date);
         StringBuilder q = new StringBuilder();
         q.append("select e.encounter_id ");
-        q.append("from encounter e ");
-        q.append("where e.date_created >= '" + effectiveDate + "' ");
+        q.append("from encounter e inner join " +
+                "( " +
+                " select encounter_type_id, uuid, name from encounter_type where uuid ='a0034eee-1940-4e35-847f-97537a35d05e' " +
+                " ) et on et.encounter_type_id=e.encounter_type " +
+                " inner join obs o on o.encounter_id=e.encounter_id and o.voided=0 " +
+                " and o.concept_id=5096 ");
+        q.append("where e.date_created >= '" + effectiveDate + "' or e.date_changed >= '" + effectiveDate + "'");
         q.append(" and e.voided = 0  ");
 
         List<Encounter> encounters = new ArrayList<>();
