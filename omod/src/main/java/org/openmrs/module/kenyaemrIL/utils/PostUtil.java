@@ -2,7 +2,6 @@ package org.openmrs.module.kenyaemrIL.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -26,7 +25,7 @@ public class PostUtil<T> {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 //            String encoding = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbiIsImF1ZCI6IndlYiIsImV4cCI6MTUyMzYxMjg4OSwiaWF0IjoxNTIzMDA4MDg5fQ.lUOuYNGy4kk1RmRFKm7IwVb3iN78gwSf5KE9thLl9KtDwU1ZGkJ3SNjiPSNembQ4nYneHvapggoj_qvfCl2nBA";
             String userpass = "admin" + ":" + "Admin123";
-            String basicAuth = String.format("Basic %s", DatatypeConverter.printBase64Binary(userpass.getBytes()));
+      //      String basicAuth = String.format("Basic %s", DatatypeConverter.printBase64Binary(userpass.getBytes()));
 //            connection.setRequestProperty("Authorization", "Bearer " + basicAuth);
             connection.setDoInput(true);
             connection.setDoOutput(true);
