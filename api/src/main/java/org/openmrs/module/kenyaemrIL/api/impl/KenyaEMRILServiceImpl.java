@@ -434,8 +434,125 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public boolean processPharmacyOrder(ILMessage ilMessage) {
-        throw new NotYetImplementedException("Not Yet Implemented");
+    public boolean processPharmacyOrder(ILMessage ilMessage, String messsageUUID) {
+        boolean success = false;
+        String cccNumber = null;
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+        KenyaEMRILMessage kenyaEMRILMessage = getKenyaEMRILMessageByUuid(messsageUUID);
+//        1. Fetch the person to update using the CCC number
+        for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
+            if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
+                cccNumber = internalPatientId.getId().replaceAll("\\D", "");
+                ;
+                break;
+            }
+        }
+        if (cccNumber == null) {
+            // no patient with the given ccc number, proceed to create a new patient with the received details
+            //TODO:this is wrong we should discard this message  so do nothing
+            kenyaEMRILMessage.setStatus("Missing CCC Number");
+            success = false;
+            log.info("Pharmacy Order message without CCC Number discarded " + new Date());
+        } else {
+            //            fetch the patient
+            List<Patient> patients = Context.getPatientService().getPatients(null, cccNumber, allPatientIdentifierTypes, true);
+            Patient patient;
+            if (patients.size() > 0) {
+                patient = patients.get(0);
+                //Save the appointment
+                AppointmentMessage appointmentMessage = ilMessage.extractAppointmentMessage();
+                APPOINTMENT_INFORMATION[] appointmentInformation = appointmentMessage.getAppointment_information();
+                Encounter appEncounter;
+                //  Encounter lastFollowUpEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("e87aa2ad-6886-422e-9dfd-064e3bfe3aad"));   //last greencard followup form
+                EncounterType encounterTypeGreencard = Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e");   //  HIV consultation/followup encounter
+                //Fetch all encounters
+                List<EncounterType> encounterTypes = new ArrayList<>();
+                encounterTypes.add(encounterTypeGreencard);
+
+                Integer patientTCAConcept = 5096;
+                Integer patientTCAReasonConcept = 160288;
+                for (APPOINTMENT_INFORMATION appInfo : appointmentInformation) {
+                    PLACER_APPOINTMENT_NUMBER placerAppointmentNumber = appInfo.getPlacer_appointment_number();
+                    String appointmentStatus = appInfo.getAppointment_status();
+                    String appointmentReason = appInfo.getAppointment_reason();
+                    String action_code = appInfo.getAction_code();
+                    String appointment_note = appInfo.getAppointment_note();
+                    String appointmentDate = appInfo.getAppointment_date();
+                    String appointmentMsgDatetime = appointmentMessage.getMessage_header().getMessage_datetime();
+                    String placerAppointmentNumberNumber = placerAppointmentNumber.getNumber();
+                    String entity = placerAppointmentNumber.getEntity();
+                    Date ilMsgDate = null;
+                    //Validate
+                    if (appointmentDate != null) {
+                        try {
+                            ilMsgDate = formatter.parse(appointmentMsgDatetime);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        List<Encounter> followUpEncounters = Context.getEncounterService().getEncounters(patient, null, ilMsgDate, null, null, encounterTypes, null, null, null, false);
+                        if (followUpEncounters.size() > 0) {
+                            appEncounter = followUpEncounters.get(0);
+                            Obs o = new Obs();
+                            o.setComment(placerAppointmentNumberNumber + "" + appointment_note + "" + appointmentStatus + "" + appointmentReason);
+                            o.setConcept(Context.getConceptService().getConcept(patientTCAConcept));
+                            try {
+                                o.setValueDatetime(formatter.parse(appointmentDate));
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+                            o.setObsDatetime(new Date());
+                            o.setDateCreated(new Date());
+                            o.setCreator(Context.getUserService().getUser(1));
+                            o.setLocation(appEncounter.getLocation());
+                            o.setObsDatetime(appEncounter.getEncounterDatetime());
+                            o.setPerson(patient);
+                            appEncounter.addObs(o);
+                            Context.getEncounterService().saveEncounter(appEncounter);
+                            kenyaEMRILMessage.setStatus("Success");
+                            success = true;
+
+                        } else {
+                            //Define encounter
+                            Encounter enc = new Encounter();
+                            Location location = Utils.getDefaultLocation();
+                            enc.setLocation(location);
+                            enc.setEncounterType(Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e"));     //  HIV consultation/followup encounter
+                            enc.setEncounterDatetime(new Date());
+                            enc.setPatient(patient);
+                            enc.addProvider(Context.getEncounterService().getEncounterRole(1), Context.getProviderService().getProvider(1));
+                            enc.setForm(Context.getFormService().getFormByUuid("22c68f86-bbf0-49ba-b2d1-23fa7ccf0259"));   //TODO: HIV greencard form  to be substituted with Fast track form
+
+                            Obs o = new Obs();
+                            o.setComment(placerAppointmentNumberNumber + "" + appointment_note + "" + appointmentStatus + "" + appointmentReason);
+                            o.setConcept(Context.getConceptService().getConcept(patientTCAConcept));
+                            try {
+                                o.setValueDatetime(formatter.parse(appointmentDate));
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+                            o.setDateCreated(new Date());
+                            o.setCreator(Context.getUserService().getUser(1));
+                            o.setLocation(enc.getLocation());
+                            o.setObsDatetime(enc.getEncounterDatetime());
+                            o.setPerson(patient);
+
+                            enc.addObs(o);
+                            Context.getEncounterService().saveEncounter(enc);
+                            kenyaEMRILMessage.setStatus("Success");
+                            success = true;
+                        }
+
+                    }
+                }
+
+            } else {
+                log.error("Cannot schedule appnmt: CCC number format does not match:");
+                kenyaEMRILMessage.setStatus("Could not find a match");
+                success = false;
+            }
+
+        }
+        return success;
     }
 
     @Override

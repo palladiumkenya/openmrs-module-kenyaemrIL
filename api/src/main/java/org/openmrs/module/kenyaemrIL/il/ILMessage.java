@@ -2,7 +2,12 @@ package org.openmrs.module.kenyaemrIL.il;
 
 import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
 import org.openmrs.module.kenyaemrIL.il.appointment.AppointmentMessage;
-import org.openmrs.module.kenyaemrIL.il.observation.*;
+import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
+import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
+import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.CommonOrderDetails;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.PharmacyEncodedOrder;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 
 /**
@@ -17,6 +22,8 @@ public class ILMessage {
     private OBSERVATION_RESULT[] observation_result;
     private APPOINTMENT_INFORMATION[] appointment_information;
     private VIRAL_LOAD_RESULT[] viral_load_result;
+    private CommonOrderDetails[] commonOrderDetails;
+    private PharmacyEncodedOrder[] encodedOrderList;
 
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
@@ -74,6 +81,23 @@ public class ILMessage {
         this.viral_load_result = viral_load_result;
     }
 
+    // Adding pharmacy order
+    public CommonOrderDetails[] getCommonOrderDetails() {
+        return commonOrderDetails;
+    }
+
+    public void setCommonOrderDetails(CommonOrderDetails[] commonOrderDetails) {
+        this.commonOrderDetails = commonOrderDetails;
+    }
+
+    public PharmacyEncodedOrder[] getEncodedOrderList() {
+        return encodedOrderList;
+    }
+
+    public void setEncodedOrderList(PharmacyEncodedOrder[] encodedOrderList) {
+        this.encodedOrderList = encodedOrderList;
+    }
+
     public ILPerson extractILRegistration() {
         ILPerson ilPerson = new ILPerson();
         ilPerson.setMessage_header(this.message_header);
@@ -105,5 +129,14 @@ public class ILMessage {
         viralLoadMessage.setPatient_identification(this.getPatient_identification());
         viralLoadMessage.setViral_load_result(this.getViral_load_result());
         return viralLoadMessage;
+    }
+
+    public ILPharmacyOrder extractPharmacyOrderMessage() {
+        ILPharmacyOrder pharmacyOrderMessage = new ILPharmacyOrder();
+        pharmacyOrderMessage.setMessage_header(this.message_header);
+        pharmacyOrderMessage.setPatient_identification(this.getPatient_identification());
+       // pharmacyOrderMessage.setCommonOrderDetails(this.getCommonOrderDetails());
+       // pharmacyOrderMessage.setEncodedOrderList(this.getEncodedOrderList());
+        return pharmacyOrderMessage;
     }
 }
