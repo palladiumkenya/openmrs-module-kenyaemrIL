@@ -10,23 +10,15 @@ import java.util.List;
  *         Created on 21/11/2017.
  */
 public class ILPharmacyDispense {
-    private CommonOrderDetails commonOrderDetails;
+
     private List<PharmacyEncodedOrder> encodedOrders;
     private List<PharmacyDispense> dispenseList;
-
-
+    private PharmacyDispense[] dispense_information;
+    private CommonOrderDetails[] commonOrderDetails;
     private MESSAGE_HEADER message_header;
     private PATIENT_IDENTIFICATION patient_identification;
 
 
-
-    public CommonOrderDetails getCommonOrderDetails() {
-        return commonOrderDetails;
-    }
-
-    public void setCommonOrderDetails(CommonOrderDetails commonOrderDetails) {
-        this.commonOrderDetails = commonOrderDetails;
-    }
 
     public List<PharmacyEncodedOrder> getEncodedOrders() {
         return encodedOrders;
@@ -42,6 +34,22 @@ public class ILPharmacyDispense {
 
     public void setDispenseList(List<PharmacyDispense> dispenseList) {
         this.dispenseList = dispenseList;
+    }
+
+    public PharmacyDispense[] getDispense_information() {
+        return dispense_information;
+    }
+
+    public void setDispense_information(PharmacyDispense[] dispense_information) {
+        this.dispense_information = dispense_information;
+    }
+
+    public CommonOrderDetails[] getCommon_Order_information() {
+        return commonOrderDetails;
+    }
+
+    public void setCommon_Order_information(CommonOrderDetails[] common_order_information) {
+        this.commonOrderDetails = commonOrderDetails;
     }
 
     public MESSAGE_HEADER getMessage_header() {

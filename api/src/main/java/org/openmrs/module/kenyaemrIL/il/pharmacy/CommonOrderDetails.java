@@ -68,4 +68,6 @@ public class CommonOrderDetails {
     public void setOrderingPhysician(OrderingPhysician orderingPhysician) {
         this.orderingPhysician = orderingPhysician;
     }
+
+
 }

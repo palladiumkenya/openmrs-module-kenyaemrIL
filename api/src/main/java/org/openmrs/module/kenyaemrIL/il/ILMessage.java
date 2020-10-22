@@ -6,8 +6,8 @@ import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
 import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.CommonOrderDetails;
-import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
-import org.openmrs.module.kenyaemrIL.il.pharmacy.PharmacyEncodedOrder;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.PharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 
 /**
@@ -22,8 +22,8 @@ public class ILMessage {
     private OBSERVATION_RESULT[] observation_result;
     private APPOINTMENT_INFORMATION[] appointment_information;
     private VIRAL_LOAD_RESULT[] viral_load_result;
+    private PharmacyDispense[] dispense_information;
     private CommonOrderDetails[] commonOrderDetails;
-    private PharmacyEncodedOrder[] encodedOrderList;
 
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
@@ -81,24 +81,24 @@ public class ILMessage {
         this.viral_load_result = viral_load_result;
     }
 
-    // Adding pharmacy order
-    public CommonOrderDetails[] getCommonOrderDetails() {
+    // Adding pharmacy dispense
+    public PharmacyDispense[] getDispense_information() {
+        return dispense_information;
+    }
+
+    public void setDispense_information(PharmacyDispense[] dispense_information) {
+        this.dispense_information = dispense_information;
+    }
+
+    public CommonOrderDetails[] getCommon_Order_information() {
         return commonOrderDetails;
     }
 
-    public void setCommonOrderDetails(CommonOrderDetails[] commonOrderDetails) {
+    public void setCommon_Order_information(CommonOrderDetails[] commonOrderDetails) {
         this.commonOrderDetails = commonOrderDetails;
     }
 
-    public PharmacyEncodedOrder[] getEncodedOrderList() {
-        return encodedOrderList;
-    }
-
-    public void setEncodedOrderList(PharmacyEncodedOrder[] encodedOrderList) {
-        this.encodedOrderList = encodedOrderList;
-    }
-
-    public ILPerson extractILRegistration() {
+   public ILPerson extractILRegistration() {
         ILPerson ilPerson = new ILPerson();
         ilPerson.setMessage_header(this.message_header);
         ilPerson.setPatient_identification(this.patient_identification);
@@ -131,12 +131,22 @@ public class ILMessage {
         return viralLoadMessage;
     }
 
-    public ILPharmacyOrder extractPharmacyOrderMessage() {
-        ILPharmacyOrder pharmacyOrderMessage = new ILPharmacyOrder();
-        pharmacyOrderMessage.setMessage_header(this.message_header);
-        pharmacyOrderMessage.setPatient_identification(this.getPatient_identification());
-       // pharmacyOrderMessage.setCommonOrderDetails(this.getCommonOrderDetails());
-       // pharmacyOrderMessage.setEncodedOrderList(this.getEncodedOrderList());
-        return pharmacyOrderMessage;
+//    public ILPharmacyOrder extractPharmacyOrderMessage() {
+//        ILPharmacyOrder pharmacyOrderMessage = new ILPharmacyOrder();
+//        pharmacyOrderMessage.setMessage_header(this.message_header);
+//        pharmacyOrderMessage.setPatient_identification(this.getPatient_identification());
+//       // pharmacyOrderMessage.setCommonOrderDetails(this.getCommonOrderDetails());
+//        //pharmacyOrderMessage.setEncodedOrderList(this.getEncodedOrderList());
+//        return pharmacyOrderMessage;
+//    }
+
+    public ILPharmacyDispense extractPharmacyDispenseMessage() {
+        ILPharmacyDispense pharmacyDispenseMessage = new ILPharmacyDispense();
+        pharmacyDispenseMessage.setMessage_header(this.message_header);
+        pharmacyDispenseMessage.setPatient_identification(this.getPatient_identification());
+        pharmacyDispenseMessage.setDispense_information(this.getDispense_information());
+        pharmacyDispenseMessage.setCommon_Order_information(this.getCommon_Order_information());
+       // pharmacyDispenseMessage.setCommon_Order_information(this.getCommon_Order_information());   //Add pharmacy_encoded_order
+        return pharmacyDispenseMessage;
     }
 }

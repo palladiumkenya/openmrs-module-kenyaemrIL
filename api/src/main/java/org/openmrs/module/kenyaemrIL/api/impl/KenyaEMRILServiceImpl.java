@@ -19,7 +19,25 @@ import com.thoughtworks.xstream.core.util.PresortedSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.cfg.NotYetImplementedException;
-import org.openmrs.*;
+import org.openmrs.CareSetting;
+import org.openmrs.Concept;
+import org.openmrs.Drug;
+import org.openmrs.DrugOrder;
+import org.openmrs.Encounter;
+import org.openmrs.EncounterType;
+import org.openmrs.Location;
+import org.openmrs.Obs;
+import org.openmrs.Order;
+import org.openmrs.OrderFrequency;
+import org.openmrs.OrderGroup;
+import org.openmrs.Patient;
+import org.openmrs.PatientIdentifier;
+import org.openmrs.PatientIdentifierType;
+import org.openmrs.PersonAddress;
+import org.openmrs.PersonAttribute;
+import org.openmrs.PersonAttributeType;
+import org.openmrs.PersonName;
+import org.openmrs.SimpleDosingInstructions;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.PatientService;
@@ -30,7 +48,17 @@ import org.openmrs.module.kenyaemr.api.KenyaEmrService;
 import org.openmrs.module.kenyaemrIL.api.ILMessageType;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
-import org.openmrs.module.kenyaemrIL.il.*;
+import org.openmrs.module.kenyaemrIL.il.EXTERNAL_PATIENT_ID;
+import org.openmrs.module.kenyaemrIL.il.ILMessage;
+import org.openmrs.module.kenyaemrIL.il.ILPerson;
+import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
+import org.openmrs.module.kenyaemrIL.il.MESSAGE_HEADER;
+import org.openmrs.module.kenyaemrIL.il.MOTHER_NAME;
+import org.openmrs.module.kenyaemrIL.il.NEXT_OF_KIN;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_ADDRESS;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_NAME;
 import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
 import org.openmrs.module.kenyaemrIL.il.appointment.AppointmentMessage;
 import org.openmrs.module.kenyaemrIL.il.appointment.PLACER_APPOINTMENT_NUMBER;
@@ -39,6 +67,7 @@ import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.PharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 import org.openmrs.module.kenyaemrIL.kenyaemrUtils.Utils;
@@ -48,7 +77,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -435,6 +471,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
     @Override
     public boolean processPharmacyOrder(ILMessage ilMessage, String messsageUUID) {
+        throw new NotYetImplementedException("Not Yet Implemented");
+    }
+
+    @Override
+    public boolean processPharmacyDispense(ILMessage ilMessage, String messsageUUID) {
         boolean success = false;
         String cccNumber = null;
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
@@ -452,92 +493,125 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             //TODO:this is wrong we should discard this message  so do nothing
             kenyaEMRILMessage.setStatus("Missing CCC Number");
             success = false;
-            log.info("Pharmacy Order message without CCC Number discarded " + new Date());
+            log.info("Pharmacy Dispense message without CCC Number discarded " + new Date());
         } else {
             //            fetch the patient
             List<Patient> patients = Context.getPatientService().getPatients(null, cccNumber, allPatientIdentifierTypes, true);
             Patient patient;
             if (patients.size() > 0) {
                 patient = patients.get(0);
-                //Save the appointment
-                AppointmentMessage appointmentMessage = ilMessage.extractAppointmentMessage();
-                APPOINTMENT_INFORMATION[] appointmentInformation = appointmentMessage.getAppointment_information();
+                //Save the dispense
+
+                 ILPharmacyDispense dispenceMessage = ilMessage.extractPharmacyDispenseMessage();
+                 PharmacyDispense[] dispenseInformation = dispenceMessage.getDispense_information();
+
                 Encounter appEncounter;
-                //  Encounter lastFollowUpEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("e87aa2ad-6886-422e-9dfd-064e3bfe3aad"));   //last greencard followup form
-                EncounterType encounterTypeGreencard = Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e");   //  HIV consultation/followup encounter
+
+                EncounterType encounterTypeDrugOrder = Context.getEncounterService().getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3");   //  Drug Order encounter
                 //Fetch all encounters
                 List<EncounterType> encounterTypes = new ArrayList<>();
-                encounterTypes.add(encounterTypeGreencard);
+                encounterTypes.add(encounterTypeDrugOrder);
+                ArrayList<Order> orderList=new ArrayList<Order>();
 
-                Integer patientTCAConcept = 5096;
-                Integer patientTCAReasonConcept = 160288;
-                for (APPOINTMENT_INFORMATION appInfo : appointmentInformation) {
-                    PLACER_APPOINTMENT_NUMBER placerAppointmentNumber = appInfo.getPlacer_appointment_number();
-                    String appointmentStatus = appInfo.getAppointment_status();
-                    String appointmentReason = appInfo.getAppointment_reason();
-                    String action_code = appInfo.getAction_code();
-                    String appointment_note = appInfo.getAppointment_note();
-                    String appointmentDate = appInfo.getAppointment_date();
-                    String appointmentMsgDatetime = appointmentMessage.getMessage_header().getMessage_datetime();
-                    String placerAppointmentNumberNumber = placerAppointmentNumber.getNumber();
-                    String entity = placerAppointmentNumber.getEntity();
+                for (PharmacyDispense dispenseInfo : dispenseInformation) {
+                    String dispenseNotes = dispenseInfo.getDispenseNotes();
+                    String frequency = dispenseInfo.getFrequency();
+                    String quantityDispensed = dispenseInfo.getQuantityDispensed();
+                    String dosage = dispenseInfo.getDosage();
+                    String codingSystem = dispenseInfo.getCodingSystem();
+                    String strength = dispenseInfo.getStrength();
+                    String duration = dispenseInfo.getDuration();
+                    String actualDrugs = dispenseInfo.getActualDrugs();
+                    String drugName = dispenseInfo.getDrugName();
+                    String dispenseMsgDatetime = dispenceMessage.getMessage_header().getMessage_datetime();
                     Date ilMsgDate = null;
                     //Validate
-                    if (appointmentDate != null) {
+                    if (drugName != null) {
                         try {
-                            ilMsgDate = formatter.parse(appointmentMsgDatetime);
+                            ilMsgDate = formatter.parse(dispenseMsgDatetime);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
-                        List<Encounter> followUpEncounters = Context.getEncounterService().getEncounters(patient, null, ilMsgDate, null, null, encounterTypes, null, null, null, false);
-                        if (followUpEncounters.size() > 0) {
-                            appEncounter = followUpEncounters.get(0);
-                            Obs o = new Obs();
-                            o.setComment(placerAppointmentNumberNumber + "" + appointment_note + "" + appointmentStatus + "" + appointmentReason);
-                            o.setConcept(Context.getConceptService().getConcept(patientTCAConcept));
-                            try {
-                                o.setValueDatetime(formatter.parse(appointmentDate));
-                            } catch (ParseException e) {
-                                e.printStackTrace();
-                            }
-                            o.setObsDatetime(new Date());
-                            o.setDateCreated(new Date());
-                            o.setCreator(Context.getUserService().getUser(1));
-                            o.setLocation(appEncounter.getLocation());
-                            o.setObsDatetime(appEncounter.getEncounterDatetime());
-                            o.setPerson(patient);
-                            appEncounter.addObs(o);
-                            Context.getEncounterService().saveEncounter(appEncounter);
+                        List<Encounter> drugOrderEncounters = Context.getEncounterService().getEncounters(patient, null, ilMsgDate, null, null, encounterTypes, null, null, null, false);
+                        if (drugOrderEncounters.size() > 0) {
+                            appEncounter = drugOrderEncounters.get(0);
+
+                            DrugOrder drugOrder;
+                            drugOrder=new DrugOrder();
+
+                            OrderGroup orderGroup;
+                            orderGroup=new OrderGroup();          // Assuming a new ordergroup
+
+                            drugOrder.setPatient(patient);
+                            drugOrder.setEncounter(appEncounter);
+                            drugOrder.setDateCreated(ilMsgDate);
+                            Drug drug = conceptService.getDrugByNameOrId(drugNameConverter(drugName));    // Needs a mapper
+                            drugOrder.setDrug(drug);
+                            drugOrder.setInstructions(dispenseNotes);
+                            drugOrder.setOrderer(drugOrder.getOrderer());      //Assuming super user untill we get ProviderID in the message
+                            drugOrder.setDose(Double.parseDouble(dosage));
+                            Concept doseUnitConcept = conceptService.getConceptByUuid("161553AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");   // Assuming MG/Milligram
+                            Concept quantityUnitConcept=conceptService.getConceptByUuid("1608AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");   // Assuming capsules
+                            drugOrder.setDoseUnits(doseUnitConcept);
+                            drugOrder.setDosingType(SimpleDosingInstructions.class);
+                            Concept route = conceptService.getConcept(160240);
+                            drugOrder.setRoute(route);
+                            OrderFrequency orderFrequency = Context.getOrderService().getOrderFrequency(1);  // Needs a mapper
+                            drugOrder.setFrequency(orderFrequency);
+                            CareSetting outpatient = Context.getOrderService().getCareSettingByName("OUTPATIENT");
+                            drugOrder.setCareSetting(outpatient);
+                            drugOrder.setQuantity(Double.parseDouble(quantityDispensed));
+                            drugOrder.setQuantityUnits(quantityUnitConcept);
+                            drugOrder.setNumRefills(0);
+                            drugOrder.setOrderGroup(orderGroup);
+                            orderList.add(drugOrder);
+
+//                            appEncounter.addObs(o);
+//                            Context.getEncounterService().saveEncounter(appEncounter);
+
+                            orderGroup.setOrders(orderList);
+                            Context.getOrderService().saveOrderGroup(orderGroup);
                             kenyaEMRILMessage.setStatus("Success");
                             success = true;
 
                         } else {
                             //Define encounter
                             Encounter enc = new Encounter();
-                            Location location = Utils.getDefaultLocation();
-                            enc.setLocation(location);
-                            enc.setEncounterType(Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e"));     //  HIV consultation/followup encounter
-                            enc.setEncounterDatetime(new Date());
-                            enc.setPatient(patient);
-                            enc.addProvider(Context.getEncounterService().getEncounterRole(1), Context.getProviderService().getProvider(1));
-                            enc.setForm(Context.getFormService().getFormByUuid("22c68f86-bbf0-49ba-b2d1-23fa7ccf0259"));   //TODO: HIV greencard form  to be substituted with Fast track form
+                            DrugOrder drugOrder;
+                            drugOrder=new DrugOrder();
 
-                            Obs o = new Obs();
-                            o.setComment(placerAppointmentNumberNumber + "" + appointment_note + "" + appointmentStatus + "" + appointmentReason);
-                            o.setConcept(Context.getConceptService().getConcept(patientTCAConcept));
-                            try {
-                                o.setValueDatetime(formatter.parse(appointmentDate));
-                            } catch (ParseException e) {
-                                e.printStackTrace();
-                            }
-                            o.setDateCreated(new Date());
-                            o.setCreator(Context.getUserService().getUser(1));
-                            o.setLocation(enc.getLocation());
-                            o.setObsDatetime(enc.getEncounterDatetime());
-                            o.setPerson(patient);
+                            OrderGroup orderGroup;
+                            orderGroup=new OrderGroup();          // Assuming a new ordergroup
 
-                            enc.addObs(o);
-                            Context.getEncounterService().saveEncounter(enc);
+                            drugOrder.setPatient(patient);
+                            drugOrder.setEncounter(enc);
+                            drugOrder.setDateCreated(ilMsgDate);
+                            Drug drug = conceptService.getDrugByNameOrId(drugNameConverter(drugName));    // Needs a mapper
+                            drugOrder.setDrug(drug);
+                            drugOrder.setInstructions(dispenseNotes);
+                            drugOrder.setOrderer(drugOrder.getOrderer());      //Assuming super user untill we get ProviderID in the message
+                            drugOrder.setDose(Double.parseDouble(dosage));
+                            Concept doseUnitConcept = conceptService.getConceptByUuid("161553AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");   // Assuming MG/Milligram
+                            Concept quantityUnitConcept=conceptService.getConceptByUuid("1608AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");   // Assuming capsules
+                            drugOrder.setDoseUnits(doseUnitConcept);
+                            drugOrder.setDosingType(SimpleDosingInstructions.class);
+                            Concept route = conceptService.getConcept(160240);
+                            drugOrder.setRoute(route);
+                            OrderFrequency orderFrequency = Context.getOrderService().getOrderFrequency(1);  // Needs a mapper
+                            drugOrder.setFrequency(orderFrequency);
+                            CareSetting outpatient = Context.getOrderService().getCareSettingByName("OUTPATIENT");
+                            drugOrder.setCareSetting(outpatient);
+                            drugOrder.setQuantity(Double.parseDouble(quantityDispensed));
+                            drugOrder.setQuantityUnits(quantityUnitConcept);
+                            drugOrder.setNumRefills(0);
+                            drugOrder.setOrderGroup(orderGroup);
+                            orderList.add(drugOrder);
+
+//                            appEncounter.addObs(o);
+//                            Context.getEncounterService().saveEncounter(appEncounter);
+
+                            orderGroup.setOrders(orderList);
+                            Context.getOrderService().saveOrderGroup(orderGroup);
                             kenyaEMRILMessage.setStatus("Success");
                             success = true;
                         }
@@ -546,18 +620,13 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 }
 
             } else {
-                log.error("Cannot schedule appnmt: CCC number format does not match:");
+                log.error("Cannot save drug dispense: CCC number format does not match:");
                 kenyaEMRILMessage.setStatus("Could not find a match");
                 success = false;
             }
 
         }
         return success;
-    }
-
-    @Override
-    public boolean processPharmacyDispense(ILMessage ilMessage) {
-        throw new NotYetImplementedException("Not Yet Implemented");
     }
 
     @Override
@@ -1776,6 +1845,14 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         whoSategeList.put(conceptService.getConcept(1222), "3");
         whoSategeList.put(conceptService.getConcept(1223), "4");
         return whoSategeList.get(key);
+    }
+
+    static String drugNameConverter(String key) {
+        Map<Concept, String> drugNameList = new HashMap<Concept, String>();
+        drugNameList.put(conceptService.getConcept(1652), "AF1A");
+        drugNameList.put(conceptService.getConcept(1652), "CF1A");
+        drugNameList.put(conceptService.getConcept(164505), "TLE");
+        return drugNameList.get(key);
     }
 
     public Integer calculateAge(Date date) {

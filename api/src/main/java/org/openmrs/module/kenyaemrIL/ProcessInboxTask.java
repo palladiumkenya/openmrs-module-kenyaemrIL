@@ -58,7 +58,7 @@ public class ProcessInboxTask extends AbstractTask {
                     break;
                 }
                 case "RDS^O13":{
-                    returnStatus = getEMRILService().processPharmacyDispense(ilMessage);
+                    returnStatus = getEMRILService().processPharmacyDispense(ilMessage,messsageUUID);
                     break;
                 }
                 case "SIU^S12":{
