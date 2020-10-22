@@ -67,7 +67,7 @@ import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
-import org.openmrs.module.kenyaemrIL.il.pharmacy.PharmacyDispense;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_DISPENSE;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 import org.openmrs.module.kenyaemrIL.kenyaemrUtils.Utils;
@@ -503,7 +503,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 //Save the dispense
 
                  ILPharmacyDispense dispenceMessage = ilMessage.extractPharmacyDispenseMessage();
-                 PharmacyDispense[] dispenseInformation = dispenceMessage.getDispense_information();
+                 PHARMACY_DISPENSE[] dispenseInformation = dispenceMessage.getDispense_information();
 
                 Encounter appEncounter;
 
@@ -513,7 +513,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 encounterTypes.add(encounterTypeDrugOrder);
                 ArrayList<Order> orderList=new ArrayList<Order>();
 
-                for (PharmacyDispense dispenseInfo : dispenseInformation) {
+                for (PHARMACY_DISPENSE dispenseInfo : dispenseInformation) {
                     String dispenseNotes = dispenseInfo.getDispenseNotes();
                     String frequency = dispenseInfo.getFrequency();
                     String quantityDispensed = dispenseInfo.getQuantityDispensed();

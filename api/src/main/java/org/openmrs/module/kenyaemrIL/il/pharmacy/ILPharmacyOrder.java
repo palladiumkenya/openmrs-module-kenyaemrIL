@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class ILPharmacyOrder {
     private COMMON_ORDER_DETAILS COMMONORDERDETAILS;
-    private List<PharmacyEncodedOrder> encodedOrderList;
+    private List<PHARMACY_ENCODED_ORDER> encodedOrderList;
     private MESSAGE_HEADER message_header;
     private PATIENT_IDENTIFICATION patient_identification;
 
@@ -23,11 +23,11 @@ public class ILPharmacyOrder {
         this.COMMONORDERDETAILS = COMMONORDERDETAILS;
     }
 
-    public List<PharmacyEncodedOrder> getEncodedOrderList() {
+    public List<PHARMACY_ENCODED_ORDER> getEncodedOrderList() {
         return encodedOrderList;
     }
 
-    public void setEncodedOrderList(List<PharmacyEncodedOrder> encodedOrderList) {
+    public void setEncodedOrderList(List<PHARMACY_ENCODED_ORDER> encodedOrderList) {
         this.encodedOrderList = encodedOrderList;
     }
 

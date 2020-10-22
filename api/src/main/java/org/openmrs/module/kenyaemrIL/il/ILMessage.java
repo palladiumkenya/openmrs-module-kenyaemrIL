@@ -7,8 +7,8 @@ import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.COMMON_ORDER_DETAILS;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
-import org.openmrs.module.kenyaemrIL.il.pharmacy.PharmacyDispense;
-import org.openmrs.module.kenyaemrIL.il.pharmacy.PharmacyEncodedOrder;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_DISPENSE;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_ENCODED_ORDER;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 
 /**
@@ -24,8 +24,8 @@ public class ILMessage {
     private APPOINTMENT_INFORMATION[] appointment_information;
     private VIRAL_LOAD_RESULT[] viral_load_result;
     private COMMON_ORDER_DETAILS common_order_details;
-    private PharmacyEncodedOrder[] pharmacyEncodedOrder;
-    private PharmacyDispense[] dispense_information;
+    private PHARMACY_ENCODED_ORDER[] pharmacy_encoded_orders;
+    private PHARMACY_DISPENSE[] dispense_information;
 
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
@@ -90,17 +90,17 @@ public class ILMessage {
         this.common_order_details = common_order_details;
     }
 
-    public PharmacyEncodedOrder[] getEncodedOrderList() { return pharmacyEncodedOrder; }
+    public PHARMACY_ENCODED_ORDER[] getEncodedOrderList() { return pharmacy_encoded_orders; }
 
-    public void setEncodedOrderList(PharmacyEncodedOrder[] pharmacyEncodedOrder) {
-        this.pharmacyEncodedOrder = pharmacyEncodedOrder;
+    public void setEncodedOrderList(PHARMACY_ENCODED_ORDER[] pharmacy_encoded_orders) {
+        this.pharmacy_encoded_orders = pharmacy_encoded_orders;
     }
 
-    public PharmacyDispense[] getDispense_information() {
+    public PHARMACY_DISPENSE[] getDispense_information() {
         return dispense_information;
     }
 
-    public void setDispense_information(PharmacyDispense[] dispense_information) {
+    public void setDispense_information(PHARMACY_DISPENSE[] dispense_information) {
         this.dispense_information = dispense_information;
     }
 
@@ -146,6 +146,7 @@ public class ILMessage {
         pharmacyDispenseMessage.setDispense_information(this.getDispense_information());
         return pharmacyDispenseMessage;
     }
+
 
 //    public static ILMessage fill(JsonObject jsonobj) throws IOException {
 //        ObjectMapper objectMapper = new ObjectMapper();

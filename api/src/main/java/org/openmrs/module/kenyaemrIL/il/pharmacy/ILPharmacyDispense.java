@@ -11,11 +11,11 @@ import java.util.List;
  */
 public class ILPharmacyDispense {
 
-    private List<PharmacyEncodedOrder> encodedOrders;
-    private List<PharmacyDispense> dispenseList;
-    private PharmacyDispense[] dispense_information;
+    private List<PHARMACY_ENCODED_ORDER> encodedOrders;
+    private List<PHARMACY_DISPENSE> dispenseList;
+    private PHARMACY_DISPENSE[] dispense_information;
     private COMMON_ORDER_DETAILS common_order_details;
-    private PharmacyEncodedOrder[] pharmacyEncodedOrder;
+    private PHARMACY_ENCODED_ORDER[] pharmacy_encoded_orders;
     private MESSAGE_HEADER message_header;
     private PATIENT_IDENTIFICATION patient_identification;
 
@@ -37,25 +37,25 @@ public class ILPharmacyDispense {
 
 
 
-    public List<PharmacyEncodedOrder> getEncodedOrders() {
+    public List<PHARMACY_ENCODED_ORDER> getEncodedOrders() {
         return encodedOrders;
     }
 
-    public void setEncodedOrders(List<PharmacyEncodedOrder> encodedOrders) {
+    public void setEncodedOrders(List<PHARMACY_ENCODED_ORDER> encodedOrders) {
         this.encodedOrders = encodedOrders;
     }
 
-    public List<PharmacyDispense> getDispenseList() {
+    public List<PHARMACY_DISPENSE> getDispenseList() {
         return dispenseList;
     }
 
-    public void setDispenseList(List<PharmacyDispense> dispenseList) {
+    public void setDispenseList(List<PHARMACY_DISPENSE> dispenseList) {
         this.dispenseList = dispenseList;
     }
 
-    public PharmacyDispense[] getDispense_information() { return dispense_information; }
+    public PHARMACY_DISPENSE[] getDispense_information() { return dispense_information; }
 
-    public void setDispense_information(PharmacyDispense[] dispense_information) {
+    public void setDispense_information(PHARMACY_DISPENSE[] dispense_information) {
         this.dispense_information = dispense_information;
     }
 
@@ -65,12 +65,12 @@ public class ILPharmacyDispense {
         this.common_order_details = common_order_details;
     }
 
-    public PharmacyEncodedOrder[] getEncodedOrderList() {
-        return pharmacyEncodedOrder;
+    public PHARMACY_ENCODED_ORDER[] getEncodedOrderList() {
+        return pharmacy_encoded_orders;
     }
 
-    public void setEncodedOrderList(PharmacyEncodedOrder[] pharmacyEncodedOrder) {
-        this.pharmacyEncodedOrder = pharmacyEncodedOrder;
+    public void setEncodedOrderList(PHARMACY_ENCODED_ORDER[] pharmacy_encoded_orders) {
+        this.pharmacy_encoded_orders = pharmacy_encoded_orders;
     }
 
 
