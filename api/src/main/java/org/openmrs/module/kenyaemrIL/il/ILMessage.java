@@ -8,6 +8,7 @@ import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.CommonOrderDetails;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PharmacyDispense;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.PharmacyEncodedOrder;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 
 /**
@@ -24,6 +25,7 @@ public class ILMessage {
     private VIRAL_LOAD_RESULT[] viral_load_result;
     private PharmacyDispense[] dispense_information;
     private CommonOrderDetails[] commonOrderDetails;
+    private PharmacyEncodedOrder[] pharmacyEncodedOrder;
 
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
@@ -98,6 +100,14 @@ public class ILMessage {
         this.commonOrderDetails = commonOrderDetails;
     }
 
+    public PharmacyEncodedOrder[] getEncodedOrderList() {
+        return pharmacyEncodedOrder;
+    }
+
+    public void setEncodedOrderList(PharmacyEncodedOrder[] pharmacyEncodedOrder) {
+        this.pharmacyEncodedOrder = pharmacyEncodedOrder;
+    }
+
    public ILPerson extractILRegistration() {
         ILPerson ilPerson = new ILPerson();
         ilPerson.setMessage_header(this.message_header);
@@ -144,9 +154,9 @@ public class ILMessage {
         ILPharmacyDispense pharmacyDispenseMessage = new ILPharmacyDispense();
         pharmacyDispenseMessage.setMessage_header(this.message_header);
         pharmacyDispenseMessage.setPatient_identification(this.getPatient_identification());
-        pharmacyDispenseMessage.setDispense_information(this.getDispense_information());
         pharmacyDispenseMessage.setCommon_Order_information(this.getCommon_Order_information());
-       // pharmacyDispenseMessage.setCommon_Order_information(this.getCommon_Order_information());   //Add pharmacy_encoded_order
+        pharmacyDispenseMessage.setEncodedOrderList(this.getEncodedOrderList());
+        pharmacyDispenseMessage.setDispense_information(this.getDispense_information());
         return pharmacyDispenseMessage;
     }
 }

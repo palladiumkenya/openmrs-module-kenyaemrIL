@@ -15,6 +15,7 @@ public class ILPharmacyDispense {
     private List<PharmacyDispense> dispenseList;
     private PharmacyDispense[] dispense_information;
     private CommonOrderDetails[] commonOrderDetails;
+    private PharmacyEncodedOrder[] pharmacyEncodedOrder;
     private MESSAGE_HEADER message_header;
     private PATIENT_IDENTIFICATION patient_identification;
 
@@ -50,6 +51,14 @@ public class ILPharmacyDispense {
 
     public void setCommon_Order_information(CommonOrderDetails[] common_order_information) {
         this.commonOrderDetails = commonOrderDetails;
+    }
+
+    public PharmacyEncodedOrder[] getEncodedOrderList() {
+        return pharmacyEncodedOrder;
+    }
+
+    public void setEncodedOrderList(PharmacyEncodedOrder[] pharmacyEncodedOrder) {
+        this.pharmacyEncodedOrder = pharmacyEncodedOrder;
     }
 
     public MESSAGE_HEADER getMessage_header() {
