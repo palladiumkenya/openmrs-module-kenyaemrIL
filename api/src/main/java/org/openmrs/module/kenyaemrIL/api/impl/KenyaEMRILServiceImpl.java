@@ -65,6 +65,7 @@ import org.openmrs.module.kenyaemrIL.il.appointment.PLACER_APPOINTMENT_NUMBER;
 import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
 import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.DispenseMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_DISPENSE;
@@ -502,7 +503,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 patient = patients.get(0);
                 //Save the dispense
 
-                 ILPharmacyDispense dispenceMessage = ilMessage.extractPharmacyDispenseMessage();
+                 DispenseMessage dispenceMessage = ilMessage.extractPharmacyDispenseMessage();
                  PHARMACY_DISPENSE[] dispenseInformation = dispenceMessage.getDispense_information();
 
                 Encounter appEncounter;

@@ -6,7 +6,7 @@ import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
 import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.COMMON_ORDER_DETAILS;
-import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.DispenseMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_DISPENSE;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_ENCODED_ORDER;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
@@ -137,8 +137,8 @@ public class ILMessage {
         return viralLoadMessage;
     }
 
-    public ILPharmacyDispense extractPharmacyDispenseMessage() {
-        ILPharmacyDispense pharmacyDispenseMessage = new ILPharmacyDispense();
+    public DispenseMessage extractPharmacyDispenseMessage() {
+        DispenseMessage pharmacyDispenseMessage = new DispenseMessage();
         pharmacyDispenseMessage.setMessage_header(this.message_header);
         pharmacyDispenseMessage.setPatient_identification(this.getPatient_identification());
         pharmacyDispenseMessage.setCommon_Order_Details(this.getCommon_Order_Details());
@@ -146,17 +146,4 @@ public class ILMessage {
         pharmacyDispenseMessage.setDispense_information(this.getDispense_information());
         return pharmacyDispenseMessage;
     }
-
-
-//    public static ILMessage fill(JsonObject jsonobj) throws IOException {
-//        ObjectMapper objectMapper = new ObjectMapper();
-//        ILMessage entity = new ILMessage();
-//        if (jsonobj.containsKey("COMMON_ORDER_DETAILS")) {
-//            COMMON_ORDER_DETAILS common_order_details = objectMapper.readValue(jsonobj.getJsonObject("COMMON_ORDER_DETAILS").toString(), COMMON_ORDER_DETAILS.class);
-//            entity.setCommon_Order_Details(common_order_details);
-//        }
-//        return entity;
-//    }
-
-
 }
