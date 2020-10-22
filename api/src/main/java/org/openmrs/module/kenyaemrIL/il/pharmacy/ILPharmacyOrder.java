@@ -9,18 +9,18 @@ import java.util.List;
  *         Created on 21/11/2017.
  */
 public class ILPharmacyOrder {
-    private CommonOrderDetails commonOrderDetails;
+    private COMMON_ORDER_DETAILS COMMONORDERDETAILS;
     private List<PharmacyEncodedOrder> encodedOrderList;
     private MESSAGE_HEADER message_header;
     private PATIENT_IDENTIFICATION patient_identification;
 
 
-    public CommonOrderDetails getCommonOrderDetails() {
-        return commonOrderDetails;
+    public COMMON_ORDER_DETAILS getCOMMONORDERDETAILS() {
+        return COMMONORDERDETAILS;
     }
 
-    public void setCommonOrderDetails(CommonOrderDetails commonOrderDetails) {
-        this.commonOrderDetails = commonOrderDetails;
+    public void setCOMMONORDERDETAILS(COMMON_ORDER_DETAILS COMMONORDERDETAILS) {
+        this.COMMONORDERDETAILS = COMMONORDERDETAILS;
     }
 
     public List<PharmacyEncodedOrder> getEncodedOrderList() {

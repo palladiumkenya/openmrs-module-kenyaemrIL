@@ -14,10 +14,26 @@ public class ILPharmacyDispense {
     private List<PharmacyEncodedOrder> encodedOrders;
     private List<PharmacyDispense> dispenseList;
     private PharmacyDispense[] dispense_information;
-    private CommonOrderDetails[] commonOrderDetails;
+    private COMMON_ORDER_DETAILS common_order_details;
     private PharmacyEncodedOrder[] pharmacyEncodedOrder;
     private MESSAGE_HEADER message_header;
     private PATIENT_IDENTIFICATION patient_identification;
+
+    public MESSAGE_HEADER getMessage_header() {
+        return message_header;
+    }
+
+    public void setMessage_header(MESSAGE_HEADER message_header) {
+        this.message_header = message_header;
+    }
+
+    public PATIENT_IDENTIFICATION getPatient_identification() {
+        return patient_identification;
+    }
+
+    public void setPatient_identification(PATIENT_IDENTIFICATION patient_identification) {
+        this.patient_identification = patient_identification;
+    }
 
 
 
@@ -37,20 +53,16 @@ public class ILPharmacyDispense {
         this.dispenseList = dispenseList;
     }
 
-    public PharmacyDispense[] getDispense_information() {
-        return dispense_information;
-    }
+    public PharmacyDispense[] getDispense_information() { return dispense_information; }
 
     public void setDispense_information(PharmacyDispense[] dispense_information) {
         this.dispense_information = dispense_information;
     }
 
-    public CommonOrderDetails[] getCommon_Order_information() {
-        return commonOrderDetails;
-    }
+    public COMMON_ORDER_DETAILS getCommon_Order_Details() { return common_order_details; }
 
-    public void setCommon_Order_information(CommonOrderDetails[] common_order_information) {
-        this.commonOrderDetails = commonOrderDetails;
+    public void setCommon_Order_Details(COMMON_ORDER_DETAILS common_order_details) {
+        this.common_order_details = common_order_details;
     }
 
     public PharmacyEncodedOrder[] getEncodedOrderList() {
@@ -61,19 +73,5 @@ public class ILPharmacyDispense {
         this.pharmacyEncodedOrder = pharmacyEncodedOrder;
     }
 
-    public MESSAGE_HEADER getMessage_header() {
-        return message_header;
-    }
 
-    public void setMessage_header(MESSAGE_HEADER message_header) {
-        this.message_header = message_header;
-    }
-
-    public PATIENT_IDENTIFICATION getPatient_identification() {
-        return patient_identification;
-    }
-
-    public void setPatient_identification(PATIENT_IDENTIFICATION patient_identification) {
-        this.patient_identification = patient_identification;
-    }
 }

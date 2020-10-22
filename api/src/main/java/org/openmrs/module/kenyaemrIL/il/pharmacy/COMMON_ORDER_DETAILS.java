@@ -4,7 +4,7 @@ package org.openmrs.module.kenyaemrIL.il.pharmacy;
  * @author Stanslaus Odhiambo
  *         Created on 21/11/2017.
  */
-public class CommonOrderDetails {
+public class COMMON_ORDER_DETAILS {
     private String orderStatus;
     private PlacerOrderNumber placerOrderNumber;
     private FillerOrderNumber fillerOrderNumber;
@@ -68,6 +68,4 @@ public class CommonOrderDetails {
     public void setOrderingPhysician(OrderingPhysician orderingPhysician) {
         this.orderingPhysician = orderingPhysician;
     }
-
-
 }

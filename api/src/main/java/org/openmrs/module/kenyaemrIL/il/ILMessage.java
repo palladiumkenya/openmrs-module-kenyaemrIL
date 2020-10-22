@@ -5,7 +5,7 @@ import org.openmrs.module.kenyaemrIL.il.appointment.AppointmentMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
 import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
-import org.openmrs.module.kenyaemrIL.il.pharmacy.CommonOrderDetails;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.COMMON_ORDER_DETAILS;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PharmacyEncodedOrder;
@@ -23,9 +23,9 @@ public class ILMessage {
     private OBSERVATION_RESULT[] observation_result;
     private APPOINTMENT_INFORMATION[] appointment_information;
     private VIRAL_LOAD_RESULT[] viral_load_result;
-    private PharmacyDispense[] dispense_information;
-    private CommonOrderDetails[] commonOrderDetails;
+    private COMMON_ORDER_DETAILS common_order_details;
     private PharmacyEncodedOrder[] pharmacyEncodedOrder;
+    private PharmacyDispense[] dispense_information;
 
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
@@ -83,29 +83,25 @@ public class ILMessage {
         this.viral_load_result = viral_load_result;
     }
 
-    // Adding pharmacy dispense
+    public COMMON_ORDER_DETAILS getCommon_Order_Details() {
+        return common_order_details; }
+
+    public void setCommon_Order_Details(COMMON_ORDER_DETAILS common_order_details) {
+        this.common_order_details = common_order_details;
+    }
+
+    public PharmacyEncodedOrder[] getEncodedOrderList() { return pharmacyEncodedOrder; }
+
+    public void setEncodedOrderList(PharmacyEncodedOrder[] pharmacyEncodedOrder) {
+        this.pharmacyEncodedOrder = pharmacyEncodedOrder;
+    }
+
     public PharmacyDispense[] getDispense_information() {
         return dispense_information;
     }
 
     public void setDispense_information(PharmacyDispense[] dispense_information) {
         this.dispense_information = dispense_information;
-    }
-
-    public CommonOrderDetails[] getCommon_Order_information() {
-        return commonOrderDetails;
-    }
-
-    public void setCommon_Order_information(CommonOrderDetails[] commonOrderDetails) {
-        this.commonOrderDetails = commonOrderDetails;
-    }
-
-    public PharmacyEncodedOrder[] getEncodedOrderList() {
-        return pharmacyEncodedOrder;
-    }
-
-    public void setEncodedOrderList(PharmacyEncodedOrder[] pharmacyEncodedOrder) {
-        this.pharmacyEncodedOrder = pharmacyEncodedOrder;
     }
 
    public ILPerson extractILRegistration() {
@@ -141,22 +137,25 @@ public class ILMessage {
         return viralLoadMessage;
     }
 
-//    public ILPharmacyOrder extractPharmacyOrderMessage() {
-//        ILPharmacyOrder pharmacyOrderMessage = new ILPharmacyOrder();
-//        pharmacyOrderMessage.setMessage_header(this.message_header);
-//        pharmacyOrderMessage.setPatient_identification(this.getPatient_identification());
-//       // pharmacyOrderMessage.setCommonOrderDetails(this.getCommonOrderDetails());
-//        //pharmacyOrderMessage.setEncodedOrderList(this.getEncodedOrderList());
-//        return pharmacyOrderMessage;
-//    }
-
     public ILPharmacyDispense extractPharmacyDispenseMessage() {
         ILPharmacyDispense pharmacyDispenseMessage = new ILPharmacyDispense();
         pharmacyDispenseMessage.setMessage_header(this.message_header);
         pharmacyDispenseMessage.setPatient_identification(this.getPatient_identification());
-        pharmacyDispenseMessage.setCommon_Order_information(this.getCommon_Order_information());
+        pharmacyDispenseMessage.setCommon_Order_Details(this.getCommon_Order_Details());
         pharmacyDispenseMessage.setEncodedOrderList(this.getEncodedOrderList());
         pharmacyDispenseMessage.setDispense_information(this.getDispense_information());
         return pharmacyDispenseMessage;
     }
+
+//    public static ILMessage fill(JsonObject jsonobj) throws IOException {
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        ILMessage entity = new ILMessage();
+//        if (jsonobj.containsKey("COMMON_ORDER_DETAILS")) {
+//            COMMON_ORDER_DETAILS common_order_details = objectMapper.readValue(jsonobj.getJsonObject("COMMON_ORDER_DETAILS").toString(), COMMON_ORDER_DETAILS.class);
+//            entity.setCommon_Order_Details(common_order_details);
+//        }
+//        return entity;
+//    }
+
+
 }
