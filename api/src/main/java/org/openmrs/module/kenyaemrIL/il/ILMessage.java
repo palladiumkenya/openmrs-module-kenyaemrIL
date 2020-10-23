@@ -35,9 +35,7 @@ public class ILMessage {
         this.message_header = message_header;
     }
 
-    public PATIENT_IDENTIFICATION getPatient_identification() {
-        return patient_identification;
-    }
+    public PATIENT_IDENTIFICATION getPatient_identification() { return patient_identification; }
 
     public void setPatient_identification(PATIENT_IDENTIFICATION patient_identification) {
         this.patient_identification = patient_identification;
