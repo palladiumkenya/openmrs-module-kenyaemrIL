@@ -37,10 +37,12 @@ import org.openmrs.PersonAddress;
 import org.openmrs.PersonAttribute;
 import org.openmrs.PersonAttributeType;
 import org.openmrs.PersonName;
+import org.openmrs.Provider;
 import org.openmrs.SimpleDosingInstructions;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.PatientService;
+import org.openmrs.api.ProviderService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.idgen.service.IdentifierSourceService;
@@ -514,16 +516,19 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 encounterTypes.add(encounterTypeDrugOrder);
                 ArrayList<Order> orderList=new ArrayList<Order>();
 
+                ProviderService providerService = Context.getProviderService();
+                Provider provider = providerService.getProvider(1);        // Added default provider admin
+
                 for (PHARMACY_DISPENSE dispenseInfo : dispenseInformation) {
-                    String dispenseNotes = dispenseInfo.getDispenseNotes();
+                    String dispenseNotes = dispenseInfo.getDispensing_notes();
                     String frequency = dispenseInfo.getFrequency();
-                    String quantityDispensed = dispenseInfo.getQuantityDispensed();
+                    String quantityDispensed = dispenseInfo.getQuantity_dispensed();
                     String dosage = dispenseInfo.getDosage();
-                    String codingSystem = dispenseInfo.getCodingSystem();
+                    String codingSystem = dispenseInfo.getCoding_system();
                     String strength = dispenseInfo.getStrength();
                     String duration = dispenseInfo.getDuration();
-                    String actualDrugs = dispenseInfo.getActualDrugs();
-                    String drugName = dispenseInfo.getDrugName();
+                    String actualDrugs = dispenseInfo.getActual_drugs();
+                    String drugName = dispenseInfo.getDrug_name();
                     String dispenseMsgDatetime = dispenceMessage.getMessage_header().getMessage_datetime();
                     Date ilMsgDate = null;
                     //Validate
@@ -549,8 +554,8 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                             Drug drug = conceptService.getDrugByNameOrId(drugNameConverter(drugName));    // Needs a mapper
                             drugOrder.setDrug(drug);
                             drugOrder.setInstructions(dispenseNotes);
-                            drugOrder.setOrderer(drugOrder.getOrderer());      //Assuming super user untill we get ProviderID in the message
-                            drugOrder.setDose(Double.parseDouble(dosage));
+                            drugOrder.setOrderer(provider);      //Assuming super user untill we get ProviderID in the message
+                            drugOrder.setDose(Double.parseDouble(dosage.replaceAll("[^\\d.]", "")));
                             Concept doseUnitConcept = conceptService.getConceptByUuid("161553AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");   // Assuming MG/Milligram
                             Concept quantityUnitConcept=conceptService.getConceptByUuid("1608AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");   // Assuming capsules
                             drugOrder.setDoseUnits(doseUnitConcept);
@@ -571,13 +576,23 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 //                            Context.getEncounterService().saveEncounter(appEncounter);
 
                             orderGroup.setOrders(orderList);
+                            orderGroup.setPatient(patient);
+                            orderGroup.setEncounter(appEncounter);
                             Context.getOrderService().saveOrderGroup(orderGroup);
                             kenyaEMRILMessage.setStatus("Success");
                             success = true;
 
                         } else {
-                            //Define encounter
-                            Encounter enc = new Encounter();
+                            //Define encounter and save encounter
+                            EncounterService encounterService = Context.getEncounterService();
+                            Encounter encounter = new Encounter();
+                            EncounterType encounterType=encounterService.getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3");
+                            encounter.setEncounterType(encounterType);
+                            encounter.setPatient(patient);
+                            encounter.setEncounterDatetime(new Date());
+                            encounter.setDateCreated(new Date());
+                            encounterService.saveEncounter(encounter);
+
                             DrugOrder drugOrder;
                             drugOrder=new DrugOrder();
 
@@ -585,13 +600,13 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                             orderGroup=new OrderGroup();          // Assuming a new ordergroup
 
                             drugOrder.setPatient(patient);
-                            drugOrder.setEncounter(enc);
-                            drugOrder.setDateCreated(ilMsgDate);
+                            drugOrder.setEncounter(encounter);
+                            drugOrder.setDateCreated(new Date());
                             Drug drug = conceptService.getDrugByNameOrId(drugNameConverter(drugName));    // Needs a mapper
                             drugOrder.setDrug(drug);
                             drugOrder.setInstructions(dispenseNotes);
-                            drugOrder.setOrderer(drugOrder.getOrderer());      //Assuming super user untill we get ProviderID in the message
-                            drugOrder.setDose(Double.parseDouble(dosage));
+                            drugOrder.setOrderer(provider);      //Assuming super user untill we get ProviderID in the message
+                            drugOrder.setDose(Double.parseDouble(dosage.replaceAll("[^\\d.]", "")));
                             Concept doseUnitConcept = conceptService.getConceptByUuid("161553AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");   // Assuming MG/Milligram
                             Concept quantityUnitConcept=conceptService.getConceptByUuid("1608AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");   // Assuming capsules
                             drugOrder.setDoseUnits(doseUnitConcept);
@@ -612,6 +627,8 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 //                            Context.getEncounterService().saveEncounter(appEncounter);
 
                             orderGroup.setOrders(orderList);
+                            orderGroup.setPatient(patient);
+                            orderGroup.setEncounter(encounter);
                             Context.getOrderService().saveOrderGroup(orderGroup);
                             kenyaEMRILMessage.setStatus("Success");
                             success = true;

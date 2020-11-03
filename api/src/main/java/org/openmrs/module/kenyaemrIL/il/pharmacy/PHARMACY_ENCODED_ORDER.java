@@ -5,13 +5,13 @@ package org.openmrs.module.kenyaemrIL.il.pharmacy;
  */
 public class PHARMACY_ENCODED_ORDER {
     private String frequency;
-    private String prescriptionNotes;
+    private String prescription_notes;
     private String dosage;
-    private String codingSystem;
-    private String quantityPrescribed;
+    private String coding_system;
+    private String quantity_prescribed;
     private String strength;
     private String duration;
-    private String drugName;
+    private String drug_name;
 
 
     public String getFrequency() {
@@ -22,12 +22,12 @@ public class PHARMACY_ENCODED_ORDER {
         this.frequency = frequency;
     }
 
-    public String getPrescriptionNotes() {
-        return prescriptionNotes;
+    public String getPrescription_notes() {
+        return prescription_notes;
     }
 
-    public void setPrescriptionNotes(String prescriptionNotes) {
-        this.prescriptionNotes = prescriptionNotes;
+    public void setPrescription_notes(String prescription_notes) {
+        this.prescription_notes = prescription_notes;
     }
 
     public String getDosage() {
@@ -38,20 +38,20 @@ public class PHARMACY_ENCODED_ORDER {
         this.dosage = dosage;
     }
 
-    public String getCodingSystem() {
-        return codingSystem;
+    public String getCoding_system() {
+        return coding_system;
     }
 
-    public void setCodingSystem(String codingSystem) {
-        this.codingSystem = codingSystem;
+    public void setCoding_system(String coding_system) {
+        this.coding_system = coding_system;
     }
 
-    public String getQuantityPrescribed() {
-        return quantityPrescribed;
+    public String getQuantity_prescribed() {
+        return quantity_prescribed;
     }
 
-    public void setQuantityPrescribed(String quantityPrescribed) {
-        this.quantityPrescribed = quantityPrescribed;
+    public void setQuantity_prescribed(String quantity_prescribed) {
+        this.quantity_prescribed = quantity_prescribed;
     }
 
     public String getStrength() {
@@ -70,11 +70,11 @@ public class PHARMACY_ENCODED_ORDER {
         this.duration = duration;
     }
 
-    public String getDrugName() {
-        return drugName;
+    public String getDrug_name() {
+        return drug_name;
     }
 
-    public void setDrugName(String drugName) {
-        this.drugName = drugName;
+    public void setDrug_name(String drug_name) {
+        this.drug_name = drug_name;
     }
 }

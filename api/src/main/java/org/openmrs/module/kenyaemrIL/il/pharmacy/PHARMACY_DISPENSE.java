@@ -5,23 +5,16 @@ package org.openmrs.module.kenyaemrIL.il.pharmacy;
  *         Created on 21/11/2017.
  */
 public class PHARMACY_DISPENSE {
-    private String dispenseNotes;
+    private String dispensing_notes;
     private String frequency;
-    private String quantityDispensed;
+    private String quantity_dispensed;
     private String dosage;
-    private String codingSystem;
+    private String coding_system;
     private String strength;
     private String duration;
-    private String actualDrugs;
-    private String drugName;
+    private String actual_drugs;
+    private String drug_name;
 
-    public String getDispenseNotes() {
-        return dispenseNotes;
-    }
-
-    public void setDispenseNotes(String dispenseNotes) {
-        this.dispenseNotes = dispenseNotes;
-    }
 
     public String getFrequency() {
         return frequency;
@@ -31,13 +24,7 @@ public class PHARMACY_DISPENSE {
         this.frequency = frequency;
     }
 
-    public String getQuantityDispensed() {
-        return quantityDispensed;
-    }
 
-    public void setQuantityDispensed(String quantityDispensed) {
-        this.quantityDispensed = quantityDispensed;
-    }
 
     public String getDosage() {
         return dosage;
@@ -47,13 +34,6 @@ public class PHARMACY_DISPENSE {
         this.dosage = dosage;
     }
 
-    public String getCodingSystem() {
-        return codingSystem;
-    }
-
-    public void setCodingSystem(String codingSystem) {
-        this.codingSystem = codingSystem;
-    }
 
     public String getStrength() {
         return strength;
@@ -61,6 +41,48 @@ public class PHARMACY_DISPENSE {
 
     public void setStrength(String strength) {
         this.strength = strength;
+    }
+
+
+    public String getDispensing_notes() {
+        return dispensing_notes;
+    }
+
+    public void setDispensing_notes(String dispensing_notes) {
+        this.dispensing_notes = dispensing_notes;
+    }
+
+    public String getQuantity_dispensed() {
+        return quantity_dispensed;
+
+    }
+
+    public void setQuantity_dispensed(String quantity_dispensed) {
+        this.quantity_dispensed = quantity_dispensed;
+    }
+
+    public String getCoding_system() {
+        return coding_system;
+    }
+
+    public void setCoding_system(String coding_system) {
+        this.coding_system = coding_system;
+    }
+
+    public String getActual_drugs() {
+        return actual_drugs;
+    }
+
+    public void setActual_drugs(String actual_drugs) {
+        this.actual_drugs = actual_drugs;
+    }
+
+    public String getDrug_name() {
+        return drug_name;
+    }
+
+    public void setDrug_name(String drug_name) {
+        this.drug_name = drug_name;
     }
 
     public String getDuration() {
@@ -71,19 +93,5 @@ public class PHARMACY_DISPENSE {
         this.duration = duration;
     }
 
-    public String getActualDrugs() {
-        return actualDrugs;
-    }
 
-    public void setActualDrugs(String actualDrugs) {
-        this.actualDrugs = actualDrugs;
-    }
-
-    public String getDrugName() {
-        return drugName;
-    }
-
-    public void setDrugName(String drugName) {
-        this.drugName = drugName;
-    }
 }

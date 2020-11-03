@@ -5,52 +5,53 @@ package org.openmrs.module.kenyaemrIL.il.pharmacy;
  *         Created on 21/11/2017.
  */
 public class COMMON_ORDER_DETAILS {
-    private String orderStatus;
-    private PlacerOrderNumber placerOrderNumber;
-    private FillerOrderNumber fillerOrderNumber;
-    private String orderControl;
-    private String transactionDateTime;
+    private String order_status;
+    private PLACER_ORDER_NUMBER placer_order_number;
+    private FILLER_ORDER_NUMBER filler_order_number;
+    private String order_control;
+    private String transaction_datetime;
     private String notes;
-    private OrderingPhysician orderingPhysician;
 
-    public String getOrderStatus() {
-        return orderStatus;
+    public ORDERING_PHYSICIAN getOrdering_physician() {
+        return ordering_physician;
     }
 
-    public void setOrderStatus(String orderStatus) {
-        this.orderStatus = orderStatus;
+    public void setOrdering_physician(ORDERING_PHYSICIAN ordering_physician) {
+        this.ordering_physician = ordering_physician;
     }
 
-    public PlacerOrderNumber getPlacerOrderNumber() {
-        return placerOrderNumber;
+    private ORDERING_PHYSICIAN ordering_physician;
+
+     public PLACER_ORDER_NUMBER getPlacer_order_number() {
+        return placer_order_number;
     }
 
-    public void setPlacerOrderNumber(PlacerOrderNumber placerOrderNumber) {
-        this.placerOrderNumber = placerOrderNumber;
+    public void setPlacer_order_number(PLACER_ORDER_NUMBER placer_order_number) {
+        this.placer_order_number = placer_order_number;
     }
 
-    public FillerOrderNumber getFillerOrderNumber() {
-        return fillerOrderNumber;
+    public FILLER_ORDER_NUMBER getFiller_order_number() {
+        return filler_order_number;
     }
 
-    public void setFillerOrderNumber(FillerOrderNumber fillerOrderNumber) {
-        this.fillerOrderNumber = fillerOrderNumber;
+    public void setFiller_order_number(FILLER_ORDER_NUMBER filler_order_number) {
+        this.filler_order_number = filler_order_number;
     }
 
-    public String getOrderControl() {
-        return orderControl;
+    public String getOrder_control() {
+        return order_control;
     }
 
-    public void setOrderControl(String orderControl) {
-        this.orderControl = orderControl;
+    public void setOrder_control(String order_control) {
+        this.order_control = order_control;
     }
 
-    public String getTransactionDateTime() {
-        return transactionDateTime;
+    public String getTransaction_datetime() {
+        return transaction_datetime;
     }
 
-    public void setTransactionDateTime(String transactionDateTime) {
-        this.transactionDateTime = transactionDateTime;
+    public void setTransaction_datetime(String transaction_datetime) {
+        this.transaction_datetime = transaction_datetime;
     }
 
     public String getNotes() {
@@ -61,11 +62,11 @@ public class COMMON_ORDER_DETAILS {
         this.notes = notes;
     }
 
-    public OrderingPhysician getOrderingPhysician() {
-        return orderingPhysician;
+    public String getOrder_status() {
+        return order_status;
     }
 
-    public void setOrderingPhysician(OrderingPhysician orderingPhysician) {
-        this.orderingPhysician = orderingPhysician;
+    public void setOrder_status(String order_status) {
+        this.order_status = order_status;
     }
 }

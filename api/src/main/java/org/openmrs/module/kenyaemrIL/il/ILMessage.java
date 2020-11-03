@@ -24,8 +24,8 @@ public class ILMessage {
     private APPOINTMENT_INFORMATION[] appointment_information;
     private VIRAL_LOAD_RESULT[] viral_load_result;
     private COMMON_ORDER_DETAILS common_order_details;
-    private PHARMACY_ENCODED_ORDER[] pharmacy_encoded_orders;
-    private PHARMACY_DISPENSE[] dispense_information;
+    private PHARMACY_ENCODED_ORDER[] pharmacy_encoded_order;
+    private PHARMACY_DISPENSE[] pharmacy_dispense;
 
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
@@ -35,7 +35,9 @@ public class ILMessage {
         this.message_header = message_header;
     }
 
-    public PATIENT_IDENTIFICATION getPatient_identification() { return patient_identification; }
+    public PATIENT_IDENTIFICATION getPatient_identification() {
+        return patient_identification;
+    }
 
     public void setPatient_identification(PATIENT_IDENTIFICATION patient_identification) {
         this.patient_identification = patient_identification;
@@ -81,28 +83,39 @@ public class ILMessage {
         this.viral_load_result = viral_load_result;
     }
 
-    public COMMON_ORDER_DETAILS getCommon_Order_Details() {
-        return common_order_details; }
+//    public COMMON_ORDER_DETAILS getCommon_Order_Details() {
+//        return common_order_details; }
+//
+//    public void setCommon_Order_Details(COMMON_ORDER_DETAILS common_order_details) {
+//        this.common_order_details = common_order_details;
+//    }
 
-    public void setCommon_Order_Details(COMMON_ORDER_DETAILS common_order_details) {
+
+    public COMMON_ORDER_DETAILS getCommon_order_details() {
+        return common_order_details;
+    }
+
+    public void setCommon_order_details(COMMON_ORDER_DETAILS common_order_details) {
         this.common_order_details = common_order_details;
     }
 
-    public PHARMACY_ENCODED_ORDER[] getEncodedOrderList() { return pharmacy_encoded_orders; }
-
-    public void setEncodedOrderList(PHARMACY_ENCODED_ORDER[] pharmacy_encoded_orders) {
-        this.pharmacy_encoded_orders = pharmacy_encoded_orders;
+    public PHARMACY_ENCODED_ORDER[] getPharmacy_encoded_order() {
+        return pharmacy_encoded_order;
     }
 
-    public PHARMACY_DISPENSE[] getDispense_information() {
-        return dispense_information;
+    public void setPharmacy_encoded_order(PHARMACY_ENCODED_ORDER[] pharmacy_encoded_order) {
+        this.pharmacy_encoded_order = pharmacy_encoded_order;
     }
 
-    public void setDispense_information(PHARMACY_DISPENSE[] dispense_information) {
-        this.dispense_information = dispense_information;
+    public PHARMACY_DISPENSE[] getPharmacy_dispense() {
+        return pharmacy_dispense;
     }
 
-   public ILPerson extractILRegistration() {
+    public void setPharmacy_dispense(PHARMACY_DISPENSE[] pharmacy_dispense) {
+        this.pharmacy_dispense = pharmacy_dispense;
+    }
+
+    public ILPerson extractILRegistration() {
         ILPerson ilPerson = new ILPerson();
         ilPerson.setMessage_header(this.message_header);
         ilPerson.setPatient_identification(this.patient_identification);
@@ -139,9 +152,9 @@ public class ILMessage {
         DispenseMessage pharmacyDispenseMessage = new DispenseMessage();
         pharmacyDispenseMessage.setMessage_header(this.message_header);
         pharmacyDispenseMessage.setPatient_identification(this.getPatient_identification());
-        pharmacyDispenseMessage.setCommon_Order_Details(this.getCommon_Order_Details());
-        pharmacyDispenseMessage.setEncodedOrderList(this.getEncodedOrderList());
-        pharmacyDispenseMessage.setDispense_information(this.getDispense_information());
+        pharmacyDispenseMessage.setCommon_Order_Details(this.getCommon_order_details());
+        pharmacyDispenseMessage.setEncodedOrderList(this.getPharmacy_encoded_order());
+        pharmacyDispenseMessage.setDispense_information(this.getPharmacy_dispense());
         return pharmacyDispenseMessage;
     }
 }
