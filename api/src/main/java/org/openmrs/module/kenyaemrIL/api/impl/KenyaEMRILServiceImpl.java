@@ -41,6 +41,7 @@ import org.openmrs.Provider;
 import org.openmrs.SimpleDosingInstructions;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.EncounterService;
+import org.openmrs.api.OrderService;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.ProviderService;
 import org.openmrs.api.context.Context;
@@ -585,6 +586,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                         } else {
                             //Define encounter and save encounter
                             EncounterService encounterService = Context.getEncounterService();
+                            OrderService orderService = Context.getOrderService();
                             Encounter encounter = new Encounter();
                             EncounterType encounterType=encounterService.getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3");
                             encounter.setEncounterType(encounterType);
@@ -630,6 +632,14 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                             orderGroup.setPatient(patient);
                             orderGroup.setEncounter(encounter);
                             Context.getOrderService().saveOrderGroup(orderGroup);
+
+                            DrugOrder orderToDiscontinue = null;
+                            try {
+                                orderToDiscontinue = (DrugOrder)orderService.discontinueOrder(drugOrder, "order fulfilled", null, provider, encounter);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            orderList.add(orderToDiscontinue);
                             kenyaEMRILMessage.setStatus("Success");
                             success = true;
                         }
