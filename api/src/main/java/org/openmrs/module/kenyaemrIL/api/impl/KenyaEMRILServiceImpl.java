@@ -19,17 +19,13 @@ import com.thoughtworks.xstream.core.util.PresortedSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.cfg.NotYetImplementedException;
-import org.openmrs.CareSetting;
 import org.openmrs.Concept;
-import org.openmrs.Drug;
 import org.openmrs.DrugOrder;
 import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
 import org.openmrs.Location;
 import org.openmrs.Obs;
 import org.openmrs.Order;
-import org.openmrs.OrderFrequency;
-import org.openmrs.OrderGroup;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PatientIdentifierType;
@@ -38,7 +34,6 @@ import org.openmrs.PersonAttribute;
 import org.openmrs.PersonAttributeType;
 import org.openmrs.PersonName;
 import org.openmrs.Provider;
-import org.openmrs.SimpleDosingInstructions;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.OrderService;
@@ -72,6 +67,7 @@ import org.openmrs.module.kenyaemrIL.il.pharmacy.DispenseMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_DISPENSE;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.PLACER_ORDER_NUMBER;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 import org.openmrs.module.kenyaemrIL.kenyaemrUtils.Utils;
@@ -508,9 +504,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
                  DispenseMessage dispenceMessage = ilMessage.extractPharmacyDispenseMessage();
                  PHARMACY_DISPENSE[] dispenseInformation = dispenceMessage.getDispense_information();
+                 PLACER_ORDER_NUMBER placer_order_number = dispenceMessage.getCommon_Order_Details().getPlacer_order_number();
 
                 Encounter appEncounter;
-
+                OrderService orderService = Context.getOrderService();
+                EncounterService encounterService = Context.getEncounterService();
                 EncounterType encounterTypeDrugOrder = Context.getEncounterService().getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3");   //  Drug Order encounter
                 //Fetch all encounters
                 List<EncounterType> encounterTypes = new ArrayList<>();
@@ -521,6 +519,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 Provider provider = providerService.getProvider(1);        // Added default provider admin
 
                 for (PHARMACY_DISPENSE dispenseInfo : dispenseInformation) {
+
                     String dispenseNotes = dispenseInfo.getDispensing_notes();
                     String frequency = dispenseInfo.getFrequency();
                     String quantityDispensed = dispenseInfo.getQuantity_dispensed();
@@ -539,54 +538,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
-                        List<Encounter> drugOrderEncounters = Context.getEncounterService().getEncounters(patient, null, ilMsgDate, null, null, encounterTypes, null, null, null, false);
-                        if (drugOrderEncounters.size() > 0) {
-                            appEncounter = drugOrderEncounters.get(0);
 
-                            DrugOrder drugOrder;
-                            drugOrder=new DrugOrder();
-
-                            OrderGroup orderGroup;
-                            orderGroup=new OrderGroup();          // Assuming a new ordergroup
-
-                            drugOrder.setPatient(patient);
-                            drugOrder.setEncounter(appEncounter);
-                            drugOrder.setDateCreated(ilMsgDate);
-                            Drug drug = conceptService.getDrugByNameOrId(drugNameConverter(drugName));    // Needs a mapper
-                            drugOrder.setDrug(drug);
-                            drugOrder.setInstructions(dispenseNotes);
-                            drugOrder.setOrderer(provider);      //Assuming super user untill we get ProviderID in the message
-                            drugOrder.setDose(Double.parseDouble(dosage.replaceAll("[^\\d.]", "")));
-                            Concept doseUnitConcept = conceptService.getConceptByUuid("161553AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");   // Assuming MG/Milligram
-                            Concept quantityUnitConcept=conceptService.getConceptByUuid("1608AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");   // Assuming capsules
-                            drugOrder.setDoseUnits(doseUnitConcept);
-                            drugOrder.setDosingType(SimpleDosingInstructions.class);
-                            Concept route = conceptService.getConcept(160240);
-                            drugOrder.setRoute(route);
-                            OrderFrequency orderFrequency = Context.getOrderService().getOrderFrequency(1);  // Needs a mapper
-                            drugOrder.setFrequency(orderFrequency);
-                            CareSetting outpatient = Context.getOrderService().getCareSettingByName("OUTPATIENT");
-                            drugOrder.setCareSetting(outpatient);
-                            drugOrder.setQuantity(Double.parseDouble(quantityDispensed));
-                            drugOrder.setQuantityUnits(quantityUnitConcept);
-                            drugOrder.setNumRefills(0);
-                            drugOrder.setOrderGroup(orderGroup);
-                            orderList.add(drugOrder);
-
-//                            appEncounter.addObs(o);
-//                            Context.getEncounterService().saveEncounter(appEncounter);
-
-                            orderGroup.setOrders(orderList);
-                            orderGroup.setPatient(patient);
-                            orderGroup.setEncounter(appEncounter);
-                            Context.getOrderService().saveOrderGroup(orderGroup);
-                            kenyaEMRILMessage.setStatus("Success");
-                            success = true;
-
-                        } else {
-                            //Define encounter and save encounter
-                            EncounterService encounterService = Context.getEncounterService();
-                            OrderService orderService = Context.getOrderService();
                             Encounter encounter = new Encounter();
                             EncounterType encounterType=encounterService.getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3");
                             encounter.setEncounterType(encounterType);
@@ -594,57 +546,18 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                             encounter.setEncounterDatetime(new Date());
                             encounter.setDateCreated(new Date());
                             encounterService.saveEncounter(encounter);
-
-                            DrugOrder drugOrder;
-                            drugOrder=new DrugOrder();
-
-                            OrderGroup orderGroup;
-                            orderGroup=new OrderGroup();          // Assuming a new ordergroup
-
-                            drugOrder.setPatient(patient);
-                            drugOrder.setEncounter(encounter);
-                            drugOrder.setDateCreated(new Date());
-                            Drug drug = conceptService.getDrugByNameOrId(drugNameConverter(drugName));    // Needs a mapper
-                            drugOrder.setDrug(drug);
-                            drugOrder.setInstructions(dispenseNotes);
-                            drugOrder.setOrderer(provider);      //Assuming super user untill we get ProviderID in the message
-                            drugOrder.setDose(Double.parseDouble(dosage.replaceAll("[^\\d.]", "")));
-                            Concept doseUnitConcept = conceptService.getConceptByUuid("161553AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");   // Assuming MG/Milligram
-                            Concept quantityUnitConcept=conceptService.getConceptByUuid("1608AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");   // Assuming capsules
-                            drugOrder.setDoseUnits(doseUnitConcept);
-                            drugOrder.setDosingType(SimpleDosingInstructions.class);
-                            Concept route = conceptService.getConcept(160240);
-                            drugOrder.setRoute(route);
-                            OrderFrequency orderFrequency = Context.getOrderService().getOrderFrequency(1);  // Needs a mapper
-                            drugOrder.setFrequency(orderFrequency);
-                            CareSetting outpatient = Context.getOrderService().getCareSettingByName("OUTPATIENT");
-                            drugOrder.setCareSetting(outpatient);
-                            drugOrder.setQuantity(Double.parseDouble(quantityDispensed));
-                            drugOrder.setQuantityUnits(quantityUnitConcept);
-                            drugOrder.setNumRefills(0);
-                            drugOrder.setOrderGroup(orderGroup);
-                            orderList.add(drugOrder);
-
-//                            appEncounter.addObs(o);
-//                            Context.getEncounterService().saveEncounter(appEncounter);
-
-                            orderGroup.setOrders(orderList);
-                            orderGroup.setPatient(patient);
-                            orderGroup.setEncounter(encounter);
-                            Context.getOrderService().saveOrderGroup(orderGroup);
-
                             DrugOrder orderToDiscontinue = null;
-                            try {
-                                orderToDiscontinue = (DrugOrder)orderService.discontinueOrder(drugOrder, "order fulfilled", null, provider, encounter);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                            orderList.add(orderToDiscontinue);
+                                // Discontinue single drug eg CTX
+                            DrugOrder drugOrder=(DrugOrder)orderService.getOrder(Integer.parseInt(placer_order_number.getNumber()));
+                                try {
+                                    orderService.discontinueOrder(drugOrder, "order fulfilled", null, provider,encounter);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                           // orderList.add(orderToDiscontinue);
                             kenyaEMRILMessage.setStatus("Success");
                             success = true;
                         }
-
-                    }
                 }
 
             } else {
@@ -1877,9 +1790,10 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
     static String drugNameConverter(String key) {
         Map<Concept, String> drugNameList = new HashMap<Concept, String>();
-        drugNameList.put(conceptService.getConcept(1652), "AF1A");
-        drugNameList.put(conceptService.getConcept(1652), "CF1A");
-        drugNameList.put(conceptService.getConcept(164505), "TLE");
+        drugNameList.put(conceptService.getConcept(1652), "af1a");
+        drugNameList.put(conceptService.getConcept(1652), "cf1a");
+        drugNameList.put(conceptService.getConcept(164505), "tle");
+        drugNameList.put(conceptService.getConcept(105281), "ctx");
         return drugNameList.get(key);
     }
 
