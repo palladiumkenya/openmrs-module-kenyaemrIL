@@ -79,6 +79,16 @@
         </description>
     </globalProperty>
     <globalProperty>
+        <property>pharmacyOrderTask.lastFetchDateAndTime</property>
+        <defaultValue>20190226120000</defaultValue>
+        <description>
+            The last date and time that the last fetch was done for orders task
+        </description>
+    </globalProperty>
+
+
+
+    <globalProperty>
         <property>enrolmentTask.lastFetchId</property>
         <defaultValue>1</defaultValue>
         <description>

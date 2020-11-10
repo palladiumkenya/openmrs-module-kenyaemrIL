@@ -1,4 +1,7 @@
 package org.openmrs.module.kenyaemrIL.il.pharmacy;
+
+import java.util.Date;
+
 /**
  * @author Stanslaus Odhiambo
  *         Created on 21/11/2017.
@@ -12,6 +15,7 @@ public class PHARMACY_ENCODED_ORDER {
     private String strength;
     private String duration;
     private String drug_name;
+    private String pharmacy_order_date;
     private String prescription_number;
 
     public String getPrescription_number() {
@@ -49,6 +53,14 @@ public class PHARMACY_ENCODED_ORDER {
 
     public String getCoding_system() {
         return coding_system;
+    }
+
+    public void setPharmacy_order_date(String pharmacy_order_date) {
+        this.pharmacy_order_date = pharmacy_order_date;
+    }
+
+    public String getPharmacy_order_date() {
+        return pharmacy_order_date;
     }
 
     public void setCoding_system(String coding_system) {
