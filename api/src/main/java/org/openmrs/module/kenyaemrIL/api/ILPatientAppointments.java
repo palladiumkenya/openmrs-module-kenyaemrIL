@@ -37,19 +37,15 @@ public class ILPatientAppointments {
 //        Form the internal patient IDs
         for (PatientIdentifier patientIdentifier : patient.getIdentifiers()) {
             ipd = new INTERNAL_PATIENT_ID();
-             if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Unique Patient Number")) {
+            if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Unique Patient Number")) {
                 ipd.setAssigning_authority("CCC");
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("CCC_NUMBER");
-                 internalPatientIds.add(ipd);
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("MPI GODS NUMBER")) {
-                if (patientIdentifier.getIdentifierType().getName() != null) {
-                    epd.setAssigning_authority("MPI");
-                    epd.setId(patientIdentifier.getIdentifier());
-                    epd.setIdentifier_type("GODS_NUMBER");
-                    patientIdentification.setExternal_patient_id(epd);
-                }
-                continue;
+                internalPatientIds.add(ipd);
+//        Form the default external patient IDs
+                epd.setAssigning_authority("MPI");
+                epd.setIdentifier_type("GODS_NUMBER");
+                patientIdentification.setExternal_patient_id(epd);
             }
         }
 

@@ -19,10 +19,26 @@ import com.thoughtworks.xstream.core.util.PresortedSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.cfg.NotYetImplementedException;
-import org.openmrs.*;
+import org.openmrs.Concept;
+import org.openmrs.DrugOrder;
+import org.openmrs.Encounter;
+import org.openmrs.EncounterType;
+import org.openmrs.Location;
+import org.openmrs.Obs;
+import org.openmrs.Order;
+import org.openmrs.Patient;
+import org.openmrs.PatientIdentifier;
+import org.openmrs.PatientIdentifierType;
+import org.openmrs.PersonAddress;
+import org.openmrs.PersonAttribute;
+import org.openmrs.PersonAttributeType;
+import org.openmrs.PersonName;
+import org.openmrs.Provider;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.EncounterService;
+import org.openmrs.api.OrderService;
 import org.openmrs.api.PatientService;
+import org.openmrs.api.ProviderService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.idgen.service.IdentifierSourceService;
@@ -30,15 +46,28 @@ import org.openmrs.module.kenyaemr.api.KenyaEmrService;
 import org.openmrs.module.kenyaemrIL.api.ILMessageType;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
-import org.openmrs.module.kenyaemrIL.il.*;
+import org.openmrs.module.kenyaemrIL.il.EXTERNAL_PATIENT_ID;
+import org.openmrs.module.kenyaemrIL.il.ILMessage;
+import org.openmrs.module.kenyaemrIL.il.ILPerson;
+import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
+import org.openmrs.module.kenyaemrIL.il.MESSAGE_HEADER;
+import org.openmrs.module.kenyaemrIL.il.MOTHER_NAME;
+import org.openmrs.module.kenyaemrIL.il.NEXT_OF_KIN;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_ADDRESS;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_NAME;
 import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
 import org.openmrs.module.kenyaemrIL.il.appointment.AppointmentMessage;
 import org.openmrs.module.kenyaemrIL.il.appointment.PLACER_APPOINTMENT_NUMBER;
 import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
 import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.DispenseMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_DISPENSE;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.PLACER_ORDER_NUMBER;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 import org.openmrs.module.kenyaemrIL.kenyaemrUtils.Utils;
@@ -48,7 +77,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -434,13 +470,126 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public boolean processPharmacyOrder(ILMessage ilMessage) {
+    public boolean processPharmacyOrder(ILMessage ilMessage, String messsageUUID) {
         throw new NotYetImplementedException("Not Yet Implemented");
     }
 
     @Override
-    public boolean processPharmacyDispense(ILMessage ilMessage) {
-        throw new NotYetImplementedException("Not Yet Implemented");
+    public boolean processPharmacyDispense(ILMessage ilMessage, String messsageUUID) {
+        boolean success = false;
+        String cccNumber = null;
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+        KenyaEMRILMessage kenyaEMRILMessage = getKenyaEMRILMessageByUuid(messsageUUID);
+//        1. Fetch the person to update using the CCC number
+        for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
+            if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
+                cccNumber = internalPatientId.getId().replaceAll("\\D", "");
+                ;
+                break;
+            }
+        }
+        if (cccNumber == null) {
+            // no patient with the given ccc number, proceed to create a new patient with the received details
+            //TODO:this is wrong we should discard this message  so do nothing
+            kenyaEMRILMessage.setStatus("Missing CCC Number");
+            success = false;
+            log.info("Pharmacy Dispense message without CCC Number discarded " + new Date());
+        } else {
+            //            fetch the patient
+            List<Patient> patients = Context.getPatientService().getPatients(null, cccNumber, allPatientIdentifierTypes, true);
+            Patient patient;
+            if (patients.size() > 0) {
+                patient = patients.get(0);
+                //Save the dispense
+
+                 DispenseMessage dispenceMessage = ilMessage.extractPharmacyDispenseMessage();
+                 PHARMACY_DISPENSE[] dispenseInformation = dispenceMessage.getDispense_information();
+                 PLACER_ORDER_NUMBER placer_order_number = dispenceMessage.getCommon_Order_Details().getPlacer_order_number();
+
+                Encounter appEncounter;
+                OrderService orderService = Context.getOrderService();
+                EncounterService encounterService = Context.getEncounterService();
+                EncounterType encounterTypeDrugOrder = Context.getEncounterService().getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3");   //  Drug Order encounter
+                //Fetch all encounters
+                List<EncounterType> encounterTypes = new ArrayList<>();
+                encounterTypes.add(encounterTypeDrugOrder);
+                ArrayList<Order> orderList=new ArrayList<Order>();
+
+                ProviderService providerService = Context.getProviderService();
+                Provider provider = providerService.getProvider(1);        // Added default provider admin
+
+                for (PHARMACY_DISPENSE dispenseInfo : dispenseInformation) {
+
+                    String dispenseNotes = dispenseInfo.getDispensing_notes();
+                    String frequency = dispenseInfo.getFrequency();
+                    String prescription_number = dispenseInfo.getPrescription_number();
+                    String quantityDispensed = dispenseInfo.getQuantity_dispensed();
+                    String dosage = dispenseInfo.getDosage();
+                    String codingSystem = dispenseInfo.getCoding_system();
+                    String strength = dispenseInfo.getStrength();
+                    String duration = dispenseInfo.getDuration();
+                    String actualDrugs = dispenseInfo.getActual_drugs();
+                    String drugName = dispenseInfo.getDrug_name();
+                    String dispenseMsgDatetime = dispenceMessage.getMessage_header().getMessage_datetime();
+                    Date ilMsgDate = null;
+                    //Validate
+                    if (drugName != null) {
+                        try {
+                            ilMsgDate = formatter.parse(dispenseMsgDatetime);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                            Encounter encounter = new Encounter();
+                            EncounterType encounterType=encounterService.getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3");
+                            encounter.setEncounterType(encounterType);
+                            encounter.setPatient(patient);
+                            encounter.setEncounterDatetime(new Date());
+                            encounter.setDateCreated(new Date());
+                            encounterService.saveEncounter(encounter);
+                            DrugOrder orderToDiscontinue = null;
+
+                        List<Order> drugOrderGroupList=new ArrayList<Order>();
+                        drugOrderGroupList = orderService.getOrderGroup(33).getOrders();    // This is for orderGroup
+
+                        Integer drugOrderSize = drugOrderGroupList.size();
+                         if(drugOrderSize != null && drugOrderSize > 0) {
+                         //Discontinues orderGroup
+                             DrugOrder drugOrder = new DrugOrder();
+                                for (int i = 0; i < drugOrderGroupList.size(); i++) {
+                                    //JSONObject drugOrderJson = (JSONObject) drugs.get(i);
+
+                                    Order order = drugOrderGroupList.get(i);
+                                    drugOrder = (DrugOrder) orderService.getOrder(Integer.valueOf(order.getId()));
+                                    try {
+                                        orderToDiscontinue = (DrugOrder) orderService.discontinueOrder(drugOrder, "order fulfilled", null, provider, encounter);
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                    orderList.add(orderToDiscontinue);
+                                }
+                          }else {
+                             // Discontinue single drug eg CTX
+                             DrugOrder drugOrder = (DrugOrder) orderService.getOrder(Integer.parseInt(placer_order_number.getNumber()));    //This is the order_id
+                             try {
+                                 orderService.discontinueOrder(drugOrder, "order fulfilled", null, provider, encounter);
+                             } catch (Exception e) {
+                                 e.printStackTrace();
+                             }
+                        }
+                            kenyaEMRILMessage.setStatus("Success");
+                            success = true;
+                        }
+                }
+
+            } else {
+                log.error("Cannot save drug dispense: CCC number format does not match:");
+                kenyaEMRILMessage.setStatus("Could not find a match");
+                success = false;
+            }
+
+        }
+        return success;
     }
 
     @Override
@@ -1659,6 +1808,15 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         whoSategeList.put(conceptService.getConcept(1222), "3");
         whoSategeList.put(conceptService.getConcept(1223), "4");
         return whoSategeList.get(key);
+    }
+
+    static String drugNameConverter(String key) {
+        Map<Concept, String> drugNameList = new HashMap<Concept, String>();
+        drugNameList.put(conceptService.getConcept(1652), "af1a");
+        drugNameList.put(conceptService.getConcept(1652), "cf1a");
+        drugNameList.put(conceptService.getConcept(164505), "tle");
+        drugNameList.put(conceptService.getConcept(105281), "ctx");
+        return drugNameList.get(key);
     }
 
     public Integer calculateAge(Date date) {

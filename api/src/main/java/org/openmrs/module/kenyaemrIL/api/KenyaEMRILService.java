@@ -112,9 +112,9 @@ public interface KenyaEMRILService extends OpenmrsService {
 
     boolean processUpdatePatientRequest(ILMessage ilMessage,  String messsageUUID);
 
-    boolean processPharmacyOrder(ILMessage ilMessage);
+    boolean processPharmacyOrder(ILMessage ilMessage,  String messsageUUID);
 
-    boolean processPharmacyDispense(ILMessage ilMessage);
+    boolean processPharmacyDispense(ILMessage ilMessage,  String messsageUUID);
 
     boolean processAppointmentSchedule(ILMessage ilMessage,String messsageUUID);
 
