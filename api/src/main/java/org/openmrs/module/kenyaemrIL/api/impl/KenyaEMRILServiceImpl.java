@@ -547,14 +547,35 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                             encounter.setDateCreated(new Date());
                             encounterService.saveEncounter(encounter);
                             DrugOrder orderToDiscontinue = null;
-                                // Discontinue single drug eg CTX
-                            DrugOrder drugOrder=(DrugOrder)orderService.getOrder(Integer.parseInt(placer_order_number.getNumber()));
-                                try {
-                                    orderService.discontinueOrder(drugOrder, "order fulfilled", null, provider,encounter);
-                                } catch (Exception e) {
-                                    e.printStackTrace();
+
+                        List<Order> drugOrderGroupList=new ArrayList<Order>();
+                        drugOrderGroupList = orderService.getOrderGroup(33).getOrders();    // This is for orderGroup
+
+                        Integer drugOrderSize = drugOrderGroupList.size();
+                         if(drugOrderSize != null && drugOrderSize > 0) {
+                         //Discontinues orderGroup
+                             DrugOrder drugOrder = new DrugOrder();
+                                for (int i = 0; i < drugOrderGroupList.size(); i++) {
+                                    //JSONObject drugOrderJson = (JSONObject) drugs.get(i);
+
+                                    Order order = drugOrderGroupList.get(i);
+                                    drugOrder = (DrugOrder) orderService.getOrder(Integer.valueOf(order.getId()));
+                                    try {
+                                        orderToDiscontinue = (DrugOrder) orderService.discontinueOrder(drugOrder, "order fulfilled", null, provider, encounter);
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                    orderList.add(orderToDiscontinue);
                                 }
-                           // orderList.add(orderToDiscontinue);
+                          }else {
+                             // Discontinue single drug eg CTX
+                             DrugOrder drugOrder = (DrugOrder) orderService.getOrder(Integer.parseInt(placer_order_number.getNumber()));    //This is the order_id
+                             try {
+                                 orderService.discontinueOrder(drugOrder, "order fulfilled", null, provider, encounter);
+                             } catch (Exception e) {
+                                 e.printStackTrace();
+                             }
+                        }
                             kenyaEMRILMessage.setStatus("Success");
                             success = true;
                         }
