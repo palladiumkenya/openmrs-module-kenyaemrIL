@@ -522,6 +522,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
                     String dispenseNotes = dispenseInfo.getDispensing_notes();
                     String frequency = dispenseInfo.getFrequency();
+                    String prescription_number = dispenseInfo.getPrescription_number();
                     String quantityDispensed = dispenseInfo.getQuantity_dispensed();
                     String dosage = dispenseInfo.getDosage();
                     String codingSystem = dispenseInfo.getCoding_system();

@@ -14,7 +14,15 @@ public class PHARMACY_DISPENSE {
     private String duration;
     private String actual_drugs;
     private String drug_name;
+    private String prescription_number;
 
+    public String getPrescription_number() {
+        return prescription_number;
+    }
+
+    public void setPrescription_number(String prescription_number) {
+        this.prescription_number = prescription_number;
+    }
 
     public String getFrequency() {
         return frequency;

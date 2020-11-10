@@ -28,7 +28,7 @@ public class MessageHeaderSingleton {
         String facilityMfl = getDefaultLocationMflCode(location);
         messageHeader.setSending_facility(facilityMfl);
         messageHeader.setReceiving_application("IL");
-        messageHeader.setReceiving_facility("");
+        messageHeader.setReceiving_facility(facilityMfl);
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddhhmmss");
         messageHeader.setMessage_datetime(formatter.format(new Date()));
         messageHeader.setSecurity("");
