@@ -12,6 +12,15 @@ public class PHARMACY_ENCODED_ORDER {
     private String strength;
     private String duration;
     private String drug_name;
+    private String prescription_number;
+
+    public String getPrescription_number() {
+        return prescription_number;
+    }
+
+    public void setPrescription_number(String prescription_number) {
+        this.prescription_number = prescription_number;
+    }
 
 
     public String getFrequency() {
