@@ -81,7 +81,7 @@ public class ILPrescriptionMessage {
         // set the patient orders
         List<PHARMACY_ENCODED_ORDER> pharmacyEncodedOrders = new ArrayList<>();
         PHARMACY_ENCODED_ORDER pharmacyEncodedOrder = null;
-        String groupOrderNumber = "OD_" + encounters.get(0).getEncounterId().toString();
+        String groupOrderNumber = encounters.get(0).getEncounterId().toString();
 
         for (Encounter drugOrderEncounter : encounters) {
 
@@ -130,13 +130,18 @@ public class ILPrescriptionMessage {
                 if (StringUtils.isBlank(placerOrderNumber.getNumber() )) {
                     placerOrderNumber.setNumber(groupOrderNumber);
                     commonOrderDetails.setPlacer_order_number(placerOrderNumber);
+                    orderingPhysician.setFirst_name(drugOrder.getCreator().getGivenName());
+                    orderingPhysician.setMiddle_name(drugOrder.getCreator().getFamilyName());
+                    orderingPhysician.setLast_name(drugOrder.getCreator().getLastName());
+                    commonOrderDetails.setOrdering_physician(orderingPhysician);
+
                 }
 
                 pharmacyEncodedOrder.setCoding_system("NASCOP_CODES");
                 pharmacyEncodedOrder.setDosage(drugOrder.getDose() != null ? String.valueOf(drugOrder.getDose().intValue()) : "");
                 pharmacyEncodedOrder.setFrequency(frequency);
                 pharmacyEncodedOrder.setQuantity_prescribed(quantity);
-                JSONObject drugObj = ILUtils.getDrugEntryByDrugName(drugOrder.getOrderGroup().getOrderSet().getName(), ILUtils.getSampleNascopCodeMapping());
+                JSONObject drugObj = ILUtils.getDrugEntryByDrugName(drugOrder.getOrderGroup().getOrderSet().getName(), ILUtils.getNacopCodesMapping());
                 String drugCode = drugObj != null ? drugObj.get("nascop_code").toString() : "Mapping Missing";
                 pharmacyEncodedOrder.setDrug_name(drugCode);
 
@@ -177,6 +182,10 @@ public class ILPrescriptionMessage {
                 if (StringUtils.isBlank(placerOrderNumber.getNumber() )) {
                     placerOrderNumber.setNumber(groupOrderNumber);
                     commonOrderDetails.setPlacer_order_number(placerOrderNumber);
+                    orderingPhysician.setFirst_name(drugOrder.getCreator().getGivenName());
+                    orderingPhysician.setMiddle_name(drugOrder.getCreator().getFamilyName());
+                    orderingPhysician.setLast_name(drugOrder.getCreator().getLastName());
+                    commonOrderDetails.setOrdering_physician(orderingPhysician);
                 }
 
                 //JSONObject drugObj = ILUtils.getDrugEntryByConceptId(drugOrder.getConcept().getConceptId(), ILUtils.getSampleNascopCodeMapping());
@@ -202,7 +211,5 @@ public class ILPrescriptionMessage {
         ilMessage.setPharmacy_encoded_order(pharmacyEncodedOrders.toArray(new PHARMACY_ENCODED_ORDER[pharmacyEncodedOrders.size()]));
         return ilMessage;
     }
-
-
 
 }

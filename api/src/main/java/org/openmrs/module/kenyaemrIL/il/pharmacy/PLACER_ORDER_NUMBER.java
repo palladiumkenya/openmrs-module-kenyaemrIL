@@ -5,7 +5,7 @@ package org.openmrs.module.kenyaemrIL.il.pharmacy;
  *         Created on 21/11/2017.
  */
 public class PLACER_ORDER_NUMBER {
-    private String entity;
+    private String entity = "";
     private String number;
 
     public String getEntity() {
