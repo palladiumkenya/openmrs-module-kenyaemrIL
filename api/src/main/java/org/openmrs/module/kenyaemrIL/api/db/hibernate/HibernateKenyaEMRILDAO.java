@@ -78,6 +78,7 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
         crit.add(Restrictions.eq("message_type", 1));
         crit.add(Restrictions.eq("retired", includeRetired));
+        crit.setMaxResults(25);
         return crit.list();
     }
 
@@ -86,6 +87,8 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
         crit.add(Restrictions.eq("message_type", 2));
         crit.add(Restrictions.eq("retired", includeRetired));
+        crit.add(Restrictions.eq("retired", includeRetired));
+        crit.setMaxResults(25);
         return crit.list();
     }
 
