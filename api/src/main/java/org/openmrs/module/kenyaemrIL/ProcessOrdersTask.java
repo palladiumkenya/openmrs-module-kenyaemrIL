@@ -1,5 +1,8 @@
 package org.openmrs.module.kenyaemrIL;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.commons.lang3.StringUtils;
 import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
 import org.openmrs.GlobalProperty;
@@ -10,6 +13,7 @@ import org.openmrs.module.kenyaemrIL.api.ILPatientUnsolicitedObservationResults;
 import org.openmrs.module.kenyaemrIL.api.ILPrescriptionMessage;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
+import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.scheduler.tasks.AbstractTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,45 +38,33 @@ public class ProcessOrdersTask extends AbstractTask {
      */
     @Override
     public void execute() {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         log.info("Executing Orders task at " + new Date());
-//        Fetch the last date of fetch
-        Date fetchDate = null;
-        GlobalProperty globalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("pharmacyOrderTask.lastFetchDateAndTime");
 
-        try {
-            String ts = globalPropertyObject.getValue().toString();
-            fetchDate = formatter.parse(ts);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        GlobalProperty lastEncounterEntryFromGP = Context.getAdministrationService().getGlobalPropertyObject(ILUtils.GP_IL_LAST_PHARMACY_MESSAGE_ENCOUNTER);// this will store the last encounter id prior to task execution
 
-//       list of encounter types of interest.
-        EncounterType drugOrderEncounterType = Context.getEncounterService().getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3");  //last drug order
-        //Fetch encounters
-        List<EncounterType> encounterTypes = new ArrayList<>();
-//       Add all the encoutners of interest
-        encounterTypes.add(drugOrderEncounterType);
+        String lastEncounterSql = "select max(encounter_id) last_id from encounter where voided=0;";
+        List<List<Object>> lastEncounterId = Context.getAdministrationService().executeSQL(lastEncounterSql, true);
 
+        Integer lastIdFromEncounterTable = (Integer) lastEncounterId.get(0).get(0);
+        lastIdFromEncounterTable = lastIdFromEncounterTable != null ? lastIdFromEncounterTable : 0;
 
-        List<Encounter> pendingDrugOrders = fetchPendingOrders(encounterTypes, fetchDate);
+        String lastEncounterValueFromGPStr = lastEncounterEntryFromGP != null && lastEncounterEntryFromGP.getValue() != null ? lastEncounterEntryFromGP.getValue().toString() : "";
+        Integer lastEncounterIDFromGP = StringUtils.isNotBlank(lastEncounterValueFromGPStr) ? Integer.parseInt(lastEncounterValueFromGPStr) : 0;
+
+        List<Encounter> pendingDrugOrders = fetchPendingOrders(lastEncounterIDFromGP, lastIdFromEncounterTable);
         Map<Patient, List<Encounter>> groupedEncounters = groupEncountersByPatient(pendingDrugOrders);
         System.out.println("Active orders:=================" + groupedEncounters.toString());
 
         for (Map.Entry entry : groupedEncounters.entrySet()) {
-
             processPendingOrders((Patient) entry.getKey(), (List<Encounter>) entry.getValue());
         }
 
-        Date nextProcessingDate = new Date();
-        globalPropertyObject.setPropertyValue(formatter.format(nextProcessingDate));
-        Context.getAdministrationService().saveGlobalProperty(globalPropertyObject);
-
+        lastEncounterEntryFromGP.setPropertyValue(lastIdFromEncounterTable.toString());
+        Context.getAdministrationService().saveGlobalProperty(lastEncounterEntryFromGP);
     }
 
-    private List<Encounter> fetchPendingOrders(List<EncounterType> encounterTypes, Date date) {
-        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-        String effectiveDate = sd.format(date);
+    private List<Encounter> fetchPendingOrders( Integer lastEncounterIdFromGP, Integer lastEncounterFromEncounterTable) {
+
         StringBuilder q = new StringBuilder();
         q.append("select e.encounter_id ");
         q.append("from encounter e inner join " +
@@ -80,10 +72,16 @@ public class ProcessOrdersTask extends AbstractTask {
                 " select encounter_type_id, uuid, name from encounter_type where uuid ='7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3' " +
                 " ) et on et.encounter_type_id=e.encounter_type " +
                 " inner join orders o on o.encounter_id=e.encounter_id and o.voided=0 and o.order_action='NEW' and o.date_stopped is null " );
-        q.append("where e.date_created = '2020-11-10'");
-       // q.append("where e.date_created >= '" + effectiveDate + "' or e.date_changed >= '" + effectiveDate + "'");
-        q.append(" and e.voided = 0 group by e.encounter_id ");
 
+       // q.append("where e.date_created >= '" + effectiveDate + "' or e.date_changed >= '" + effectiveDate + "'");
+
+        if (lastEncounterIdFromGP != null && lastEncounterIdFromGP > 0) {
+            q.append("where e.encounter_id > " + lastEncounterIdFromGP + " ");
+        } else {
+            q.append("where e.encounter_id <= " + lastEncounterFromEncounterTable + " ");
+        }
+
+        q.append(" and e.voided = 0 group by e.encounter_id ");
         List<Encounter> encounters = new ArrayList<>();
         EncounterService encounterService = Context.getEncounterService();
         List<List<Object>> queryData = Context.getAdministrationService().executeSQL(q.toString(), true);

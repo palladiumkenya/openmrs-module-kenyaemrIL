@@ -18,14 +18,6 @@ public class PHARMACY_ENCODED_ORDER {
     private String pharmacy_order_date;
     private String prescription_number;
 
-    public String getPrescription_number() {
-        return prescription_number;
-    }
-
-    public void setPrescription_number(String prescription_number) {
-        this.prescription_number = prescription_number;
-    }
-
 
     public String getFrequency() {
         return frequency;
@@ -97,5 +89,13 @@ public class PHARMACY_ENCODED_ORDER {
 
     public void setDrug_name(String drug_name) {
         this.drug_name = drug_name;
+    }
+
+    public String getPrescription_number() {
+        return prescription_number;
+    }
+
+    public void setPrescription_number(String prescription_number) {
+        this.prescription_number = prescription_number;
     }
 }

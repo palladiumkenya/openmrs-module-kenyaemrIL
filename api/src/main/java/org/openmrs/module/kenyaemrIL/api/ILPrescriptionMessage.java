@@ -3,13 +3,13 @@ package org.openmrs.module.kenyaemrIL.api;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.simple.JSONObject;
 import org.openmrs.DrugOrder;
 import org.openmrs.Encounter;
 import org.openmrs.Order;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PersonName;
-import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.il.EXTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
@@ -23,10 +23,10 @@ import org.openmrs.module.kenyaemrIL.util.ILUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
+import java.util.Locale;
 
 /**
  * Generates IL prescription message from a list of encounters
@@ -34,6 +34,7 @@ import java.util.Set;
 public class ILPrescriptionMessage {
 
     private final Log log = LogFactory.getLog(this.getClass());
+    public static final Locale LOCALE = Locale.ENGLISH;
 
     public static ILMessage generatePrescriptionMessage(Patient patient, List<Encounter> encounters) {
         ILMessage ilMessage = new ILMessage();
@@ -80,6 +81,7 @@ public class ILPrescriptionMessage {
         // set the patient orders
         List<PHARMACY_ENCODED_ORDER> pharmacyEncodedOrders = new ArrayList<>();
         PHARMACY_ENCODED_ORDER pharmacyEncodedOrder = null;
+        String groupOrderNumber = "OD_" + encounters.get(0).getEncounterId().toString();
 
         for (Encounter drugOrderEncounter : encounters) {
 
@@ -93,30 +95,62 @@ public class ILPrescriptionMessage {
             if (ordersInAnEncounter > 1) { // process regimen
                 List<Order> orderList = new ArrayList<>();
                 orderList.addAll(drugOrderEncounter.getOrders());
+
+                Comparator compareById = new Comparator() {
+                    @Override
+                    public int compare(Object o1,Object o2){
+                        Order s1=(Order) o1;
+                        Order s2=(Order) o2;
+                        return Integer.compare(s1.getOrderId(), s2.getOrderId());
+                    }
+                };
+
+                Collections.sort(orderList, compareById);
                 Order order = orderList.get(0);
                 DrugOrder drugOrder = (DrugOrder) order;
 
               //  String duration = drugOrder.getDuration() != null ? drugOrder.getDuration().toString() : "";
-                if(drugOrder.getDuration() != null) {
+
+                // TODO: pick the correct duration for the order group
+                pharmacyEncodedOrder.setDuration("30");
+
+               /* if(drugOrder.getDuration() != null) {
                     pharmacyEncodedOrder.setDuration(drugOrder.getDuration().toString());
                 }
-                String dose = drugOrder.getDose() != null ? drugOrder.getDose().toString() : "";
-                String quantity = drugOrder.getQuantity() != null ? drugOrder.getQuantity().toString() : "";
+*/
+                String quantity = drugOrder.getQuantity() != null ? String.valueOf(drugOrder.getQuantity().intValue()) : "";
                 String instructions = order.getInstructions() != null ? order.getInstructions() : "";
-                String frequency = drugOrder.getFrequency() != null ? drugOrder.getFrequency().toString() : "";
-                placerOrderNumber.setNumber(order.getOrderId().toString());
-                commonOrderDetails.setPlacer_order_number(placerOrderNumber);
+                String frequency = "";
+                if (drugOrder.getFrequency() != null && drugOrder.getFrequency().getConcept() != null) {
+                    frequency = drugOrder.getFrequency().getConcept().getShortNameInLocale(LOCALE) != null ? drugOrder.getFrequency().getConcept().getShortNameInLocale(LOCALE).getName() : drugOrder.getFrequency().getConcept().getName().getName();
+                }
+                // setting this to the order id of the first element in the group
+
+                // do this just once
+                if (StringUtils.isBlank(placerOrderNumber.getNumber() )) {
+                    placerOrderNumber.setNumber(groupOrderNumber);
+                    commonOrderDetails.setPlacer_order_number(placerOrderNumber);
+                }
+
                 pharmacyEncodedOrder.setCoding_system("NASCOP_CODES");
-                pharmacyEncodedOrder.setDosage(drugOrder.getDose() != null ? drugOrder.getDose().toString() : "");
+                pharmacyEncodedOrder.setDosage(drugOrder.getDose() != null ? String.valueOf(drugOrder.getDose().intValue()) : "");
                 pharmacyEncodedOrder.setFrequency(frequency);
                 pharmacyEncodedOrder.setQuantity_prescribed(quantity);
-                pharmacyEncodedOrder.setDrug_name(drugOrder.getOrderGroup().getOrderSet().getName());
+                JSONObject drugObj = ILUtils.getDrugEntryByDrugName(drugOrder.getOrderGroup().getOrderSet().getName(), ILUtils.getSampleNascopCodeMapping());
+                String drugCode = drugObj != null ? drugObj.get("nascop_code").toString() : "Mapping Missing";
+                pharmacyEncodedOrder.setDrug_name(drugCode);
+
+                // we are setting the group's order number to that of the first element in the group.
+                // when processing dispense message from ADT, this should be checked and handled appropriately
+                pharmacyEncodedOrder.setPrescription_number(drugOrder.getOrderId().toString());
 
                 List<String> regimenStrength = new ArrayList<>();
-                for (Order regOrder : drugOrderEncounter.getOrders()) {
+                for (Order regOrder : orderList) {
+                    System.out.println("Order id: " + regOrder.getOrderId());
                     DrugOrder dOrder = (DrugOrder) regOrder;
-                    regimenStrength.add( dOrder.getDose().intValue() + dOrder.getDoseUnits().getName().getName());
+                    regimenStrength.add( dOrder.getDose().intValue() + (dOrder.getDoseUnits().getShortNameInLocale(LOCALE) != null ? dOrder.getDoseUnits().getShortNameInLocale(LOCALE).getName() : dOrder.getDoseUnits().getName().getName()));
                 }
+
                 pharmacyEncodedOrder.setStrength(StringUtils.join(regimenStrength, "/"));
                 pharmacyEncodedOrder.setPrescription_notes(instructions);
                 String ts = formatter.format(order.getDateActivated());
@@ -124,24 +158,38 @@ public class ILPrescriptionMessage {
                 pharmacyEncodedOrders.add(pharmacyEncodedOrder);
 
             } else { // process single drug
+
                 List<Order> orderList = new ArrayList<>();
                 orderList.addAll(drugOrderEncounter.getOrders());
                 Order order = orderList.get(0);
                 DrugOrder drugOrder = (DrugOrder) order;
 
+
                 String duration = drugOrder.getDuration() != null ? drugOrder.getDuration().toString() : "";
-                String dose = drugOrder.getDose() != null ? drugOrder.getDose().toString() : "";
-                String quantity = drugOrder.getQuantity() != null ? drugOrder.getQuantity().toString() : "";
+                String dose = drugOrder.getDose() != null ? String.valueOf(drugOrder.getDose().intValue()) : "";
+                String quantity = drugOrder.getQuantity() != null ? String.valueOf(drugOrder.getQuantity().intValue()) : "";
                 String instructions = order.getInstructions() != null ? order.getInstructions() : "";
-                String frequency = drugOrder.getFrequency() != null ? drugOrder.getFrequency().toString() : "";
-                placerOrderNumber.setNumber(order.getOrderId().toString());
-                commonOrderDetails.setPlacer_order_number(placerOrderNumber);
+                String frequency = "";
+                if (drugOrder.getFrequency() != null && drugOrder.getFrequency().getConcept() != null) {
+                    frequency = drugOrder.getFrequency().getConcept().getShortNameInLocale(LOCALE) != null ? drugOrder.getFrequency().getConcept().getShortNameInLocale(LOCALE).getName() : drugOrder.getFrequency().getConcept().getName().getName();
+                }
+                // do this just once
+                if (StringUtils.isBlank(placerOrderNumber.getNumber() )) {
+                    placerOrderNumber.setNumber(groupOrderNumber);
+                    commonOrderDetails.setPlacer_order_number(placerOrderNumber);
+                }
+
+                //JSONObject drugObj = ILUtils.getDrugEntryByConceptId(drugOrder.getConcept().getConceptId(), ILUtils.getSampleNascopCodeMapping());
+                //String drugCode = drugObj != null ? drugObj.get("nascop_code").toString() : "Mapping Missing";
+                pharmacyEncodedOrder.setDrug_name(drugOrder.getConcept().getName().getName());
                 pharmacyEncodedOrder.setDuration(duration);
                 pharmacyEncodedOrder.setCoding_system("NASCOP_CODES");
                 pharmacyEncodedOrder.setDosage(dose);
                 pharmacyEncodedOrder.setFrequency(frequency);
                 pharmacyEncodedOrder.setQuantity_prescribed(quantity);
-                //  pharmacyEncodedOrder.setStrength("Single");
+                pharmacyEncodedOrder.setStrength(drugOrder.getDose().intValue() + (drugOrder.getDoseUnits().getShortNameInLocale(LOCALE) != null ? drugOrder.getDoseUnits().getShortNameInLocale(LOCALE).getName() : drugOrder.getDoseUnits().getName().getName()));
+                pharmacyEncodedOrder.setPrescription_number(drugOrder.getOrderId().toString());
+
                 pharmacyEncodedOrder.setPrescription_notes(instructions);
                 String ts = formatter.format(order.getDateActivated());
                 pharmacyEncodedOrder.setPharmacy_order_date(ts);
@@ -154,6 +202,7 @@ public class ILPrescriptionMessage {
         ilMessage.setPharmacy_encoded_order(pharmacyEncodedOrders.toArray(new PHARMACY_ENCODED_ORDER[pharmacyEncodedOrders.size()]));
         return ilMessage;
     }
+
 
 
 }
