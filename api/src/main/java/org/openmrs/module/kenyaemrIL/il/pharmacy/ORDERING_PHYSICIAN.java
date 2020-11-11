@@ -6,9 +6,9 @@ package org.openmrs.module.kenyaemrIL.il.pharmacy;
  */
 public class ORDERING_PHYSICIAN {
 
-    private String prefix;
-    private String first_name;
-    private String middle_name;
+    private String prefix = "";
+    private String first_name = "";
+    private String middle_name = "";
 
     public String getFirst_name() {
         return first_name;
