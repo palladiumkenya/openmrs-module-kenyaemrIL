@@ -26,6 +26,7 @@ import org.openmrs.EncounterType;
 import org.openmrs.Location;
 import org.openmrs.Obs;
 import org.openmrs.Order;
+import org.openmrs.OrderGroup;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PatientIdentifierType;
@@ -551,28 +552,27 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                             encounterService.saveEncounter(encounter);
                             DrugOrder orderToDiscontinue = null;
 
-                        List<Order> drugOrderGroupList=new ArrayList<Order>();
-                        drugOrderGroupList = orderService.getOrderGroup(33).getOrders();    // This is for orderGroup
+                        DrugOrder drugOrder = (DrugOrder) orderService.getOrder(Integer.parseInt(prescription_number));
 
-                        Integer drugOrderSize = drugOrderGroupList.size();
-                         if(drugOrderSize != null && drugOrderSize > 0) {
-                         //Discontinues orderGroup
-                             DrugOrder drugOrder = new DrugOrder();
-                                for (int i = 0; i < drugOrderGroupList.size(); i++) {
-                                    //JSONObject drugOrderJson = (JSONObject) drugs.get(i);
+                        // check if order is single or group
+                        if (drugOrder.getOrderGroup() != null) { // this is a group
+                            // get order group
+                            OrderGroup og = Context.getOrderService().getOrderGroup(drugOrder.getOrderGroup().getOrderGroupId());
+                            // get group members
+                            List<Order> groupMembers = og.getOrders();
+                            for (int i = 0; i < groupMembers.size(); i++) {
 
-                                    Order order = drugOrderGroupList.get(i);
-                                    drugOrder = (DrugOrder) orderService.getOrder(Integer.valueOf(order.getId()));
-                                    try {
-                                        orderToDiscontinue = (DrugOrder) orderService.discontinueOrder(drugOrder, "order fulfilled", null, provider, encounter);
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                    orderList.add(orderToDiscontinue);
+                                Order order = groupMembers.get(i);
+                                drugOrder = (DrugOrder) orderService.getOrder(Integer.valueOf(order.getId()));
+                                try {
+                                    orderToDiscontinue = (DrugOrder) orderService.discontinueOrder(drugOrder, "order fulfilled", null, provider, encounter);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
                                 }
-                          }else {
-                             // Discontinue single drug eg CTX
-                             DrugOrder drugOrder = (DrugOrder) orderService.getOrder(Integer.parseInt(placer_order_number.getNumber()));    //This is the order_id
+                                orderList.add(orderToDiscontinue);
+                            }
+                        } else { // it is single
+
                              try {
                                  orderService.discontinueOrder(drugOrder, "order fulfilled", null, provider, encounter);
                              } catch (Exception e) {
