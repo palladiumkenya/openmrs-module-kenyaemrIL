@@ -79,6 +79,16 @@
         </description>
     </globalProperty>
     <globalProperty>
+        <property>pharmacyOrderTask.lastFetchDateAndTime</property>
+        <defaultValue>20190226120000</defaultValue>
+        <description>
+            The last date and time that the last fetch was done for orders task
+        </description>
+    </globalProperty>
+
+
+
+    <globalProperty>
         <property>enrolmentTask.lastFetchId</property>
         <defaultValue>1</defaultValue>
         <description>
@@ -90,6 +100,22 @@
         <defaultValue>127.0.0.1:5000</defaultValue>
         <description>
             This is where IL Outbox messages will be routed to
+        </description>
+    </globalProperty>
+
+    <globalProperty>
+        <property>kenyaemrIL.drugsMappingDirectory</property>
+        <defaultValue>kenyaemrIL</defaultValue>
+        <description>
+            Directory for storing order related config for IL data exchange
+        </description>
+    </globalProperty>
+
+    <globalProperty>
+        <property>kenyaemrIL.lastPharmacyMessageEncounter</property>
+        <defaultValue></defaultValue>
+        <description>
+            The last encounter id to help track the last time pharmacy message is generated
         </description>
     </globalProperty>
     <!-- /Internationalization -->

@@ -64,9 +64,11 @@ import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
 import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.DispenseMessage;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.OrderMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_DISPENSE;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_ENCODED_ORDER;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PLACER_ORDER_NUMBER;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
@@ -1505,6 +1507,37 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         }
         return isSuccessful;
     }
+
+
+    @Override
+    public boolean logPharmacyOrders(ILMessage ilMessage) {
+        boolean isSuccessful;
+        //Message Header
+        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("RDE^001");
+        ilMessage.setMessage_header(messageHeader);
+        KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
+        try {
+            OrderMessage orderMessage = ilMessage.extractPharmacyOrderMessage();
+            String messageString = mapper.writeValueAsString(orderMessage);
+            kenyaEMRILMessage.setHl7_type("RDE^001");
+            kenyaEMRILMessage.setSource("KENYAEMR");
+            kenyaEMRILMessage.setMessage(messageString);
+            kenyaEMRILMessage.setDescription("");
+            kenyaEMRILMessage.setName("");
+            kenyaEMRILMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
+            KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
+            if (savedInstance != null) {
+                isSuccessful = true;
+            } else {
+                isSuccessful = false;
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            isSuccessful = false;
+        }
+        return isSuccessful;
+    }
+
 
     private Patient wrapIlPerson(ILMessage ilPerson) {
 

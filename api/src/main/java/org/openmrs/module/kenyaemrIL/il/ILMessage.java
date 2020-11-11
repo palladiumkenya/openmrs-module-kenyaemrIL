@@ -7,6 +7,7 @@ import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.COMMON_ORDER_DETAILS;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.DispenseMessage;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.OrderMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_DISPENSE;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_ENCODED_ORDER;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
@@ -156,5 +157,14 @@ public class ILMessage {
         pharmacyDispenseMessage.setEncodedOrderList(this.getPharmacy_encoded_order());
         pharmacyDispenseMessage.setDispense_information(this.getPharmacy_dispense());
         return pharmacyDispenseMessage;
+    }
+
+    public OrderMessage extractPharmacyOrderMessage() {
+        OrderMessage orderMessage = new OrderMessage();
+        orderMessage.setMessage_header(this.message_header);
+        orderMessage.setPatient_identification(this.getPatient_identification());
+        orderMessage.setCommon_Order_Details(this.getCommon_order_details());
+        orderMessage.setPharmacy_encoded_order(this.getPharmacy_encoded_order());
+        return orderMessage;
     }
 }
