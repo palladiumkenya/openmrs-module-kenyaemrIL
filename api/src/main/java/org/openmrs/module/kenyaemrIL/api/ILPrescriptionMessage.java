@@ -142,7 +142,7 @@ public class ILPrescriptionMessage {
                 pharmacyEncodedOrder.setFrequency(frequency);
                 pharmacyEncodedOrder.setQuantity_prescribed(quantity);
                 JSONObject drugObj = ILUtils.getDrugEntryByDrugName(drugOrder.getOrderGroup().getOrderSet().getName(), ILUtils.getNacopCodesMapping());
-                String drugCode = drugObj != null ? drugObj.get("nascop_code").toString() : "Mapping Missing";
+                String drugCode = drugObj != null ? drugObj.get("nascop_code").toString() : drugOrder.getOrderGroup().getOrderSet().getName();
                 pharmacyEncodedOrder.setDrug_name(drugCode);
 
                 // we are setting the group's order number to that of the first element in the group.
