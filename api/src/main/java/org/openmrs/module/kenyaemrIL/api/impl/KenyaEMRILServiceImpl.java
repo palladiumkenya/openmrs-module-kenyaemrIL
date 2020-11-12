@@ -316,37 +316,45 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
     @Override
     public boolean processUpdatePatientRequest(ILMessage ilMessage, String messsageUUID) {
-        Patient patient = null;
-        String cccNumber = null;
-        KenyaEMRILMessage kenyaEMRILMessage = getKenyaEMRILMessageByUuid(messsageUUID);
-//        1. Fetch the person to update using the CCC number
-        for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
-            if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
-                cccNumber = internalPatientId.getId().replaceAll("\\D", "");
-                break;
-            }
-        }
-        if (cccNumber == null) {
-//           patient without CCC Number - discard
-            kenyaEMRILMessage.setStatus("Missing CCC Number");
-            return false;
-            //return processCreatePatientRequest(ilMessage);
-        } else {
-//            fetch the patient
-            List<Patient> patients = Context.getPatientService().getPatients(null, cccNumber, allPatientIdentifierTypes, true);
-            if (patients.size() > 0) {
-                patient = patients.get(0);
-                patient = updatePatientDetails(patient, wrapIlPerson(ilMessage));
-            }
 
-            Patient cPatient = patientService.savePatient(patient);
-            if (cPatient != null) {
-                return true;
-            } else {
-                kenyaEMRILMessage.setStatus("Unknown Error");
-                return false;
-            }
-        }
+        KenyaEMRILMessage kenyaEMRILMessage = getKenyaEMRILMessageByUuid(messsageUUID);
+        boolean success = false;
+//        Patient patient = null;
+//        String cccNumber = null;
+//        KenyaEMRILMessage kenyaEMRILMessage = getKenyaEMRILMessageByUuid(messsageUUID);
+////        1. Fetch the person to update using the CCC number
+//        for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
+//            if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
+//                cccNumber = internalPatientId.getId().replaceAll("\\D", "");
+//                break;
+//            }
+//        }
+//        if (cccNumber == null) {
+////           patient without CCC Number - discard
+//            kenyaEMRILMessage.setStatus("Missing CCC Number");
+//            return false;
+//            //return processCreatePatientRequest(ilMessage);
+//        } else {
+////            fetch the patient
+//            List<Patient> patients = Context.getPatientService().getPatients(null, cccNumber, allPatientIdentifierTypes, true);
+//            if (patients.size() > 0) {
+//                patient = patients.get(0);
+//                patient = updatePatientDetails(patient, wrapIlPerson(ilMessage));
+//            }
+//
+//            Patient cPatient = patientService.savePatient(patient);
+//            if (cPatient != null) {
+//                return true;
+//            } else {
+//                kenyaEMRILMessage.setStatus("Unknown Error");
+//                return false;
+//            }
+//        }
+
+  // Defaulted ADT A08 message to processed
+        kenyaEMRILMessage.setStatus("Success");
+        success = true;
+        return success;
     }
 
     private Patient updatePatientDetails(Patient oldPatientToUpdate, Patient newPatientDetails) {
