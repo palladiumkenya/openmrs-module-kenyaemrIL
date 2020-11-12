@@ -14,8 +14,10 @@ import org.openmrs.module.kenyaemrIL.il.EXTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION_SIMPLE;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_NAME;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.COMMON_ORDER_DETAILS;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.FILLER_ORDER_NUMBER;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ORDERING_PHYSICIAN;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_ENCODED_ORDER;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PLACER_ORDER_NUMBER;
@@ -39,12 +41,14 @@ public class ILPrescriptionMessage {
     public static ILMessage generatePrescriptionMessage(Patient patient, List<Encounter> encounters) {
         ILMessage ilMessage = new ILMessage();
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-        PATIENT_IDENTIFICATION patientIdentification = new PATIENT_IDENTIFICATION();
+        PATIENT_IDENTIFICATION_SIMPLE patientIdentification = new PATIENT_IDENTIFICATION_SIMPLE();
         COMMON_ORDER_DETAILS commonOrderDetails = new COMMON_ORDER_DETAILS();
         List<INTERNAL_PATIENT_ID> internalPatientIds = new ArrayList<INTERNAL_PATIENT_ID>();
         EXTERNAL_PATIENT_ID epd = new EXTERNAL_PATIENT_ID();
         ORDERING_PHYSICIAN orderingPhysician = new ORDERING_PHYSICIAN();
+        FILLER_ORDER_NUMBER fillerOrderNumber = new FILLER_ORDER_NUMBER();
         PLACER_ORDER_NUMBER placerOrderNumber = new PLACER_ORDER_NUMBER();
+        commonOrderDetails.setFiller_order_number(fillerOrderNumber);
         INTERNAL_PATIENT_ID ipd;
         //        Form the internal patient IDs
         for (PatientIdentifier patientIdentifier : patient.getIdentifiers()) {
@@ -206,7 +210,7 @@ public class ILPrescriptionMessage {
             }
         }
 
-        ilMessage.setPatient_identification(patientIdentification);
+        ilMessage.setPatient_identification_simple(patientIdentification);
         ilMessage.setCommon_order_details(commonOrderDetails);
         ilMessage.setPharmacy_encoded_order(pharmacyEncodedOrders.toArray(new PHARMACY_ENCODED_ORDER[pharmacyEncodedOrders.size()]));
         return ilMessage;

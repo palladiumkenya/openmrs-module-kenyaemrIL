@@ -19,6 +19,7 @@ import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 public class ILMessage {
     private MESSAGE_HEADER message_header;
     private PATIENT_IDENTIFICATION patient_identification;
+    private PATIENT_IDENTIFICATION_SIMPLE patient_identification_simple;
     private PATIENT_VISIT patient_visit;
     private NEXT_OF_KIN[] next_of_kin;
     private OBSERVATION_RESULT[] observation_result;
@@ -82,6 +83,14 @@ public class ILMessage {
 
     public void setViral_load_result(VIRAL_LOAD_RESULT[] viral_load_result) {
         this.viral_load_result = viral_load_result;
+    }
+
+    public PATIENT_IDENTIFICATION_SIMPLE getPatient_identification_simple() {
+        return patient_identification_simple;
+    }
+
+    public void setPatient_identification_simple(PATIENT_IDENTIFICATION_SIMPLE patient_identification_simple) {
+        this.patient_identification_simple = patient_identification_simple;
     }
 
 //    public COMMON_ORDER_DETAILS getCommon_Order_Details() {
@@ -162,7 +171,7 @@ public class ILMessage {
     public OrderMessage extractPharmacyOrderMessage() {
         OrderMessage orderMessage = new OrderMessage();
         orderMessage.setMessage_header(this.message_header);
-        orderMessage.setPatient_identification(this.getPatient_identification());
+        orderMessage.setPatient_identification(this.getPatient_identification_simple());
         orderMessage.setCommon_Order_Details(this.getCommon_order_details());
         orderMessage.setPharmacy_encoded_order(this.getPharmacy_encoded_order());
         return orderMessage;

@@ -5,10 +5,10 @@ package org.openmrs.module.kenyaemrIL.il.pharmacy;
  *         Created on 21/11/2017.
  */
 public class COMMON_ORDER_DETAILS {
-    private String order_status = "";
+    private String order_status = "CA";
     private PLACER_ORDER_NUMBER placer_order_number;
     private FILLER_ORDER_NUMBER filler_order_number;
-    private String order_control = "";
+    private String order_control = "CA";
     private String transaction_datetime = "";
     private String notes = "";
 
