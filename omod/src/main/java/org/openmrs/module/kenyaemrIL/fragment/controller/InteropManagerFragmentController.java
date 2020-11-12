@@ -5,16 +5,24 @@ import org.apache.commons.logging.LogFactory;
 import org.hibernate.Transaction;
 import org.hibernate.jdbc.Work;
 import org.json.JSONObject;
+import org.openmrs.Encounter;
 import org.openmrs.Patient;
+import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.db.hibernate.DbSessionFactory;
+import org.openmrs.module.kenyaemrIL.api.ILPrescriptionMessage;
+import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
+import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.ui.framework.UiUtils;
 import org.openmrs.ui.framework.fragment.FragmentModel;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * controller for pivotTableCharts fragment
@@ -187,6 +195,37 @@ public class InteropManagerFragmentController {
         catch (Exception e) {
             throw new IllegalArgumentException("Unable to execute query", e);
         }
+
+        return ret;
+    }
+
+    public SimpleObject postPrescriptionMessage(@RequestParam(value = "patient") Patient patient, UiUtils ui) {
+
+        SimpleObject ret = SimpleObject.create("status", "Successful");
+
+        StringBuilder q = new StringBuilder();
+        q.append("select e.encounter_id ");
+        q.append("from encounter e inner join " +
+                "( " +
+                " select encounter_type_id, uuid, name from encounter_type where uuid ='7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3' " +
+                " ) et on et.encounter_type_id=e.encounter_type " +
+                " inner join orders o on o.encounter_id=e.encounter_id and o.voided=0 and o.order_action='NEW' and o.date_stopped is null " );
+        q.append("where e.patient_id = " + patient.getPatientId() + " ");
+        q.append(" and e.voided = 0 group by e.encounter_id ");
+
+        List<Encounter> encounters = new ArrayList<Encounter>();
+        EncounterService encounterService = Context.getEncounterService();
+        List<List<Object>> queryData = Context.getAdministrationService().executeSQL(q.toString(), true);
+        for (List<Object> row : queryData) {
+            Integer encounterId = (Integer) row.get(0);
+            Encounter e = encounterService.getEncounter(encounterId);
+            encounters.add(e);
+        }
+        System.out.println("No of drug encounters found: " + encounters.size());
+
+        ILMessage ilMessage = ILPrescriptionMessage.generatePrescriptionMessage(patient, encounters);
+        KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
+        service.logPharmacyOrders(ilMessage);
 
         return ret;
     }
