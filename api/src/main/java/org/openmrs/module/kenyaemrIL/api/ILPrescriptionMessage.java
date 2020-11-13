@@ -113,15 +113,7 @@ public class ILPrescriptionMessage {
                 Order order = orderList.get(0);
                 DrugOrder drugOrder = (DrugOrder) order;
 
-              //  String duration = drugOrder.getDuration() != null ? drugOrder.getDuration().toString() : "";
-
-                // TODO: pick the correct duration for the order group
-                pharmacyEncodedOrder.setDuration("30");
-
-               /* if(drugOrder.getDuration() != null) {
-                    pharmacyEncodedOrder.setDuration(drugOrder.getDuration().toString());
-                }
-*/
+                String duration = drugOrder.getDuration() != null ? String.valueOf(drugOrder.getDuration().intValue()) : "";
                 String quantity = drugOrder.getQuantity() != null ? String.valueOf(drugOrder.getQuantity().intValue()) : "";
                 String instructions = order.getInstructions() != null ? order.getInstructions() : "";
                 String frequency = "";
@@ -144,6 +136,7 @@ public class ILPrescriptionMessage {
                 pharmacyEncodedOrder.setCoding_system("NASCOP_CODES");
                 pharmacyEncodedOrder.setDosage(drugOrder.getDose() != null ? String.valueOf(drugOrder.getDose().intValue()) : "");
                 pharmacyEncodedOrder.setFrequency(frequency);
+                pharmacyEncodedOrder.setDuration(duration);
                 pharmacyEncodedOrder.setQuantity_prescribed(quantity);
                 JSONObject drugObj = ILUtils.getDrugEntryByDrugName(drugOrder.getOrderGroup().getOrderSet().getName(), ILUtils.getNacopCodesMapping());
                 String drugCode = drugObj != null ? drugObj.get("nascop_code").toString() : drugOrder.getOrderGroup().getOrderSet().getName();
