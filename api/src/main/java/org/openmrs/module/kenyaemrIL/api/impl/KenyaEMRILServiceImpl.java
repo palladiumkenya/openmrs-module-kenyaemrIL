@@ -64,11 +64,10 @@ import org.openmrs.module.kenyaemrIL.il.appointment.PLACER_APPOINTMENT_NUMBER;
 import org.openmrs.module.kenyaemrIL.il.observation.ObservationMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.DispenseMessage;
-import org.openmrs.module.kenyaemrIL.il.pharmacy.OrderMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.OrderMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_DISPENSE;
-import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_ENCODED_ORDER;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PLACER_ORDER_NUMBER;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
@@ -548,8 +547,13 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                             e.printStackTrace();
                         }
 
+            DrugOrder drugOrder = (DrugOrder) orderService.getOrder(Integer.parseInt(prescription_number));
+             if (!drugOrder.isActive()) {
+                 kenyaEMRILMessage.setStatus("Completed");
+                 return true;
+             }else{
                             Encounter encounter = new Encounter();
-                            EncounterType encounterType=encounterService.getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3");
+                            EncounterType encounterType = encounterService.getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3");
                             encounter.setEncounterType(encounterType);
                             encounter.setPatient(patient);
                             encounter.setEncounterDatetime(new Date());
@@ -557,36 +561,35 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                             encounterService.saveEncounter(encounter);
                             DrugOrder orderToDiscontinue = null;
 
-                        DrugOrder drugOrder = (DrugOrder) orderService.getOrder(Integer.parseInt(prescription_number));
+                            // check if order is single or group
+                            if (drugOrder.getOrderGroup() != null) { // this is a group
+                                // get order group
+                                OrderGroup og = Context.getOrderService().getOrderGroup(drugOrder.getOrderGroup().getOrderGroupId());
+                                // get group members
+                                List<Order> groupMembers = og.getOrders();
+                                for (int i = 0; i < groupMembers.size(); i++) {
 
-                        // check if order is single or group
-                        if (drugOrder.getOrderGroup() != null) { // this is a group
-                            // get order group
-                            OrderGroup og = Context.getOrderService().getOrderGroup(drugOrder.getOrderGroup().getOrderGroupId());
-                            // get group members
-                            List<Order> groupMembers = og.getOrders();
-                            for (int i = 0; i < groupMembers.size(); i++) {
+                                    Order order = groupMembers.get(i);
+                                    drugOrder = (DrugOrder) orderService.getOrder(Integer.valueOf(order.getId()));
+                                    try {
+                                        orderToDiscontinue = (DrugOrder) orderService.discontinueOrder(drugOrder, "order fulfilled", null, provider, encounter);
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                    orderList.add(orderToDiscontinue);
+                                }
+                            } else { // it is single
 
-                                Order order = groupMembers.get(i);
-                                drugOrder = (DrugOrder) orderService.getOrder(Integer.valueOf(order.getId()));
                                 try {
-                                    orderToDiscontinue = (DrugOrder) orderService.discontinueOrder(drugOrder, "order fulfilled", null, provider, encounter);
+                                    orderService.discontinueOrder(drugOrder, "order fulfilled", null, provider, encounter);
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
-                                orderList.add(orderToDiscontinue);
                             }
-                        } else { // it is single
-
-                             try {
-                                 orderService.discontinueOrder(drugOrder, "order fulfilled", null, provider, encounter);
-                             } catch (Exception e) {
-                                 e.printStackTrace();
-                             }
-                        }
                             kenyaEMRILMessage.setStatus("Success");
                             success = true;
                         }
+                    }
                 }
 
             } else {
