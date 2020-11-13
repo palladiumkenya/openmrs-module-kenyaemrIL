@@ -6,10 +6,13 @@ import org.openmrs.*;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.il.*;
+import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
+
+import static org.openmrs.module.kenyaemrIL.api.ILPatientUnsolicitedObservationResults.pregnancyStatusConverter;
 
 /**
  * Created by codehub on 10/30/15.
@@ -172,6 +175,95 @@ public class ILPatientRegistration {
         patientKins[0] = nok;
         ilMessage.setNext_of_kin(patientKins);
 
+        //Set the patient observation results
+        List<OBSERVATION_RESULT> observationResults = new ArrayList<>();
+        OBSERVATION_RESULT observationResult = null;
+       // observationResult = new OBSERVATION_RESULT();
+
+        Encounter hivEnrollmentEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc"));  //hiv enrollment
+        Integer HeightConcept = 5090;
+        Integer WeightConcept = 5089;
+        Integer IspregnantConcept = 5272;
+        Integer YesConcept = 1065;
+        Integer NoConcept = 1066;
+        Integer WhoStageConcept =5356;
+        Integer ARTInitiationDateConcept = 159599;
+
+        //Enrollment encounter
+        if (hivEnrollmentEncounter != null) {
+            for (Obs obs : hivEnrollmentEncounter.getObs()) {
+                observationResult = new OBSERVATION_RESULT();
+                if (obs.getConcept().getConceptId().equals(HeightConcept)) {          // start height
+                    observationResult.setObservation_identifier("START_HEIGHT");
+                    observationResult.setSet_id("");
+                    observationResult.setCoding_system("");
+                    observationResult.setValue_type("NM");
+                    observationResult.setObservation_value(String.valueOf(obs.getValueNumeric()));
+                    observationResult.setUnits("CM");
+                    observationResult.setObservation_result_status("F");
+                    String ts = formatter.format(obs.getObsDatetime());
+                    observationResult.setObservation_datetime(ts);
+                    observationResult.setAbnormal_flags("N");
+                    observationResults.add(observationResult);
+                }
+                if (obs.getConcept().getConceptId().equals(WeightConcept)) {     //  start weight
+                    observationResult.setObservation_identifier("START_WEIGHT");
+                    observationResult.setSet_id("");
+                    observationResult.setCoding_system("");
+                    observationResult.setValue_type("NM");
+                    observationResult.setObservation_value(String.valueOf(obs.getValueNumeric()));
+                    observationResult.setUnits("KG");
+                    observationResult.setObservation_result_status("F");
+                    String ts = formatter.format(obs.getObsDatetime());
+                    observationResult.setObservation_datetime(ts);
+                    observationResult.setAbnormal_flags("N");
+                    observationResults.add(observationResult);
+                }
+                if (obs.getConcept().getConceptId().equals(IspregnantConcept) && obs.getValueCoded().equals(YesConcept)) {          //is pregnant
+                    observationResult.setObservation_identifier("IS_PREGNANT");
+                    observationResult.setSet_id("");
+                    observationResult.setCoding_system("");
+                    observationResult.setValue_type("CE");
+                    observationResult.setObservation_value(pregnancyStatusConverter(obs.getValueCoded()));
+                    observationResult.setUnits("YES/NO");
+                    observationResult.setObservation_result_status("F");
+                    String ts = formatter.format(obs.getObsDatetime());
+                    observationResult.setObservation_datetime(ts);
+                    observationResult.setAbnormal_flags("N");
+                    observationResults.add(observationResult);
+                }
+                if (obs.getConcept().getConceptId().equals(ARTInitiationDateConcept)) {     // ART Start date
+                    observationResult.setObservation_identifier("ART_START");
+                    observationResult.setSet_id("");
+                    observationResult.setCoding_system("");
+                    observationResult.setValue_type("DT");
+                    String artDate = formatter.format(obs.getValueDatetime());
+                    observationResult.setObservation_value(artDate);
+                    observationResult.setUnits("");
+                    observationResult.setObservation_result_status("F");
+                    String ts = formatter.format(obs.getObsDatetime());
+                    observationResult.setObservation_datetime(ts);
+                    observationResult.setAbnormal_flags("N");
+                    observationResults.add(observationResult);
+                }
+                if (obs.getConcept().getConceptId().equals(WhoStageConcept)) {                      //  start who stage
+                    observationResult.setObservation_identifier("WHO_STAGE");
+                    observationResult.setSet_id("");
+                    observationResult.setCoding_system("");
+                    observationResult.setValue_type("NM");
+                    observationResult.setObservation_value(whoStageConverter(obs.getValueCoded()));
+                    observationResult.setUnits("");
+                    observationResult.setObservation_result_status("F");
+                    String ts = formatter.format(obs.getObsDatetime());
+                    observationResult.setObservation_datetime(ts);
+                    observationResult.setAbnormal_flags("N");
+                    observationResults.add(observationResult);
+                }
+
+            }
+        }
+
+        ilMessage.setObservation_result(observationResults.toArray(new OBSERVATION_RESULT[observationResults.size()]));
         return ilMessage;
     }
 
@@ -197,5 +289,16 @@ public class ILPatientRegistration {
         patientSourceList.put(conceptService.getConcept(5622), "other");
         return patientSourceList.get(key);
     }
-
+    static String whoStageConverter(Concept key) {
+        Map<Concept, String> whoStageList = new HashMap<Concept, String>();
+        whoStageList.put(conceptService.getConcept(1204), "1");
+        whoStageList.put(conceptService.getConcept(1205), "2");
+        whoStageList.put(conceptService.getConcept(1206), "3");
+        whoStageList.put(conceptService.getConcept(1207), "4");
+        whoStageList.put(conceptService.getConcept(1220), "1");
+        whoStageList.put(conceptService.getConcept(1221), "2");
+        whoStageList.put(conceptService.getConcept(1222), "3");
+        whoStageList.put(conceptService.getConcept(1223), "4");
+        return whoStageList.get(key);
+    }
 }

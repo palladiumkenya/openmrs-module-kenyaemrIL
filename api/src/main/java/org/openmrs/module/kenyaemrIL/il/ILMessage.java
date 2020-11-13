@@ -131,6 +131,7 @@ public class ILMessage {
         ilPerson.setPatient_identification(this.patient_identification);
         ilPerson.setNext_of_kin(this.next_of_kin);
         ilPerson.setPatient_visit(this.getPatient_visit());
+        ilPerson.setObservation_result(this.getObservation_result());
         return ilPerson;
     }
 
