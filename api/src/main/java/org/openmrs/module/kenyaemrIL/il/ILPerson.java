@@ -4,9 +4,7 @@ package org.openmrs.module.kenyaemrIL.il;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
 import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
-import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
@@ -23,6 +21,15 @@ public class ILPerson{
     private PATIENT_IDENTIFICATION patient_identification;
     private NEXT_OF_KIN[] next_of_kin;
     private PATIENT_VISIT patient_visit;
+    private OBSERVATION_RESULT [] observation_result;
+
+    public OBSERVATION_RESULT[] getObservation_result() {
+        return observation_result;
+    }
+
+    public void setObservation_result(OBSERVATION_RESULT[] observation_result) {
+        this.observation_result = observation_result;
+    }
 
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
