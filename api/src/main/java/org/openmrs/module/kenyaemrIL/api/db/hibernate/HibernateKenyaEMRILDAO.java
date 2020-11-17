@@ -18,6 +18,8 @@ import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
+import org.openmrs.GlobalProperty;
+import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 
@@ -75,19 +77,23 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
 
     @Override
     public List<KenyaEMRILMessage> getKenyaEMRILInboxes(Boolean includeRetired) {
+        String IL_MESSAGES_MAX_BATCH_FETCH_SIZE = "kenyaemrIL.ilMessagesMaxBatchFetch";
+        GlobalProperty batchSize = Context.getAdministrationService().getGlobalPropertyObject(IL_MESSAGES_MAX_BATCH_FETCH_SIZE);
         Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
         crit.add(Restrictions.eq("message_type", 1));
         crit.add(Restrictions.eq("retired", includeRetired));
-        crit.setMaxResults(25);
+        crit.setMaxResults(Integer.parseInt(batchSize.getValue().toString()));
         return crit.list();
     }
 
     @Override
     public List<KenyaEMRILMessage> getKenyaEMRILOutboxes(Boolean includeRetired) {
+        String IL_MESSAGES_MAX_BATCH_FETCH_SIZE = "kenyaemrIL.ilMessagesMaxBatchFetch";
+        GlobalProperty batchSize = Context.getAdministrationService().getGlobalPropertyObject(IL_MESSAGES_MAX_BATCH_FETCH_SIZE);
         Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
         crit.add(Restrictions.eq("message_type", 2));
         crit.add(Restrictions.eq("retired", includeRetired));
-        crit.setMaxResults(25);
+        crit.setMaxResults(Integer.parseInt(batchSize.getValue().toString()));
         return crit.list();
     }
 

@@ -87,7 +87,6 @@
     </globalProperty>
 
 
-
     <globalProperty>
         <property>enrolmentTask.lastFetchId</property>
         <defaultValue>1</defaultValue>
@@ -116,6 +115,14 @@
         <defaultValue></defaultValue>
         <description>
             The last encounter id to help track the last time pharmacy message is generated
+        </description>
+    </globalProperty>
+
+    <globalProperty>
+        <property>kenyaemrIL.ilMessagesMaxBatchFetch</property>
+        <defaultValue>25</defaultValue>
+        <description>
+            The maximum batch fetch for processing for inbox and outbox tasks
         </description>
     </globalProperty>
     <!-- /Internationalization -->
