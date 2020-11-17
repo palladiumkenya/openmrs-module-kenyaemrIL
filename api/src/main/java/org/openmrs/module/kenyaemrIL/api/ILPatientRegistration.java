@@ -184,10 +184,14 @@ public class ILPatientRegistration {
         Integer HeightConcept = 5090;
         Integer WeightConcept = 5089;
         Integer IspregnantConcept = 5272;
+        Integer EDDConcept = 5596;
         Integer YesConcept = 1065;
         Integer NoConcept = 1066;
         Integer WhoStageConcept =5356;
         Integer ARTInitiationDateConcept = 159599;
+        Integer AlcoholUseConcept = 159449;
+        Integer SmokerConcept = 155600;
+        Integer CurrentRegimenConcept = 1193;
 
         //Enrollment encounter
         if (hivEnrollmentEncounter != null) {
@@ -232,11 +236,40 @@ public class ILPatientRegistration {
                     observationResult.setAbnormal_flags("N");
                     observationResults.add(observationResult);
                 }
+
+                if (obs.getConcept().getConceptId().equals(EDDConcept)) {                                              //PREGNANT_EDD
+                    observationResult.setObservation_identifier("PREGNANT_EDD");
+                    observationResult.setSet_id("");
+                    observationResult.setCoding_system("");
+                    observationResult.setValue_type("DT");
+                    String edd = formatter.format(obs.getValueDatetime());
+                    observationResult.setObservation_value(edd);
+                    observationResult.setUnits("");
+                    observationResult.setObservation_result_status("F");
+                    String ts = formatter.format(obs.getObsDatetime());
+                    observationResult.setObservation_datetime(ts);
+                    observationResult.setAbnormal_flags("N");
+                    observationResults.add(observationResult);
+                }
                 if (obs.getConcept().getConceptId().equals(ARTInitiationDateConcept)) {     // ART Start date
                     observationResult.setObservation_identifier("ART_START");
                     observationResult.setSet_id("");
                     observationResult.setCoding_system("");
                     observationResult.setValue_type("DT");
+                    String artDate = formatter.format(obs.getValueDatetime());
+                    observationResult.setObservation_value(artDate);
+                    observationResult.setUnits("");
+                    observationResult.setObservation_result_status("F");
+                    String ts = formatter.format(obs.getObsDatetime());
+                    observationResult.setObservation_datetime(ts);
+                    observationResult.setAbnormal_flags("N");
+                    observationResults.add(observationResult);
+                }
+                if (obs.getConcept().getConceptId().equals(CurrentRegimenConcept)) {     // CURRENT_REGIMEN
+                    observationResult.setObservation_identifier("CURRENT_REGIMEN");
+                    observationResult.setSet_id("");
+                    observationResult.setCoding_system("");
+                    observationResult.setValue_type("CE");
                     String artDate = formatter.format(obs.getValueDatetime());
                     observationResult.setObservation_value(artDate);
                     observationResult.setUnits("");
@@ -253,6 +286,34 @@ public class ILPatientRegistration {
                     observationResult.setValue_type("NM");
                     observationResult.setObservation_value(whoStageConverter(obs.getValueCoded()));
                     observationResult.setUnits("");
+                    observationResult.setObservation_result_status("F");
+                    String ts = formatter.format(obs.getObsDatetime());
+                    observationResult.setObservation_datetime(ts);
+                    observationResult.setAbnormal_flags("N");
+                    observationResults.add(observationResult);
+                }
+
+                if (obs.getConcept().getConceptId().equals(AlcoholUseConcept)) {                      //  IS_ALCOHOLIC
+                    observationResult.setObservation_identifier("IS_ALCOHOLIC");
+                    observationResult.setSet_id("");
+                    observationResult.setCoding_system("");
+                    observationResult.setValue_type("CE");
+                    observationResult.setObservation_value(yesNoStatusConverter(obs.getValueCoded()));
+                    observationResult.setUnits("YES/NO");
+                    observationResult.setObservation_result_status("F");
+                    String ts = formatter.format(obs.getObsDatetime());
+                    observationResult.setObservation_datetime(ts);
+                    observationResult.setAbnormal_flags("N");
+                    observationResults.add(observationResult);
+                }
+
+                if (obs.getConcept().getConceptId().equals(SmokerConcept)) {                      //  IS_SMOKER
+                    observationResult.setObservation_identifier("IS_SMOKER");
+                    observationResult.setSet_id("");
+                    observationResult.setCoding_system("");
+                    observationResult.setValue_type("CE");
+                    observationResult.setObservation_value(yesNoStatusConverter(obs.getValueCoded()));
+                    observationResult.setUnits("YES/NO");
                     observationResult.setObservation_result_status("F");
                     String ts = formatter.format(obs.getObsDatetime());
                     observationResult.setObservation_datetime(ts);
@@ -300,5 +361,13 @@ public class ILPatientRegistration {
         whoStageList.put(conceptService.getConcept(1222), "3");
         whoStageList.put(conceptService.getConcept(1223), "4");
         return whoStageList.get(key);
+    }
+
+    static String yesNoStatusConverter(Concept key) {
+        Map<Concept, String> yesStatusList = new HashMap<Concept, String>();
+        yesStatusList.put(conceptService.getConcept(1065), "YES");
+        yesStatusList.put(conceptService.getConcept(1066), "NO");
+
+        return yesStatusList.get(key);
     }
 }

@@ -1549,11 +1549,12 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         return isSuccessful;
     }
 
-
     private Patient wrapIlPerson(ILMessage ilPerson) {
 
         Patient patient = new Patient();
         Location defaultLocation = kenyaEmrService.getDefaultLocation();
+
+        DateFormat formatter = new SimpleDateFormat("yyyyMMdd");
 
         allPatientIdentifierTypes = Context.getPatientService().getAllPatientIdentifierTypes();
         for (PatientIdentifierType identiferType : allPatientIdentifierTypes) {
@@ -1570,7 +1571,6 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         String stringDateOfBirth = patientIdentification.getDate_of_birth();
         if (stringDateOfBirth != null) {
             Date dateOfBirth = null;
-            DateFormat formatter = new SimpleDateFormat("yyyyMMdd");
             try {
                 dateOfBirth = formatter.parse(stringDateOfBirth);
                 patient.setBirthdate(dateOfBirth);
@@ -1739,6 +1739,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 patient.addAttribute(nokRealtionshipAttribute);
             }
         }
+
         return patient;
     }
 
