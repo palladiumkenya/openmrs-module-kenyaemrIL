@@ -272,7 +272,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         KenyaEMRILMessage kenyaEMRILMessage = getKenyaEMRILMessageByUuid(messsageUUID);
         try {
-            Patient ilPerson = wrapIlPerson(ilMessage);
+            Patient ilPerson = wrapIlPerson(ilMessage,kenyaEMRILMessage);
             PatientIdentifier uniquePatientNumber = ilPerson.getPatientIdentifier("Unique Patient Number");
             Pattern p = Pattern.compile("^[0-9]{10,11}$");
             String cccNumber = uniquePatientNumber.getIdentifier();
@@ -336,7 +336,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 //            List<Patient> patients = Context.getPatientService().getPatients(null, cccNumber, allPatientIdentifierTypes, true);
 //            if (patients.size() > 0) {
 //                patient = patients.get(0);
-//                patient = updatePatientDetails(patient, wrapIlPerson(ilMessage));
+//                patient = updatePatientDetails(patient, wrapIlPerson(ilMessage,kenyaEMRILMessage));
 //            }
 //
 //            Patient cPatient = patientService.savePatient(patient);
@@ -1549,7 +1549,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         return isSuccessful;
     }
 
-    private Patient wrapIlPerson(ILMessage ilPerson) {
+    private Patient wrapIlPerson(ILMessage ilPerson,KenyaEMRILMessage kenyaEMRILMessage) {
 
         Patient patient = new Patient();
         Location defaultLocation = kenyaEmrService.getDefaultLocation();
@@ -1600,6 +1600,16 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             phoneAttribute.setAttributeType(phoneAttributeType);
             phoneAttribute.setValue(phoneNumber);
             patient.addAttribute(phoneAttribute);
+        }
+
+        //        Process the il patient source attribute status
+        String patientSource = kenyaEMRILMessage.getSource();
+        if (patientSource != null) {
+            PersonAttribute ilPatientSource = new PersonAttribute();
+            PersonAttributeType ilPatientSourceAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("ac9a19f2-88af-4f3b-b4c2-f6e57c0d89af");
+            ilPatientSource.setAttributeType(ilPatientSourceAttributeType);
+            ilPatientSource.setValue(patientSource);
+            patient.addAttribute(ilPatientSource);
         }
 //        Set the gender
         if (patientIdentification.getSex() != null) {

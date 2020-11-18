@@ -5,6 +5,7 @@ import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
+import org.openmrs.PersonAttribute;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.ILPatientRegistration;
@@ -88,11 +89,18 @@ public class ProcessEnrollmentTask extends AbstractTask {
     }
 
     private boolean registrationEvent(Patient patient) {
-        ILMessage ilMessage = ILPatientRegistration.iLPatientWrapper(patient);
-        KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
-        return service.sendAddPersonRequest(ilMessage);
+        boolean notDuplicate = false;
+        PersonAttribute checkDuplicate = patient.getAttribute("IL Patient Source");
+        if (checkDuplicate != null) {
+            notDuplicate = false;
+        } else{
+            ILMessage ilMessage = ILPatientRegistration.iLPatientWrapper(patient);
+            KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
+            service.sendAddPersonRequest(ilMessage);
+            notDuplicate = true;
+        }
+        return notDuplicate;
     }
-
 
 
 }
