@@ -103,14 +103,6 @@
     </globalProperty>
 
     <globalProperty>
-        <property>kenyaemrIL.drugsMappingDirectory</property>
-        <defaultValue>kenyaemrIL</defaultValue>
-        <description>
-            Directory for storing order related config for IL data exchange
-        </description>
-    </globalProperty>
-
-    <globalProperty>
         <property>kenyaemrIL.lastPharmacyMessageEncounter</property>
         <defaultValue></defaultValue>
         <description>
