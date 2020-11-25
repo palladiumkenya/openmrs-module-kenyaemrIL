@@ -10,6 +10,7 @@ import org.openmrs.Order;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PersonName;
+import org.openmrs.module.kenyacore.RegimenMappingUtils;
 import org.openmrs.module.kenyaemrIL.il.EXTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
@@ -20,7 +21,7 @@ import org.openmrs.module.kenyaemrIL.il.pharmacy.FILLER_ORDER_NUMBER;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ORDERING_PHYSICIAN;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_ENCODED_ORDER;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PLACER_ORDER_NUMBER;
-import org.openmrs.module.kenyaemrIL.util.ILUtils;
+import org.openmrs.ui.framework.SimpleObject;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -88,8 +89,6 @@ public class ILPrescriptionMessage {
 
         for (Encounter drugOrderEncounter : encounters) {
 
-            System.out.println("Processing encounter :========================================");
-
             // check if encounter is for single drug or regimen.
             // use encounter.getOrders().size(): 1 = single, >1 for multiple
             int ordersInAnEncounter = drugOrderEncounter.getOrders().size();
@@ -132,14 +131,21 @@ public class ILPrescriptionMessage {
 
                 }
 
+                Encounter currentRegimenEncounter = RegimenMappingUtils.getLastEncounterForProgram(patient, "ARV");
+                SimpleObject regimenDetails = RegimenMappingUtils.buildRegimenChangeObject(currentRegimenEncounter.getObs(), currentRegimenEncounter);
+                String regimenName = (String) regimenDetails.get("regimenShortDisplay");
+                String regimenLine = (String) regimenDetails.get("regimenLine");
+                String nascopCode = "";
+                if (StringUtils.isNotBlank(regimenName )) {
+                    nascopCode = RegimenMappingUtils.getDrugNascopCodeByDrugNameAndRegimenLine(regimenName, regimenLine);
+                }
+
                 pharmacyEncodedOrder.setCoding_system("NASCOP_CODES");
                 pharmacyEncodedOrder.setDosage(drugOrder.getDose() != null ? String.valueOf(drugOrder.getDose().intValue()) : "");
                 pharmacyEncodedOrder.setFrequency(frequency);
                 pharmacyEncodedOrder.setDuration(duration);
                 pharmacyEncodedOrder.setQuantity_prescribed(quantity);
-                JSONObject drugObj = ILUtils.getDrugEntryByDrugName(drugOrder.getOrderGroup().getOrderSet().getName(), ILUtils.getNacopCodesMapping());
-                String drugCode = drugObj != null ? drugObj.get("nascop_code").toString() : drugOrder.getOrderGroup().getOrderSet().getName();
-                pharmacyEncodedOrder.setDrug_name(drugCode);
+                pharmacyEncodedOrder.setDrug_name(StringUtils.isNotBlank(nascopCode) ? nascopCode : regimenName);
 
                 // we are setting the group's order number to that of the first element in the group.
                 // when processing dispense message from ADT, this should be checked and handled appropriately
@@ -184,8 +190,6 @@ public class ILPrescriptionMessage {
                     commonOrderDetails.setOrdering_physician(orderingPhysician);
                 }
 
-                //JSONObject drugObj = ILUtils.getDrugEntryByConceptId(drugOrder.getConcept().getConceptId(), ILUtils.getSampleNascopCodeMapping());
-                //String drugCode = drugObj != null ? drugObj.get("nascop_code").toString() : "Mapping Missing";
                 pharmacyEncodedOrder.setDrug_name(drugOrder.getConcept().getName().getName());
                 pharmacyEncodedOrder.setDuration(duration);
                 pharmacyEncodedOrder.setCoding_system("NASCOP_CODES");
