@@ -3,7 +3,6 @@ package org.openmrs.module.kenyaemrIL.api;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.simple.JSONObject;
 import org.openmrs.DrugOrder;
 import org.openmrs.Encounter;
 import org.openmrs.Order;
@@ -140,6 +139,11 @@ public class ILPrescriptionMessage {
                     nascopCode = RegimenMappingUtils.getDrugNascopCodeByDrugNameAndRegimenLine(regimenName, regimenLine);
                 }
 
+                if (StringUtils.isBlank(nascopCode) && StringUtils.isNotBlank(regimenLine)) {
+                    nascopCode = RegimenMappingUtils.getNonStandardCodeFromRegimenLine(regimenLine);
+                    instructions += ". Prescribed drugs: " + regimenName;
+                }
+
                 pharmacyEncodedOrder.setCoding_system("NASCOP_CODES");
                 pharmacyEncodedOrder.setDosage(drugOrder.getDose() != null ? String.valueOf(drugOrder.getDose().intValue()) : "");
                 pharmacyEncodedOrder.setFrequency(frequency);
@@ -153,7 +157,6 @@ public class ILPrescriptionMessage {
 
                 List<String> regimenStrength = new ArrayList<>();
                 for (Order regOrder : orderList) {
-                    System.out.println("Order id: " + regOrder.getOrderId());
                     DrugOrder dOrder = (DrugOrder) regOrder;
                     regimenStrength.add( dOrder.getDose().intValue() + (dOrder.getDoseUnits().getShortNameInLocale(LOCALE) != null ? dOrder.getDoseUnits().getShortNameInLocale(LOCALE).getName() : dOrder.getDoseUnits().getName().getName()));
                 }
