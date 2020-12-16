@@ -16,13 +16,16 @@ import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.ui.framework.UiUtils;
 import org.openmrs.ui.framework.fragment.FragmentModel;
+import org.openmrs.util.PrivilegeConstants;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * controller for pivotTableCharts fragment
@@ -200,7 +203,7 @@ public class InteropManagerFragmentController {
     }
 
     public SimpleObject postPrescriptionMessage(@RequestParam(value = "patient") Patient patient, UiUtils ui) {
-
+        Context.addProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
         SimpleObject ret = SimpleObject.create("status", "Successful");
 
         StringBuilder q = new StringBuilder();
@@ -226,6 +229,8 @@ public class InteropManagerFragmentController {
         ILMessage ilMessage = ILPrescriptionMessage.generatePrescriptionMessage(patient, encounters);
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
         service.logPharmacyOrders(ilMessage);
+
+        Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
 
         return ret;
     }
