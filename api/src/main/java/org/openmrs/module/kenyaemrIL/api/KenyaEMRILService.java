@@ -13,9 +13,11 @@
  */
 package org.openmrs.module.kenyaemrIL.api;
 
+import org.openmrs.Patient;
 import org.openmrs.api.OpenmrsService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
 import org.springframework.transaction.annotation.Transactional;
@@ -97,6 +99,19 @@ public interface KenyaEMRILService extends OpenmrsService {
     List<KenyaEMRILMessage> getAllKenyaEMRILMessages(Boolean includeAll);
 
     List<KenyaEMRILMessage> getKenyaEMRILStatus(String status);
+
+    //KenyaemrRegistrations
+    KenyaEMRILRegistration getKenyaEMRILRegistrationByUuid(String uniqueId);
+
+    KenyaEMRILRegistration getKenyaEMRILRegistrationForPatient(Patient patient);
+
+    KenyaEMRILRegistration saveKenyaEMRILRegistration(KenyaEMRILRegistration kenyaEMRILRegistration);
+
+    List<KenyaEMRILRegistration> getKenyaEMRILRegistration(Boolean includeRetired);
+
+   // List<KenyaEMRILRegistration> getAllKenyaEMRILRegistration(Boolean includeAll);
+
+  //  List<KenyaEMRILRegistration> getKenyaEMRILRegistrationStatus(String status);
 
 
 

@@ -1,7 +1,6 @@
 package org.openmrs.module.kenyaemrIL.fragment.controller;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.hibernate.Transaction;
 import org.hibernate.jdbc.Work;
 import org.json.JSONObject;
@@ -10,13 +9,18 @@ import org.openmrs.Patient;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.db.hibernate.DbSessionFactory;
+import org.openmrs.module.kenyaemrIL.api.ILMessageType;
+import org.openmrs.module.kenyaemrIL.api.ILPatientRegistration;
 import org.openmrs.module.kenyaemrIL.api.ILPrescriptionMessage;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.ui.framework.UiUtils;
 import org.openmrs.ui.framework.fragment.FragmentModel;
 import org.openmrs.util.PrivilegeConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.sql.Connection;
@@ -31,7 +35,8 @@ import java.util.List;
  * controller for pivotTableCharts fragment
  */
 public class InteropManagerFragmentController {
-    private final Log log = LogFactory.getLog(getClass());
+       // Logger
+    private static final Logger log = LoggerFactory.getLogger(InteropManagerFragmentController.class);
 
     public void controller(FragmentModel model){
         DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
@@ -205,6 +210,39 @@ public class InteropManagerFragmentController {
     public SimpleObject postPrescriptionMessage(@RequestParam(value = "patient") Patient patient, UiUtils ui) {
         Context.addProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
         SimpleObject ret = SimpleObject.create("status", "Successful");
+        ObjectMapper mapper = new ObjectMapper();
+
+        boolean isSuccessful = false;
+        KenyaEMRILRegistration kenyaEMRILRegistration = new KenyaEMRILRegistration();
+        KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
+        KenyaEMRILRegistration registered = service.getKenyaEMRILRegistrationForPatient(patient);
+       try{
+            if (registered == null) { // check if registration for patient has never been sent to IL
+                    //Send to  registration message to outbox
+                ILMessage ilMessage = ILPatientRegistration.iLPatientWrapper(patient);
+                service.sendAddPersonRequest(ilMessage);
+
+                   // Save copy to il_registration table
+                    String messageString = mapper.writeValueAsString(ilMessage);
+                    kenyaEMRILRegistration.setPatient_id(patient.getPatientId());
+                    kenyaEMRILRegistration.setHl7_type("ADT^A04");
+                    kenyaEMRILRegistration.setSource("KENYAEMR");
+                    kenyaEMRILRegistration.setMessage(messageString);
+                    kenyaEMRILRegistration.setDescription("");
+                    kenyaEMRILRegistration.setName("");
+                    kenyaEMRILRegistration.setMessage_type(ILMessageType.OUTBOUND.getValue());
+                    KenyaEMRILRegistration savedInstance = service.saveKenyaEMRILRegistration(kenyaEMRILRegistration);
+                            if (savedInstance != null) {
+                                isSuccessful = true;
+                            } else {
+                                isSuccessful = false;
+                            }
+                log.info("Executing new enrollment " + isSuccessful);
+               }
+
+            } catch (Exception e) {
+               e.printStackTrace();
+           }
 
         StringBuilder q = new StringBuilder();
         q.append("select e.encounter_id ");
@@ -227,7 +265,6 @@ public class InteropManagerFragmentController {
         System.out.println("No of drug encounters found: " + encounters.size());
 
         ILMessage ilMessage = ILPrescriptionMessage.generatePrescriptionMessage(patient, encounters);
-        KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
         service.logPharmacyOrders(ilMessage);
 
         Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);

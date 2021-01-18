@@ -52,6 +52,7 @@ import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
 import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 import org.openmrs.module.kenyaemrIL.il.MESSAGE_HEADER;
 import org.openmrs.module.kenyaemrIL.il.MOTHER_NAME;
 import org.openmrs.module.kenyaemrIL.il.NEXT_OF_KIN;
@@ -266,7 +267,33 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         return this.dao.getKenyaEMRILStatus(status);
     }
 
+    //kenyaemrILRegistrations
     @Override
+    public KenyaEMRILRegistration getKenyaEMRILRegistrationByUuid(String uniqueId) {
+        KenyaEMRILRegistration kenyaEMRILRegistration = this.dao.getKenyaEMRILRegistrationByUuid(uniqueId);
+        System.out.println("What is it that was returned: " + kenyaEMRILRegistration);
+        return kenyaEMRILRegistration;
+    }
+
+    @Override
+    public KenyaEMRILRegistration getKenyaEMRILRegistrationForPatient(Patient patient) {
+        KenyaEMRILRegistration kenyaEMRILRegistration = this.dao.getKenyaEMRILRegistrationForPatient(patient);
+        System.out.println("What is it that was returned: " + kenyaEMRILRegistration);
+        return kenyaEMRILRegistration;
+    }
+
+
+    @Override
+    public KenyaEMRILRegistration saveKenyaEMRILRegistration(KenyaEMRILRegistration kenyaEMRILRegistration) {
+        return this.dao.createKenyaEMRILRegistration(kenyaEMRILRegistration);
+    }
+
+    @Override
+    public List<KenyaEMRILRegistration> getKenyaEMRILRegistration(Boolean includeRetired) {
+        return this.dao.getKenyaEMRILRegistration(includeRetired);
+    }
+
+      @Override
     public boolean processCreatePatientRequest(ILMessage ilMessage, String messsageUUID) {
         boolean successful = false;
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
