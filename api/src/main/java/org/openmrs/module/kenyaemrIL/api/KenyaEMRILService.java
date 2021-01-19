@@ -17,6 +17,7 @@ import org.openmrs.Patient;
 import org.openmrs.api.OpenmrsService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
@@ -100,7 +101,11 @@ public interface KenyaEMRILService extends OpenmrsService {
 
     List<KenyaEMRILMessage> getKenyaEMRILStatus(String status);
 
-    //KenyaemrRegistrations
+    // Adding KenyaemrILMessageArchive
+    KenyaEMRILMessageArchive saveKenyaEMRILMessageArchive(KenyaEMRILMessageArchive kenyaEMRILMessageArchive);
+
+
+    //Adding KenyaemrRegistrations
     KenyaEMRILRegistration getKenyaEMRILRegistrationByUuid(String uniqueId);
 
     KenyaEMRILRegistration getKenyaEMRILRegistrationForPatient(Patient patient);

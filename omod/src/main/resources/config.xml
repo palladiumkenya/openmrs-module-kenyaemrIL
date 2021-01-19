@@ -34,6 +34,7 @@
         KenyaEMRIL.hbm.xml
         KenyaEMRILMessage.hbm.xml
         KenyaEMRILRegistration.hbm.xml
+        KenyaEMRILMessageArchive.hbm.xml
 
     </mappingFiles>
 

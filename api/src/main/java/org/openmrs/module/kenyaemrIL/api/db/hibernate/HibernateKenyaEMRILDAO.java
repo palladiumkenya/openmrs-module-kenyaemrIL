@@ -23,6 +23,7 @@ import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 
 import java.util.List;
@@ -51,11 +52,9 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
 
     @Override
     public KenyaEMRILMessage getKenyaEMRILMessageByUuid(String uniqueId) {
-        System.out.println("About to test this one here " + uniqueId);
         Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
         crit.add(Restrictions.eq("uuid", uniqueId));
         KenyaEMRILMessage kenyaEMRILMessage = (KenyaEMRILMessage) crit.uniqueResult();
-        System.out.println("Just before the return: " + kenyaEMRILMessage);
         return kenyaEMRILMessage;
     }
 
@@ -106,24 +105,26 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         return crit.list();
     }
 
+    @Override
+    public KenyaEMRILMessageArchive createKenyaEMRILMessageArchive(KenyaEMRILMessageArchive delegate) {
+        this.sessionFactory.getCurrentSession().saveOrUpdate(delegate);
+        return delegate;
+    }
+
     // Adding kenyaemrILRegistrations
     @Override
     public KenyaEMRILRegistration getKenyaEMRILRegistrationByUuid(String uniqueId) {
-        System.out.println("About to test this one here " + uniqueId);
         Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILRegistration.class);
         crit.add(Restrictions.eq("uuid", uniqueId));
         KenyaEMRILRegistration KenyaEMRILRegistration = (KenyaEMRILRegistration) crit.uniqueResult();
-        System.out.println("Just before the return: " + KenyaEMRILRegistration);
         return KenyaEMRILRegistration;
     }
 
     @Override
     public KenyaEMRILRegistration getKenyaEMRILRegistrationForPatient(Patient patient) {
-        System.out.println("About to test this one here " + patient.getPatientId());
         Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILRegistration.class);
         crit.add(Restrictions.eq("patient_id", patient.getPatientId()));
         KenyaEMRILRegistration KenyaEMRILRegistration = (KenyaEMRILRegistration) crit.uniqueResult();
-        System.out.println("Just before the return: " + KenyaEMRILRegistration);
         return KenyaEMRILRegistration;
     }
 
