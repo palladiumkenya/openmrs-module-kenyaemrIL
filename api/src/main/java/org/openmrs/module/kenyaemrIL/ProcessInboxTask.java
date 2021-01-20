@@ -2,9 +2,11 @@ package org.openmrs.module.kenyaemrIL;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.kenyaemrIL.api.ILMessageType;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.scheduler.tasks.AbstractTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +42,7 @@ public class ProcessInboxTask extends AbstractTask {
 //        Process each message and mark as processed
         String message = pendingInbox.getMessage();
         String messsageUUID = pendingInbox.getUuid();
+        KenyaEMRILMessageErrorQueue kenyaEMRILMessageErrorQueue = new KenyaEMRILMessageErrorQueue();
         message = message.substring(message.indexOf("{"), message.lastIndexOf("}") + 1);
         try {
             boolean returnStatus= false;
@@ -89,26 +92,46 @@ public class ProcessInboxTask extends AbstractTask {
 
 
             if(returnStatus){
-//                if the processing was ok, mark as retired so that it is not processed again;
-                pendingInbox.setRetired(returnStatus);
-                getEMRILService().saveKenyaEMRILMessage(pendingInbox);
+                  // if the processing was ok, purge so that it is not processed again;
+                  //Purge from the il_messages table
+                getEMRILService().deleteKenyaEMRILMessage(pendingInbox);
+
            }else{
-                log.error("Cannot process message ");
-                pendingInbox.setStatus("Unknown Error");
-                pendingInbox.setRetired(true);
-                pendingInbox.setMessage(pendingInbox.getMessage()+"- CANNOT_PROCESS");
-                getEMRILService().saveKenyaEMRILMessage(pendingInbox);
-            }
+                log.error("Cannot process message due to unknown error ");
+                String initialMessage = pendingInbox.getMessage();
+                String msgPart = pendingInbox.getMessage();
+                    // Log unknown error message in il_message_error_queue
+                kenyaEMRILMessageErrorQueue.setHl7_type(ilMessage.getMessage_header().getMessage_type().toUpperCase());
+                kenyaEMRILMessageErrorQueue.setSource(ilMessage.getMessage_header().getSending_application().toUpperCase());
+                kenyaEMRILMessageErrorQueue.setMessage(msgPart);
+                kenyaEMRILMessageErrorQueue.setStatus("Unknown Error");
+                kenyaEMRILMessageErrorQueue.setMessage_type(ILMessageType.INBOUND.getValue());
+                getEMRILService().saveKenyaEMRILMessageErrorQueue(kenyaEMRILMessageErrorQueue);
+
+                //Purge from the il_messages table
+                getEMRILService().deleteKenyaEMRILMessage(pendingInbox);
+               }
+
         } catch (IOException e) {
             log.error("Cannot process message due to "+e.getMessage());
-            pendingInbox.setStatus("Message in wrong format");
-            pendingInbox.setRetired(true);
-            pendingInbox.setMessage(pendingInbox.getMessage()+"- CANNOT_PROCESS");
-            getEMRILService().saveKenyaEMRILMessage(pendingInbox);
-            //e.printStackTrace();
+                     try {
+                ILMessage ilMessage = mapper.readValue(message.toLowerCase(), ILMessage.class);
+
+                // Log unknown error message in il_message_error_queue
+                String initialMessage = pendingInbox.getMessage();
+                String msgPart = pendingInbox.getMessage();
+
+                kenyaEMRILMessageErrorQueue.setHl7_type(ilMessage.getMessage_header().getMessage_type().toUpperCase());
+                kenyaEMRILMessageErrorQueue.setSource(ilMessage.getMessage_header().getSending_application().toUpperCase());
+                kenyaEMRILMessageErrorQueue.setMessage(msgPart);
+                kenyaEMRILMessageErrorQueue.setStatus("Message in wrong format");
+                kenyaEMRILMessageErrorQueue.setMessage_type(ILMessageType.INBOUND.getValue());
+                getEMRILService().saveKenyaEMRILMessageErrorQueue(kenyaEMRILMessageErrorQueue);
+
+                //Purge from the il_messages table
+                getEMRILService().deleteKenyaEMRILMessage(pendingInbox);
+              }catch (IOException c){}
         }
-
-
     }
 
     private List<KenyaEMRILMessage> fetchILInboxes(boolean fetchRetired) {

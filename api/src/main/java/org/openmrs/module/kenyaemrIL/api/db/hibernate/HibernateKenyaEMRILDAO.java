@@ -19,9 +19,13 @@ import org.hibernate.Criteria;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
 import org.openmrs.GlobalProperty;
+import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 
 import java.util.List;
 
@@ -49,11 +53,9 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
 
     @Override
     public KenyaEMRILMessage getKenyaEMRILMessageByUuid(String uniqueId) {
-        System.out.println("About to test this one here " + uniqueId);
         Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
         crit.add(Restrictions.eq("uuid", uniqueId));
         KenyaEMRILMessage kenyaEMRILMessage = (KenyaEMRILMessage) crit.uniqueResult();
-        System.out.println("Just before the return: " + kenyaEMRILMessage);
         return kenyaEMRILMessage;
     }
 
@@ -100,6 +102,68 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     @Override
     public List<KenyaEMRILMessage> getKenyaEMRILStatus(String status) {
         Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
+        crit.add(Restrictions.eq("status", status));
+        return crit.list();
+    }
+
+    @Override
+    public KenyaEMRILMessageArchive createKenyaEMRILMessageArchive(KenyaEMRILMessageArchive delegate) {
+        this.sessionFactory.getCurrentSession().saveOrUpdate(delegate);
+        return delegate;
+    }
+
+    @Override
+    public KenyaEMRILMessageErrorQueue createKenyaEMRILMessageErrorQueue(KenyaEMRILMessageErrorQueue delegate) {
+        this.sessionFactory.getCurrentSession().saveOrUpdate(delegate);
+        return delegate;
+    }
+
+    // Adding kenyaemrILRegistrations
+    @Override
+    public KenyaEMRILRegistration getKenyaEMRILRegistrationByUuid(String uniqueId) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILRegistration.class);
+        crit.add(Restrictions.eq("uuid", uniqueId));
+        KenyaEMRILRegistration KenyaEMRILRegistration = (KenyaEMRILRegistration) crit.uniqueResult();
+        return KenyaEMRILRegistration;
+    }
+
+    @Override
+    public KenyaEMRILRegistration getKenyaEMRILRegistrationForPatient(Patient patient) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILRegistration.class);
+        crit.add(Restrictions.eq("patient_id", patient.getPatientId()));
+        KenyaEMRILRegistration KenyaEMRILRegistration = (KenyaEMRILRegistration) crit.uniqueResult();
+        return KenyaEMRILRegistration;
+    }
+
+    @Override
+    public KenyaEMRILRegistration createKenyaEMRILRegistration(KenyaEMRILRegistration delegate) {
+        this.sessionFactory.getCurrentSession().saveOrUpdate(delegate);
+        return delegate;
+    }
+
+
+    @Override
+    public List<KenyaEMRILRegistration> getKenyaEMRILRegistration(Boolean includeRetired) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILRegistration.class);
+        crit.add(Restrictions.eq("retired", includeRetired));
+        return crit.list();
+    }
+
+
+    @Override
+    public List<KenyaEMRILRegistration> getAllKenyaEMRILRegistration(Boolean includeRetired) {
+        String IL_MESSAGES_MAX_BATCH_FETCH_SIZE = "kenyaemrIL.ilMessagesMaxBatchFetch";
+        GlobalProperty batchSize = Context.getAdministrationService().getGlobalPropertyObject(IL_MESSAGES_MAX_BATCH_FETCH_SIZE);
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILRegistration.class);
+        crit.add(Restrictions.eq("message_type", 1));
+        crit.add(Restrictions.eq("retired", includeRetired));
+        crit.setMaxResults(Integer.parseInt(batchSize.getValue().toString()));
+        return crit.list();
+    }
+
+    @Override
+    public List<KenyaEMRILRegistration> getKenyaEMRILRegistrationStatus(String status) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILRegistration.class);
         crit.add(Restrictions.eq("status", status));
         return crit.list();
     }

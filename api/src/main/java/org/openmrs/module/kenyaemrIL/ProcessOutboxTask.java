@@ -49,15 +49,18 @@ public class ProcessOutboxTask extends AbstractTask {
             ClientResponse resp = webResource.type("application/json")
                     .post(ClientResponse.class, outbox.getMessage().toUpperCase());
 
-            System.out.println("The status received from the server: " + resp.getStatus());
-            log.info("The status received from the server: " + resp.getStatus());
+            System.out.println("The status received from the IL server: " + resp.getStatus());
+            log.info("The status received from the IL server: " + resp.getStatus());
             if (resp.getStatus() != 200) {
                 System.err.println("Unable to connect to the server");
-                log.info("Unable to connect to the server");
+                log.info("Unable to connect to the IL server");
             } else {
                 log.info("Successfull sent message to IL");
+                System.out.println("Successfull sent message to IL");
                 outbox.setRetired(true);
                 getEMRILService().saveKenyaEMRILMessage(outbox);
+                //Purge from the il_messages table
+                getEMRILService().deleteKenyaEMRILMessage(outbox);
             }
         }catch (Exception e){
             e.printStackTrace();
