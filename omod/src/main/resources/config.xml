@@ -35,8 +35,10 @@
         KenyaEMRILMessage.hbm.xml
         KenyaEMRILRegistration.hbm.xml
         KenyaEMRILMessageArchive.hbm.xml
+        KenyaEMRILMessageErrorQueue.hbm.xml
 
     </mappingFiles>
+
 
     <!-- Internationalization -->
     <!-- All message codes should start with ${project.parent.artifactId}. -->

@@ -233,4 +233,30 @@
         </modifySql>
     </changeSet>
 
+    <changeSet id="${project.parent.artifactId}-20210120-0946" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="il_message_error_queue" /></not>
+        </preConditions>
+        <comment>
+            Create table for il messages archive
+        </comment>
+        <createTable tableName="il_message_error_queue">
+            <column name="message_id" autoIncrement="true" type="int">
+                <constraints nullable="false" primaryKey="true" />
+            </column>
+            <column name="message" type="text"></column>
+            <column name="creator" type="int"></column>
+            <column name="message_type" type="int"></column>
+            <column name="hl7_type" type="varchar(20)"></column>
+            <column name="retired" type="int"></column>
+            <column name="status" type="varchar(100)" defaultValue="Success" ></column>
+            <column name="source" type="varchar(50)" ></column>
+            <column name="date_created" type="datetime"></column>
+            <column name="uuid" type="varchar(38)"></column>
+        </createTable>
+        <modifySql dbms="mysql">
+            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_unicode_ci"/>
+        </modifySql>
+    </changeSet>
+
 </databaseChangeLog>

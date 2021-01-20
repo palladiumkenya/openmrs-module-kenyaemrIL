@@ -24,6 +24,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 
 import java.util.List;
@@ -107,6 +108,12 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
 
     @Override
     public KenyaEMRILMessageArchive createKenyaEMRILMessageArchive(KenyaEMRILMessageArchive delegate) {
+        this.sessionFactory.getCurrentSession().saveOrUpdate(delegate);
+        return delegate;
+    }
+
+    @Override
+    public KenyaEMRILMessageErrorQueue createKenyaEMRILMessageErrorQueue(KenyaEMRILMessageErrorQueue delegate) {
         this.sessionFactory.getCurrentSession().saveOrUpdate(delegate);
         return delegate;
     }

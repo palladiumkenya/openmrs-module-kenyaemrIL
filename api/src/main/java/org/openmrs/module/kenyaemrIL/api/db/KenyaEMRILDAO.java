@@ -17,6 +17,7 @@ import org.openmrs.Patient;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 
 import java.util.List;
@@ -45,6 +46,9 @@ public interface KenyaEMRILDAO {
 
     // Adding kenyaILMessageArchive
     KenyaEMRILMessageArchive createKenyaEMRILMessageArchive(KenyaEMRILMessageArchive kenyaEMRILMessageArchive);
+
+    // Adding kenyaILMessageErrorQueue
+    KenyaEMRILMessageErrorQueue createKenyaEMRILMessageErrorQueue(KenyaEMRILMessageErrorQueue kenyaEMRILMessageErrorQueue);
 
     // Adding kenyaemrILRegistrations
 

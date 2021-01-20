@@ -53,6 +53,7 @@ import org.openmrs.module.kenyaemrIL.il.ILPerson;
 import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 import org.openmrs.module.kenyaemrIL.il.MESSAGE_HEADER;
 import org.openmrs.module.kenyaemrIL.il.MOTHER_NAME;
@@ -284,6 +285,12 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     @Override
     public KenyaEMRILMessageArchive saveKenyaEMRILMessageArchive(KenyaEMRILMessageArchive kenyaEMRILMessageArchive) {
         return this.dao.createKenyaEMRILMessageArchive(kenyaEMRILMessageArchive);
+    }
+
+    //Add KenyaemrILMessageErrorQueue
+    @Override
+    public KenyaEMRILMessageErrorQueue saveKenyaEMRILMessageErrorQueue(KenyaEMRILMessageErrorQueue kenyaEMRILMessageErrorQueue) {
+        return this.dao.createKenyaEMRILMessageErrorQueue(kenyaEMRILMessageErrorQueue);
     }
 
 

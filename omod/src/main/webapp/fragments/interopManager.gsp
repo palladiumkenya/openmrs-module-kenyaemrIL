@@ -9,13 +9,13 @@
             jq("#msg").text("");
 
             jq("#refresh").prop("disabled", true);
-            jq("#errorMessages").prop("disabled", true);
+            jq("#errorQueue").prop("disabled", true);
             jq.getJSON('${ ui.actionLink("refreshTables") }')
                 .success(function(data) {
                     jq("#showStatus").hide();
                     jq("#msg").text("IL messages refreshed successfully");
                     jq("#refresh").prop("disabled", false);
-                    jq("#errorMessages").prop("disabled", false);
+                    jq("#errorQueue").prop("disabled", false);
                     for (index in data) {
                         jq('#log_table > tbody > tr').remove();
                         var tbody = jq('#log_table > tbody');
@@ -37,23 +37,23 @@
                     jq("#showStatus").hide();
                     jq("#msg").text("There was an error refreshing IL messages");
                     jq("#refresh").prop("disabled", false);
-                    jq("#errorMessages").prop("disabled", false);
+                    jq("#errorQueue").prop("disabled", false);
                     alert('AJAX error ' + err);
                 })
         });
-        jq('#errorMessages').click(function() {
-            jq("#errorMessages").attr("disabled", false);
+        jq('#errorQueue').click(function() {
+            jq("#errorQueue").attr("disabled", false);
             jq("#msgSpan").text("Refreshing error Messages");
             jq("#showStatus").show();
             jq("#msg").text("");
             jq("#refresh").prop("disabled", true);
-            jq("#errorMessages").prop("disabled", true);
+            jq("#errorQueue").prop("disabled", true);
             jq.getJSON('${ ui.actionLink("errorMessages") }')
                 .success(function(data) {
                     jq("#showStatus").hide();
                     jq("#msg").text("IL error messages refreshed successfully");
                     jq("#refresh").prop("disabled", false);
-                    jq("#errorMessages").prop("disabled", false);
+                    jq("#errorQueue").prop("disabled", false);
                     for (index in data) {
                         jq('#log_table > tbody > tr').remove();
                         var tbody = jq('#log_table > tbody');
@@ -75,7 +75,7 @@
                     jq("#showStatus").hide();
                     jq("#msg").text("There was an error refreshing IL messages");
                     jq("#refresh").prop("disabled", false);
-                    jq("#errorMessages").prop("disabled", false);
+                    jq("#errorQueue").prop("disabled", false);
                     alert('AJAX error ' + err);
                 })
         });
@@ -108,13 +108,20 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 </style>
 <hr>
 <div>
-
+<table>
+    <tr>
+        <td>
     <button id="refresh">
         <img src="${ ui.resourceLink("kenyaui", "images/glyphs/ok.png") }" /> Recent messages
     </button>
-
-    <br/>
-    <br/>
+        </td>
+        <td>
+     <button id="errorQueue">
+        <img src="${ ui.resourceLink("kenyaui", "images/glyphs/ok.png") }" /> Error messages
+     </button>
+        </td>
+    </tr>
+</table>
 </div>
 <br/>
 <div id="showStatus">

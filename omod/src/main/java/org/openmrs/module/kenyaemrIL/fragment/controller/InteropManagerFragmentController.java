@@ -41,7 +41,7 @@ public class InteropManagerFragmentController {
     public void controller(FragmentModel model){
         DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
 
-        final String sqlSelectQuery = "SELECT date_created, hl7_type, source, retired, status FROM openmrs.il_message order by date_created desc limit 10;";
+        final String sqlSelectQuery = "SELECT date_created, hl7_type, source, retired, status FROM il_message order by date_created desc limit 10;";
         final List<SimpleObject> ret = new ArrayList<SimpleObject>();
 
         try {
@@ -99,7 +99,7 @@ public class InteropManagerFragmentController {
 
         DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
 
-        final String sqlSelectQuery = "SELECT date_created, hl7_type, source, retired, status FROM openmrs.il_message order by date_created desc limit 10;";
+        final String sqlSelectQuery = "SELECT date_created, hl7_type, source, retired, status FROM il_message order by date_created desc limit 10;";
         final List<SimpleObject> ret = new ArrayList<SimpleObject>();
         Transaction tx = null;
         try {
@@ -155,7 +155,7 @@ public class InteropManagerFragmentController {
 
         DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
 
-        final String sqlSelectQuery = "SELECT date_created, hl7_type, source, retired, status FROM openmrs.il_message where message_type = 1 and status <> 'Success' order by date_created desc limit 10;";
+        final String sqlSelectQuery = "SELECT date_created, hl7_type, source, retired, status FROM il_message_error_queue order by date_created desc limit 10;";
         final List<SimpleObject> ret = new ArrayList<SimpleObject>();
         Transaction tx = null;
         try {
