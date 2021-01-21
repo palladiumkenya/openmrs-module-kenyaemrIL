@@ -45,7 +45,7 @@
                   length="1" not-null="true"/>
 
         <property name="status" type="java.lang.String" column="status"
-                  length="100" not-null="true" insert="false" />
+                  length="200"  />
 
         <property name="source" type="java.lang.String" column="source"
                   length="50" />

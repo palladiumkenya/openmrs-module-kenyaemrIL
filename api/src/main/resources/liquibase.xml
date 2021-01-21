@@ -238,7 +238,7 @@
             <not><tableExists tableName="il_message_error_queue" /></not>
         </preConditions>
         <comment>
-            Create table for il messages archive
+            Create table for il messages error queue
         </comment>
         <createTable tableName="il_message_error_queue">
             <column name="message_id" autoIncrement="true" type="int">
@@ -257,6 +257,32 @@
         <modifySql dbms="mysql">
             <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_unicode_ci"/>
         </modifySql>
+    </changeSet>
+
+    <changeSet id="${project.parent.artifactId}-20210121-1144" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="il_message_error_queue" columnName="status"/>
+            </and>
+        </preConditions>
+        <comment>
+            Drop status field for update
+        </comment>
+        <dropColumn columnName="status" tableName="il_message_error_queue"/>
+    </changeSet>
+
+    <changeSet id="${project.parent.artifactId}-20210121-1152" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+               <not>
+                    <columnExists tableName="il_message_error_queue" columnName="status"/>
+                </not>
+        </preConditions>
+        <comment>
+            Add back dropped status field for logging error description
+        </comment>
+        <addColumn tableName="il_message_error_queue">
+            <column name="status" type="varchar(255)"> <constraints nullable="true"/> </column>
+        </addColumn>
     </changeSet>
 
 </databaseChangeLog>
