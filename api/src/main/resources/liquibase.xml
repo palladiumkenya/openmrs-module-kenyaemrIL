@@ -285,4 +285,34 @@
         </addColumn>
     </changeSet>
 
+    <!--Removing scheduled process Orders task-->
+    <changeSet id="${project.parent.artifactId}-20210122-1030" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.ProcessOrdersTask'
+                And name = 'Process Order Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Deleting Process Order Task into 'schedule_task_config' table</comment>
+        <delete tableName="scheduler_task_config">
+            <where>name='Process Order Task'</where>
+        </delete>
+    </changeSet>
+
+    <!--Removing scheduled process ORU task-->
+    <changeSet id="${project.parent.artifactId}-20210122-1052" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.ProcessORUsTask'
+                And name = 'Process ORU Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Deleting Process ORU Task into 'schedule_task_config' table</comment>
+        <delete tableName="scheduler_task_config">
+            <where>name='Process ORU Task'</where>
+        </delete>
+    </changeSet>
+
 </databaseChangeLog>
