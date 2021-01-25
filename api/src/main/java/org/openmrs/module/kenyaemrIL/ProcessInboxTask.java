@@ -93,7 +93,7 @@ public class ProcessInboxTask extends AbstractTask {
 
 
             if(returnStatus){
-                  // if the processing was ok, purge so that it is not processed again;
+                  // if the processing was ok, purge so that it is not processed again; TODO: Skipping this temporarily for future implementation
                   //Purge from the il_messages table
                 getEMRILService().deleteKenyaEMRILMessage(pendingInbox);
 
