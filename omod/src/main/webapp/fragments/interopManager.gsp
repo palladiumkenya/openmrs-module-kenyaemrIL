@@ -57,9 +57,7 @@
             jq("#errorQueue").prop("disabled", true);
             jq.getJSON('${ ui.actionLink("errorMessages") }')
                 .success(function(data) {
-                    console.log("Print data ==>"+data);
-                    if (data !="") {
-                        console.log("Data is populated ==>");
+                     if (data !="") {
                     jq("#showStatus").hide();
                     jq("#msg").text("IL error messages refreshed successfully");
                     jq("#refresh").prop("disabled", false);
@@ -86,7 +84,6 @@
                         jq("#errorQueue").prop("disabled", false);
                         jq("#showStatus").hide();
                         jq("#msg").text("IL error messages refreshed successfully");
-                        console.log("Data is empty ==>");
                     }
                 })
                 .error(function(xhr, status, err) {
