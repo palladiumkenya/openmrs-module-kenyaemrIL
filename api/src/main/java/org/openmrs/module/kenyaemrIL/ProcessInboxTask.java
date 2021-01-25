@@ -132,6 +132,8 @@ public class ProcessInboxTask extends AbstractTask {
                 getEMRILService().deleteKenyaEMRILMessage(pendingInbox);
               }catch (IOException c){}
         }
+        //Purge from the il_messages table
+        getEMRILService().deleteKenyaEMRILMessage(pendingInbox);
     }
 
     private List<KenyaEMRILMessage> fetchILInboxes(boolean fetchRetired) {

@@ -737,11 +737,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                             Encounter enc = new Encounter();
                             Location location = Utils.getDefaultLocation();
                             enc.setLocation(location);
-                            enc.setEncounterType(Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e"));     //  HIV consultation/followup encounter
+                            enc.setEncounterType(Context.getEncounterService().getEncounterTypeByUuid("e87aa2ad-6886-422e-9dfd-064e3bfe3aad"));     //  Fast track encounter
                             enc.setEncounterDatetime(new Date());
                             enc.setPatient(patient);
                             enc.addProvider(Context.getEncounterService().getEncounterRole(1), Context.getProviderService().getProvider(1));
-                            enc.setForm(Context.getFormService().getFormByUuid("22c68f86-bbf0-49ba-b2d1-23fa7ccf0259"));   //TODO: HIV greencard form  to be substituted with Fast track form
+                            enc.setForm(Context.getFormService().getFormByUuid("83fb6ab2-faec-4d87-a714-93e77a28a201"));   //TODO: Fast track form
 
                             Obs o = new Obs();
                             o.setComment(placerAppointmentNumberNumber + "" + appointment_note + "" + appointmentStatus + "" + appointmentReason);
