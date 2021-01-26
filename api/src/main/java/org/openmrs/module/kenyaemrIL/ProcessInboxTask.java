@@ -42,6 +42,8 @@ public class ProcessInboxTask extends AbstractTask {
 //        Process each message and mark as processed
         String message = pendingInbox.getMessage();
         String messsageUUID = pendingInbox.getUuid();
+        String messsageSource = pendingInbox.getSource();
+        String messsageHL7Type = pendingInbox.getHl7_type();
         KenyaEMRILMessageErrorQueue kenyaEMRILMessageErrorQueue = new KenyaEMRILMessageErrorQueue();
         message = message.substring(message.indexOf("{"), message.lastIndexOf("}") + 1);
         try {
@@ -66,6 +68,7 @@ public class ProcessInboxTask extends AbstractTask {
                 }
                 case "SIU^S12":{
                    // returnStatus = getEMRILService().processAppointmentSchedule(ilMessage,messsageUUID);
+                    //TODO: Skipping this temporarily for future implementation
                     returnStatus = true;
                     break;
                 }
@@ -93,7 +96,7 @@ public class ProcessInboxTask extends AbstractTask {
 
 
             if(returnStatus){
-                  // if the processing was ok, purge so that it is not processed again; TODO: Skipping this temporarily for future implementation
+                  // if the processing was ok, purge so that it is not processed again;
                   //Purge from the il_messages table
                 getEMRILService().deleteKenyaEMRILMessage(pendingInbox);
 
@@ -132,6 +135,16 @@ public class ProcessInboxTask extends AbstractTask {
                 //Purge from the il_messages table
                 getEMRILService().deleteKenyaEMRILMessage(pendingInbox);
               }catch (IOException c){}
+              //Message format different from IL Standard
+            String msgPart = pendingInbox.getMessage();
+            kenyaEMRILMessageErrorQueue.setHl7_type(messsageHL7Type);
+            kenyaEMRILMessageErrorQueue.setSource(messsageSource);
+            kenyaEMRILMessageErrorQueue.setMessage(msgPart);
+            kenyaEMRILMessageErrorQueue.setStatus("Non standard IL Message");
+            getEMRILService().saveKenyaEMRILMessageErrorQueue(kenyaEMRILMessageErrorQueue);
+
+            //Purge from the il_messages table
+            getEMRILService().deleteKenyaEMRILMessage(pendingInbox);
         }
 
     }
