@@ -136,13 +136,13 @@ public class ProcessInboxTask extends AbstractTask {
                 getEMRILService().deleteKenyaEMRILMessage(pendingInbox);
               }catch (IOException c){}
               //Message format different from IL Standard
-            String msgPart = pendingInbox.getMessage();
-            kenyaEMRILMessageErrorQueue.setHl7_type(messsageHL7Type);
-            kenyaEMRILMessageErrorQueue.setSource(messsageSource);
-            kenyaEMRILMessageErrorQueue.setMessage(msgPart);
-            kenyaEMRILMessageErrorQueue.setStatus("Non standard IL Message");
-            getEMRILService().saveKenyaEMRILMessageErrorQueue(kenyaEMRILMessageErrorQueue);
-
+//            String msgPart = pendingInbox.getMessage();
+//            kenyaEMRILMessageErrorQueue.setHl7_type(messsageHL7Type);
+//            kenyaEMRILMessageErrorQueue.setSource(messsageSource);
+//            kenyaEMRILMessageErrorQueue.setMessage(msgPart);
+//            kenyaEMRILMessageErrorQueue.setStatus("Non standard IL Message");
+//            getEMRILService().saveKenyaEMRILMessageErrorQueue(kenyaEMRILMessageErrorQueue);
+//         TODO: ADT to adhere to correct IL message format
             //Purge from the il_messages table
             getEMRILService().deleteKenyaEMRILMessage(pendingInbox);
         }
