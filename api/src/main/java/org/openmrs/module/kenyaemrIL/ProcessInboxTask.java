@@ -66,6 +66,7 @@ public class ProcessInboxTask extends AbstractTask {
                 }
                 case "SIU^S12":{
                    // returnStatus = getEMRILService().processAppointmentSchedule(ilMessage,messsageUUID);
+                    //TODO: Skipping this temporarily for future implementation
                     returnStatus = true;
                     break;
                 }
@@ -93,7 +94,7 @@ public class ProcessInboxTask extends AbstractTask {
 
 
             if(returnStatus){
-                  // if the processing was ok, purge so that it is not processed again; TODO: Skipping this temporarily for future implementation
+                  // if the processing was ok, purge so that it is not processed again;
                   //Purge from the il_messages table
                 getEMRILService().deleteKenyaEMRILMessage(pendingInbox);
 
@@ -133,7 +134,8 @@ public class ProcessInboxTask extends AbstractTask {
                 getEMRILService().deleteKenyaEMRILMessage(pendingInbox);
               }catch (IOException c){}
         }
-
+        //Purge from the il_messages table
+        getEMRILService().deleteKenyaEMRILMessage(pendingInbox);
     }
 
     private List<KenyaEMRILMessage> fetchILInboxes(boolean fetchRetired) {
