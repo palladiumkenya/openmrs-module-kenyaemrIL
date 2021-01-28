@@ -142,7 +142,7 @@ public class ProcessInboxTask extends AbstractTask {
 //            kenyaEMRILMessageErrorQueue.setMessage(msgPart);
 //            kenyaEMRILMessageErrorQueue.setStatus("Non standard IL Message");
 //            getEMRILService().saveKenyaEMRILMessageErrorQueue(kenyaEMRILMessageErrorQueue);
-//         TODO: ADT to adhere to correct IL message format
+//         TODO: Uncomment non standard IL message format
             //Purge from the il_messages table
             getEMRILService().deleteKenyaEMRILMessage(pendingInbox);
         }
