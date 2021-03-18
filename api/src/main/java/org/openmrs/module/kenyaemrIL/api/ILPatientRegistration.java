@@ -1,14 +1,19 @@
 package org.openmrs.module.kenyaemrIL.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.*;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.kenyacore.RegimenMappingUtils;
 import org.openmrs.module.kenyaemrIL.il.*;
 import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
+import org.openmrs.module.kenyaemrIL.kenyaemrUtils.Utils;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
+import org.openmrs.ui.framework.SimpleObject;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -192,6 +197,8 @@ public class ILPatientRegistration {
         Integer AlcoholUseConcept = 159449;
         Integer SmokerConcept = 155600;
         Integer CurrentRegimenConcept = 1193;
+        boolean hasStartWeight = false;
+        boolean hasStartHeight = false;
 
         //Enrollment encounter
         if (hivEnrollmentEncounter != null) {
@@ -209,6 +216,7 @@ public class ILPatientRegistration {
                     observationResult.setObservation_datetime(ts);
                     observationResult.setAbnormal_flags("N");
                     observationResults.add(observationResult);
+                    hasStartHeight = true;
                 }
                 if (obs.getConcept().getConceptId().equals(WeightConcept)) {     //  start weight
                     observationResult.setObservation_identifier("START_WEIGHT");
@@ -222,6 +230,7 @@ public class ILPatientRegistration {
                     observationResult.setObservation_datetime(ts);
                     observationResult.setAbnormal_flags("N");
                     observationResults.add(observationResult);
+                    hasStartWeight = true;
                 }
                 if (obs.getConcept().getConceptId().equals(IspregnantConcept) && obs.getValueCoded().equals(YesConcept)) {          //is pregnant
                     observationResult.setObservation_identifier("IS_PREGNANT");
@@ -265,20 +274,7 @@ public class ILPatientRegistration {
                     observationResult.setAbnormal_flags("N");
                     observationResults.add(observationResult);
                 }
-                if (obs.getConcept().getConceptId().equals(CurrentRegimenConcept)) {     // CURRENT_REGIMEN
-                    observationResult.setObservation_identifier("CURRENT_REGIMEN");
-                    observationResult.setSet_id("");
-                    observationResult.setCoding_system("");
-                    observationResult.setValue_type("CE");
-                    String artDate = formatter.format(obs.getValueDatetime());
-                    observationResult.setObservation_value(artDate);
-                    observationResult.setUnits("");
-                    observationResult.setObservation_result_status("F");
-                    String ts = formatter.format(obs.getObsDatetime());
-                    observationResult.setObservation_datetime(ts);
-                    observationResult.setAbnormal_flags("N");
-                    observationResults.add(observationResult);
-                }
+
                 if (obs.getConcept().getConceptId().equals(WhoStageConcept)) {                      //  start who stage
                     observationResult.setObservation_identifier("WHO_STAGE");
                     observationResult.setSet_id("");
@@ -322,6 +318,98 @@ public class ILPatientRegistration {
                 }
 
             }
+        }
+
+        // pull latest weight and height from triage obs if patient doesn't have start weight and height recorded on enrollment form
+
+        // extract triage information
+
+        if (!hasStartWeight) {
+            try {
+                List<Obs> latestWeightObs = Utils.getNLastObs(conceptService.getConcept(WeightConcept), patient, 1);
+                if (latestWeightObs.size() > 0) {
+                    Obs weightObs = latestWeightObs.get(0);
+
+                    // compose observation object
+                    observationResult = new OBSERVATION_RESULT();
+                    observationResult.setObservation_identifier("WEIGHT");
+                    observationResult.setSet_id("");
+                    observationResult.setCoding_system("");
+                    observationResult.setValue_type("NM");
+                    observationResult.setObservation_value(String.valueOf(weightObs.getValueNumeric()));
+                    observationResult.setUnits("KG");
+                    observationResult.setObservation_result_status("F");
+                    String ts = formatter.format(weightObs.getObsDatetime());
+                    observationResult.setObservation_datetime(ts);
+                    observationResult.setAbnormal_flags("N");
+                    observationResults.add(observationResult);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        if (!hasStartHeight) {
+            try {
+                List<Obs> latestHeightObs = Utils.getNLastObs(conceptService.getConcept(HeightConcept), patient, 1);
+                if (latestHeightObs.size() > 0) {
+                    Obs heightObs = latestHeightObs.get(0);
+
+                    // compose observation object
+                    observationResult = new OBSERVATION_RESULT();
+                    observationResult.setObservation_identifier("HEIGHT");
+
+                    observationResult.setSet_id("");
+                    observationResult.setCoding_system("");
+                    observationResult.setValue_type("NM");
+                    observationResult.setObservation_value(String.valueOf(heightObs.getValueNumeric()));
+                    observationResult.setUnits("CM");
+                    observationResult.setObservation_result_status("F");
+                    String ts = formatter.format(heightObs.getObsDatetime());
+                    observationResult.setObservation_datetime(ts);
+                    observationResult.setAbnormal_flags("N");
+                    observationResults.add(observationResult);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        // pull the current regimen from regimen events
+
+        Encounter currentRegimenEncounter = RegimenMappingUtils.getLastEncounterForProgram(patient, "ARV");
+        SimpleObject regimenDetails = RegimenMappingUtils.buildRegimenChangeObject(currentRegimenEncounter.getObs(), currentRegimenEncounter);
+        String regimenName = (String) regimenDetails.get("regimenShortDisplay");
+        String regimenLine = (String) regimenDetails.get("regimenLine");
+        String startDate = (String) regimenDetails.get("startDate");
+        String artDate = "";
+        String nascopCode = "";
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        if (StringUtils.isNotBlank(regimenName )) {
+            nascopCode = RegimenMappingUtils.getDrugNascopCodeByDrugNameAndRegimenLine(regimenName, regimenLine);
+        }
+
+        if (StringUtils.isBlank(nascopCode) && StringUtils.isNotBlank(regimenLine)) {
+            nascopCode = RegimenMappingUtils.getNonStandardCodeFromRegimenLine(regimenLine);
+        }
+
+        if (StringUtils.isNotBlank(nascopCode) && StringUtils.isNotBlank(startDate)) {
+            observationResult.setObservation_identifier("CURRENT_REGIMEN");
+            observationResult.setSet_id("");
+            observationResult.setCoding_system("NASCOP_CODES");
+            observationResult.setValue_type("CE");
+            try {
+                artDate = formatter.format(df.parse(startDate));
+            } catch (ParseException e) {
+                //e.printStackTrace();
+            }
+            observationResult.setObservation_value(nascopCode);
+            observationResult.setUnits("");
+            observationResult.setObservation_result_status("F");
+            observationResult.setObservation_datetime(artDate);
+            observationResult.setAbnormal_flags("N");
+            observationResults.add(observationResult);
         }
 
         ilMessage.setObservation_result(observationResults.toArray(new OBSERVATION_RESULT[observationResults.size()]));
