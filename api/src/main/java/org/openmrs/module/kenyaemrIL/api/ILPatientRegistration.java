@@ -421,6 +421,7 @@ public class ILPatientRegistration {
         patientTypeList.put(conceptService.getConcept(164144), "New");
         patientTypeList.put(conceptService.getConcept(160563), "Transfer In");
         patientTypeList.put(conceptService.getConcept(164931), "Transit");
+        patientTypeList.put(conceptService.getConcept(159833), "Reenrollment");
         return patientTypeList.get(key);
     }
 
