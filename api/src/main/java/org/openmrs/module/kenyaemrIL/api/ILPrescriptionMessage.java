@@ -5,21 +5,26 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.DrugOrder;
 import org.openmrs.Encounter;
+import org.openmrs.Obs;
 import org.openmrs.Order;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PersonName;
+import org.openmrs.api.ConceptService;
+import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyacore.RegimenMappingUtils;
 import org.openmrs.module.kenyaemrIL.il.EXTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION_SIMPLE;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_NAME;
+import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.COMMON_ORDER_DETAILS;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.FILLER_ORDER_NUMBER;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ORDERING_PHYSICIAN;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_ENCODED_ORDER;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PLACER_ORDER_NUMBER;
+import org.openmrs.module.kenyaemrIL.kenyaemrUtils.Utils;
 import org.openmrs.ui.framework.SimpleObject;
 
 import java.text.SimpleDateFormat;
@@ -37,7 +42,13 @@ public class ILPrescriptionMessage {
     private final Log log = LogFactory.getLog(this.getClass());
     public static final Locale LOCALE = Locale.ENGLISH;
 
+
     public static ILMessage generatePrescriptionMessage(Patient patient, List<Encounter> encounters) {
+
+        Integer heightConcept = 5090;
+        Integer weightConcept = 5089;
+        ConceptService conceptService = Context.getConceptService();
+
         ILMessage ilMessage = new ILMessage();
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         PATIENT_IDENTIFICATION_SIMPLE patientIdentification = new PATIENT_IDENTIFICATION_SIMPLE();
@@ -49,6 +60,10 @@ public class ILPrescriptionMessage {
         PLACER_ORDER_NUMBER placerOrderNumber = new PLACER_ORDER_NUMBER();
         commonOrderDetails.setFiller_order_number(fillerOrderNumber);
         INTERNAL_PATIENT_ID ipd;
+
+        //Set the patient observation results
+        List<OBSERVATION_RESULT> observationResults = new ArrayList<>();
+        OBSERVATION_RESULT observationResult = null;
         //        Form the internal patient IDs
         for (PatientIdentifier patientIdentifier : patient.getIdentifiers()) {
             ipd = new INTERNAL_PATIENT_ID();
@@ -209,9 +224,62 @@ public class ILPrescriptionMessage {
             }
         }
 
+        // extract triage information
+
+        try {
+            List<Obs> latestWeightObs = Utils.getNLastObs(conceptService.getConcept(weightConcept), patient, 1);
+            if (latestWeightObs.size() > 0) {
+                Obs weightObs = latestWeightObs.get(0);
+
+                // compose observation object
+                observationResult = new OBSERVATION_RESULT();
+                observationResult.setObservation_identifier("WEIGHT");
+                observationResult.setSet_id("");
+                observationResult.setCoding_system("");
+                observationResult.setValue_type("NM");
+                observationResult.setObservation_value(String.valueOf(weightObs.getValueNumeric()));
+                observationResult.setUnits("KG");
+                observationResult.setObservation_result_status("F");
+                String ts = formatter.format(weightObs.getObsDatetime());
+                observationResult.setObservation_datetime(ts);
+                observationResult.setAbnormal_flags("N");
+                observationResults.add(observationResult);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            List<Obs> latestHeightObs = Utils.getNLastObs(conceptService.getConcept(heightConcept), patient, 1);
+            if (latestHeightObs.size() > 0) {
+                Obs heightObs = latestHeightObs.get(0);
+
+                // compose observation object
+                observationResult = new OBSERVATION_RESULT();
+                observationResult.setObservation_identifier("HEIGHT");
+
+                observationResult.setSet_id("");
+                observationResult.setCoding_system("");
+                observationResult.setValue_type("NM");
+                observationResult.setObservation_value(String.valueOf(heightObs.getValueNumeric()));
+                observationResult.setUnits("CM");
+                observationResult.setObservation_result_status("F");
+                String ts = formatter.format(heightObs.getObsDatetime());
+                observationResult.setObservation_datetime(ts);
+                observationResult.setAbnormal_flags("N");
+                observationResults.add(observationResult);
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+
         ilMessage.setPatient_identification_simple(patientIdentification);
         ilMessage.setCommon_order_details(commonOrderDetails);
         ilMessage.setPharmacy_encoded_order(pharmacyEncodedOrders.toArray(new PHARMACY_ENCODED_ORDER[pharmacyEncodedOrders.size()]));
+        ilMessage.setObservation_result(observationResults.toArray(new OBSERVATION_RESULT[observationResults.size()]));
         return ilMessage;
     }
 
