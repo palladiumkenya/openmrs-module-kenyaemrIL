@@ -1,21 +1,37 @@
 package org.openmrs.module.kenyaemrIL.api;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.openmrs.*;
+import org.openmrs.Concept;
+import org.openmrs.Encounter;
+import org.openmrs.Obs;
+import org.openmrs.Patient;
+import org.openmrs.PatientIdentifier;
+import org.openmrs.PersonAddress;
+import org.openmrs.PersonName;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.kenyacore.RegimenMappingUtils;
-import org.openmrs.module.kenyaemrIL.il.*;
+import org.openmrs.module.kenyaemrIL.il.EXTERNAL_PATIENT_ID;
+import org.openmrs.module.kenyaemrIL.il.ILMessage;
+import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
+import org.openmrs.module.kenyaemrIL.il.MOTHER_NAME;
+import org.openmrs.module.kenyaemrIL.il.NEXT_OF_KIN;
+import org.openmrs.module.kenyaemrIL.il.NOK_NAME;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_ADDRESS;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_NAME;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_VISIT;
+import org.openmrs.module.kenyaemrIL.il.PHYSICAL_ADDRESS;
 import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
 import org.openmrs.module.kenyaemrIL.kenyaemrUtils.Utils;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
-import org.openmrs.ui.framework.SimpleObject;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.openmrs.module.kenyaemrIL.api.ILPatientUnsolicitedObservationResults.pregnancyStatusConverter;
 
@@ -124,12 +140,18 @@ public class ILPatientRegistration {
             patientVisit.setVisit_date(formatter.format(lastEnrollmentDate));      //hiv_care_enrollment date
             patientVisit.setHiv_care_enrollment_date(formatter.format(lastEnrollmentDate));        //hiv_care_enrollment date
             for (Obs obs : lastEnrollment.getObs()) {
-                //set patient type
+                //set patient type and patient source
                 if (obs.getConcept().getConceptId().equals(patientEnrollmentTypeConcept)) {    //get patient type
                     patientVisit.setPatient_type(patientTypeConverter(obs.getValueCoded()));
+                    if(obs.getValueCoded().getConceptId() == 160563 || obs.getValueCoded().getConceptId() == 164931) {
+                        patientVisit.setPatient_source(patientSourceConverter(obs.getValueCoded()));
+                    }
                 }
                 if (obs.getConcept().getConceptId().equals(patientEnrollmentSourceConcept)) {    //get patient source
-                    patientVisit.setPatient_source(patientSourceConverter(obs.getValueCoded()));
+                    if( patientVisit.getPatient_source().isEmpty()) {
+                        patientVisit.setPatient_source(patientSourceConverter(obs.getValueCoded()));
+                    }
+
                 }
             }
         }else{
@@ -378,39 +400,39 @@ public class ILPatientRegistration {
 
         // pull the current regimen from regimen events
 
-        Encounter currentRegimenEncounter = RegimenMappingUtils.getLastEncounterForProgram(patient, "ARV");
-        SimpleObject regimenDetails = RegimenMappingUtils.buildRegimenChangeObject(currentRegimenEncounter.getObs(), currentRegimenEncounter);
-        String regimenName = (String) regimenDetails.get("regimenShortDisplay");
-        String regimenLine = (String) regimenDetails.get("regimenLine");
-        String startDate = (String) regimenDetails.get("startDate");
-        String artDate = "";
-        String nascopCode = "";
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        if (StringUtils.isNotBlank(regimenName )) {
-            nascopCode = RegimenMappingUtils.getDrugNascopCodeByDrugNameAndRegimenLine(regimenName, regimenLine);
-        }
-
-        if (StringUtils.isBlank(nascopCode) && StringUtils.isNotBlank(regimenLine)) {
-            nascopCode = RegimenMappingUtils.getNonStandardCodeFromRegimenLine(regimenLine);
-        }
-
-        if (StringUtils.isNotBlank(nascopCode) && StringUtils.isNotBlank(startDate)) {
-            observationResult.setObservation_identifier("CURRENT_REGIMEN");
-            observationResult.setSet_id("");
-            observationResult.setCoding_system("NASCOP_CODES");
-            observationResult.setValue_type("CE");
-            try {
-                artDate = formatter.format(df.parse(startDate));
-            } catch (ParseException e) {
-                //e.printStackTrace();
-            }
-            observationResult.setObservation_value(nascopCode);
-            observationResult.setUnits("");
-            observationResult.setObservation_result_status("F");
-            observationResult.setObservation_datetime(artDate);
-            observationResult.setAbnormal_flags("N");
-            observationResults.add(observationResult);
-        }
+//        Encounter currentRegimenEncounter = RegimenMappingUtils.getLastEncounterForProgram(patient, "ARV");
+//        SimpleObject regimenDetails = RegimenMappingUtils.buildRegimenChangeObject(currentRegimenEncounter.getObs(), currentRegimenEncounter);
+//        String regimenName = (String) regimenDetails.get("regimenShortDisplay");
+//        String regimenLine = (String) regimenDetails.get("regimenLine");
+//        String startDate = (String) regimenDetails.get("startDate");
+//        String artDate = "";
+//        String nascopCode = "";
+//        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+//        if (StringUtils.isNotBlank(regimenName )) {
+//            nascopCode = RegimenMappingUtils.getDrugNascopCodeByDrugNameAndRegimenLine(regimenName, regimenLine);
+//        }
+//
+//        if (StringUtils.isBlank(nascopCode) && StringUtils.isNotBlank(regimenLine)) {
+//            nascopCode = RegimenMappingUtils.getNonStandardCodeFromRegimenLine(regimenLine);
+//        }
+//
+//        if (StringUtils.isNotBlank(nascopCode) && StringUtils.isNotBlank(startDate)) {
+//            observationResult.setObservation_identifier("CURRENT_REGIMEN");
+//            observationResult.setSet_id("");
+//            observationResult.setCoding_system("NASCOP_CODES");
+//            observationResult.setValue_type("CE");
+//            try {
+//                artDate = formatter.format(df.parse(startDate));
+//            } catch (ParseException e) {
+//                //e.printStackTrace();
+//            }
+//            observationResult.setObservation_value(nascopCode);
+//            observationResult.setUnits("");
+//            observationResult.setObservation_result_status("F");
+//            observationResult.setObservation_datetime(artDate);
+//            observationResult.setAbnormal_flags("N");
+//            observationResults.add(observationResult);
+//        }
 
         ilMessage.setObservation_result(observationResults.toArray(new OBSERVATION_RESULT[observationResults.size()]));
         return ilMessage;
@@ -437,6 +459,9 @@ public class ILPatientRegistration {
         patientSourceList.put(conceptService.getConcept(162050), "ccc");
         patientSourceList.put(conceptService.getConcept(160551), "self");
         patientSourceList.put(conceptService.getConcept(5622), "other");
+        // Added Transfer in and Transits for ADT mappings
+        patientSourceList.put(conceptService.getConcept(160563), "Transfer In");
+        patientSourceList.put(conceptService.getConcept(164931), "Transit");
         return patientSourceList.get(key);
     }
     static String whoStageConverter(Concept key) {
