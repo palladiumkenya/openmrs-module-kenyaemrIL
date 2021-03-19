@@ -52,6 +52,7 @@
         <uiframeworkVersion>3.15.0</uiframeworkVersion>
         <legacyUiVersion>1.5.0</legacyUiVersion>
         <jacksonVersion>2.10.1</jacksonVersion>
+        <apacheHttpClientVersion>4.5.10</apacheHttpClientVersion>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -302,6 +303,19 @@
                 <version>20170516</version>
             </dependency>
 
+            <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${apacheHttpClientVersion}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -326,7 +340,12 @@
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>2.4</version>
                 </plugin>
-            </plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>2.9.1</version>
+                </plugin>
+               </plugins>
         </pluginManagement>
     </build>
 
