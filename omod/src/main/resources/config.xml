@@ -21,6 +21,9 @@
     <require_modules>
         <require_module version="${kenyaemrVersion}">org.openmrs.module.kenyaemr</require_module>
         <require_module version="2.1">org.openmrs.module.webservices.rest</require_module>
+        <require_module version="${kenyacoreVersion}">
+            org.openmrs.module.kenyacore
+        </require_module>
     </require_modules>
     <!-- Adds link to admin page -->
     <extension>
