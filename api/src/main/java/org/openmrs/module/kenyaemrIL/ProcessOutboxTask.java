@@ -1,11 +1,12 @@
 package org.openmrs.module.kenyaemrIL;
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import org.apache.http.util.EntityUtils;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContexts;
 import org.openmrs.GlobalProperty;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
@@ -43,21 +44,35 @@ public class ProcessOutboxTask extends AbstractTask {
     private void processFetchedRecord(KenyaEMRILMessage outbox) {
 //        Send to IL and mark as sent
         GlobalProperty IL_URL = Context.getAdministrationService().getGlobalPropertyObject("ilServer.address");
-        try {
-            Client restClient = Client.create();
-            WebResource webResource = restClient.resource(IL_URL.getPropertyValue());
-           // log.info("log info"+outbox.getMessage().toUpperCase());
-            //System.out.println("IL URL ==>"+IL_URL.getPropertyValue());
-           // System.out.println("Outbox message ==>"+outbox.getMessage().toUpperCase());
-            ClientResponse resp = webResource.type("application/json")
-                    .post(ClientResponse.class, outbox.getMessage().toUpperCase());
+            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+                    SSLContexts.createDefault(),
+                    new String[]{"TLSv1.2"},
+                    null,
+                    SSLConnectionSocketFactory.getDefaultHostnameVerifier());
 
-            System.out.println("The status received from the IL server: " + resp.getStatus());
-            log.info("The status received from the IL server: " + resp.getStatus());
-            if (resp.getStatus() != 200) {
-                String message = resp.getEntity(String.class);
-                System.err.println(("Failed : HTTP error code : " + resp.getStatus() + ", error message: " + message));
-                log.error(("Failed : HTTP error code : " + resp.getStatus() + ", error message: " + message));
+            CloseableHttpClient httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+
+            try {
+
+                //Define a postRequest request
+                HttpPost postRequest = new HttpPost(IL_URL.getPropertyValue());
+
+                //Set the API media type in http content-type header
+                postRequest.addHeader("content-type", "application/json");
+                //postRequest.addHeader("apikey", API_KEY);
+                //Set the request post body
+                String payload = outbox.getMessage().toUpperCase();
+                StringEntity userEntity = new StringEntity(payload);
+                postRequest.setEntity(userEntity);
+
+                //Send the request; It will immediately return the response in HttpResponse object if any
+                HttpResponse response = httpClient.execute(postRequest);
+
+                //verify the valid error code first
+                int statusCode = response.getStatusLine().getStatusCode();
+                if (statusCode != 200) {
+                 System.err.println("Connection refused : Could not send message to IL");
+                 log.error("Could not connect to IL Server");
 
             } else {
                 log.info("Successfully sent message to IL");
