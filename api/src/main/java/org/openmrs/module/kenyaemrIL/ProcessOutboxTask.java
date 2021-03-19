@@ -3,6 +3,9 @@ package org.openmrs.module.kenyaemrIL;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
+import org.apache.http.util.EntityUtils;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.openmrs.GlobalProperty;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
@@ -52,8 +55,10 @@ public class ProcessOutboxTask extends AbstractTask {
             System.out.println("The status received from the IL server: " + resp.getStatus());
             log.info("The status received from the IL server: " + resp.getStatus());
             if (resp.getStatus() != 200) {
-                System.err.println("Unable to connect to the server");
-                log.info("Unable to connect to the IL server");
+                String message = resp.getEntity(String.class);
+                System.err.println(("Failed : HTTP error code : " + resp.getStatus() + ", error message: " + message));
+                log.info(("Failed : HTTP error code : " + resp.getStatus() + ", error message: " + message));
+
             } else {
                 log.info("Successfull sent message to IL");
                 System.out.println("Successfull sent message to IL");
