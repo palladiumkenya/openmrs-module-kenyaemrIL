@@ -1,5 +1,6 @@
 package org.openmrs.module.kenyaemrIL.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.Concept;
@@ -11,6 +12,7 @@ import org.openmrs.PersonAddress;
 import org.openmrs.PersonName;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.kenyacore.RegimenMappingUtils;
 import org.openmrs.module.kenyaemrIL.il.EXTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
@@ -25,7 +27,9 @@ import org.openmrs.module.kenyaemrIL.il.PHYSICAL_ADDRESS;
 import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
 import org.openmrs.module.kenyaemrIL.kenyaemrUtils.Utils;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
+import org.openmrs.ui.framework.SimpleObject;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -400,39 +404,39 @@ public class ILPatientRegistration {
 
         // pull the current regimen from regimen events
 
-//        Encounter currentRegimenEncounter = RegimenMappingUtils.getLastEncounterForProgram(patient, "ARV");
-//        SimpleObject regimenDetails = RegimenMappingUtils.buildRegimenChangeObject(currentRegimenEncounter.getObs(), currentRegimenEncounter);
-//        String regimenName = (String) regimenDetails.get("regimenShortDisplay");
-//        String regimenLine = (String) regimenDetails.get("regimenLine");
-//        String startDate = (String) regimenDetails.get("startDate");
-//        String artDate = "";
-//        String nascopCode = "";
-//        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-//        if (StringUtils.isNotBlank(regimenName )) {
-//            nascopCode = RegimenMappingUtils.getDrugNascopCodeByDrugNameAndRegimenLine(regimenName, regimenLine);
-//        }
-//
-//        if (StringUtils.isBlank(nascopCode) && StringUtils.isNotBlank(regimenLine)) {
-//            nascopCode = RegimenMappingUtils.getNonStandardCodeFromRegimenLine(regimenLine);
-//        }
-//
-//        if (StringUtils.isNotBlank(nascopCode) && StringUtils.isNotBlank(startDate)) {
-//            observationResult.setObservation_identifier("CURRENT_REGIMEN");
-//            observationResult.setSet_id("");
-//            observationResult.setCoding_system("NASCOP_CODES");
-//            observationResult.setValue_type("CE");
-//            try {
-//                artDate = formatter.format(df.parse(startDate));
-//            } catch (ParseException e) {
-//                //e.printStackTrace();
-//            }
-//            observationResult.setObservation_value(nascopCode);
-//            observationResult.setUnits("");
-//            observationResult.setObservation_result_status("F");
-//            observationResult.setObservation_datetime(artDate);
-//            observationResult.setAbnormal_flags("N");
-//            observationResults.add(observationResult);
-//        }
+        Encounter currentRegimenEncounter = RegimenMappingUtils.getLastEncounterForProgram(patient, "ARV");
+        SimpleObject regimenDetails = RegimenMappingUtils.buildRegimenChangeObject(currentRegimenEncounter.getObs(), currentRegimenEncounter);
+        String regimenName = (String) regimenDetails.get("regimenShortDisplay");
+        String regimenLine = (String) regimenDetails.get("regimenLine");
+        String startDate = (String) regimenDetails.get("startDate");
+        String artDate = "";
+        String nascopCode = "";
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        if (StringUtils.isNotBlank(regimenName )) {
+            nascopCode = RegimenMappingUtils.getDrugNascopCodeByDrugNameAndRegimenLine(regimenName, regimenLine);
+        }
+
+        if (StringUtils.isBlank(nascopCode) && StringUtils.isNotBlank(regimenLine)) {
+            nascopCode = RegimenMappingUtils.getNonStandardCodeFromRegimenLine(regimenLine);
+        }
+
+        if (StringUtils.isNotBlank(nascopCode) && StringUtils.isNotBlank(startDate)) {
+            observationResult.setObservation_identifier("CURRENT_REGIMEN");
+            observationResult.setSet_id("");
+            observationResult.setCoding_system("NASCOP_CODES");
+            observationResult.setValue_type("CE");
+            try {
+                artDate = formatter.format(df.parse(startDate));
+            } catch (ParseException e) {
+                //e.printStackTrace();
+            }
+            observationResult.setObservation_value(nascopCode);
+            observationResult.setUnits("");
+            observationResult.setObservation_result_status("F");
+            observationResult.setObservation_datetime(artDate);
+            observationResult.setAbnormal_flags("N");
+            observationResults.add(observationResult);
+        }
 
         ilMessage.setObservation_result(observationResults.toArray(new OBSERVATION_RESULT[observationResults.size()]));
         return ilMessage;

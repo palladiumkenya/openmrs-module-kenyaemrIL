@@ -57,11 +57,11 @@ public class ProcessOutboxTask extends AbstractTask {
             if (resp.getStatus() != 200) {
                 String message = resp.getEntity(String.class);
                 System.err.println(("Failed : HTTP error code : " + resp.getStatus() + ", error message: " + message));
-                log.info(("Failed : HTTP error code : " + resp.getStatus() + ", error message: " + message));
+                log.error(("Failed : HTTP error code : " + resp.getStatus() + ", error message: " + message));
 
             } else {
-                log.info("Successfull sent message to IL");
-                System.out.println("Successfull sent message to IL");
+                log.info("Successfully sent message to IL");
+                System.out.println("Successfully sent message to IL");
                 outbox.setRetired(true);
                 getEMRILService().saveKenyaEMRILMessage(outbox);
                 //Purge from the il_messages table
