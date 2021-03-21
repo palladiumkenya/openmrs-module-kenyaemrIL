@@ -175,6 +175,7 @@ public class ILMessage {
         orderMessage.setPatient_identification(this.getPatient_identification_simple());
         orderMessage.setCommon_Order_Details(this.getCommon_order_details());
         orderMessage.setPharmacy_encoded_order(this.getPharmacy_encoded_order());
+        orderMessage.setObservation_result(this.observation_result);
         return orderMessage;
     }
 }
