@@ -18,6 +18,7 @@ import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION_SIMPLE;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_NAME;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_VISIT;
 import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.COMMON_ORDER_DETAILS;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.FILLER_ORDER_NUMBER;
@@ -62,7 +63,6 @@ public class ILPrescriptionMessage {
         INTERNAL_PATIENT_ID ipd;
 
         List<OBSERVATION_RESULT> observationResults = new ArrayList<>();
-        OBSERVATION_RESULT observationResult = null;
         //        Form the internal patient IDs
         for (PatientIdentifier patientIdentifier : patient.getIdentifiers()) {
             ipd = new INTERNAL_PATIENT_ID();
@@ -224,7 +224,6 @@ public class ILPrescriptionMessage {
         }
 
         // extract triage information
-
         try {
             List<Obs> latestWeightObs = Utils.getNLastObs(conceptService.getConcept(weightConcept), patient, 1);
 
@@ -261,7 +260,7 @@ public class ILPrescriptionMessage {
                 heightObservationResult.setSet_id("");
                 heightObservationResult.setCoding_system("");
                 heightObservationResult.setValue_type("NM");
-                heightObservationResult.setObservation_value(String.valueOf(heightObs.getValueNumeric()));
+                heightObservationResult.setObservation_value(String.valueOf(heightObs.getValueNumeric().intValue()));
                 heightObservationResult.setUnits("CM");
                 heightObservationResult.setObservation_result_status("F");
                 String ts = formatter.format(heightObs.getObsDatetime());
@@ -276,7 +275,6 @@ public class ILPrescriptionMessage {
         ilMessage.setPatient_identification_simple(patientIdentification);
         ilMessage.setCommon_order_details(commonOrderDetails);
         ilMessage.setPharmacy_encoded_order(pharmacyEncodedOrders.toArray(new PHARMACY_ENCODED_ORDER[pharmacyEncodedOrders.size()]));
-
         ilMessage.setObservation_result(observationResults.toArray(new OBSERVATION_RESULT[observationResults.size()]));
         return ilMessage;
     }

@@ -159,8 +159,8 @@ public class ILPatientRegistration {
                 }
             }
         }else{
-            patientVisit.setVisit_date("");      //hiv_care_enrollment date
-            patientVisit.setHiv_care_enrollment_date("");        //hiv_care_enrollment date
+            patientVisit.setVisit_date("");
+            patientVisit.setHiv_care_enrollment_date("");
             patientVisit.setPatient_type("");
             patientVisit.setPatient_source("");
         }
