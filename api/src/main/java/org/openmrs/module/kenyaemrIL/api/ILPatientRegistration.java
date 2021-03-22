@@ -159,8 +159,8 @@ public class ILPatientRegistration {
                 }
             }
         }else{
-            patientVisit.setVisit_date("");      //hiv_care_enrollment date
-            patientVisit.setHiv_care_enrollment_date("");        //hiv_care_enrollment date
+            patientVisit.setVisit_date("");
+            patientVisit.setHiv_care_enrollment_date("");
             patientVisit.setPatient_type("");
             patientVisit.setPatient_source("");
         }
@@ -209,7 +209,6 @@ public class ILPatientRegistration {
         //Set the patient observation results
         List<OBSERVATION_RESULT> observationResults = new ArrayList<>();
         OBSERVATION_RESULT observationResult = null;
-       // observationResult = new OBSERVATION_RESULT();
 
         Encounter hivEnrollmentEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc"));  //hiv enrollment
         Integer HeightConcept = 5090;
@@ -243,8 +242,7 @@ public class ILPatientRegistration {
                     observationResult.setAbnormal_flags("N");
                     observationResults.add(observationResult);
                     hasStartHeight = true;
-                }
-                if (obs.getConcept().getConceptId().equals(WeightConcept)) {     //  start weight
+                } else if (obs.getConcept().getConceptId().equals(WeightConcept)) {     //  start weight
                     observationResult.setObservation_identifier("START_WEIGHT");
                     observationResult.setSet_id("");
                     observationResult.setCoding_system("");
@@ -257,8 +255,7 @@ public class ILPatientRegistration {
                     observationResult.setAbnormal_flags("N");
                     observationResults.add(observationResult);
                     hasStartWeight = true;
-                }
-                if (obs.getConcept().getConceptId().equals(IspregnantConcept) && obs.getValueCoded().equals(YesConcept)) {          //is pregnant
+                } else if (obs.getConcept().getConceptId().equals(IspregnantConcept) && obs.getValueCoded().equals(YesConcept)) {          //is pregnant
                     observationResult.setObservation_identifier("IS_PREGNANT");
                     observationResult.setSet_id("");
                     observationResult.setCoding_system("");
@@ -270,9 +267,7 @@ public class ILPatientRegistration {
                     observationResult.setObservation_datetime(ts);
                     observationResult.setAbnormal_flags("N");
                     observationResults.add(observationResult);
-                }
-
-                if (obs.getConcept().getConceptId().equals(EDDConcept)) {                                              //PREGNANT_EDD
+                } else if (obs.getConcept().getConceptId().equals(EDDConcept)) {                                              //PREGNANT_EDD
                     observationResult.setObservation_identifier("PREGNANT_EDD");
                     observationResult.setSet_id("");
                     observationResult.setCoding_system("");
@@ -285,8 +280,7 @@ public class ILPatientRegistration {
                     observationResult.setObservation_datetime(ts);
                     observationResult.setAbnormal_flags("N");
                     observationResults.add(observationResult);
-                }
-                if (obs.getConcept().getConceptId().equals(ARTInitiationDateConcept)) {     // ART Start date
+                } else if (obs.getConcept().getConceptId().equals(ARTInitiationDateConcept)) {     // ART Start date
                     observationResult.setObservation_identifier("ART_START");
                     observationResult.setSet_id("");
                     observationResult.setCoding_system("");
@@ -299,9 +293,7 @@ public class ILPatientRegistration {
                     observationResult.setObservation_datetime(ts);
                     observationResult.setAbnormal_flags("N");
                     observationResults.add(observationResult);
-                }
-
-                if (obs.getConcept().getConceptId().equals(WhoStageConcept)) {                      //  start who stage
+                } else if (obs.getConcept().getConceptId().equals(WhoStageConcept)) {                      //  start who stage
                     observationResult.setObservation_identifier("WHO_STAGE");
                     observationResult.setSet_id("");
                     observationResult.setCoding_system("");
@@ -313,9 +305,7 @@ public class ILPatientRegistration {
                     observationResult.setObservation_datetime(ts);
                     observationResult.setAbnormal_flags("N");
                     observationResults.add(observationResult);
-                }
-
-                if (obs.getConcept().getConceptId().equals(AlcoholUseConcept)) {                      //  IS_ALCOHOLIC
+                } else if (obs.getConcept().getConceptId().equals(AlcoholUseConcept)) {                      //  IS_ALCOHOLIC
                     observationResult.setObservation_identifier("IS_ALCOHOLIC");
                     observationResult.setSet_id("");
                     observationResult.setCoding_system("");
@@ -327,9 +317,7 @@ public class ILPatientRegistration {
                     observationResult.setObservation_datetime(ts);
                     observationResult.setAbnormal_flags("N");
                     observationResults.add(observationResult);
-                }
-
-                if (obs.getConcept().getConceptId().equals(SmokerConcept)) {                      //  IS_SMOKER
+                } else if (obs.getConcept().getConceptId().equals(SmokerConcept)) {                      //  IS_SMOKER
                     observationResult.setObservation_identifier("IS_SMOKER");
                     observationResult.setSet_id("");
                     observationResult.setCoding_system("");
@@ -405,39 +393,41 @@ public class ILPatientRegistration {
         // pull the current regimen from regimen events
 
         Encounter currentRegimenEncounter = RegimenMappingUtils.getLastEncounterForProgram(patient, "ARV");
-        SimpleObject regimenDetails = RegimenMappingUtils.buildRegimenChangeObject(currentRegimenEncounter.getObs(), currentRegimenEncounter);
-        String regimenName = (String) regimenDetails.get("regimenShortDisplay");
-        String regimenLine = (String) regimenDetails.get("regimenLine");
-        String startDate = (String) regimenDetails.get("startDate");
-        String artDate = "";
-        String nascopCode = "";
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        if (StringUtils.isNotBlank(regimenName )) {
-            nascopCode = RegimenMappingUtils.getDrugNascopCodeByDrugNameAndRegimenLine(regimenName, regimenLine);
-        }
 
-        if (StringUtils.isBlank(nascopCode) && StringUtils.isNotBlank(regimenLine)) {
-            nascopCode = RegimenMappingUtils.getNonStandardCodeFromRegimenLine(regimenLine);
-        }
-
-        if (StringUtils.isNotBlank(nascopCode) && StringUtils.isNotBlank(startDate)) {
-            observationResult.setObservation_identifier("CURRENT_REGIMEN");
-            observationResult.setSet_id("");
-            observationResult.setCoding_system("NASCOP_CODES");
-            observationResult.setValue_type("CE");
-            try {
-                artDate = formatter.format(df.parse(startDate));
-            } catch (ParseException e) {
-                //e.printStackTrace();
+        if (currentRegimenEncounter != null) {
+            SimpleObject regimenDetails = RegimenMappingUtils.buildRegimenChangeObject(currentRegimenEncounter.getObs(), currentRegimenEncounter);
+            String regimenName = (String) regimenDetails.get("regimenShortDisplay");
+            String regimenLine = (String) regimenDetails.get("regimenLine");
+            String startDate = (String) regimenDetails.get("startDate");
+            String artDate = "";
+            String nascopCode = "";
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+            if (StringUtils.isNotBlank(regimenName)) {
+                nascopCode = RegimenMappingUtils.getDrugNascopCodeByDrugNameAndRegimenLine(regimenName, regimenLine);
             }
-            observationResult.setObservation_value(nascopCode);
-            observationResult.setUnits("");
-            observationResult.setObservation_result_status("F");
-            observationResult.setObservation_datetime(artDate);
-            observationResult.setAbnormal_flags("N");
-            observationResults.add(observationResult);
-        }
 
+            if (StringUtils.isBlank(nascopCode) && StringUtils.isNotBlank(regimenLine)) {
+                nascopCode = RegimenMappingUtils.getNonStandardCodeFromRegimenLine(regimenLine);
+            }
+
+            if (StringUtils.isNotBlank(nascopCode) && StringUtils.isNotBlank(startDate)) {
+                observationResult.setObservation_identifier("CURRENT_REGIMEN");
+                observationResult.setSet_id("");
+                observationResult.setCoding_system("NASCOP_CODES");
+                observationResult.setValue_type("CE");
+                try {
+                    artDate = formatter.format(df.parse(startDate));
+                } catch (ParseException e) {
+                    //e.printStackTrace();
+                }
+                observationResult.setObservation_value(nascopCode);
+                observationResult.setUnits("");
+                observationResult.setObservation_result_status("F");
+                observationResult.setObservation_datetime(artDate);
+                observationResult.setAbnormal_flags("N");
+                observationResults.add(observationResult);
+            }
+        }
         ilMessage.setObservation_result(observationResults.toArray(new OBSERVATION_RESULT[observationResults.size()]));
         return ilMessage;
     }

@@ -18,6 +18,7 @@ import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION_SIMPLE;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_NAME;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_VISIT;
 import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.COMMON_ORDER_DETAILS;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.FILLER_ORDER_NUMBER;
@@ -39,7 +40,7 @@ import java.util.Locale;
  */
 public class ILPrescriptionMessage {
 
-    private final Log log = LogFactory.getLog(this.getClass());
+    private static final Log log = LogFactory.getLog(ILPrescriptionMessage.class);
     public static final Locale LOCALE = Locale.ENGLISH;
 
 
@@ -61,9 +62,7 @@ public class ILPrescriptionMessage {
         commonOrderDetails.setFiller_order_number(fillerOrderNumber);
         INTERNAL_PATIENT_ID ipd;
 
-        //Set the patient observation results
         List<OBSERVATION_RESULT> observationResults = new ArrayList<>();
-        OBSERVATION_RESULT observationResult = null;
         //        Form the internal patient IDs
         for (PatientIdentifier patientIdentifier : patient.getIdentifiers()) {
             ipd = new INTERNAL_PATIENT_ID();
@@ -225,25 +224,25 @@ public class ILPrescriptionMessage {
         }
 
         // extract triage information
-
         try {
             List<Obs> latestWeightObs = Utils.getNLastObs(conceptService.getConcept(weightConcept), patient, 1);
+
             if (latestWeightObs.size() > 0) {
                 Obs weightObs = latestWeightObs.get(0);
 
                 // compose observation object
-                observationResult = new OBSERVATION_RESULT();
-                observationResult.setObservation_identifier("WEIGHT");
-                observationResult.setSet_id("");
-                observationResult.setCoding_system("");
-                observationResult.setValue_type("NM");
-                observationResult.setObservation_value(String.valueOf(weightObs.getValueNumeric()));
-                observationResult.setUnits("KG");
-                observationResult.setObservation_result_status("F");
+                OBSERVATION_RESULT weightObservationResult = new OBSERVATION_RESULT();
+                weightObservationResult.setObservation_identifier("WEIGHT");
+                weightObservationResult.setSet_id("");
+                weightObservationResult.setCoding_system("");
+                weightObservationResult.setValue_type("NM");
+                weightObservationResult.setObservation_value(String.valueOf(weightObs.getValueNumeric()));
+                weightObservationResult.setUnits("KG");
+                weightObservationResult.setObservation_result_status("F");
                 String ts = formatter.format(weightObs.getObsDatetime());
-                observationResult.setObservation_datetime(ts);
-                observationResult.setAbnormal_flags("N");
-                observationResults.add(observationResult);
+                weightObservationResult.setObservation_datetime(ts);
+                weightObservationResult.setAbnormal_flags("N");
+                observationResults.add(weightObservationResult);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -255,26 +254,23 @@ public class ILPrescriptionMessage {
                 Obs heightObs = latestHeightObs.get(0);
 
                 // compose observation object
-                observationResult = new OBSERVATION_RESULT();
-                observationResult.setObservation_identifier("HEIGHT");
+                OBSERVATION_RESULT heightObservationResult = new OBSERVATION_RESULT();
+                heightObservationResult.setObservation_identifier("HEIGHT");
 
-                observationResult.setSet_id("");
-                observationResult.setCoding_system("");
-                observationResult.setValue_type("NM");
-                observationResult.setObservation_value(String.valueOf(heightObs.getValueNumeric()));
-                observationResult.setUnits("CM");
-                observationResult.setObservation_result_status("F");
+                heightObservationResult.setSet_id("");
+                heightObservationResult.setCoding_system("");
+                heightObservationResult.setValue_type("NM");
+                heightObservationResult.setObservation_value(String.valueOf(heightObs.getValueNumeric().intValue()));
+                heightObservationResult.setUnits("CM");
+                heightObservationResult.setObservation_result_status("F");
                 String ts = formatter.format(heightObs.getObsDatetime());
-                observationResult.setObservation_datetime(ts);
-                observationResult.setAbnormal_flags("N");
-                observationResults.add(observationResult);
-
+                heightObservationResult.setObservation_datetime(ts);
+                heightObservationResult.setAbnormal_flags("N");
+                observationResults.add(heightObservationResult);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-
 
         ilMessage.setPatient_identification_simple(patientIdentification);
         ilMessage.setCommon_order_details(commonOrderDetails);
