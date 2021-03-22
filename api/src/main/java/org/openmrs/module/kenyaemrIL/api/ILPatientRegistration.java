@@ -40,8 +40,7 @@ import java.util.Map;
 import static org.openmrs.module.kenyaemrIL.api.ILPatientUnsolicitedObservationResults.pregnancyStatusConverter;
 
 /**
- * Created by codehub on 10/30/15.
- * A fragment controller for an IL Registration
+ * Registration message model for IL
  */
 public class ILPatientRegistration {
 
@@ -159,9 +158,8 @@ public class ILPatientRegistration {
             }
 
             nok.setNok_name(fnok);
-        }else{
-
         }
+
         nok.setPhone_number(patient.getAttribute("Next of kin contact") != null ? patient.getAttribute("Next of kin contact").getValue() : "");
         nok.setRelationship(patient.getAttribute("Next of kin relationship") != null ? patient.getAttribute("Next of kin relationship").getValue() : "");
         nok.setAddress(patient.getAttribute("Next of kin address") != null ? patient.getAttribute("Next of kin address").getValue() : "");
@@ -340,7 +338,7 @@ public class ILPatientRegistration {
 
                     // compose observation object
                     observationResult = new OBSERVATION_RESULT();
-                    observationResult.setObservation_identifier("WEIGHT");
+                    observationResult.setObservation_identifier("START_WEIGHT");
                     observationResult.setSet_id("");
                     observationResult.setCoding_system("");
                     observationResult.setValue_type("NM");
@@ -366,7 +364,7 @@ public class ILPatientRegistration {
 
                     // compose observation object
                     observationResult = new OBSERVATION_RESULT();
-                    observationResult.setObservation_identifier("HEIGHT");
+                    observationResult.setObservation_identifier("START_HEIGHT");
 
                     observationResult.setSet_id("");
                     observationResult.setCoding_system("");
