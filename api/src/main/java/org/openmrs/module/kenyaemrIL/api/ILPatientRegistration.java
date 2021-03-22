@@ -186,9 +186,6 @@ public class ILPatientRegistration {
         Integer ARTInitiationDateConcept = 159599;
         Integer AlcoholUseConcept = 159449;
         Integer SmokerConcept = 155600;
-        String patientType = "";
-        String entryPoint = "";
-        Integer CurrentRegimenConcept = 1193;
         Integer patientTypeConcept = 164932;
         Integer patientTypeResponseConceptId = null;
         Integer patientEntryPointResponseConceptId = null;
@@ -321,37 +318,12 @@ public class ILPatientRegistration {
             if (adtEntryPoint != null) {
                 patientVisit.setPatient_source(adtEntryPoint);
             }
-        }
-
-        // get enrollment Date
-        /*Encounter lastEnrollment = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc"));
-        Integer patientEnrollmentTypeConcept = 164932;
-        Integer patientEnrollmentSourceConcept = 160540;
-        if(lastEnrollment != null) {
-            Date lastEnrollmentDate = lastEnrollment.getEncounterDatetime();
-            patientVisit.setVisit_date(formatter.format(lastEnrollmentDate));      //hiv_care_enrollment date
-            patientVisit.setHiv_care_enrollment_date(formatter.format(lastEnrollmentDate));        //hiv_care_enrollment date
-            for (Obs obs : lastEnrollment.getObs()) {
-                //set patient type and patient source
-                if (obs.getConcept().getConceptId().equals(patientEnrollmentTypeConcept)) {    //get patient type
-                    patientVisit.setPatient_type(patientTypeConverter(obs.getValueCoded()));
-                    if(obs.getValueCoded().getConceptId() == 160563 || obs.getValueCoded().getConceptId() == 164931) {
-                        patientVisit.setPatient_source(patientSourceConverter(obs.getValueCoded()));
-                    }
-                }
-                if (obs.getConcept().getConceptId().equals(patientEnrollmentSourceConcept)) {    //get patient source
-                    if( patientVisit.getPatient_source().isEmpty()) {
-                        patientVisit.setPatient_source(patientSourceConverter(obs.getValueCoded()));
-                    }
-
-                }
-            }
-        }else{
+        } else { //TODO: confirm if this block is necessary. The object constructor seems to do the same thing
             patientVisit.setVisit_date("");
             patientVisit.setHiv_care_enrollment_date("");
             patientVisit.setPatient_type("");
             patientVisit.setPatient_source("");
-        }*/
+        }
 
         //add patientVisit to IL message
         ilMessage.setPatient_visit(patientVisit);
