@@ -40,8 +40,7 @@ import java.util.Map;
 import static org.openmrs.module.kenyaemrIL.api.ILPatientUnsolicitedObservationResults.pregnancyStatusConverter;
 
 /**
- * Created by codehub on 10/30/15.
- * A fragment controller for an IL Registration
+ * Registration message model for IL
  */
 public class ILPatientRegistration {
 
@@ -133,41 +132,6 @@ public class ILPatientRegistration {
         //add patientIdentification to IL message
         ilMessage.setPatient_identification(patientIdentification);
 
-//set patient visit
-        PATIENT_VISIT patientVisit = new PATIENT_VISIT();
-        // get enrollment Date
-        Encounter lastEnrollment = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc"));
-        Integer patientEnrollmentTypeConcept = 164932;
-        Integer patientEnrollmentSourceConcept = 160540;
-        if(lastEnrollment != null) {
-            Date lastEnrollmentDate = lastEnrollment.getEncounterDatetime();
-            patientVisit.setVisit_date(formatter.format(lastEnrollmentDate));      //hiv_care_enrollment date
-            patientVisit.setHiv_care_enrollment_date(formatter.format(lastEnrollmentDate));        //hiv_care_enrollment date
-            for (Obs obs : lastEnrollment.getObs()) {
-                //set patient type and patient source
-                if (obs.getConcept().getConceptId().equals(patientEnrollmentTypeConcept)) {    //get patient type
-                    patientVisit.setPatient_type(patientTypeConverter(obs.getValueCoded()));
-                    if(obs.getValueCoded().getConceptId() == 160563 || obs.getValueCoded().getConceptId() == 164931) {
-                        patientVisit.setPatient_source(patientSourceConverter(obs.getValueCoded()));
-                    }
-                }
-                if (obs.getConcept().getConceptId().equals(patientEnrollmentSourceConcept)) {    //get patient source
-                    if( patientVisit.getPatient_source().isEmpty()) {
-                        patientVisit.setPatient_source(patientSourceConverter(obs.getValueCoded()));
-                    }
-
-                }
-            }
-        }else{
-            patientVisit.setVisit_date("");
-            patientVisit.setHiv_care_enrollment_date("");
-            patientVisit.setPatient_type("");
-            patientVisit.setPatient_source("");
-        }
-
-      //add patientVisit to IL message
-        ilMessage.setPatient_visit(patientVisit);
-
   //    Next of KIN
         NEXT_OF_KIN patientKins[] = new NEXT_OF_KIN[1];
         NEXT_OF_KIN nok = new NEXT_OF_KIN();
@@ -194,9 +158,8 @@ public class ILPatientRegistration {
             }
 
             nok.setNok_name(fnok);
-        }else{
-
         }
+
         nok.setPhone_number(patient.getAttribute("Next of kin contact") != null ? patient.getAttribute("Next of kin contact").getValue() : "");
         nok.setRelationship(patient.getAttribute("Next of kin relationship") != null ? patient.getAttribute("Next of kin relationship").getValue() : "");
         nok.setAddress(patient.getAttribute("Next of kin address") != null ? patient.getAttribute("Next of kin address").getValue() : "");
@@ -221,12 +184,18 @@ public class ILPatientRegistration {
         Integer ARTInitiationDateConcept = 159599;
         Integer AlcoholUseConcept = 159449;
         Integer SmokerConcept = 155600;
-        Integer CurrentRegimenConcept = 1193;
+        Integer patientTypeConcept = 164932;
+        Integer patientTypeResponseConceptId = null;
+        Integer patientEntryPointResponseConceptId = null;
+        Integer patientEntryPointConcept = 160540;
         boolean hasStartWeight = false;
         boolean hasStartHeight = false;
+        Date hivEnrollmentDate = null;
 
         //Enrollment encounter
         if (hivEnrollmentEncounter != null) {
+            hivEnrollmentDate = hivEnrollmentEncounter.getEncounterDatetime();
+
             for (Obs obs : hivEnrollmentEncounter.getObs()) {
                 observationResult = new OBSERVATION_RESULT();
                 if (obs.getConcept().getConceptId().equals(HeightConcept)) {          // start height
@@ -329,10 +298,33 @@ public class ILPatientRegistration {
                     observationResult.setObservation_datetime(ts);
                     observationResult.setAbnormal_flags("N");
                     observationResults.add(observationResult);
+                } else if (obs.getConcept().getConceptId().equals(patientTypeConcept)) {    //get patient type
+                    patientTypeResponseConceptId = obs.getValueCoded().getConceptId();
+                } else if (obs.getConcept().getConceptId().equals(patientEntryPointConcept)) {    //get patient entry point
+                    patientEntryPointResponseConceptId = obs.getValueCoded().getConceptId();
                 }
 
             }
         }
+
+        //set patient visit
+        PATIENT_VISIT patientVisit = new PATIENT_VISIT();
+        if (hivEnrollmentEncounter != null) {
+            patientVisit.setVisit_date(formatter.format(hivEnrollmentDate));      //hiv_care_enrollment date
+            patientVisit.setHiv_care_enrollment_date(formatter.format(hivEnrollmentDate));        //hiv_care_enrollment date
+            String adtEntryPoint = getAdtEntryPoint(patientTypeResponseConceptId, patientEntryPointResponseConceptId);
+            if (adtEntryPoint != null) {
+                patientVisit.setPatient_source(adtEntryPoint);
+            }
+        } else { //TODO: confirm if this block is necessary. The object constructor seems to do the same thing
+            patientVisit.setVisit_date("");
+            patientVisit.setHiv_care_enrollment_date("");
+            patientVisit.setPatient_type("");
+            patientVisit.setPatient_source("");
+        }
+
+        //add patientVisit to IL message
+        ilMessage.setPatient_visit(patientVisit);
 
         // pull latest weight and height from triage obs if patient doesn't have start weight and height recorded on enrollment form
 
@@ -346,7 +338,7 @@ public class ILPatientRegistration {
 
                     // compose observation object
                     observationResult = new OBSERVATION_RESULT();
-                    observationResult.setObservation_identifier("WEIGHT");
+                    observationResult.setObservation_identifier("START_WEIGHT");
                     observationResult.setSet_id("");
                     observationResult.setCoding_system("");
                     observationResult.setValue_type("NM");
@@ -372,12 +364,12 @@ public class ILPatientRegistration {
 
                     // compose observation object
                     observationResult = new OBSERVATION_RESULT();
-                    observationResult.setObservation_identifier("HEIGHT");
+                    observationResult.setObservation_identifier("START_HEIGHT");
 
                     observationResult.setSet_id("");
                     observationResult.setCoding_system("");
                     observationResult.setValue_type("NM");
-                    observationResult.setObservation_value(String.valueOf(heightObs.getValueNumeric()));
+                    observationResult.setObservation_value(String.valueOf(heightObs.getValueNumeric().intValue()));
                     observationResult.setUnits("CM");
                     observationResult.setObservation_result_status("F");
                     String ts = formatter.format(heightObs.getObsDatetime());
@@ -432,15 +424,62 @@ public class ILPatientRegistration {
         return ilMessage;
     }
 
+    /**
+     * Tailormade converter for ADT entry points. ADT combines patient type and entry point into one variable
+     * Default entry points in ADT: outpatient, in patient, PMTCT, VCT, Transit, Transfer In.
+     * Users are also allowed to add custom entry points i.e. CCC, TB Clinic, etc
+     * @param patientType
+     * @param entryPoint
+     * @return
+     */
+    static String getAdtEntryPoint(Integer patientType, Integer entryPoint) {
+        if (patientType == null && entryPoint == null) { // this is mostly important for legacy data
+            return null;
+        }
+        if (patientType != null && patientType.equals(160563)) {
+            return "Transfer In";
+        } else if (patientType != null && patientType.equals(164931)) {
+            return "Transit";
+        } else { // factor in entry point
+            if (entryPoint != null) {
+                if (entryPoint.equals(160536) || entryPoint.equals(160537)) {
+                    return "In Patient";
+                } else if (entryPoint.equals(160542)) {
+                    return "Opd";
+                } else if (entryPoint.equals(159937)) {
+                    return "PMTCT";
+                } else if (entryPoint.equals(160539)) {
+                    return "VCT";
+                } else if (entryPoint.equals(160541)) {
+                    return "TB Clinic";
+                } else if (entryPoint.equals(162050)) {
+                    return "CCC";
+                }
+            }
+        }
+
+
+        return "CCC"; // We will be defaulting to CCC
+    }
+    /**
+     * Converter for patient type as captured in hiv enrollment form
+     * @param key
+     * @return
+     */
     static String patientTypeConverter(Concept key) {
         Map<Concept, String> patientTypeList = new HashMap<Concept, String>();
-        patientTypeList.put(conceptService.getConcept(164144), "New");
+        patientTypeList.put(conceptService.getConcept(164144), "New Patient");
         patientTypeList.put(conceptService.getConcept(160563), "Transfer In");
         patientTypeList.put(conceptService.getConcept(164931), "Transit");
         patientTypeList.put(conceptService.getConcept(159833), "Reenrollment");
         return patientTypeList.get(key);
     }
 
+    /**
+     * Converter for patient entry point as captured in hiv enrollment form
+     * @param key
+     * @return
+     */
     static String patientSourceConverter(Concept key) {
         Map<Concept, String> patientSourceList = new HashMap<Concept, String>();
         patientSourceList.put(conceptService.getConcept(159938), "hbtc");
@@ -453,11 +492,10 @@ public class ILPatientRegistration {
         patientSourceList.put(conceptService.getConcept(162050), "ccc");
         patientSourceList.put(conceptService.getConcept(160551), "self");
         patientSourceList.put(conceptService.getConcept(5622), "other");
-        // Added Transfer in and Transits for ADT mappings
-        patientSourceList.put(conceptService.getConcept(160563), "Transfer In");
-        patientSourceList.put(conceptService.getConcept(164931), "Transit");
         return patientSourceList.get(key);
     }
+
+
     static String whoStageConverter(Concept key) {
         Map<Concept, String> whoStageList = new HashMap<Concept, String>();
         whoStageList.put(conceptService.getConcept(1204), "1");
