@@ -445,7 +445,7 @@ public class ILPatientRegistration {
                 if (entryPoint.equals(160536) || entryPoint.equals(160537)) {
                     return "In Patient";
                 } else if (entryPoint.equals(160542)) {
-                    return "Opd";
+                    return "Outpatient";
                 } else if (entryPoint.equals(159937)) {
                     return "PMTCT";
                 } else if (entryPoint.equals(160539)) {
