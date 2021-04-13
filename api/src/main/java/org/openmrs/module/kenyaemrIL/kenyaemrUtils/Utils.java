@@ -8,6 +8,14 @@ import java.util.*;
 
 public class Utils {
 
+    /**
+     * Get the last n observations for a given concept
+     * @param concept
+     * @param patient
+     * @param nLast
+     * @return
+     * @throws Exception
+     */
     public static List<Obs> getNLastObs(Concept concept, Patient patient, Integer nLast) throws Exception {
         List<Obs> obs = Context.getObsService().getObservations(
                 Arrays.asList(Context.getPersonService().getPerson(patient.getPersonId())),
@@ -25,12 +33,37 @@ public class Utils {
         return obs;
     }
 
+    /**
+     * Get the first obs for a given concept
+     * @param concept
+     * @param patient
+     * @return
+     * @throws Exception
+     */
+
+    public static Obs getFirstObs(Concept concept, Patient patient) throws Exception {
+        List<Obs> obs = Context.getObsService().getObservations(
+                Arrays.asList(Context.getPersonService().getPerson(patient.getPersonId())),
+                null,
+                Arrays.asList(concept),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false);
+        return obs.size() > 0 ? obs.get(0) : null;
+    }
+
     public static Obs getLatestObs(Patient patient, String conceptIdentifier) {
         Concept concept = Context.getConceptService().getConceptByUuid(conceptIdentifier);
         List<Obs> obs = Context.getObsService().getObservationsByPersonAndConcept(patient, concept);
         if (obs.size() > 0) {
             // these are in reverse chronological order
-            return obs.get(0);
+            return obs.get(obs.size() - 1);
         }
         return null;
     }

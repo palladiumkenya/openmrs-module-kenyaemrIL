@@ -90,8 +90,13 @@ public class ILPatientRegistration {
         }
 //set external identifier if available
         EXTERNAL_PATIENT_ID epd = new EXTERNAL_PATIENT_ID();
+        //        Form the default external patient IDs
+        epd.setAssigning_authority("MPI");
+        epd.setIdentifier_type("GODS_NUMBER");
+        patientIdentification.setExternal_patient_id(epd);
+
+
         INTERNAL_PATIENT_ID ipd;
-//        Form the internal patient IDs
         for (PatientIdentifier patientIdentifier : patient.getIdentifiers()) {
             ipd = new INTERNAL_PATIENT_ID();
             if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Unique Patient Number")) {
@@ -99,10 +104,11 @@ public class ILPatientRegistration {
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("CCC_NUMBER");
                 internalPatientIds.add(ipd);
-//        Form the default external patient IDs
-                epd.setAssigning_authority("MPI");
-                epd.setIdentifier_type("GODS_NUMBER");
-                patientIdentification.setExternal_patient_id(epd);
+            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Patient Clinic Number")) {
+                ipd.setAssigning_authority("CCC");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("PATIENT_CLINIC_NUMBER");
+                internalPatientIds.add(ipd);
             }
         }
 
@@ -332,23 +338,22 @@ public class ILPatientRegistration {
 
         if (!hasStartWeight) {
             try {
-                List<Obs> latestWeightObs = Utils.getNLastObs(conceptService.getConcept(WeightConcept), patient, 1);
-                if (latestWeightObs.size() > 0) {
-                    Obs weightObs = latestWeightObs.get(0);
+                Obs weightObs = Utils.getFirstObs(conceptService.getConcept(WeightConcept), patient);
+                if (weightObs != null) {
 
                     // compose observation object
-                    observationResult = new OBSERVATION_RESULT();
-                    observationResult.setObservation_identifier("START_WEIGHT");
-                    observationResult.setSet_id("");
-                    observationResult.setCoding_system("");
-                    observationResult.setValue_type("NM");
-                    observationResult.setObservation_value(String.valueOf(weightObs.getValueNumeric()));
-                    observationResult.setUnits("KG");
-                    observationResult.setObservation_result_status("F");
+                    OBSERVATION_RESULT startWeightResult = new OBSERVATION_RESULT();
+                    startWeightResult.setObservation_identifier("START_WEIGHT");
+                    startWeightResult.setSet_id("");
+                    startWeightResult.setCoding_system("");
+                    startWeightResult.setValue_type("NM");
+                    startWeightResult.setObservation_value(String.valueOf(weightObs.getValueNumeric()));
+                    startWeightResult.setUnits("KG");
+                    startWeightResult.setObservation_result_status("F");
                     String ts = formatter.format(weightObs.getObsDatetime());
-                    observationResult.setObservation_datetime(ts);
-                    observationResult.setAbnormal_flags("N");
-                    observationResults.add(observationResult);
+                    startWeightResult.setObservation_datetime(ts);
+                    startWeightResult.setAbnormal_flags("N");
+                    observationResults.add(startWeightResult);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -358,36 +363,35 @@ public class ILPatientRegistration {
 
         if (!hasStartHeight) {
             try {
-                List<Obs> latestHeightObs = Utils.getNLastObs(conceptService.getConcept(HeightConcept), patient, 1);
-                if (latestHeightObs.size() > 0) {
-                    Obs heightObs = latestHeightObs.get(0);
+                Obs heightObs = Utils.getFirstObs(conceptService.getConcept(HeightConcept), patient);
+                if (heightObs != null) {
 
                     // compose observation object
-                    observationResult = new OBSERVATION_RESULT();
-                    observationResult.setObservation_identifier("START_HEIGHT");
+                    OBSERVATION_RESULT startHeightResult = new OBSERVATION_RESULT();
+                    startHeightResult.setObservation_identifier("START_HEIGHT");
 
-                    observationResult.setSet_id("");
-                    observationResult.setCoding_system("");
-                    observationResult.setValue_type("NM");
-                    observationResult.setObservation_value(String.valueOf(heightObs.getValueNumeric().intValue()));
-                    observationResult.setUnits("CM");
-                    observationResult.setObservation_result_status("F");
+                    startHeightResult.setSet_id("");
+                    startHeightResult.setCoding_system("");
+                    startHeightResult.setValue_type("NM");
+                    startHeightResult.setObservation_value(String.valueOf(heightObs.getValueNumeric().intValue()));
+                    startHeightResult.setUnits("CM");
+                    startHeightResult.setObservation_result_status("F");
                     String ts = formatter.format(heightObs.getObsDatetime());
-                    observationResult.setObservation_datetime(ts);
-                    observationResult.setAbnormal_flags("N");
-                    observationResults.add(observationResult);
+                    startHeightResult.setObservation_datetime(ts);
+                    startHeightResult.setAbnormal_flags("N");
+                    observationResults.add(startHeightResult);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
-        // pull the current regimen from regimen events
+        // pull the first regimen from regimen events
 
-        Encounter currentRegimenEncounter = RegimenMappingUtils.getLastEncounterForProgram(patient, "ARV");
+        Encounter initialRegimenEncounter = RegimenMappingUtils.getFirstEncounterForProgram(patient, "ARV");
 
-        if (currentRegimenEncounter != null) {
-            SimpleObject regimenDetails = RegimenMappingUtils.buildRegimenChangeObject(currentRegimenEncounter.getObs(), currentRegimenEncounter);
+        if (initialRegimenEncounter != null) {
+            SimpleObject regimenDetails = RegimenMappingUtils.buildRegimenChangeObject(initialRegimenEncounter.getObs(), initialRegimenEncounter);
             String regimenName = (String) regimenDetails.get("regimenShortDisplay");
             String regimenLine = (String) regimenDetails.get("regimenLine");
             String startDate = (String) regimenDetails.get("startDate");
@@ -403,21 +407,22 @@ public class ILPatientRegistration {
             }
 
             if (StringUtils.isNotBlank(nascopCode) && StringUtils.isNotBlank(startDate)) {
-                observationResult.setObservation_identifier("CURRENT_REGIMEN");
-                observationResult.setSet_id("");
-                observationResult.setCoding_system("NASCOP_CODES");
-                observationResult.setValue_type("CE");
+                OBSERVATION_RESULT startRegimenResult = new OBSERVATION_RESULT();
+                startRegimenResult.setObservation_identifier("CURRENT_REGIMEN");
+                startRegimenResult.setSet_id("");
+                startRegimenResult.setCoding_system("NASCOP_CODES");
+                startRegimenResult.setValue_type("CE");
                 try {
                     artDate = formatter.format(df.parse(startDate));
                 } catch (ParseException e) {
                     //e.printStackTrace();
                 }
-                observationResult.setObservation_value(nascopCode);
-                observationResult.setUnits("");
-                observationResult.setObservation_result_status("F");
-                observationResult.setObservation_datetime(artDate);
-                observationResult.setAbnormal_flags("N");
-                observationResults.add(observationResult);
+                startRegimenResult.setObservation_value(nascopCode);
+                startRegimenResult.setUnits("");
+                startRegimenResult.setObservation_result_status("F");
+                startRegimenResult.setObservation_datetime(artDate);
+                startRegimenResult.setAbnormal_flags("N");
+                observationResults.add(startRegimenResult);
             }
         }
         ilMessage.setObservation_result(observationResults.toArray(new OBSERVATION_RESULT[observationResults.size()]));
