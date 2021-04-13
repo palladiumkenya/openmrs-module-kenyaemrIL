@@ -195,6 +195,48 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
 
     @Override
+    public boolean sendUpdatePersonRequest(ILMessage ilMessage) {
+        boolean isSuccessful;
+        //Message Header
+        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("ADT^A08");
+        ilMessage.setMessage_header(messageHeader);
+        ILPerson ilPerson = ilMessage.extractILRegistration();
+        KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
+        KenyaEMRILMessageArchive kenyaEMRILMessageArchive = new KenyaEMRILMessageArchive();
+
+        try {
+            String messageString = mapper.writeValueAsString(ilPerson);
+            kenyaEMRILMessage.setHl7_type("ADT^A08");
+            kenyaEMRILMessage.setSource("KENYAEMR");
+            kenyaEMRILMessage.setMessage(messageString);
+            kenyaEMRILMessage.setDescription("");
+            kenyaEMRILMessage.setName("");
+            kenyaEMRILMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
+
+            //Archive
+            kenyaEMRILMessageArchive.setHl7_type("ADT^A08");
+            kenyaEMRILMessageArchive.setSource("KENYAEMR");
+            kenyaEMRILMessageArchive.setMessage(messageString);
+            kenyaEMRILMessageArchive.setDescription("");
+            kenyaEMRILMessageArchive.setName("");
+            kenyaEMRILMessageArchive.setMessage_type(ILMessageType.OUTBOUND.getValue());
+
+            KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
+            KenyaEMRILMessageArchive archiveInstance = saveKenyaEMRILMessageArchive(kenyaEMRILMessageArchive);
+            if (savedInstance != null || archiveInstance != null) {
+                isSuccessful = true;
+            } else {
+                isSuccessful = false;
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            isSuccessful = false;
+        }
+        return isSuccessful;
+    }
+
+
+    @Override
     public List<ILPharmacyOrder> fetchAllPharmacyOrders() {
         throw new NotYetImplementedException("Not Yet Implemented");
     }
