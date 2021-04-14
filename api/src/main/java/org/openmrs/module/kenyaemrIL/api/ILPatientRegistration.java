@@ -179,6 +179,7 @@ public class ILPatientRegistration {
         List<OBSERVATION_RESULT> observationResults = new ArrayList<>();
         OBSERVATION_RESULT observationResult = null;
 
+        // TODO: this should be obtained from the scheduled task query
         Encounter hivEnrollmentEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc"));  //hiv enrollment
         Integer HeightConcept = 5090;
         Integer WeightConcept = 5089;
