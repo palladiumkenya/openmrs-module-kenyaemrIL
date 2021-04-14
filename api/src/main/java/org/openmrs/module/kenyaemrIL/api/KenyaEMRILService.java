@@ -61,6 +61,15 @@ public interface KenyaEMRILService extends OpenmrsService {
 
     boolean sendAddPersonRequest(ILMessage ilMessage);
 
+    /**
+     * Prepares registration updates message.
+     * This currently handles only the ART start event.
+     * This is a temporary fix to the registration updates message: ADT^A08
+     * @param ilMessage
+     * @return
+     */
+    boolean sendUpdatePersonRequest(ILMessage ilMessage);
+
 
 
     /*    Pharmacy Orders     - Outgoing  */

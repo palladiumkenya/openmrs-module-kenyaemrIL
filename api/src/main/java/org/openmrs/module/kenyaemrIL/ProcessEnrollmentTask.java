@@ -3,10 +3,12 @@ package org.openmrs.module.kenyaemrIL;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
+import org.openmrs.Form;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
 import org.openmrs.PersonAttribute;
 import org.openmrs.api.EncounterService;
+import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.ILPatientRegistration;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
@@ -52,9 +54,22 @@ public class ProcessEnrollmentTask extends AbstractTask {
         List<EncounterType> encounterTypes = new ArrayList<>();
         encounterTypes.add(encounterTypeEnrollment);
         List<Encounter> pendingEnrollments = fetchPendingEnrollments(encounterTypes, fetchDate);
+        List<Patient> patientsStartedOnArt = getArtInitiations(fetchDate);
         for (Encounter e : pendingEnrollments) {
             Patient p = e.getPatient();
+            // check if the patient is also in the list for updates.
+            if (patientsStartedOnArt != null && patientsStartedOnArt.size() > 0) {
+                if (patientsStartedOnArt.contains(p)) {
+                    patientsStartedOnArt.remove(p);// remove so that a patient message is generated just once
+                }
+            }
             boolean b = registrationEvent(p);
+        }
+
+        if (patientsStartedOnArt != null && patientsStartedOnArt.size() > 0) {
+            for (Patient p : patientsStartedOnArt) {
+                registrationUpdateEvent(p);
+            }
         }
         Date nextProcessingDate = new Date();
         globalPropertyObject.setPropertyValue(formatter.format(nextProcessingDate));
@@ -62,6 +77,12 @@ public class ProcessEnrollmentTask extends AbstractTask {
 
     }
 
+    /**
+     * Fetch new/edited enrollment encounters
+     * @param encounterTypes
+     * @param date
+     * @return
+     */
     private List<Encounter> fetchPendingEnrollments(List<EncounterType> encounterTypes, Date date) {
         // return Context.getEncounterService().getEncounters(null, null, date, null, null, encounterTypes, null, null, null, false);
 
@@ -72,9 +93,9 @@ public class ProcessEnrollmentTask extends AbstractTask {
         q.append("from encounter e inner join " +
                 "( " +
                 " select encounter_type_id, uuid, name from encounter_type where uuid ='de78a6be-bfc5-4634-adc3-5f1a280455cc' " +
-                " ) et on et.encounter_type_id=e.encounter_type ");
-        q.append("where e.date_created >= '" + effectiveDate + "' or e.date_changed >= '" + effectiveDate + "'");
-        q.append(" and e.voided = 0  ");
+                " ) et on et.encounter_type_id = e.encounter_type and e.voided = 0 ");
+        q.append(" group by e.patient_id ");
+        q.append("having min(e.date_created) >= '" + effectiveDate + "' or min(e.date_changed) >= '" + effectiveDate + "'");
 
         List<Encounter> encounters = new ArrayList<>();
         EncounterService encounterService = Context.getEncounterService();
@@ -88,6 +109,36 @@ public class ProcessEnrollmentTask extends AbstractTask {
 
     }
 
+    /**
+     * Gets a list of patients who have had art start events since the last timestamp
+     * @param date last timestamp
+     * @return a list of patients whose initial art initiations are as at the provided timestamp
+     */
+    private List<Patient> getArtInitiations (Date date) {
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        String effectiveDate = sd.format(date);
+        StringBuilder q = new StringBuilder();
+        q.append("select e.patient_id ");
+        q.append("from encounter e inner join " +
+                "( " +
+                " select encounter_type_id, uuid, name from encounter_type where uuid ='7dffc392-13e7-11e9-ab14-d663bd873d93' " +
+                " ) et on et.encounter_type_id=e.encounter_type and e.voided = 0 ");
+        q.append(" group by e.patient_id ");
+        q.append("having min(e.date_created) >= '" + effectiveDate + "'");
+
+
+        List<Patient> patients = new ArrayList<>();
+        PatientService patientService = Context.getPatientService();
+        List<List<Object>> queryData = Context.getAdministrationService().executeSQL(q.toString(), true);
+        for (List<Object> row : queryData) {
+            Integer encounterId = (Integer) row.get(0);
+            Patient p = patientService.getPatient(encounterId);
+            patients.add(p);
+        }
+        return patients;
+    }
+
+
     private boolean registrationEvent(Patient patient) {
         boolean notDuplicate = false;
         PersonAttribute checkDuplicate = patient.getAttribute("IL Patient Source");
@@ -97,6 +148,25 @@ public class ProcessEnrollmentTask extends AbstractTask {
             ILMessage ilMessage = ILPatientRegistration.iLPatientWrapper(patient);
             KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
             service.sendAddPersonRequest(ilMessage);
+            notDuplicate = true;
+        }
+        return notDuplicate;
+    }
+
+    /**
+     * Generates the registration update message
+     * @param patient
+     * @return
+     */
+    private boolean registrationUpdateEvent(Patient patient) {
+        boolean notDuplicate = false;
+        PersonAttribute checkDuplicate = patient.getAttribute("IL Patient Source");
+        if (checkDuplicate != null) {
+            notDuplicate = false;
+        } else{
+            ILMessage ilMessage = ILPatientRegistration.iLPatientWrapper(patient);
+            KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
+            service.sendUpdatePersonRequest(ilMessage);
             notDuplicate = true;
         }
         return notDuplicate;
