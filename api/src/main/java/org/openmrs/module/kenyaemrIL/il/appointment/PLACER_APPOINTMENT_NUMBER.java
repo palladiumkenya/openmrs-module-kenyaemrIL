@@ -10,7 +10,7 @@ public class PLACER_APPOINTMENT_NUMBER {
 
     public PLACER_APPOINTMENT_NUMBER(){
         this.entity = "KENYAEMR";
-        this.number = ""; //TODO: should be set to the obs id
+        this.number = ""; //TODO: should be set to the encounter id
     }
 
     public String getEntity() {
