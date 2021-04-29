@@ -124,6 +124,14 @@
             The maximum batch fetch for processing for inbox and outbox tasks
         </description>
     </globalProperty>
+
+    <globalProperty>
+        <property>kenyaemrIL.viral_load_result_end_point</property>
+        <defaultValue></defaultValue>
+        <description>
+            End point for processing viral load results from the lab
+        </description>
+    </globalProperty>
     <!-- /Internationalization -->
 </module>
 
