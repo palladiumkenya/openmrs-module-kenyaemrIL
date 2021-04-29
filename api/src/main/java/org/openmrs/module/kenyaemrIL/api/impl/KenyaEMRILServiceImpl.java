@@ -15,6 +15,7 @@ package org.openmrs.module.kenyaemrIL.api.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thoughtworks.xstream.core.util.PresortedSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,7 +36,6 @@ import org.openmrs.PersonAttribute;
 import org.openmrs.PersonAttributeType;
 import org.openmrs.PersonName;
 import org.openmrs.Provider;
-import org.openmrs.api.ConceptService;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.OrderService;
 import org.openmrs.api.PatientService;
@@ -73,6 +73,7 @@ import org.openmrs.module.kenyaemrIL.il.pharmacy.OrderMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_DISPENSE;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PLACER_ORDER_NUMBER;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
+import org.openmrs.module.kenyaemrIL.il.utils.ViralLoadProcessorUtil;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 import org.openmrs.module.kenyaemrIL.kenyaemrUtils.Utils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
@@ -171,7 +172,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             kenyaEMRILMessage.setName("");
             kenyaEMRILMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
 
-               //Archive
+            //Archive
             kenyaEMRILMessageArchive.setHl7_type("ADT^A04");
             kenyaEMRILMessageArchive.setSource("KENYAEMR");
             kenyaEMRILMessageArchive.setMessage(messageString);
@@ -360,13 +361,13 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         return this.dao.getKenyaEMRILRegistration(includeRetired);
     }
 
-      @Override
+    @Override
     public boolean processCreatePatientRequest(ILMessage ilMessage, String messsageUUID) {
         boolean successful = false;
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         KenyaEMRILMessage kenyaEMRILMessage = getKenyaEMRILMessageByUuid(messsageUUID);
         try {
-            Patient ilPerson = wrapIlPerson(ilMessage,kenyaEMRILMessage);
+            Patient ilPerson = wrapIlPerson(ilMessage, kenyaEMRILMessage);
             PatientIdentifier uniquePatientNumber = ilPerson.getPatientIdentifier("Unique Patient Number");
             Pattern p = Pattern.compile("^[0-9]{10,11}$");
             String cccNumber = uniquePatientNumber.getIdentifier();
@@ -603,9 +604,9 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 patient = patients.get(0);
                 //Save the dispense
 
-                 DispenseMessage dispenceMessage = ilMessage.extractPharmacyDispenseMessage();
-                 PHARMACY_DISPENSE[] dispenseInformation = dispenceMessage.getDispense_information();
-                 PLACER_ORDER_NUMBER placer_order_number = dispenceMessage.getCommon_Order_Details().getPlacer_order_number();
+                DispenseMessage dispenceMessage = ilMessage.extractPharmacyDispenseMessage();
+                PHARMACY_DISPENSE[] dispenseInformation = dispenceMessage.getDispense_information();
+                PLACER_ORDER_NUMBER placer_order_number = dispenceMessage.getCommon_Order_Details().getPlacer_order_number();
 
                 Encounter appEncounter;
                 OrderService orderService = Context.getOrderService();
@@ -614,7 +615,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 //Fetch all encounters
                 List<EncounterType> encounterTypes = new ArrayList<>();
                 encounterTypes.add(encounterTypeDrugOrder);
-                ArrayList<Order> orderList=new ArrayList<Order>();
+                ArrayList<Order> orderList = new ArrayList<Order>();
 
                 ProviderService providerService = Context.getProviderService();
                 Provider provider = providerService.getProvider(1);        // Added default provider admin
@@ -641,11 +642,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                             e.printStackTrace();
                         }
 
-            DrugOrder drugOrder = (DrugOrder) orderService.getOrder(Integer.parseInt(prescription_number));
-             if (!drugOrder.isActive()) {
-                 kenyaEMRILMessage.setStatus("Completed");
-                 return true;
-             }else{
+                        DrugOrder drugOrder = (DrugOrder) orderService.getOrder(Integer.parseInt(prescription_number));
+                        if (!drugOrder.isActive()) {
+                            kenyaEMRILMessage.setStatus("Completed");
+                            return true;
+                        } else {
                             Encounter encounter = new Encounter();
                             EncounterType encounterType = encounterService.getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3");
                             encounter.setEncounterType(encounterType);
@@ -838,9 +839,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyyMMdd");
         KenyaEMRILMessage kenyaEMRILMessage = getKenyaEMRILMessageByUuid(messsageUUID);
-        ConceptService conceptService = Context.getConceptService();
         PatientService patientService = Context.getPatientService();
-        EncounterService encounterService = Context.getEncounterService();
 //        1. Fetch the person to update using the CCC number
         for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
             if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
@@ -849,12 +848,12 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             }
         }
         if (cccNumber == null) {
-//            no patient with the given ccc number, proceed to create a new patient with the received details
+            // no patient with the given ccc number, proceed to create a new patient with the received details
             kenyaEMRILMessage.setStatus("Missing CCC Number");
             success = false;
         } else {
 
-//            fetch the patient
+            // fetch the patient
             List<Patient> patients = patientService.getPatients(null, cccNumber, allPatientIdentifierTypes, true);
             Patient patient;
             if (patients.size() > 0) {
@@ -863,16 +862,6 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 //Save the viral load results
                 ViralLoadMessage viralLoadMessage = ilMessage.extractViralLoadMessage();
                 VIRAL_LOAD_RESULT[] viralLoadResult = viralLoadMessage.getViral_load_result();
-                //Encounter lastLabResultsEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("17a381d1-7e29-406a-b782-aa903b963c28"));   //last lab results encounter type
-                EncounterType encounterTypeLabResults = encounterService.getEncounterTypeByUuid("e1406e88-e9a9-11e8-9f32-f2801f1b9fd1");
-                //Fetch all lab encounters
-                List<EncounterType> encounterTypes = new ArrayList<>();
-                encounterTypes.add(encounterTypeLabResults);
-
-                Integer vLConcept = 856;
-                Integer LDLQuestionConcept = 1305;
-                Integer LDLAnswerConcept = 1302;
-                Integer ARVConcept = 1085;
 
                 for (VIRAL_LOAD_RESULT labInfo : viralLoadResult) {
                     String dateSampleCollected = labInfo.getDate_sample_collected();
@@ -895,105 +884,27 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
-                        //Select lab encounters on the specific sample collected date
-                        patient_id = patient.getPatientId();
-                        StringBuilder q = new StringBuilder();
-                        q.append("select e.encounter_id, coalesce(o.value_coded, o.value_numeric) as hasResult ");
-                        q.append("from encounter e inner join " +
-                                "( " +
-                                " select encounter_type_id, uuid, name from encounter_type " +
-                                " where uuid ='17a381d1-7e29-406a-b782-aa903b963c28' " +
-                                " ) et on et.encounter_type_id=e.encounter_type " +
-                                " left join obs o on o.encounter_id=e.encounter_id and o.voided=0 and o.concept_id in (856, 1305) ");
-                        q.append("where date(e.encounter_datetime) = date('" + ilSampleCollectedDate + "')  and patient_id = " + patient_id.intValue() );
-                        q.append(" and e.voided = 0 group by e.patient_id  ");
 
-                        List<Encounter> encounters = new ArrayList<>();
-                        List<List<Object>> queryData = Context.getAdministrationService().executeSQL(q.toString(), true);
-                        System.out.println("Sample datetime ==> "+ilSampleCollectedDate);
-                        if (queryData.size() > 0) {
-                            System.out.println("Duplicate in query Data ==> "+queryData.size());
-                            for (List<Object> row : queryData) {
-                                Integer encounterId = (Integer) row.get(0);
-                                Integer vlAnswerConcept = (Integer) row.get(1);
-                                if (vlAnswerConcept != null) {
-                                    kenyaEMRILMessage.setStatus("Duplicate vl exists");
-                                    System.out.println("Duplicate vl exists ");
-                                    success = false;
-                                    continue;
-                                } else {
+                        isLDL = vlResult.toLowerCase().contains("ldl");
+                        if (isLDL) {
+                            vlResult = "ldl";
+                        }
 
-                                    Encounter labEncounter = encounterService.getEncounter(encounterId);
-                                    Obs o = new Obs();
-                                    o.setComment(dateSampleCollected + "" + dateSampleTested + "" + sampleType + "" + sampleRejection + "" + justification + "" + regimen + "" + labTested);
-                                    isLDL = vlResult.toLowerCase().contains("ldl");
-                                    if (!isLDL && !vlResult.trim().equals("")) {
-                                        o.setConcept(conceptService.getConcept(vLConcept));       //add viral load concept
-                                        String vlStr = vlResult.replaceAll("\\D", "");
-                                        double viralResultNumeric = Double.parseDouble(vlStr.equals("") ? "0" : vlStr);
-                                        o.setValueNumeric(viralResultNumeric);
-                                    } else {
-                                        o.setConcept(Context.getConceptService().getConcept(LDLQuestionConcept));       //add ldl concept
-                                        o.setValueCoded(Context.getConceptService().getConcept(LDLAnswerConcept));
-                                    }
-                                    o.setDateCreated(new Date());
-                                    o.setCreator(Context.getUserService().getUser(1));
-                                    o.setLocation(labEncounter.getLocation());
-                                    try {
-                                        o.setObsDatetime(dateFormatter.parse(labInfo.getDate_sample_collected()));
-                                    } catch (ParseException e) {
-                                        e.printStackTrace();
-                                    }
-                                    o.setPerson(patient);
-                                    labEncounter.addObs(o);
-                                    encounterService.saveEncounter(labEncounter);
-                                    kenyaEMRILMessage.setStatus("Success");
-                                    success = true;
+                        try {
+                            // initiate a POST request here
+                            ObjectNode msg = ViralLoadProcessorUtil.getJsonNodeFactory().objectNode();
+                            msg.put("patientId", patient.getPatientId().intValue());
+                            msg.put("orderDate", new SimpleDateFormat("yyyy-MM-dd").format(ilSampleCollectedDate));
+                            msg.put("result", vlResult);
 
-                                }
-                            }
-
-                        } else {
-
-                            //Define new encountetr
-                            Encounter enc = new Encounter();
-                            Location location = Utils.getDefaultLocation();
-                            enc.setLocation(location);
-                            enc.setEncounterType(Context.getEncounterService().getEncounterTypeByUuid("17a381d1-7e29-406a-b782-aa903b963c28"));
-                            enc.setEncounterDatetime(new Date());
-                            enc.setPatient(patient);
-                            enc.addProvider(Context.getEncounterService().getEncounterRole(1), Context.getProviderService().getProvider(1));
-                            enc.setForm(Context.getFormService().getFormByUuid("7e603909-9ed5-4d0c-a688-26ecb05d8b6e"));   //lab results form
-
-                            Obs o = new Obs();
-                            o.setComment(dateSampleCollected + "" + dateSampleTested + "" + sampleType + "" + sampleRejection + "" + justification + "" + regimen + "" + labTested);
-
-                            isLDL = vlResult.toLowerCase().contains("ldl");
-                            if (!isLDL && !vlResult.trim().equals("")) {
-                                o.setConcept(Context.getConceptService().getConcept(vLConcept));       //add viral load concept
-                                String vlStr = vlResult.replaceAll("\\D", "");
-                                System.out.println("vlStr: " + vlStr);
-                                double viralResultNumeric = Double.parseDouble(vlStr.equals("") ? "0" : vlStr);
-                                o.setValueNumeric(viralResultNumeric);
-                            } else {
-                                o.setConcept(Context.getConceptService().getConcept(LDLQuestionConcept));       //add ldl concept
-                                o.setValueCoded(Context.getConceptService().getConcept(LDLAnswerConcept));
-                            }
-
-                            o.setDateCreated(new Date());
-                            o.setCreator(Context.getUserService().getUser(1));
-                            o.setLocation(enc.getLocation());
-                            try {
-                                o.setObsDatetime(dateFormatter.parse(labInfo.getDate_sample_collected()));
-                            } catch (ParseException e) {
-                                e.printStackTrace();
-                            }
-                            o.setPerson(patient);
-
-                            enc.addObs(o);
-                            Context.getEncounterService().saveEncounter(enc);
+                            ViralLoadProcessorUtil.restEndPointForLabResult(msg.toString());
+                            //ViralLoadProcessorUtil.updateOrder(patient, ilSampleCollectedDate, vlResult);// will be enabled once the direct method is resolved at core level
                             kenyaEMRILMessage.setStatus("Success");
                             success = true;
+                        } catch (Exception e) {
+                            kenyaEMRILMessage.setStatus("An error occured while updating results. " + e.getMessage());
+                            success = false;
+                            e.printStackTrace();
                         }
                     }
                 }
@@ -1001,7 +912,6 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 kenyaEMRILMessage.setStatus("Could not find a match");
                 success = false;
             }
-
         }
 
         return success;
@@ -1131,7 +1041,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             kenyaEMRILMessage.setDescription("");
             kenyaEMRILMessage.setName("");
             kenyaEMRILMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
-             //Archive
+            //Archive
             kenyaEMRILMessageArchive.setHl7_type("RDE^001");
             kenyaEMRILMessageArchive.setSource("KENYAEMR");
             kenyaEMRILMessageArchive.setMessage(messageString);
@@ -1154,7 +1064,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         return isSuccessful;
     }
 
-    private Patient wrapIlPerson(ILMessage ilPerson,KenyaEMRILMessage kenyaEMRILMessage) {
+    private Patient wrapIlPerson(ILMessage ilPerson, KenyaEMRILMessage kenyaEMRILMessage) {
 
         Patient patient = new Patient();
         Location defaultLocation = kenyaEmrService.getDefaultLocation();
