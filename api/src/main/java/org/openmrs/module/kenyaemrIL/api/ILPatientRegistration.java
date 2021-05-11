@@ -387,9 +387,10 @@ public class ILPatientRegistration {
             }
         }
 
-        // pull the first regimen from regimen events
+        // pull the first and the last regimen from regimen events
 
         Encounter initialRegimenEncounter = RegimenMappingUtils.getFirstEncounterForProgram(patient, "ARV");
+        Encounter currentRegimenEncounter = RegimenMappingUtils.getLastEncounterForProgram(patient, "ARV");
 
         if (initialRegimenEncounter != null) {
             SimpleObject regimenDetails = RegimenMappingUtils.buildRegimenChangeObject(initialRegimenEncounter.getObs(), initialRegimenEncounter);
@@ -409,7 +410,7 @@ public class ILPatientRegistration {
 
             if (StringUtils.isNotBlank(nascopCode) && StringUtils.isNotBlank(startDate)) {
                 OBSERVATION_RESULT startRegimenResult = new OBSERVATION_RESULT();
-                startRegimenResult.setObservation_identifier("CURRENT_REGIMEN");
+                startRegimenResult.setObservation_identifier("START_REGIMEN");
                 startRegimenResult.setSet_id("");
                 startRegimenResult.setCoding_system("NASCOP_CODES");
                 startRegimenResult.setValue_type("CE");
@@ -426,6 +427,43 @@ public class ILPatientRegistration {
                 observationResults.add(startRegimenResult);
             }
         }
+
+        if (currentRegimenEncounter != null) {
+            SimpleObject regimenDetails = RegimenMappingUtils.buildRegimenChangeObject(currentRegimenEncounter.getObs(), currentRegimenEncounter);
+            String regimenName = (String) regimenDetails.get("regimenShortDisplay");
+            String regimenLine = (String) regimenDetails.get("regimenLine");
+            String startDate = (String) regimenDetails.get("startDate");
+            String artDate = "";
+            String nascopCode = "";
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+            if (StringUtils.isNotBlank(regimenName)) {
+                nascopCode = RegimenMappingUtils.getDrugNascopCodeByDrugNameAndRegimenLine(regimenName, regimenLine);
+            }
+
+            if (StringUtils.isBlank(nascopCode) && StringUtils.isNotBlank(regimenLine)) {
+                nascopCode = RegimenMappingUtils.getNonStandardCodeFromRegimenLine(regimenLine);
+            }
+
+            if (StringUtils.isNotBlank(nascopCode) && StringUtils.isNotBlank(startDate)) {
+                OBSERVATION_RESULT currentRegimenResult = new OBSERVATION_RESULT();
+                currentRegimenResult.setObservation_identifier("CURRENT_REGIMEN");
+                currentRegimenResult.setSet_id("");
+                currentRegimenResult.setCoding_system("NASCOP_CODES");
+                currentRegimenResult.setValue_type("CE");
+                try {
+                    artDate = formatter.format(df.parse(startDate));
+                } catch (ParseException e) {
+                    //e.printStackTrace();
+                }
+                currentRegimenResult.setObservation_value(nascopCode);
+                currentRegimenResult.setUnits("");
+                currentRegimenResult.setObservation_result_status("F");
+                currentRegimenResult.setObservation_datetime(artDate);
+                currentRegimenResult.setAbnormal_flags("N");
+                observationResults.add(currentRegimenResult);
+            }
+        }
+
         ilMessage.setObservation_result(observationResults.toArray(new OBSERVATION_RESULT[observationResults.size()]));
         return ilMessage;
     }
