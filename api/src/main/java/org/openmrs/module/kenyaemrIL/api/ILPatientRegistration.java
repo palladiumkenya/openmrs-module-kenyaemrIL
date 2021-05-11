@@ -323,6 +323,7 @@ public class ILPatientRegistration {
             if (adtEntryPoint != null) {
                 patientVisit.setPatient_source(adtEntryPoint);
             }
+            patientVisit.setPatient_type("ART");
         } else { //TODO: confirm if this block is necessary. The object constructor seems to do the same thing
             patientVisit.setVisit_date("");
             patientVisit.setHiv_care_enrollment_date("");
