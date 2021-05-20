@@ -197,6 +197,7 @@ public class ILPatientRegistration {
         Integer patientEntryPointConcept = 160540;
         boolean hasStartWeight = false;
         boolean hasStartHeight = false;
+        boolean hasArtStart = false;
         Date hivEnrollmentDate = null;
 
         //Enrollment encounter
@@ -269,6 +270,7 @@ public class ILPatientRegistration {
                     observationResult.setObservation_datetime(ts);
                     observationResult.setAbnormal_flags("N");
                     observationResults.add(observationResult);
+                    hasArtStart = true;
                 } else if (obs.getConcept().getConceptId().equals(WhoStageConcept)) {                      //  start who stage
                     observationResult.setObservation_identifier("WHO_STAGE");
                     observationResult.setSet_id("");
@@ -428,6 +430,40 @@ public class ILPatientRegistration {
                 observationResults.add(startRegimenResult);
             }
         }
+
+        if (!hasArtStart && initialRegimenEncounter != null) {
+            try {
+                SimpleObject regimenDetails = RegimenMappingUtils.buildRegimenChangeObject(initialRegimenEncounter.getObs(), initialRegimenEncounter);
+                if (regimenDetails != null) {
+                    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+                    String startDate = (String) regimenDetails.get("startDate");
+                    String artDate = "";
+                    try {
+                        artDate = formatter.format(df.parse(startDate));
+                    } catch (ParseException e) {
+                        //e.printStackTrace();
+                    }
+                    // compose observation object
+                    OBSERVATION_RESULT artStartDateResult = new OBSERVATION_RESULT();
+                    // -----------------------
+                    artStartDateResult.setObservation_identifier("ART_START");
+                    artStartDateResult.setSet_id("");
+                    artStartDateResult.setCoding_system("");
+                    artStartDateResult.setValue_type("DT");
+                    artStartDateResult.setObservation_value(artDate);
+                    artStartDateResult.setUnits("");
+                    artStartDateResult.setObservation_result_status("F");
+                    String ts = formatter.format(initialRegimenEncounter.getEncounterDatetime());
+                    artStartDateResult.setObservation_datetime(ts);
+                    artStartDateResult.setAbnormal_flags("N");
+                    observationResults.add(artStartDateResult);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+
 
         if (currentRegimenEncounter != null) {
             SimpleObject regimenDetails = RegimenMappingUtils.buildRegimenChangeObject(currentRegimenEncounter.getObs(), currentRegimenEncounter);
