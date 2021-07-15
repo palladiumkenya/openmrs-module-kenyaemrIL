@@ -30,7 +30,7 @@
 
 
         <property name="message" type="java.lang.String"
-                  column="message" not-null="true" length="2048"/>
+                  column="message" not-null="true" length="4000"/>
 
         <many-to-one name="creator" class="org.openmrs.User" not-null="true">
             <column name="creator"/>
