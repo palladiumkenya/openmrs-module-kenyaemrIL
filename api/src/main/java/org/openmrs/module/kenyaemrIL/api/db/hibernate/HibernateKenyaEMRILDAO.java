@@ -131,6 +131,7 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     public KenyaEMRILRegistration getKenyaEMRILRegistrationForPatient(Patient patient) {
         Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILRegistration.class);
         crit.add(Restrictions.eq("patient_id", patient.getPatientId()));
+        crit.setMaxResults(1);
         KenyaEMRILRegistration KenyaEMRILRegistration = (KenyaEMRILRegistration) crit.uniqueResult();
         return KenyaEMRILRegistration;
     }
