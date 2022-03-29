@@ -136,9 +136,9 @@ public class ILPrescriptionMessage {
                 if (StringUtils.isBlank(placerOrderNumber.getNumber() )) {
                     placerOrderNumber.setNumber(groupOrderNumber);
                     commonOrderDetails.setPlacer_order_number(placerOrderNumber);
-                    orderingPhysician.setFirst_name(drugOrder.getOrderer().getPerson().getGivenName());
-                    orderingPhysician.setMiddle_name(drugOrder.getOrderer().getPerson().getMiddleName());
-                    orderingPhysician.setLast_name(drugOrder.getOrderer().getPerson().getFamilyName());
+                    orderingPhysician.setFirst_name(drugOrder.getOrderer().getPerson().getGivenName() != null ? drugOrder.getOrderer().getPerson().getGivenName() : "");
+                    orderingPhysician.setMiddle_name(drugOrder.getOrderer().getPerson().getMiddleName() != null ? drugOrder.getOrderer().getPerson().getMiddleName() : "");
+                    orderingPhysician.setLast_name(drugOrder.getOrderer().getPerson().getFamilyName() != null ? drugOrder.getOrderer().getPerson().getFamilyName() : "");
                     commonOrderDetails.setOrdering_physician(orderingPhysician);
 
                 }
@@ -200,9 +200,9 @@ public class ILPrescriptionMessage {
                 if (StringUtils.isBlank(placerOrderNumber.getNumber() )) {
                     placerOrderNumber.setNumber(groupOrderNumber);
                     commonOrderDetails.setPlacer_order_number(placerOrderNumber);
-                    orderingPhysician.setFirst_name(drugOrder.getOrderer().getPerson().getGivenName());
-                    orderingPhysician.setMiddle_name(drugOrder.getOrderer().getPerson().getMiddleName());
-                    orderingPhysician.setLast_name(drugOrder.getOrderer().getPerson().getFamilyName());
+                    orderingPhysician.setFirst_name(drugOrder.getOrderer().getPerson().getGivenName() != null ? drugOrder.getOrderer().getPerson().getGivenName() : "");
+                    orderingPhysician.setMiddle_name(drugOrder.getOrderer().getPerson().getMiddleName() != null ? drugOrder.getOrderer().getPerson().getMiddleName() : "");
+                    orderingPhysician.setLast_name(drugOrder.getOrderer().getPerson().getFamilyName() != null ? drugOrder.getOrderer().getPerson().getFamilyName() : "");
                     commonOrderDetails.setOrdering_physician(orderingPhysician);
                 }
 
