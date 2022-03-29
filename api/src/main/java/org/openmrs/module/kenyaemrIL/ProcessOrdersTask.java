@@ -1,15 +1,11 @@
 package org.openmrs.module.kenyaemrIL;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
 import org.openmrs.Encounter;
-import org.openmrs.EncounterType;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.kenyaemrIL.api.ILPatientUnsolicitedObservationResults;
 import org.openmrs.module.kenyaemrIL.api.ILPrescriptionMessage;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
@@ -18,7 +14,6 @@ import org.openmrs.scheduler.tasks.AbstractTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -90,7 +85,6 @@ public class ProcessOrdersTask extends AbstractTask {
             Encounter e = encounterService.getEncounter(encounterId);
             encounters.add(e);
         }
-        System.out.println("No of drug encounters found: " + encounters.size());
         return encounters;
 
     }
