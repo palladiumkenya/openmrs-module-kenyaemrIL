@@ -262,7 +262,6 @@ public class InteropManagerFragmentController {
             Encounter e = encounterService.getEncounter(encounterId);
             encounters.add(e);
         }
-        System.out.println("No of drug encounters found: " + encounters.size());
 
         ILMessage ilMessage = ILPrescriptionMessage.generatePrescriptionMessage(patient, encounters);
         service.logPharmacyOrders(ilMessage);
