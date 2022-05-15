@@ -15,15 +15,19 @@
         "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
 <hibernate-mapping package="org.openmrs.module.kenyaemrIL.il">
 
-    <class name="org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage" table="il_message">
+    <class name="org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration" table="il_registration">
 
         <id name="message_id" type="int" column="message_id" unsaved-value="0">
             <generator class="native">
-                <param name="sequence">il_registration_message_id_seq</param>
+                <param name="sequence">il_message_message_id_seq</param>
             </generator>
         </id>
 
         <discriminator column="message_id" insert="false"/>
+
+        <property name="patient_id" type="int" column="patient_id"
+                  length="1" not-null="true"/>
+
 
         <property name="message" type="java.lang.String"
                   column="message" not-null="true" length="4000"/>

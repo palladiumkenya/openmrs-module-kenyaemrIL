@@ -13,8 +13,12 @@
  */
 package org.openmrs.module.kenyaemrIL.api.db;
 
+import org.openmrs.Patient;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 
 import java.util.List;
 
@@ -39,4 +43,24 @@ public interface KenyaEMRILDAO {
     List<KenyaEMRILMessage> getAllKenyaEMRILMessages(Boolean includeAll);
 
     List<KenyaEMRILMessage> getKenyaEMRILStatus(String status);
+
+    // Adding kenyaILMessageArchive
+    KenyaEMRILMessageArchive createKenyaEMRILMessageArchive(KenyaEMRILMessageArchive kenyaEMRILMessageArchive);
+
+    // Adding kenyaILMessageErrorQueue
+    KenyaEMRILMessageErrorQueue createKenyaEMRILMessageErrorQueue(KenyaEMRILMessageErrorQueue kenyaEMRILMessageErrorQueue);
+
+    // Adding kenyaemrILRegistrations
+
+    KenyaEMRILRegistration getKenyaEMRILRegistrationByUuid(String uniqueId);
+
+    KenyaEMRILRegistration getKenyaEMRILRegistrationForPatient(Patient patient);
+
+    KenyaEMRILRegistration createKenyaEMRILRegistration(KenyaEMRILRegistration kenyaEMRILRegistration);
+
+    List<KenyaEMRILRegistration> getKenyaEMRILRegistration(Boolean includeRetired);
+
+    List<KenyaEMRILRegistration> getAllKenyaEMRILRegistration(Boolean includeAll);
+
+    List<KenyaEMRILRegistration> getKenyaEMRILRegistrationStatus(String status);
 }

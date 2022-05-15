@@ -1,18 +1,33 @@
 package org.openmrs.module.kenyaemrIL.fragment.controller;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.hibernate.Transaction;
 import org.hibernate.jdbc.Work;
 import org.json.JSONObject;
+import org.openmrs.Encounter;
 import org.openmrs.Patient;
+import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.db.hibernate.DbSessionFactory;
+import org.openmrs.module.kenyaemrIL.api.ILMessageType;
+import org.openmrs.module.kenyaemrIL.api.ILPatientRegistration;
+import org.openmrs.module.kenyaemrIL.api.ILPrescriptionMessage;
+import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
+import org.openmrs.module.kenyaemrIL.il.ILMessage;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.ui.framework.UiUtils;
 import org.openmrs.ui.framework.fragment.FragmentModel;
+import org.openmrs.util.PrivilegeConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.annotation.RequestParam;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,12 +35,13 @@ import java.util.List;
  * controller for pivotTableCharts fragment
  */
 public class InteropManagerFragmentController {
-    private final Log log = LogFactory.getLog(getClass());
+       // Logger
+    private static final Logger log = LoggerFactory.getLogger(InteropManagerFragmentController.class);
 
     public void controller(FragmentModel model){
         DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
 
-        final String sqlSelectQuery = "SELECT date_created, hl7_type, source, retired, status FROM openmrs.il_message order by date_created desc limit 10;";
+        final String sqlSelectQuery = "SELECT date_created, hl7_type, source, retired, status FROM il_message order by date_created desc limit 10;";
         final List<SimpleObject> ret = new ArrayList<SimpleObject>();
 
         try {
@@ -83,7 +99,7 @@ public class InteropManagerFragmentController {
 
         DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
 
-        final String sqlSelectQuery = "SELECT date_created, hl7_type, source, retired, status FROM openmrs.il_message order by date_created desc limit 10;";
+        final String sqlSelectQuery = "SELECT date_created, hl7_type, source, retired, status FROM il_message order by date_created desc limit 10;";
         final List<SimpleObject> ret = new ArrayList<SimpleObject>();
         Transaction tx = null;
         try {
@@ -139,7 +155,7 @@ public class InteropManagerFragmentController {
 
         DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
 
-        final String sqlSelectQuery = "SELECT date_created, hl7_type, source, retired, status FROM openmrs.il_message where message_type = 1 and status <> 'Success' order by date_created desc limit 10;";
+        final String sqlSelectQuery = "SELECT date_created, hl7_type, source, retired, status FROM il_message_error_queue order by date_created desc limit 10;";
         final List<SimpleObject> ret = new ArrayList<SimpleObject>();
         Transaction tx = null;
         try {
@@ -187,6 +203,70 @@ public class InteropManagerFragmentController {
         catch (Exception e) {
             throw new IllegalArgumentException("Unable to execute query", e);
         }
+
+        return ret;
+    }
+
+    public SimpleObject postPrescriptionMessage(@RequestParam(value = "patient") Patient patient, UiUtils ui) {
+        Context.addProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
+        SimpleObject ret = SimpleObject.create("status", "Successful");
+        ObjectMapper mapper = new ObjectMapper();
+
+        boolean isSuccessful = false;
+        KenyaEMRILRegistration kenyaEMRILRegistration = new KenyaEMRILRegistration();
+        KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
+        KenyaEMRILRegistration registered = service.getKenyaEMRILRegistrationForPatient(patient);
+       try{
+            if (registered == null) { // check if registration for patient has never been sent to IL
+                    //Send to  registration message to outbox
+                ILMessage ilMessage = ILPatientRegistration.iLPatientWrapper(patient);
+                service.sendAddPersonRequest(ilMessage);
+
+                   // Save copy to il_registration table
+                    String messageString = mapper.writeValueAsString(ilMessage);
+                    kenyaEMRILRegistration.setPatient_id(patient.getPatientId());
+                    kenyaEMRILRegistration.setHl7_type("ADT^A04");
+                    kenyaEMRILRegistration.setSource("KENYAEMR");
+                    kenyaEMRILRegistration.setMessage(messageString);
+                    kenyaEMRILRegistration.setDescription("");
+                    kenyaEMRILRegistration.setName("");
+                    kenyaEMRILRegistration.setMessage_type(ILMessageType.OUTBOUND.getValue());
+                    KenyaEMRILRegistration savedInstance = service.saveKenyaEMRILRegistration(kenyaEMRILRegistration);
+                            if (savedInstance != null) {
+                                isSuccessful = true;
+                            } else {
+                                isSuccessful = false;
+                            }
+                log.info("Executing new enrollment " + isSuccessful);
+               }
+
+            } catch (Exception e) {
+               e.printStackTrace();
+           }
+
+        StringBuilder q = new StringBuilder();
+        q.append("select e.encounter_id ");
+        q.append("from encounter e inner join " +
+                "( " +
+                " select encounter_type_id, uuid, name from encounter_type where uuid ='7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3' " +
+                " ) et on et.encounter_type_id=e.encounter_type " +
+                " inner join orders o on o.encounter_id=e.encounter_id and o.voided=0 and o.order_action='NEW' and o.date_stopped is null " );
+        q.append("where e.patient_id = " + patient.getPatientId() + " ");
+        q.append(" and e.voided = 0 group by e.encounter_id ");
+
+        List<Encounter> encounters = new ArrayList<Encounter>();
+        EncounterService encounterService = Context.getEncounterService();
+        List<List<Object>> queryData = Context.getAdministrationService().executeSQL(q.toString(), true);
+        for (List<Object> row : queryData) {
+            Integer encounterId = (Integer) row.get(0);
+            Encounter e = encounterService.getEncounter(encounterId);
+            encounters.add(e);
+        }
+
+        ILMessage ilMessage = ILPrescriptionMessage.generatePrescriptionMessage(patient, encounters);
+        service.logPharmacyOrders(ilMessage);
+
+        Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
 
         return ret;
     }

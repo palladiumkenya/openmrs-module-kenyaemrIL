@@ -4,9 +4,9 @@ package org.openmrs.module.kenyaemrIL.il.pharmacy;
  * @author Stanslaus Odhiambo
  *         Created on 21/11/2017.
  */
-public class FillerOrderNumber {
-    private String entity;
-    private String number;
+public class FILLER_ORDER_NUMBER {
+    private String entity = "";
+    private String number = "";
 
     public String getEntity() {
         return entity;

@@ -13,9 +13,13 @@
  */
 package org.openmrs.module.kenyaemrIL.api;
 
+import org.openmrs.Patient;
 import org.openmrs.api.OpenmrsService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +60,15 @@ public interface KenyaEMRILService extends OpenmrsService {
     boolean sendUpdateRequest(ILMessage ilMessage);
 
     boolean sendAddPersonRequest(ILMessage ilMessage);
+
+    /**
+     * Prepares registration updates message.
+     * This currently handles only the ART start event.
+     * This is a temporary fix to the registration updates message: ADT^A08
+     * @param ilMessage
+     * @return
+     */
+    boolean sendUpdatePersonRequest(ILMessage ilMessage);
 
 
 
@@ -98,6 +111,25 @@ public interface KenyaEMRILService extends OpenmrsService {
 
     List<KenyaEMRILMessage> getKenyaEMRILStatus(String status);
 
+    // Adding KenyaemrILMessageArchive
+    KenyaEMRILMessageArchive saveKenyaEMRILMessageArchive(KenyaEMRILMessageArchive kenyaEMRILMessageArchive);
+
+    // Adding KenyaemrILMessageErrorQueue
+    KenyaEMRILMessageErrorQueue saveKenyaEMRILMessageErrorQueue(KenyaEMRILMessageErrorQueue kenyaEMRILMessageErrorQueue);
+
+    //Adding KenyaemrRegistrations
+    KenyaEMRILRegistration getKenyaEMRILRegistrationByUuid(String uniqueId);
+
+    KenyaEMRILRegistration getKenyaEMRILRegistrationForPatient(Patient patient);
+
+    KenyaEMRILRegistration saveKenyaEMRILRegistration(KenyaEMRILRegistration kenyaEMRILRegistration);
+
+    List<KenyaEMRILRegistration> getKenyaEMRILRegistration(Boolean includeRetired);
+
+   // List<KenyaEMRILRegistration> getAllKenyaEMRILRegistration(Boolean includeAll);
+
+  //  List<KenyaEMRILRegistration> getKenyaEMRILRegistrationStatus(String status);
+
 
 
 
@@ -112,9 +144,9 @@ public interface KenyaEMRILService extends OpenmrsService {
 
     boolean processUpdatePatientRequest(ILMessage ilMessage,  String messsageUUID);
 
-    boolean processPharmacyOrder(ILMessage ilMessage);
+    boolean processPharmacyOrder(ILMessage ilMessage,  String messsageUUID);
 
-    boolean processPharmacyDispense(ILMessage ilMessage);
+    boolean processPharmacyDispense(ILMessage ilMessage,  String messsageUUID);
 
     boolean processAppointmentSchedule(ILMessage ilMessage,String messsageUUID);
 
@@ -149,4 +181,11 @@ public interface KenyaEMRILService extends OpenmrsService {
      * @return true or false - depending on the processing outcome
      */
     boolean logORUs(ILMessage ilMessage);
+
+    /**
+     *
+     * @param ilMessage -  the message to populate and send
+     * @return true or false - depending on the processing outcome
+     */
+    boolean logPharmacyOrders(ILMessage ilMessage);
 }

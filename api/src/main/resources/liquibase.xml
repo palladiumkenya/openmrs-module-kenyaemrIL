@@ -154,4 +154,165 @@
             <column name="uuid" value="e31bf937-6550-438a-82ed-f5b1a4bc167e" />
         </insert>
     </changeSet>
+
+    <!--Adding scheduled task :Set the Orders task-->
+    <changeSet id="${project.parent.artifactId}-20201102-1544" author="makombe">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.ProcessOrdersTask'
+                And name = 'Process Order Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Inserting Process Order Task into 'schedule_task_config' table</comment>
+        <insert tableName="scheduler_task_config">
+            <column name="name" value="Process Order Task" />
+            <column name="description" value="Periodically Process Orders Task" />
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.ProcessOrdersTask" />
+            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
+            <column name="start_time" valueDate="2020-11-02T23:59:59" />
+            <column name="repeat_interval" value="7200" />
+            <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="1" />
+            <column name="started" value="0" />
+            <column name="uuid" value="f38474a0-1de5-11eb-adc1-0242ac120002" />
+        </insert>
+    </changeSet>
+
+    <changeSet id="${project.parent.artifactId}-20210118-1048" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="il_registration" /></not>
+        </preConditions>
+        <comment>
+            Create table for il registration messages
+        </comment>
+        <createTable tableName="il_registration">
+            <column name="message_id" autoIncrement="true" type="int">
+                <constraints nullable="false" primaryKey="true" />
+            </column>
+            <column name="patient_id" type="int"></column>
+            <column name="message" type="text"></column>
+            <column name="creator" type="int"></column>
+            <column name="message_type" type="int"></column>
+            <column name="hl7_type" type="varchar(20)"></column>
+            <column name="retired" type="int"></column>
+            <column name="status" type="varchar(100)" defaultValue="Success" ></column>
+            <column name="source" type="varchar(50)" ></column>
+            <column name="date_created" type="datetime"></column>
+            <column name="uuid" type="varchar(38)"></column>
+        </createTable>
+        <modifySql dbms="mysql">
+            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_unicode_ci"/>
+        </modifySql>
+    </changeSet>
+
+    <changeSet id="${project.parent.artifactId}-20210119-1138" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="il_message_archive" /></not>
+        </preConditions>
+        <comment>
+            Create table for il messages archive
+        </comment>
+        <createTable tableName="il_message_archive">
+            <column name="message_id" autoIncrement="true" type="int">
+                <constraints nullable="false" primaryKey="true" />
+            </column>
+            <column name="message" type="text"></column>
+            <column name="creator" type="int"></column>
+            <column name="message_type" type="int"></column>
+            <column name="hl7_type" type="varchar(20)"></column>
+            <column name="retired" type="int"></column>
+            <column name="status" type="varchar(100)" defaultValue="Success" ></column>
+            <column name="source" type="varchar(50)" ></column>
+            <column name="date_created" type="datetime"></column>
+            <column name="uuid" type="varchar(38)"></column>
+        </createTable>
+        <modifySql dbms="mysql">
+            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_unicode_ci"/>
+        </modifySql>
+    </changeSet>
+
+    <changeSet id="${project.parent.artifactId}-20210120-0946" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="il_message_error_queue" /></not>
+        </preConditions>
+        <comment>
+            Create table for il messages error queue
+        </comment>
+        <createTable tableName="il_message_error_queue">
+            <column name="message_id" autoIncrement="true" type="int">
+                <constraints nullable="false" primaryKey="true" />
+            </column>
+            <column name="message" type="text"></column>
+            <column name="creator" type="int"></column>
+            <column name="message_type" type="int"></column>
+            <column name="hl7_type" type="varchar(20)"></column>
+            <column name="retired" type="int"></column>
+            <column name="status" type="varchar(100)" defaultValue="Success" ></column>
+            <column name="source" type="varchar(50)" ></column>
+            <column name="date_created" type="datetime"></column>
+            <column name="uuid" type="varchar(38)"></column>
+        </createTable>
+        <modifySql dbms="mysql">
+            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_unicode_ci"/>
+        </modifySql>
+    </changeSet>
+
+    <changeSet id="${project.parent.artifactId}-20210121-1144" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="il_message_error_queue" columnName="status"/>
+            </and>
+        </preConditions>
+        <comment>
+            Drop status field for update
+        </comment>
+        <dropColumn columnName="status" tableName="il_message_error_queue"/>
+    </changeSet>
+
+    <changeSet id="${project.parent.artifactId}-20210121-1152" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+               <not>
+                    <columnExists tableName="il_message_error_queue" columnName="status"/>
+                </not>
+        </preConditions>
+        <comment>
+            Add back dropped status field for logging error description
+        </comment>
+        <addColumn tableName="il_message_error_queue">
+            <column name="status" type="varchar(255)"> <constraints nullable="true"/> </column>
+        </addColumn>
+    </changeSet>
+
+    <!--Removing scheduled process Orders task-->
+    <changeSet id="${project.parent.artifactId}-20210122-1030" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.ProcessOrdersTask'
+                And name = 'Process Order Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Deleting Process Order Task into 'schedule_task_config' table</comment>
+        <delete tableName="scheduler_task_config">
+            <where>name='Process Order Task'</where>
+        </delete>
+    </changeSet>
+
+    <!--Removing scheduled process ORU task-->
+    <changeSet id="${project.parent.artifactId}-20210122-1052" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.ProcessORUsTask'
+                And name = 'Process ORU Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Deleting Process ORU Task into 'schedule_task_config' table</comment>
+        <delete tableName="scheduler_task_config">
+            <where>name='Process ORU Task'</where>
+        </delete>
+    </changeSet>
+
 </databaseChangeLog>

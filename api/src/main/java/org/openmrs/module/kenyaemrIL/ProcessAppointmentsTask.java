@@ -35,8 +35,7 @@ public class ProcessAppointmentsTask extends AbstractTask {
     public void execute() {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         log.info("Executing appointments task at " + new Date());
-//        Fetch greencard encounter
-//        Fetch the last date of fetch
+
         Date fetchDate = null;
         GlobalProperty globalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("appointmentTask.lastFetchDateAndTime");
 
@@ -50,13 +49,11 @@ public class ProcessAppointmentsTask extends AbstractTask {
         //Fetch all encounters
         List<EncounterType> encounterTypes = new ArrayList<>();
         encounterTypes.add(encounterTypeGreencard);
-        System.out.println("Encounter types"+encounterTypes);
-        System.out.println("FetchDate"+fetchDate);
         List<Encounter> pendingAppointments = fetchPendingAppointments(encounterTypes, fetchDate);
-        System.out.println("Fetched GC appointment encounters"+pendingAppointments);
+
         for (Encounter e : pendingAppointments) {
             Patient p = e.getPatient();
-            boolean b = appointmentsEvent(p);
+            boolean b = appointmentsEvent(p, e);
         }
         Date nextProcessingDate = new Date();
         globalPropertyObject.setPropertyValue(formatter.format(nextProcessingDate));
@@ -72,11 +69,11 @@ public class ProcessAppointmentsTask extends AbstractTask {
         q.append("select e.encounter_id ");
         q.append("from encounter e inner join " +
                 "( " +
-                " select encounter_type_id, uuid, name from encounter_type where uuid ='a0034eee-1940-4e35-847f-97537a35d05e' " +
-                " ) et on et.encounter_type_id=e.encounter_type " +
-                " inner join obs o on o.encounter_id=e.encounter_id and o.voided=0 " +
-                " and o.concept_id=5096 ");
-        q.append("where e.date_created >= '" + effectiveDate + "' or e.date_changed >= '" + effectiveDate + "'");
+                " select encounter_type_id, uuid, name from encounter_type where uuid = 'a0034eee-1940-4e35-847f-97537a35d05e' " +
+                " ) et on et.encounter_type_id = e.encounter_type " +
+                " inner join obs o on o.encounter_id = e.encounter_id and o.voided = 0 " +
+                " and o.concept_id = 5096 and date(o.value_datetime) >= curdate() ");
+        q.append("where e.date_created >= '" + effectiveDate + "' or e.date_changed >= '" + effectiveDate + "'" + " or o.date_created >= '" + effectiveDate + "'");
         q.append(" and e.voided = 0  ");
 
         List<Encounter> encounters = new ArrayList<>();
@@ -91,8 +88,8 @@ public class ProcessAppointmentsTask extends AbstractTask {
 
     }
 
-    private boolean appointmentsEvent(Patient patient) {
-        ILMessage ilMessage = ILPatientAppointments.iLPatientWrapper(patient);
+    private boolean appointmentsEvent(Patient patient, Encounter e) {
+        ILMessage ilMessage = ILPatientAppointments.iLPatientWrapper(patient, e);
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
         return service.logAppointmentSchedule(ilMessage);
     }

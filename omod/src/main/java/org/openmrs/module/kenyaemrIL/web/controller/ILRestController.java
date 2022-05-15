@@ -20,6 +20,8 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.utils.HTTPRequestUtils;
+import org.openmrs.module.kenyaemrIL.il.utils.ViralLoadProcessorUtil;
+import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.springframework.stereotype.Controller;
@@ -67,6 +69,29 @@ public class ILRestController extends BaseRestController {
 		}
 
 		return response;
+	}
+
+	/**
+	 * end point to process internal request to process lab results
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(method = RequestMethod.POST, value = "/labresults") // end point for processing individual lab results
+	@ResponseBody
+	public Object processIncomingViralLoadResults(HttpServletRequest request) {
+		String requestBody = null;
+		try {
+			requestBody = ViralLoadProcessorUtil.fetchRequestBody(request.getReader());
+		} catch (IOException e) {
+			return new SimpleObject().add("ServerResponse", "Error extracting request body");
+		}
+
+		if (requestBody != null) {
+
+			return ViralLoadProcessorUtil.restEndPointForLabResult(requestBody);
+
+		}
+		return new SimpleObject().add("Report", "The request could not be interpreted properly");
 	}
 
 

@@ -2,13 +2,24 @@ package org.openmrs.module.kenyaemrIL.api;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.openmrs.*;
+import org.openmrs.Concept;
+import org.openmrs.Encounter;
+import org.openmrs.Obs;
+import org.openmrs.Patient;
+import org.openmrs.PatientIdentifier;
+import org.openmrs.PersonName;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.kenyaemrIL.il.*;
+import org.openmrs.module.kenyaemrIL.il.EXTERNAL_PATIENT_ID;
+import org.openmrs.module.kenyaemrIL.il.ILMessage;
+import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
+import org.openmrs.module.kenyaemrIL.il.MOTHER_NAME;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_ADDRESS;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_NAME;
+import org.openmrs.module.kenyaemrIL.il.PHYSICAL_ADDRESS;
 import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
 import org.openmrs.module.kenyaemrIL.il.appointment.PLACER_APPOINTMENT_NUMBER;
-import org.openmrs.module.kenyaemrIL.util.ILUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -26,7 +37,7 @@ public class ILPatientAppointments {
     static ConceptService conceptService = Context.getConceptService();
 
 
-    public static ILMessage iLPatientWrapper(Patient patient) {
+    public static ILMessage iLPatientWrapper(Patient patient, Encounter lastFollowUpEncounter) {
         ILMessage ilMessage = new ILMessage();
         PATIENT_IDENTIFICATION patientIdentification = new PATIENT_IDENTIFICATION();
         List<INTERNAL_PATIENT_ID> internalPatientIds = new ArrayList<INTERNAL_PATIENT_ID>();
@@ -37,19 +48,20 @@ public class ILPatientAppointments {
 //        Form the internal patient IDs
         for (PatientIdentifier patientIdentifier : patient.getIdentifiers()) {
             ipd = new INTERNAL_PATIENT_ID();
-             if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Unique Patient Number")) {
+            if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Unique Patient Number")) {
                 ipd.setAssigning_authority("CCC");
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("CCC_NUMBER");
-                 internalPatientIds.add(ipd);
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("MPI GODS NUMBER")) {
-                if (patientIdentifier.getIdentifierType().getName() != null) {
-                    epd.setAssigning_authority("MPI");
-                    epd.setId(patientIdentifier.getIdentifier());
-                    epd.setIdentifier_type("GODS_NUMBER");
-                    patientIdentification.setExternal_patient_id(epd);
-                }
-                continue;
+                internalPatientIds.add(ipd);
+                // Form the default external patient IDs
+                epd.setAssigning_authority("MPI");
+                epd.setIdentifier_type("GODS_NUMBER");
+                patientIdentification.setExternal_patient_id(epd);
+            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Patient Clinic Number")) {
+                ipd.setAssigning_authority("CCC");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("PATIENT_CLINIC_NUMBER");
+                internalPatientIds.add(ipd);
             }
         }
 
@@ -63,8 +75,6 @@ public class ILPatientAppointments {
         patientname.setMiddle_name(personName.getMiddleName() != null ? personName.getMiddleName() : "");
         patientname.setLast_name(personName.getFamilyName() != null ? personName.getFamilyName() : "");
         patientIdentification.setPatient_name(patientname);
-
-
 
         // Set to empty strings unwanted patient details for viral load
         patientIdentification.setSex("");   //        Set the Gender, phone number and marital status
@@ -84,39 +94,39 @@ public class ILPatientAppointments {
         patientIdentification.setMother_name(new MOTHER_NAME());
 
         ilMessage.setPatient_identification(patientIdentification);
-//set appointment information
+        //set appointment information
         APPOINTMENT_INFORMATION appointments[] = new APPOINTMENT_INFORMATION[1];
         APPOINTMENT_INFORMATION appointmentInformation = new APPOINTMENT_INFORMATION();
         PLACER_APPOINTMENT_NUMBER placerAppointmentNumber = new PLACER_APPOINTMENT_NUMBER();
 
-        Encounter lastFollowUpEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e"));   //last greencard followup form
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         Integer patientTCAConcept = 5096;
-        Integer patientTCAReasonConcept = 160288;
+        //Integer patientTCAReasonConcept = 160288;
         if (lastFollowUpEncounter != null) {
             for (Obs obs : lastFollowUpEncounter.getObs()) {
                 if (obs.getConcept().getConceptId().equals(patientTCAConcept)) {
-                    placerAppointmentNumber.setNumber(String.valueOf(obs.getObsId()));                   //set placer appointment number
-                    placerAppointmentNumber.setEntity("KENYAEMR");                                      //set Entity
-                    appointmentInformation.setAppointment_date(formatter.format((obs.getValueDate())));      //set patient TCA
-                    appointmentInformation.setAction_code("A");                                          //set action code
-                    appointmentInformation.setAppointment_note("N/A");                                   //set appointment note
-                    appointmentInformation.setAppointment_status("PENDING");                             //set appointment status
-                    appointmentInformation.setAppointment_placing_entity("KENYAEMR");                    //set appointment placing entity
+                    //we use encounter id to take care of changing appointment date for the same encounter
+                    placerAppointmentNumber.setNumber(String.valueOf(lastFollowUpEncounter.getEncounterId().intValue()));
+                    appointmentInformation.setPlacer_appointment_number(placerAppointmentNumber);
+                    appointmentInformation.setVisit_date(formatter.format(lastFollowUpEncounter.getEncounterDatetime()));
+                    appointmentInformation.setAppointment_date(formatter.format((obs.getValueDate())));
+                    appointmentInformation.setAction_code("A");
+                    appointmentInformation.setAppointment_note("N/A");
+                    appointmentInformation.setAppointment_status("PENDING");
+                    appointmentInformation.setAppointment_placing_entity("KENYAEMR");
 
-                }
-                if (obs.getConcept().getConceptId().equals(patientTCAReasonConcept)) {
-                    //appointmentInformation.setAppointment_reason(appointmentReasonConverter(obs.getValueCoded()));    //set appointment reason
-                    appointmentInformation.setAppointment_reason("");    //set appointment reason
-                   // appointmentInformation.setAppointment_type(appointmentTypeConverter(obs.getValueCoded()));         //set appointment type
-                    appointmentInformation.setAppointment_type("");         //set appointment type
-                    appointmentInformation.setAppointment_location(appointmentLocationConverter(obs.getValueCoded()));   //set appointment location
-                }
+                    // the current appointment generated from the emr is the clinical. we'll populate the defaults
+                    appointmentInformation.setAppointment_reason("FOLLOWUP");
+                    appointmentInformation.setAppointment_type("CLINICAL");
+                    appointmentInformation.setAppointment_location("CLINIC");
 
+                    appointments[0] = appointmentInformation;
+                    ilMessage.setAppointment_information(appointments);
+                    break; // we are only interested on the tca observation
+                }
             }
         }
-        appointments[0] = appointmentInformation;
-        ilMessage.setAppointment_information(appointments);
+
         return ilMessage;
     }
 

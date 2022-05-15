@@ -7,6 +7,10 @@ import org.openmrs.api.ConceptService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.il.*;
 import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_ENCODED_ORDER;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.COMMON_ORDER_DETAILS;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.ORDERING_PHYSICIAN;
+import org.openmrs.module.kenyaemrIL.il.pharmacy.PLACER_ORDER_NUMBER;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 
 import java.text.SimpleDateFormat;
@@ -18,23 +22,29 @@ import java.util.Map;
 /**
  * Created by codehub on 01/25/18.
  * A fragment controller for an IL Observation Result Unsolicited Message
+ * TODO: Current ORU only listens to changes in patient program interruptions/discontinuations i.e. Transfer out, lost to followup, and death
  */
 public class ILPatientUnsolicitedObservationResults {
 
     private final Log log = LogFactory.getLog(this.getClass());
     static ConceptService conceptService = Context.getConceptService();
+    public static final String HIV_DISCONTINUATION_ENC_TYPE = "2bdada65-4c72-4a48-8730-859890e25cee";
 
 
-    public static ILMessage iLPatientWrapper(Patient patient) {
+
+    public static ILMessage iLPatientWrapper(Patient patient, Encounter encounter) {
         ILMessage ilMessage = new ILMessage();
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         PATIENT_IDENTIFICATION patientIdentification = new PATIENT_IDENTIFICATION();
+        COMMON_ORDER_DETAILS commonOrderDetails = new COMMON_ORDER_DETAILS();
         List<INTERNAL_PATIENT_ID> internalPatientIds = new ArrayList<INTERNAL_PATIENT_ID>();
         EXTERNAL_PATIENT_ID epd = new EXTERNAL_PATIENT_ID();
+        ORDERING_PHYSICIAN orderingPhysician = new ORDERING_PHYSICIAN();
+        PLACER_ORDER_NUMBER placerOrderNumber = new PLACER_ORDER_NUMBER();
         INTERNAL_PATIENT_ID ipd;
-//set external identifier if available
+        //set external identifier if available
 
-        //        Form the internal patient IDs
+        //Form the internal patient IDs
         for (PatientIdentifier patientIdentifier : patient.getIdentifiers()) {
             ipd = new INTERNAL_PATIENT_ID();
             if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Unique Patient Number")) {
@@ -42,14 +52,15 @@ public class ILPatientUnsolicitedObservationResults {
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("CCC_NUMBER");
                 internalPatientIds.add(ipd);
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("MPI GODS NUMBER")) {
-                if (patientIdentifier.getIdentifierType().getName() != null) {
-                    epd.setAssigning_authority("MPI");
-                    epd.setId(patientIdentifier.getIdentifier());
-                    epd.setIdentifier_type("GODS_NUMBER");
-                    patientIdentification.setExternal_patient_id(epd);
-                }
-                continue;
+                // Form the default external patient IDs
+                epd.setAssigning_authority("MPI");
+                epd.setIdentifier_type("GODS_NUMBER");
+                patientIdentification.setExternal_patient_id(epd);
+            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Patient Clinic Number")) {
+                ipd.setAssigning_authority("CCC");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("PATIENT_CLINIC_NUMBER");
+                internalPatientIds.add(ipd);
             }
         }
 
@@ -69,12 +80,17 @@ public class ILPatientUnsolicitedObservationResults {
         //Set the patient observation results
         List<OBSERVATION_RESULT> observationResults = new ArrayList<>();
         OBSERVATION_RESULT observationResult = null;
-        observationResult = new OBSERVATION_RESULT();
+
+
+        // set the patient orders
+       /* List<PHARMACY_ENCODED_ORDER> pharmacyEncodedOrders = new ArrayList<>();
+        PHARMACY_ENCODED_ORDER pharmacyEncodedOrder = null;*/
+
 
        // List<EncounterType> encounterTypes = ILUtils.getAllEncounterTypesOfInterest(); //TODO @stance consider consolidating all encounters
-        //EncounterType mchMotherEncounter = Context.getEncounterService().getEncounterTypeByUuid("3ee036d8-7c13-4393-b5d6-036f2fe45126");  //mch mother enrollment
+        //EncounterType mchMotherEncounter = Context.getEncounterService().getEncounterTypeByUuid("3ee036d8-7c13-4393-b5d6-036f2fe45126");
 
-        Encounter hivGreencardEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e"));   //last greencard followup
+        /*Encounter hivGreencardEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e"));   //last greencard followup
         Encounter hivEnrollmentEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc"));  //hiv enrollment
         Encounter drugOrderEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3"));  //last drug order
         Encounter mchMotherEncounter = ILUtils.lastEncounter(patient, Context.getEncounterService().getEncounterTypeByUuid("3ee036d8-7c13-4393-b5d6-036f2fe45126"));  //mch mother enrollment
@@ -100,9 +116,9 @@ public class ILPatientUnsolicitedObservationResults {
         Integer TBTreatmentCompleteDateConcept =164384;
         Integer WhoStageConcept =5356;
         Integer YesConcept = 1065;
-        Integer NoConcept = 1066;
+        Integer NoConcept = 1066;*/
         //Enrollment encounter
-        if (hivEnrollmentEncounter != null) {
+        /*if (hivEnrollmentEncounter != null) {
             for (Obs obs : hivEnrollmentEncounter.getObs()) {
                 if (obs.getConcept().getConceptId().equals(HeightConcept)) {          // height
                     observationResult.setObservation_identifier("START_HEIGHT");
@@ -155,9 +171,9 @@ public class ILPatientUnsolicitedObservationResults {
                     observationResult.setAbnormal_flags("N");
                 }
             }
-        }
+        }*/
             //Greencard encounter
-            if (hivGreencardEncounter != null) {
+            /*if (hivGreencardEncounter != null) {
                 for (Obs obs : hivGreencardEncounter.getObs()) {
                     if (obs.getConcept().getConceptId().equals(HeightConcept)) {          // height
                         observationResult.setObservation_identifier("START_HEIGHT");
@@ -276,39 +292,79 @@ public class ILPatientUnsolicitedObservationResults {
                             observationResult.setAbnormal_flags("N");
                         }
                     }
-            }
+            }*/
                 //Drug order encounter
-                if (drugOrderEncounter != null) {
-                    for (Obs obs : drugOrderEncounter.getObs()) {
-                        if (obs.getConcept().getConceptId().equals(ARVConcept)) {    //set current regimen
-                            observationResult.setObservation_identifier("CURRENT_REGIMEN");
-                            observationResult.setSet_id("");
-                            observationResult.setCoding_system("NASCOP_CODES");
-                            observationResult.setValue_type("CE");
-                            observationResult.setObservation_value(String.valueOf(obs.getValueText()));
-                            observationResult.setUnits("");
-                            observationResult.setObservation_result_status("F");
-                            String ts = formatter.format(obs.getObsDatetime());
-                            observationResult.setObservation_datetime(ts);
-                            observationResult.setAbnormal_flags("N");
-                        }
-                        if (obs.getConcept().getConceptId().equals(ARTInitiationDateConcept)) {     // art start date
-                            observationResult.setObservation_identifier("ART_START");
-                            observationResult.setSet_id("");
-                            observationResult.setCoding_system("");
-                            observationResult.setValue_type("DT");
-                            String tsv= formatter.format(obs.getValueDatetime());
-                            observationResult.setObservation_value(tsv);
-                            observationResult.setUnits("");
-                            observationResult.setObservation_result_status("F");
-                            String ts = formatter.format(obs.getObsDatetime());
-                            observationResult.setObservation_datetime(ts);
-                            observationResult.setAbnormal_flags("N");
-                        }
+                /*if (drugOrderEncounter != null) {
+                    for (Order order : drugOrderEncounter.getOrders()) {
+                        pharmacyEncodedOrder = new PHARMACY_ENCODED_ORDER();
+
+                        orderingPhysician.setFirst_name(order.getCreator().getGivenName());
+                        orderingPhysician.setLast_name(order.getCreator().getFamilyName());
+                        commonOrderDetails.setOrder_control("CA");
+                        commonOrderDetails.setOrder_status("CA");
+                        commonOrderDetails.setNotes("");
+                        String transactionDate = formatter.format(order.getDateCreated());
+                        commonOrderDetails.setTransaction_datetime(transactionDate);
+                        placerOrderNumber.setEntity("KENYAEMR");
+
+
+                        commonOrderDetails.setOrdering_physician(orderingPhysician);
+
+
+                         if (order.getOrderGroup() != null) {
+                             DrugOrder drugOrder = (DrugOrder)order;
+
+                             String duration = drugOrder.getDuration() != null ? drugOrder.getDuration().toString(): "";
+                             String dose = drugOrder.getDose() != null ? drugOrder.getDose().toString(): "";
+                             String quantity = drugOrder.getQuantity() != null ? drugOrder.getQuantity().toString(): "";
+                             String instructions = order.getInstructions() != null ? order.getInstructions(): "";
+                             String frequency = drugOrder.getFrequency() != null ? drugOrder.getFrequency().toString(): "";
+
+
+                             placerOrderNumber.setNumber(order.getOrderGroup().getOrderGroupId().toString());
+                             commonOrderDetails.setPlacer_order_number(placerOrderNumber);
+
+                             //  pharmacyEncodedOrder.se("CURRENT_REGIMEN");
+
+                            pharmacyEncodedOrder.setDuration(duration);
+                            pharmacyEncodedOrder.setCoding_system("NASCOP_CODES");
+                            pharmacyEncodedOrder.setDosage(dose);
+                            pharmacyEncodedOrder.setFrequency(frequency);
+                            pharmacyEncodedOrder.setQuantity_prescribed(quantity);
+                            pharmacyEncodedOrder.setDrug_name(drugOrder.getOrderGroup().getOrderSet().getName());
+                            pharmacyEncodedOrder.setStrength("F");
+                            pharmacyEncodedOrder.setPrescription_notes(instructions);
+                            String ts = formatter.format(order.getDateActivated());
+                            pharmacyEncodedOrder.setPharmacy_order_date(ts);
+                            pharmacyEncodedOrders.add(pharmacyEncodedOrder);
+
+                         }else {
+                             DrugOrder drugOrder =(DrugOrder)order;
+                             String duration = drugOrder.getDuration() != null ? drugOrder.getDuration().toString(): "";
+                             String dose = drugOrder.getDose() != null ? drugOrder.getDose().toString(): "";
+                             String quantity = drugOrder.getQuantity() != null ? drugOrder.getQuantity().toString(): "";
+                             String instructions = order.getInstructions() != null ? order.getInstructions(): "";
+                             String frequency = drugOrder.getFrequency() != null ? drugOrder.getFrequency().toString(): "";
+                             placerOrderNumber.setNumber(order.getOrderId().toString());
+                             commonOrderDetails.setPlacer_order_number(placerOrderNumber);
+                             pharmacyEncodedOrder.setDuration(duration);
+                             pharmacyEncodedOrder.setCoding_system("NASCOP_CODES");
+                             pharmacyEncodedOrder.setDosage(dose);
+                             pharmacyEncodedOrder.setFrequency(frequency);
+                             pharmacyEncodedOrder.setQuantity_prescribed(quantity);
+                           //  pharmacyEncodedOrder.setStrength("Single");
+                             pharmacyEncodedOrder.setPrescription_notes(instructions);
+                             String ts = formatter.format(order.getDateActivated());
+                             pharmacyEncodedOrder.setPharmacy_order_date(ts);
+                             pharmacyEncodedOrders.add(pharmacyEncodedOrder);
+
+
+                         }
+
                     }
-                }
+                }*/
                 //MCH mother  encounter
-                if (mchMotherEncounter != null) {
+                /*if (mchMotherEncounter != null) {
                     for (Obs obs : mchMotherEncounter.getObs()) {
                         observationResult.setObservation_identifier("PMTCT_INITIATION");          // PMTCT initiation
                         observationResult.setSet_id("");
@@ -336,9 +392,9 @@ public class ILPatientUnsolicitedObservationResults {
                             observationResult.setAbnormal_flags("N");
                         }
                     }
-                }
+                }*/
         //lab result encounter
-                if (labResultEncounter != null) {
+                /*if (labResultEncounter != null) {
                     for (Obs obs : labResultEncounter.getObs()) {
                         if (obs.getConcept().getConceptId().equals(CD4Concept)) {     // cd4 count
                             observationResult.setObservation_identifier("CD4_COUNT");
@@ -365,8 +421,39 @@ public class ILPatientUnsolicitedObservationResults {
                             observationResult.setAbnormal_flags("N");
                         }
                     }
-            }
-            observationResults.add(observationResult);
+            }*/
+                //<td><obs conceptId="161555AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" answerConceptIds="159492AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,160034AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,5240AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,819AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,5622AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,1067AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" answerLabels="Transferred Out,Died,Lost to Follow,Cannot afford Treatment,Other,Unknown" id="idReason" /></td>
+
+        for (Obs obs : encounter.getObs()) {
+                    if (obs.getConcept().getConceptId().equals(161555)) {
+                        observationResult = new OBSERVATION_RESULT();
+                        observationResult.setObservation_identifier("HIV_DISCONTINUATION_REASON");
+                        observationResult.setSet_id("");
+                        observationResult.setCoding_system("");
+                        observationResult.setValue_type("CE");
+                        observationResult.setUnits("");
+                        observationResult.setObservation_result_status("F");
+                        String ts = formatter.format(obs.getObsDatetime());
+                        observationResult.setObservation_datetime(ts);
+                        observationResult.setAbnormal_flags("N");
+
+                        if (obs.getValueCoded().getConceptId().equals(159492)) { // TO
+                            observationResult.setObservation_value("TRANSFER_OUT");
+                        } else if (obs.getValueCoded().getConceptId().equals(160034)) { // died
+                            observationResult.setObservation_value("DIED");
+                        } else if (obs.getValueCoded().getConceptId().equals(5240)) { // documented ltfu
+                            observationResult.setObservation_value("LOST_TO_FOLLOWUP");
+                        } else if (obs.getValueCoded().getConceptId().equals(819)) { // cannot afford drugs
+                            observationResult.setObservation_value("CANNOT_AFFORD_DRUGS");
+                        } else if (obs.getValueCoded().getConceptId().equals(5622)) { // other
+                            observationResult.setObservation_value("OTHER_REASONS");
+                        } else if (obs.getValueCoded().getConceptId().equals(1067)) { // unknown
+                            observationResult.setObservation_value("UNKNOWN");
+                        }
+                        observationResults.add(observationResult);
+                    }
+                }
+
         ilMessage.setPatient_identification(patientIdentification);
         ilMessage.setObservation_result(observationResults.toArray(new OBSERVATION_RESULT[observationResults.size()]));
         return ilMessage;

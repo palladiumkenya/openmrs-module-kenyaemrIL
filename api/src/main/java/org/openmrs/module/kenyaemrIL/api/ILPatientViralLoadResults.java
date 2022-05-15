@@ -38,14 +38,10 @@ public class ILPatientViralLoadResults {
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("CCC_NUMBER");
                 internalPatientIds.add(ipd);
-            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("MPI GODS NUMBER")) {
-                if (patientIdentifier.getIdentifierType().getName() != null) {
-                    epd.setAssigning_authority("MPI");
-                    epd.setId(patientIdentifier.getIdentifier());
-                    epd.setIdentifier_type("GODS_NUMBER");
-                    patientIdentification.setExternal_patient_id(epd);
-                }
-                continue;
+//        Form the default external patient IDs
+                epd.setAssigning_authority("MPI");
+                epd.setIdentifier_type("GODS_NUMBER");
+                patientIdentification.setExternal_patient_id(epd);
             }
         }
         //Set the patient name

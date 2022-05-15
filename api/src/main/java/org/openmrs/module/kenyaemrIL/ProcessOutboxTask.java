@@ -1,8 +1,16 @@
 package org.openmrs.module.kenyaemrIL;
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContexts;
+import org.apache.http.util.EntityUtils;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.openmrs.GlobalProperty;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
@@ -18,11 +26,8 @@ import java.util.List;
  * Implementation of a task that processes the IL outbox every one minute .
  */
 public class ProcessOutboxTask extends AbstractTask {
-    //private final String IL_URL = "http://52.178.24.227:9721/api/";
 
-    // Logger
     private static final Logger log = LoggerFactory.getLogger(ProcessOutboxTask.class);
-
 
     /**
      * @see AbstractTask#execute()
@@ -40,26 +45,55 @@ public class ProcessOutboxTask extends AbstractTask {
     private void processFetchedRecord(KenyaEMRILMessage outbox) {
 //        Send to IL and mark as sent
         GlobalProperty IL_URL = Context.getAdministrationService().getGlobalPropertyObject("ilServer.address");
-        try {
-            Client restClient = Client.create();
-            WebResource webResource = restClient.resource(IL_URL.getPropertyValue());
-           // log.info("log info"+outbox.getMessage().toUpperCase());
-            //System.out.println("IL URL ==>"+IL_URL.getPropertyValue());
-           // System.out.println("Outbox message ==>"+outbox.getMessage().toUpperCase());
-            ClientResponse resp = webResource.type("application/json")
-                    .post(ClientResponse.class, outbox.getMessage().toUpperCase());
+        if (IL_URL == null) {
+            System.out.println("There is no global property for IL server URL!");
+            return;
+        }
 
-            System.out.println("The status received from the server: " + resp.getStatus());
-            log.info("The status received from the server: " + resp.getStatus());
-            if (resp.getStatus() != 200) {
-                System.err.println("Unable to connect to the server");
-                log.info("Unable to connect to the server");
+        if (StringUtils.isBlank(IL_URL.getPropertyValue())) {
+            System.out.println("Please set URL for IL server!");
+            return;
+        }
+
+        SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+                SSLContexts.createDefault(),
+                new String[]{"TLSv1.2"},
+                null,
+                SSLConnectionSocketFactory.getDefaultHostnameVerifier());
+
+        CloseableHttpClient httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+
+        try {
+
+            //Define a postRequest request
+            HttpPost postRequest = new HttpPost(IL_URL.getPropertyValue());
+
+            //Set the API media type in http content-type header
+            postRequest.addHeader("content-type", "application/json");
+            //Set the request post body
+            String payload = outbox.getMessage().toUpperCase();
+            StringEntity userEntity = new StringEntity(payload);
+            postRequest.setEntity(userEntity);
+            HttpResponse response = httpClient.execute(postRequest);
+
+            //verify the valid error code first
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode != 200) {
+                JSONParser parser = new JSONParser();
+                JSONObject responseObj = (JSONObject) parser.parse(EntityUtils.toString(response.getEntity()));
+                JSONObject errorObj = (JSONObject) responseObj.get("error");
+                System.out.println("Error sending message to IL server! " + "Status code - " + statusCode + ". Msg" + errorObj.get("message"));
+                log.error("Error sending message to IL server! " + "Status code - " + statusCode + ". Msg" + errorObj.get("message"));
+
             } else {
-                log.info("Successfull sent message to IL");
+                log.info("Successfully sent message to IL server");
+                System.out.println("Successfully sent message to IL server");
                 outbox.setRetired(true);
                 getEMRILService().saveKenyaEMRILMessage(outbox);
+                //Purge from the il_messages table
+                getEMRILService().deleteKenyaEMRILMessage(outbox);
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             log.error(e.getMessage());
         }

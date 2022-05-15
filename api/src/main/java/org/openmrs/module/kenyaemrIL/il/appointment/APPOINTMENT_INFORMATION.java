@@ -13,6 +13,7 @@ public class APPOINTMENT_INFORMATION {
     private String  appointment_type;
     private String  appointment_note;
     private String  appointment_date;
+    private String  visit_date;
     private PLACER_APPOINTMENT_NUMBER  placer_appointment_number;
 
     public APPOINTMENT_INFORMATION() {
@@ -82,6 +83,14 @@ public class APPOINTMENT_INFORMATION {
 
     public void setAppointment_date(String appointment_date) {
         this.appointment_date = appointment_date;
+    }
+
+    public String getVisit_date() {
+        return visit_date;
+    }
+
+    public void setVisit_date(String visit_date) {
+        this.visit_date = visit_date;
     }
 
     public PLACER_APPOINTMENT_NUMBER getPlacer_appointment_number() {

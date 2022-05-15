@@ -16,16 +16,30 @@ package org.openmrs.module.kenyaemrIL.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.openmrs.*;
+import org.openmrs.Encounter;
+import org.openmrs.EncounterType;
+import org.openmrs.Form;
+import org.openmrs.Patient;
+import org.openmrs.Person;
+import org.openmrs.Provider;
+import org.openmrs.User;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
 /**
  * Miscellaneous utility methods
  */
 public class ILUtils {
+
+	public static final String GP_IL_CONFIG_DIR = "kenyaemrIL.drugsMappingDirectory";
+	public static final String GP_IL_LAST_PHARMACY_MESSAGE_ENCOUNTER = "kenyaemrIL.lastPharmacyMessageEncounter";
 
 	/**
 	 * Checks whether a date has any time value
@@ -189,4 +203,5 @@ public class ILUtils {
 
 		return encounterTypes;
 	}
+
 }
