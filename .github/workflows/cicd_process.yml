@@ -17,9 +17,13 @@ jobs:
         port: ${{ secrets.PORT }}
         command_timeout: 200m
         script: |
+          cd /apps/github-workflows/kenyaemr-modules
+          sudo rm -rf openmrs-module-kenyaemrIL
+          sudo mkdir openmrs-module-kenyaemrIL
+          sudo chown -R cicd2:cicd2 openmrs-module-kenyaemrIL
           git config --global --add safe.directory /apps/github-workflows/kenyaemr-modules/openmrs-module-kenyaemrIL      
           cd /apps/github-workflows/kenyaemr-modules/openmrs-module-kenyaemrIL
-          git pull origin openmrs-2.3.3-upgrade
+          git clone -b openmrs-2.3.3-upgrade https://github.com/palladiumkenya/openmrs-module-kenyaemrIL.git .
           git status
           mvn clean install -DskipTests
           sudo rm -rf /var/lib/OpenMRS/modules/kenyaemrIL-*.omod
