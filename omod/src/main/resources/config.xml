@@ -39,6 +39,8 @@
         KenyaEMRILRegistration.hbm.xml
         KenyaEMRILMessageArchive.hbm.xml
         KenyaEMRILMessageErrorQueue.hbm.xml
+        KenyaEMRMhealthOutbox.hbm.xml
+        KenyaEMRMhealthPatientRegistration.hbm.xml
 
     </mappingFiles>
 
@@ -130,6 +132,40 @@
         <defaultValue></defaultValue>
         <description>
             End point for processing viral load results from the lab
+        </description>
+    </globalProperty>
+
+    <!--configuration for mlab endpoint-->
+    <globalProperty>
+        <property>kenyaemrIL.endpoint.mlab.pull</property>
+        <defaultValue>https://mlab.mhealthkenya.co.ke/api/get/il/viral_loads</defaultValue>
+        <description>
+            End point for pulling viral load results from mlab server
+        </description>
+    </globalProperty>
+
+    <!--configuration for ushauri endpoint-->
+    <globalProperty>
+        <property>kenyaemrIL.endpoint.ushauri.push</property>
+        <defaultValue>https://il.mhealthkenya.co.ke/hl7_message</defaultValue>
+        <description>
+            End point for pushing messages to ushauri
+        </description>
+    </globalProperty>
+
+    <globalProperty>
+        <property>kemr.ushauri.ssl_verification_enabled</property>
+        <defaultValue>true</defaultValue>
+        <description>
+            Switch that enables/disables ssl verification when pushing data to Ushauri
+        </description>
+    </globalProperty>
+
+    <globalProperty>
+        <property>kemr.mhealth.middlware</property>
+        <defaultValue>IL</defaultValue>
+        <description>
+            Configures how KenyaEMR sends messages to Mhealth servers. Valid options are IL or Direct
         </description>
     </globalProperty>
     <!-- /Internationalization -->

@@ -16,9 +16,15 @@ package org.openmrs.module.kenyaemrIL.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.conn.ssl.X509HostnameVerifier;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.http.ssl.SSLContexts;
 import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
 import org.openmrs.Form;
+import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
 import org.openmrs.Person;
 import org.openmrs.Provider;
@@ -26,6 +32,16 @@ import org.openmrs.User;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -40,8 +56,18 @@ public class ILUtils {
 
 	public static final String GP_IL_CONFIG_DIR = "kenyaemrIL.drugsMappingDirectory";
 	public static final String GP_IL_LAST_PHARMACY_MESSAGE_ENCOUNTER = "kenyaemrIL.lastPharmacyMessageEncounter";
+	public static final String GP_MLAB_SERVER_REQUEST_URL = "kenyaemrIL.endpoint.mlab.pull";
+	public static final String GP_MLAB_SERVER_API_TOKEN = "";
+	public static final String GP_SSL_VERIFICATION_ENABLED = "kemrorder.ssl_verification_enabled";
+    public static final String GP_USHAURI_SSL_VERIFICATION_ENABLED = "kemr.ushauri.ssl_verification_enabled";
+    public static final String GP_USHAURI_PUSH_SERVER_URL = "kenyaemrIL.endpoint.ushauri.push";
+    public static String GP_MHEALTH_MIDDLEWARE_TO_USE = "kemr.mhealth.middlware";
+    public static String HL7_REGISTRATION_MESSAGE = "ADT^A04";
+    public static String HL7_REGISTRATION_UPDATE_MESSAGE = "ADT^A08";
+    public static String HL7_APPOINTMENT_MESSAGE = "SIU^S12";
 
-	/**
+
+    /**
 	 * Checks whether a date has any time value
 	 * @param date the date
 	 * @return true if the date has time
@@ -204,4 +230,82 @@ public class ILUtils {
 		return encounterTypes;
 	}
 
+	/**
+	 * Default SSL context
+	 *
+	 * @return
+	 */
+	public static SSLConnectionSocketFactory sslConnectionSocketFactoryDefault() {
+		SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+				SSLContexts.createDefault(),
+				new String[]{"TLSv1.2"},
+				null,
+				SSLConnectionSocketFactory.getDefaultHostnameVerifier());
+		return sslsf;
+	}
+
+	/**
+	 * Builds an SSL context for disabling/bypassing SSL verification
+	 *
+	 * @return
+	 */
+	public static SSLConnectionSocketFactory sslConnectionSocketFactoryWithDisabledSSLVerification() {
+		SSLContextBuilder builder = SSLContexts.custom();
+		try {
+			builder.loadTrustMaterial(null, new TrustStrategy() {
+				@Override
+				public boolean isTrusted(X509Certificate[] chain, String authType)
+						throws CertificateException {
+					return true;
+				}
+			});
+		} catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException(e);
+		} catch (KeyStoreException e) {
+			throw new RuntimeException(e);
+		}
+		SSLContext sslContext = null;
+		try {
+			sslContext = builder.build();
+		} catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException(e);
+		} catch (KeyManagementException e) {
+			throw new RuntimeException(e);
+		}
+		SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+				sslContext, new X509HostnameVerifier() {
+			@Override
+			public void verify(String host, SSLSocket ssl)
+					throws IOException {
+			}
+
+			@Override
+			public void verify(String host, X509Certificate cert)
+					throws SSLException {
+			}
+
+			@Override
+			public void verify(String host, String[] cns,
+							   String[] subjectAlts) throws SSLException {
+			}
+
+			@Override
+			public boolean verify(String s, SSLSession sslSession) {
+				return true;
+			}
+		});
+		return sslsf;
+	}
+
+	public static String getILUsage() {
+		GlobalProperty gpUseILEnabled = Context.getAdministrationService().getGlobalPropertyObject(ILUtils.GP_MHEALTH_MIDDLEWARE_TO_USE);
+		boolean sendDirectToUshauri = false;
+		if (gpUseILEnabled != null) {
+			String useILPropValue = gpUseILEnabled.getPropertyValue();
+			if (StringUtils.isNotBlank(useILPropValue) && useILPropValue.equalsIgnoreCase("false")) {
+				sendDirectToUshauri = true;
+			}
+		}
+		return null;
+	}
 }

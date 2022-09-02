@@ -15,10 +15,12 @@ package org.openmrs.module.kenyaemrIL.api.db;
 
 import org.openmrs.Patient;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
+import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
+import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
 
 import java.util.List;
 
@@ -63,4 +65,20 @@ public interface KenyaEMRILDAO {
     List<KenyaEMRILRegistration> getAllKenyaEMRILRegistration(Boolean includeAll);
 
     List<KenyaEMRILRegistration> getKenyaEMRILRegistrationStatus(String status);
+
+    // additions to support for data exchange with mhealth apps
+
+    KenyaemrMhealthOutboxMessage getMhealthOutboxMessageByUuid(String uuid);
+
+    KenyaemrMhealthOutboxMessage saveMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthMessageOutbox);
+
+    void deleteMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthOutboxMessage);
+
+    List<KenyaemrMhealthOutboxMessage> getAllMhealthOutboxMessages(Boolean includeAll);
+
+    List<KenyaemrMhealthOutboxMessage> getKenyaEMROutboxMessagesToSend(boolean b);
+
+    List<KenyaEMRILMessage> fetchAllViralLoadResults(boolean status);
+
+    List<KenyaEMRILMessageErrorQueue> fetchAllViralLoadErrors();
 }

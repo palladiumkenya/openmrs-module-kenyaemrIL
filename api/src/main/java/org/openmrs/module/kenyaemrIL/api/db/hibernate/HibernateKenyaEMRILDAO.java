@@ -22,10 +22,12 @@ import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
+import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
+import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
 
 import java.util.List;
 
@@ -168,5 +170,58 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         crit.add(Restrictions.eq("status", status));
         return crit.list();
     }
+
+    @Override
+    public KenyaemrMhealthOutboxMessage getMhealthOutboxMessageByUuid(String uuid) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaemrMhealthOutboxMessage.class);
+        crit.add(Restrictions.eq("uuid", uuid));
+        KenyaemrMhealthOutboxMessage mhealthOutboxMessage = (KenyaemrMhealthOutboxMessage) crit.uniqueResult();
+        return mhealthOutboxMessage;
+    }
+
+    @Override
+    public KenyaemrMhealthOutboxMessage saveMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthMessageOutbox) {
+        this.sessionFactory.getCurrentSession().saveOrUpdate(KenyaemrMhealthMessageOutbox);
+        return KenyaemrMhealthMessageOutbox;
+    }
+
+    @Override
+    public void deleteMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthOutboxMessage) {
+        this.sessionFactory.getCurrentSession().delete(KenyaemrMhealthOutboxMessage);
+    }
+
+    @Override
+    public List<KenyaemrMhealthOutboxMessage> getAllMhealthOutboxMessages(Boolean includeAll) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaemrMhealthOutboxMessage.class);
+        crit.add(Restrictions.eq("retired", false));
+        return crit.list();
+    }
+
+    @Override
+    public List<KenyaemrMhealthOutboxMessage> getKenyaEMROutboxMessagesToSend(boolean b) {
+        String IL_MESSAGES_MAX_BATCH_FETCH_SIZE = "kenyaemrIL.ilMessagesMaxBatchFetch";
+        GlobalProperty batchSize = Context.getAdministrationService().getGlobalPropertyObject(IL_MESSAGES_MAX_BATCH_FETCH_SIZE);
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaemrMhealthOutboxMessage.class);
+        crit.add(Restrictions.eq("message_type", 2));
+        crit.add(Restrictions.eq("retired", false));
+        crit.setMaxResults(Integer.parseInt(batchSize.getValue().toString()));
+        return crit.list();
+    }
+
+    @Override
+    public List<KenyaEMRILMessage> fetchAllViralLoadResults(boolean status) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessage.class);
+        crit.add(Restrictions.eq("message_type", 1));
+        crit.add(Restrictions.eq("hl7_type", "ORU^VL"));
+        crit.add(Restrictions.eq("retired", status));
+        return crit.list();
+    }
+
+    @Override
+    public List<KenyaEMRILMessageErrorQueue> fetchAllViralLoadErrors() {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessageErrorQueue.class);
+        crit.add(Restrictions.eq("message_type", 1));
+        crit.add(Restrictions.eq("hl7_type", "ORU^VL"));
+        return crit.list();    }
 
 }

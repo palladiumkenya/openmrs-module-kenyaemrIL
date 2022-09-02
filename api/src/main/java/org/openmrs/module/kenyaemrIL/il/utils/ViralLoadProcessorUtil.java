@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
@@ -26,6 +27,9 @@ import org.openmrs.Obs;
 import org.openmrs.Order;
 import org.openmrs.OrderType;
 import org.openmrs.Patient;
+import org.openmrs.TestOrder;
+import org.openmrs.api.EncounterService;
+import org.openmrs.api.OrderService;
 import org.openmrs.api.context.Context;
 
 import java.io.BufferedReader;
@@ -50,6 +54,9 @@ public class ViralLoadProcessorUtil {
     public static Concept vlTestConceptQuantitative = Context.getConceptService().getConcept(856);
     public static EncounterType labEncounterType = Context.getEncounterService().getEncounterTypeByUuid(LAB_ORDER_ENCOUNTER_TYPE_UUID);
     public static OrderType labType = Context.getOrderService().getOrderTypeByUuid(OrderType.TEST_ORDER_TYPE_UUID);
+
+    public static EncounterService encounterService = Context.getEncounterService();
+    public static OrderService orderService = Context.getOrderService();
 
     /**
      * POST end point for processing internal REST requests
@@ -162,7 +169,75 @@ public class ViralLoadProcessorUtil {
                 }
             }
         } else {
-            System.out.println("There are no VL lab requests on the results date as indicated in the imported VL results document");
+            // create the order, set result, and discontinue the order
+
+            Encounter orderEnc = new Encounter();
+            orderEnc.setEncounterType(labEncounterType);
+            orderEnc.setEncounterDatetime(vlOrderDate);
+            orderEnc.setPatient(patient);
+            orderEnc.setCreator(Context.getUserService().getUser(1));
+
+            Encounter enc = new Encounter();
+            enc.setEncounterType(labEncounterType);
+            enc.setEncounterDatetime(orderDiscontinuationDate);
+            enc.setPatient(patient);
+            enc.setCreator(Context.getUserService().getUser(1));
+
+            Concept vlQuestionConcept = null;
+            String lDLResult = "< LDL copies/ml";
+            String aboveMillionResult = "> 10,000,000 cp/ml";
+            Obs o = new Obs();
+
+            if (result.equalsIgnoreCase(lDLResult) || result.contains("LDL")) {
+                vlQuestionConcept = vlTestConceptQualitative;
+                o.setValueCoded(LDLConcept);
+            } else if (result.equalsIgnoreCase(aboveMillionResult)) {
+                vlQuestionConcept = vlTestConceptQuantitative;
+                o.setValueNumeric(new Double(10000001));
+            } else {
+                vlQuestionConcept = vlTestConceptQuantitative;
+                Double vlVal = NumberUtils.toDouble(result);
+                o.setValueNumeric(vlVal);
+            }
+
+            CareSetting careSetting = orderService.getCareSetting(1);
+
+            TestOrder order = new TestOrder();
+            order.setAction(Order.Action.NEW);
+            order.setCareSetting(careSetting);
+            order.setConcept(vlQuestionConcept);
+            order.setPatient(patient);
+            order.setFulfillerComment("MLAB result");
+            order.setOrderer(Context.getProviderService().getUnknownProvider());
+            order.setUrgency(orderToVoid.getUrgency());
+            order.setOrderReason(orderToVoid.getOrderReason());
+            order.setOrderReasonNonCoded(orderToVoid.getOrderReasonNonCoded());
+            order.setDateActivated(vlOrderDate);
+            order.setCreator(Context.getUserService().getUser(1));
+            order.setEncounter(orderEnc);
+            Order savedOrder = orderService.saveOrder(order, null);
+
+            try {
+
+                encounterService.saveEncounter(enc);
+                orderService.discontinueOrder(savedOrder, "Results received", orderDiscontinuationDate, savedOrder.getOrderer(),
+                        savedOrder.getEncounter());
+
+                o.setConcept(vlQuestionConcept);
+                o.setDateCreated(new Date());
+                o.setCreator(Context.getUserService().getUser(1));
+                o.setObsDatetime(vlOrderDate);
+                o.setPerson(patient);
+                o.setOrder(savedOrder);
+
+                orderEnc.addObs(o);
+                encounterService.saveEncounter(orderEnc);
+
+            } catch (Exception e) {
+                System.out.println("Lab Results Get Results: An error was encountered while updating orders for viral load");
+                e.printStackTrace();
+            }
+
         }
 
     }

@@ -76,6 +76,7 @@ import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.module.kenyaemrIL.il.utils.ViralLoadProcessorUtil;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 import org.openmrs.module.kenyaemrIL.kenyaemrUtils.Utils;
+import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -359,6 +360,16 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     @Override
     public List<KenyaEMRILRegistration> getKenyaEMRILRegistration(Boolean includeRetired) {
         return this.dao.getKenyaEMRILRegistration(includeRetired);
+    }
+
+    @Override
+    public List<KenyaEMRILMessage> fetchAllViralLoadResults(boolean status) {
+        return dao.fetchAllViralLoadResults(status);
+    }
+
+    @Override
+    public List<KenyaEMRILMessageErrorQueue> fetchAllViralLoadErrors() {
+        return dao.fetchAllViralLoadErrors();
     }
 
     @Override
@@ -1063,6 +1074,32 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         }
         return isSuccessful;
     }
+
+    @Override
+    public KenyaemrMhealthOutboxMessage getMhealthOutboxMessageByUuid(String uuid) {
+        return dao.getMhealthOutboxMessageByUuid(uuid);
+    }
+
+    @Override
+    public KenyaemrMhealthOutboxMessage saveMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthMessageOutbox) {
+        return dao.saveMhealthOutboxMessage(KenyaemrMhealthMessageOutbox);
+    }
+
+    @Override
+    public void deleteMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthOutboxMessage) {
+        dao.deleteMhealthOutboxMessage(KenyaemrMhealthOutboxMessage);
+    }
+
+    @Override
+    public List<KenyaemrMhealthOutboxMessage> getAllMhealthOutboxMessages(Boolean includeAll) {
+        return dao.getAllMhealthOutboxMessages(false);
+    }
+
+    @Override
+    public List<KenyaemrMhealthOutboxMessage> getKenyaEMROutboxMessagesToSend(Boolean includeRetired) {
+        return dao.getKenyaEMROutboxMessagesToSend(false);
+    }
+
 
     private Patient wrapIlPerson(ILMessage ilPerson, KenyaEMRILMessage kenyaEMRILMessage) {
 

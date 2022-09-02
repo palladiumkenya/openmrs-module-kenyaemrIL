@@ -1,23 +1,20 @@
-package org.openmrs.module.kenyaemrIL.il;
+package org.openmrs.module.kenyaemrIL.mhealth;
 
 import org.openmrs.BaseOpenmrsMetadata;
 
 import java.io.Serializable;
 
 /**
- * @author Patrick Wangoo
- *         Created on 20/01/2021.
+ * model for mhealth message outbox sent directly to the mhealth remote servers
  */
-public class KenyaEMRILMessageErrorQueue extends BaseOpenmrsMetadata implements Serializable {
-    private static final long serialVersionUID = 3062136520728193223L;
+public class KenyaemrMhealthOutboxMessage extends BaseOpenmrsMetadata implements Serializable {
+    private static final long serialVersionUID = 3062136520728193225L;
     private Integer message_id;
     private Integer message_type;
     private String hl7_type;
     private String status;
     private String source;
     private String message;
-
-    private String middleware; // IL or Direct
 
     public String getSource() {
         return source;
@@ -27,10 +24,10 @@ public class KenyaEMRILMessageErrorQueue extends BaseOpenmrsMetadata implements 
         this.source = source;
     }
 
-    public KenyaEMRILMessageErrorQueue() {
+    public KenyaemrMhealthOutboxMessage() {
     }
 
-    public KenyaEMRILMessageErrorQueue(Integer messageId) {
+    public KenyaemrMhealthOutboxMessage(Integer messageId) {
         this.message_id = messageId;
     }
 
@@ -84,13 +81,5 @@ public class KenyaEMRILMessageErrorQueue extends BaseOpenmrsMetadata implements 
 
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    public String getMiddleware() {
-        return middleware;
-    }
-
-    public void setMiddleware(String middleware) {
-        this.middleware = middleware;
     }
 }
