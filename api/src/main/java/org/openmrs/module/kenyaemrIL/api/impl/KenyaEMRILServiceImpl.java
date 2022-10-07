@@ -77,6 +77,7 @@ import org.openmrs.module.kenyaemrIL.il.utils.ViralLoadProcessorUtil;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 import org.openmrs.module.kenyaemrIL.kenyaemrUtils.Utils;
 import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
+import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -188,6 +189,16 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             } else {
                 isSuccessful = false;
             }
+
+            // check the configured middleware
+            String configuredMiddleware = ILUtils.getMiddlewareInuse();
+
+            if (configuredMiddleware != null) {
+                if (configuredMiddleware.equalsIgnoreCase("Direct") || configuredMiddleware.equalsIgnoreCase("Hybrid")) {
+                    KenyaemrMhealthOutboxMessage directQueueMessage = ILUtils.replicateILMessage(kenyaEMRILMessage);
+                    saveMhealthOutboxMessage(directQueueMessage);
+                }
+            }
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             isSuccessful = false;
@@ -223,12 +234,22 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             kenyaEMRILMessageArchive.setName("");
             kenyaEMRILMessageArchive.setMessage_type(ILMessageType.OUTBOUND.getValue());
 
+
             KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
             KenyaEMRILMessageArchive archiveInstance = saveKenyaEMRILMessageArchive(kenyaEMRILMessageArchive);
             if (savedInstance != null || archiveInstance != null) {
                 isSuccessful = true;
             } else {
                 isSuccessful = false;
+            }
+            // check the configured middleware
+            String configuredMiddleware = ILUtils.getMiddlewareInuse();
+
+            if (configuredMiddleware != null) {
+                if (configuredMiddleware.equalsIgnoreCase("Direct") || configuredMiddleware.equalsIgnoreCase("Hybrid")) {
+                    KenyaemrMhealthOutboxMessage directQueueMessage = ILUtils.replicateILMessage(kenyaEMRILMessage);
+                    saveMhealthOutboxMessage(directQueueMessage);
+                }
             }
         } catch (JsonProcessingException e) {
             e.printStackTrace();
@@ -967,6 +988,16 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
                 isSuccessful = true;
             } else {
                 isSuccessful = false;
+            }
+
+            // check the configured middleware
+            String configuredMiddleware = ILUtils.getMiddlewareInuse();
+
+            if (configuredMiddleware != null) {
+                if (configuredMiddleware.equalsIgnoreCase("Direct") || configuredMiddleware.equalsIgnoreCase("Hybrid")) {
+                    KenyaemrMhealthOutboxMessage directQueueMessage = ILUtils.replicateILMessage(kenyaEMRILMessage);
+                    saveMhealthOutboxMessage(directQueueMessage);
+                }
             }
         } catch (JsonProcessingException e) {
             e.printStackTrace();

@@ -2,19 +2,14 @@ package org.openmrs.module.kenyaemrIL.page.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.thoughtworks.xstream.core.util.PresortedSet;
-import org.openmrs.PersonName;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
-import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_NAME;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_VISIT;
-import org.openmrs.module.kenyaemrIL.il.observation.VIRAL_LOAD_RESULT;
-import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.module.kenyaui.KenyaUiUtils;
@@ -27,7 +22,6 @@ import org.openmrs.ui.framework.page.PageModel;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.SortedSet;
 
 @AppPage("kenyaemr.ushauri.home")
 public class UshauriHomePageController {

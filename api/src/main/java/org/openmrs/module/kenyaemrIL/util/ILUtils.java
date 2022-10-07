@@ -31,6 +31,9 @@ import org.openmrs.Provider;
 import org.openmrs.User;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.kenyaemrIL.api.ILMessageType;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
+import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
@@ -297,15 +300,31 @@ public class ILUtils {
 		return sslsf;
 	}
 
-	public static String getILUsage() {
-		GlobalProperty gpUseILEnabled = Context.getAdministrationService().getGlobalPropertyObject(ILUtils.GP_MHEALTH_MIDDLEWARE_TO_USE);
-		boolean sendDirectToUshauri = false;
-		if (gpUseILEnabled != null) {
-			String useILPropValue = gpUseILEnabled.getPropertyValue();
-			if (StringUtils.isNotBlank(useILPropValue) && useILPropValue.equalsIgnoreCase("false")) {
-				sendDirectToUshauri = true;
-			}
+	/**
+	 * Gets the configured middleware from the global property.
+	 * Valid options include:
+	 * 1. IL - ideal for use cases where only the IL is used
+	 * 2. Direct - this is a short term measure to enable send data directly to ushauri server
+	 * 3. Hybrid - configures the system for both IL and Direct options
+	 * @return
+	 */
+	public static String getMiddlewareInuse() {
+		GlobalProperty gpMiddlewareConfig = Context.getAdministrationService().getGlobalPropertyObject(ILUtils.GP_MHEALTH_MIDDLEWARE_TO_USE);
+		if (gpMiddlewareConfig != null && gpMiddlewareConfig.getPropertyValue() != null) {
+			return gpMiddlewareConfig.getPropertyValue();
 		}
 		return null;
+	}
+
+	public static KenyaemrMhealthOutboxMessage replicateILMessage(KenyaEMRILMessage kenyaEMRILMessage) {
+
+		KenyaemrMhealthOutboxMessage outboxMessage = new KenyaemrMhealthOutboxMessage();
+		outboxMessage.setHl7_type(kenyaEMRILMessage.getHl7_type());
+		outboxMessage.setSource(kenyaEMRILMessage.getSource());
+		outboxMessage.setMessage(kenyaEMRILMessage.getMessage());
+		outboxMessage.setDescription("");
+		outboxMessage.setName("");
+		outboxMessage.setMessage_type(kenyaEMRILMessage.getMessage_type());
+		return outboxMessage;
 	}
 }
