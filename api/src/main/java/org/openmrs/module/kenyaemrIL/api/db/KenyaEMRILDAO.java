@@ -81,4 +81,14 @@ public interface KenyaEMRILDAO {
     List<KenyaEMRILMessage> fetchAllViralLoadResults(boolean status);
 
     List<KenyaEMRILMessageErrorQueue> fetchAllViralLoadErrors();
+
+    List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors();
+
+    void reQueueErrors(String errorList);
+
+    void purgeILErrorQueueMessage(KenyaEMRILMessageErrorQueue kenyaEMRILMessageErrorQueue);
+
+    KenyaEMRILMessageErrorQueue getKenyaEMRILErrorMessageByUuid(String uniqueId);
+
+    void purgeErrors(String errorList);
 }

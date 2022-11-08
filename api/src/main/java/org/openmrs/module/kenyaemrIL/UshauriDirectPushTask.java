@@ -60,7 +60,7 @@ public class UshauriDirectPushTask extends AbstractTask {
             boolean useILMiddleware = true; // this is also the default if no value is set in the global property
             if (gpMhealthMiddleware != null) {
                 String gpMhealthMiddlewarePropValue = gpMhealthMiddleware.getPropertyValue();
-                if (StringUtils.isNotBlank(gpMhealthMiddlewarePropValue) && gpMhealthMiddlewarePropValue.equalsIgnoreCase("Direct")) {
+                if (StringUtils.isNotBlank(gpMhealthMiddlewarePropValue) && (gpMhealthMiddlewarePropValue.equalsIgnoreCase("Direct") || gpMhealthMiddlewarePropValue.equalsIgnoreCase("Hybrid"))) {
                     useILMiddleware = false;
                 }
             }
@@ -143,12 +143,14 @@ public class UshauriDirectPushTask extends AbstractTask {
                 }
                 System.out.println("Error sending message to USHAURI server! " + "Status code - " + statusCode + ". Msg" + errorsString);
                 log.error("Error sending message to USHAURI server! " + "Status code - " + statusCode + ". Msg" + errorsString);
-
+                if (errorsString.length() > 200) {
+                    errorsString = errorsString.substring(0, 199);
+                }
                 KenyaEMRILMessageErrorQueue kenyaEMRILMessageErrorQueue = new KenyaEMRILMessageErrorQueue();
                 kenyaEMRILMessageErrorQueue.setHl7_type(outbox.getHl7_type().toUpperCase());
                 kenyaEMRILMessageErrorQueue.setSource(outbox.getSource().toUpperCase());
                 kenyaEMRILMessageErrorQueue.setMessage(outbox.getMessage());
-                kenyaEMRILMessageErrorQueue.setStatus("Status code: " + statusCode);
+                kenyaEMRILMessageErrorQueue.setStatus(errorsString);
                 kenyaEMRILMessageErrorQueue.setMessage_type(ILMessageType.OUTBOUND.getValue());
                 kenyaEMRILMessageErrorQueue.setMiddleware("Direct");
                 Context.getService(KenyaEMRILService.class).saveKenyaEMRILMessageErrorQueue(kenyaEMRILMessageErrorQueue);

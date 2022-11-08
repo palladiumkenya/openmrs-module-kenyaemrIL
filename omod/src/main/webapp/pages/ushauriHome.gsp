@@ -95,6 +95,9 @@ tr:nth-child(even) {background-color: #f2f2f2;}
     width: 100px;
 }
 
+.errorColumn {
+    width: 300px;
+}
 .pagination-sm .page-link {
     padding: .25rem .5rem;
     font-size: .875rem;
@@ -222,7 +225,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                             <th class="clientNameColumn">Patient Identifier</th>
                                             <th class="cccNumberColumn">Patient Name</th>
                                             <th class="sampleTypeColumn">Message Type</th>
-                                            <th class="sampleTypeColumn">Visit Date</th>
+                                            <th class="sampleTypeColumn">Visit/Appointment Date</th>
                                             <th class="dateRequestColumn">Date created</th>
                                             <th class="actionColumn"></th>
                                         </tr>
@@ -245,7 +248,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
         </div>
         
         <div class="ke-tab" data-tabid="general_error_queue">
-            <table id="general-error-queue-data" cellspacing="0" cellpadding="0" width="100%">
+            <table id="general-error" cellspacing="0" cellpadding="0" width="100%">
                 <tr>
                     <td style="width: 99%; vertical-align: top">
                         <div class="ke-panel-frame">
@@ -263,6 +266,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                                 <th class="sampleTypeColumn">Message Type</th>
                                                 <th class="sampleTypeColumn">Visit Date</th>
                                                 <th class="dateRequestColumn">Date created</th>
+                                                <th class="errorColumn">Error</th>
                                                 <th class="actionColumn">
                                                     <input type="button" id="requeueGeneralErrors" value="Re-queue" disabled/>
                                                     <input type="button" id="deleteGeneralErrors" value="Delete" disabled/>
@@ -512,58 +516,6 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             jq('#showViewPayloadDialog').modal('show');
         });
 
-        jq(document).on('click','.editPayloadButton',function () {
-            var queueUuid = jq(this).val();
-            console.log("Checking for queue entry with uuid: " + queueUuid);
-
-            ui.getFragmentActionAsJson('afyastat', 'mergePatients', 'getMessagePayload', { queueUuid : queueUuid }, function (result) {
-                let payloadObject = [];
-                try {
-                    payloadObject = JSON.parse(result.payload);
-                } catch(ex) {
-                    payloadObject = JSON.parse("{}")
-                }
-
-                jq('#json-edit-display').empty();
-                payloadEditor = new JsonEditor('#json-edit-display', payloadObject,{
-                    withQuotes:true,
-                    rootCollapsable:true
-                });
-                jq('.savePayloadButton').val(queueUuid);
-            });
-
-            jq('#showEditPayloadDialog').modal('show');
-        });
-
-        jq(document).on('click','.savePayloadButton',function () {
-            var queueUuid = jq(this).val();
-            console.log("Got the edited entry with uuid: " + queueUuid);
-
-            let newPayload = "";
-            try {
-                newPayload = JSON.stringify(payloadEditor.get());
-                ui.getFragmentActionAsJson('afyastat', 'mergePatients', 'updateMessagePayload', { queueUuid : queueUuid, payload : newPayload}, function (result) {
-                    if(result)
-                    {
-                        console.log("Payload Successfully Edited");
-                        alert("Payload Successfully Edited");
-                        let selectedError = [];
-                        selectedError.push(queueUuid);
-                        let listToSubmit = selectedError.join();
-                        ui.getFragmentActionAsJson('afyastat', 'mergePatients', 'requeueErrors', { errorList : listToSubmit }, function (result) {
-                            document.location.reload();
-                        });
-                        jq('#showEditPayloadDialog').modal('hide');
-                    } else {
-                        console.log("Error Editing Payload");
-                        alert("Error Editing Payload");
-                    }
-                });
-            } catch (ex) {
-                console.log("Payload JSON Error: " + ex);
-                alert(ex);
-            }
-        });
 
         // used to create new registration and bypass any patient matching on the provided patient demographics
         jq(document).on('click','.createButton',function () {
@@ -756,7 +708,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                 let sliced = selectedErrors.slice(begin, end);
                 let listToSubmit = sliced.join();
                 // lets delete this page
-                ui.getFragmentActionAsJson('afyastat', 'mergePatients', 'purgeErrors', { errorList : listToSubmit }, function (result) {
+                ui.getFragmentActionAsJson('kenyaemrIL', 'interopManager', 'purgeErrors', { errorList : listToSubmit }, function (result) {
                     sendCount++;
                     console.log("Delete items: Finished sending page. Sendcount: " + sendCount);
                     if(sendCount >= pages)
@@ -784,7 +736,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                 let sliced = selectedErrors.slice(begin, end);
                 let listToSubmit = sliced.join();
                 // lets requeue this page
-                ui.getFragmentActionAsJson('afyastat', 'mergePatients', 'requeueErrors', { errorList : listToSubmit }, function (result) {
+                ui.getFragmentActionAsJson('kenyaemrIL', 'interopManager', 'requeueErrors', { errorList : listToSubmit }, function (result) {
                     sendCount++;
                     if(sendCount >= pages)
                     {
@@ -825,57 +777,6 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
                 selectTd.append(selectCheckbox);
                 tr.append(selectTd);
-            }
-
-            if (tableId === 'registration-error') {
-                var selectTd = jq('<td/>');
-                var selectCheckbox = jq('<input/>', {
-                    type: 'checkbox',
-                    class: 'selectRegistrationElement',
-                    value: displayRecords[i].uuid
-                });
-
-                selectTd.append(selectCheckbox);
-                tr.append(selectTd);
-
-                var actionTd = jq('<td/>');
-
-                var btnView = jq('<button/>', {
-                    text: 'View',
-                    class: 'viewPayloadButton',
-                    value: displayRecords[i].uuid
-                });
-
-                var btnEdit = jq('<button/>', {
-                    text: 'Edit',
-                    class: 'editPayloadButton',
-                    value: displayRecords[i].uuid
-                });
-
-                actionTd.append(btnView);
-                actionTd.append(btnEdit);
-
-                tr.append(actionTd);
-            }
-
-            if (tableId === 'registration-error' && displayRecords[i].discriminator === 'json-registration' && displayRecords[i].message.includes('Found a patient with similar characteristic')) {
-                var btnMerge = jq('<button/>', {
-                    text: 'Merge',
-                    class: 'mergeButton',
-                    value: displayRecords[i].uuid
-                });
-                actionTd.append(btnMerge);
-                tr.append(actionTd);
-            }
-
-            if (tableId === 'registration-error' && displayRecords[i].discriminator === 'json-registration' && displayRecords[i].message.includes('Found a patient with similar characteristic')) {
-                var btnCreateNewRegistration = jq('<button/>', {
-                    text: 'Register',
-                    class: 'createButton',
-                    value: displayRecords[i].uuid
-                });
-                actionTd.append(btnCreateNewRegistration);
-                tr.append(actionTd);
             }
 
             displayObject.append(tr);

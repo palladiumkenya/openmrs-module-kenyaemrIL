@@ -24,6 +24,7 @@ import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
 import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -204,6 +205,16 @@ public interface KenyaEMRILService extends OpenmrsService {
 
     List<KenyaemrMhealthOutboxMessage> getAllMhealthOutboxMessages(Boolean includeAll);
 
-    List<KenyaemrMhealthOutboxMessage> getKenyaEMROutboxMessagesToSend(Boolean includeRetired);
+    List<KenyaemrMhealthOutboxMessage> getKenyaEMROutboxMessagesToSend(Boolean includeRetired);//fetchAllViralLoadErrors
 
+    List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors();
+
+    void reQueueErrors(final @RequestParam(value = "errorList") String errorList);
+
+    void purgeILErrorQueueMessage(KenyaEMRILMessageErrorQueue kenyaEMRILMessageErrorQueue);
+
+    KenyaEMRILMessageErrorQueue getKenyaEMRILErrorMessageByUuid(String uniqueId);
+
+
+    void purgeErrors(final @RequestParam(value = "errorList") String errorList);
 }

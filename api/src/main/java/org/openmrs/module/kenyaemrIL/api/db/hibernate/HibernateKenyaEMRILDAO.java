@@ -22,12 +22,12 @@ import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
-import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
+import org.openmrs.module.kenyaemrIL.util.ILUtils;
 
 import java.util.List;
 
@@ -222,6 +222,72 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessageErrorQueue.class);
         crit.add(Restrictions.eq("message_type", 1));
         crit.add(Restrictions.eq("hl7_type", "ORU^VL"));
-        return crit.list();    }
+        return crit.list();
+    }
+
+    @Override
+    public List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors() {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessageErrorQueue.class);
+        crit.add(Restrictions.eq("middleware", "Direct"));
+        return crit.list();
+    }
+
+    @Override
+    public void reQueueErrors(String errorList) {
+        if (Context.isAuthenticated()) {
+
+            if (errorList.equals("all")) {
+                List<KenyaEMRILMessageErrorQueue> errors = fetchAllMhealthErrors();
+
+                for (KenyaEMRILMessageErrorQueue errorData : errors) {
+                    KenyaemrMhealthOutboxMessage queueData = ILUtils.createMhealthOutboxMessageFromErrorMessage(errorData);
+                    saveMhealthOutboxMessage(queueData);
+                    purgeILErrorQueueMessage(errorData);
+                }
+            } else {
+                String[] uuidList = errorList.split(",");
+                for (String uuid : uuidList) {
+                    KenyaEMRILMessageErrorQueue errorData = getKenyaEMRILErrorMessageByUuid(uuid);
+                    KenyaemrMhealthOutboxMessage queueData = ILUtils.createMhealthOutboxMessageFromErrorMessage(errorData);
+                    saveMhealthOutboxMessage(queueData);
+                    purgeILErrorQueueMessage(errorData);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void purgeILErrorQueueMessage(KenyaEMRILMessageErrorQueue kenyaEMRILMessageErrorQueue) {
+        this.sessionFactory.getCurrentSession().delete(kenyaEMRILMessageErrorQueue);
+
+    }
+
+    @Override
+    public KenyaEMRILMessageErrorQueue getKenyaEMRILErrorMessageByUuid(String uniqueId) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessageErrorQueue.class);
+        crit.add(Restrictions.eq("uuid", uniqueId));
+        KenyaEMRILMessageErrorQueue errorQueueMessage = (KenyaEMRILMessageErrorQueue) crit.uniqueResult();
+        return errorQueueMessage;
+    }
+
+    @Override
+    public void purgeErrors(String errorList) {
+        if (Context.isAuthenticated()) {
+
+            if (errorList.equals("all")) {
+                List<KenyaEMRILMessageErrorQueue> errors = fetchAllMhealthErrors();
+
+                for (KenyaEMRILMessageErrorQueue errorData : errors) {
+                    purgeILErrorQueueMessage(errorData);
+                }
+            } else {
+                String[] uuidList = errorList.split(",");
+                for (String uuid : uuidList) {
+                    KenyaEMRILMessageErrorQueue errorData = getKenyaEMRILErrorMessageByUuid(uuid);
+                    purgeILErrorQueueMessage(errorData);
+                }
+            }
+        }
+    }
 
 }

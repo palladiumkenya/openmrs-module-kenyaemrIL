@@ -1131,6 +1131,31 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         return dao.getKenyaEMROutboxMessagesToSend(false);
     }
 
+    @Override
+    public List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors() {
+        return dao.fetchAllMhealthErrors();
+    }
+
+    @Override
+    public void reQueueErrors(String errorList) {
+        dao.reQueueErrors(errorList);
+    }
+
+    @Override
+    public void purgeILErrorQueueMessage(KenyaEMRILMessageErrorQueue kenyaEMRILMessageErrorQueue) {
+        dao.purgeILErrorQueueMessage(kenyaEMRILMessageErrorQueue);
+    }
+
+    @Override
+    public KenyaEMRILMessageErrorQueue getKenyaEMRILErrorMessageByUuid(String uniqueId) {
+        return dao.getKenyaEMRILErrorMessageByUuid(uniqueId);
+    }
+
+    @Override
+    public void purgeErrors(String errorList) {
+        dao.purgeErrors(errorList);
+    }
+
 
     private Patient wrapIlPerson(ILMessage ilPerson, KenyaEMRILMessage kenyaEMRILMessage) {
 

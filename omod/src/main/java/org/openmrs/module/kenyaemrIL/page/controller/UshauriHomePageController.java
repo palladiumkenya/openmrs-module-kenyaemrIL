@@ -2,6 +2,7 @@ package org.openmrs.module.kenyaemrIL.page.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
@@ -10,6 +11,7 @@ import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_NAME;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_VISIT;
+import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
 import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.module.kenyaui.KenyaUiUtils;
@@ -19,8 +21,12 @@ import org.openmrs.ui.framework.UiUtils;
 import org.openmrs.ui.framework.annotation.SpringBean;
 import org.openmrs.ui.framework.page.PageModel;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 
 @AppPage("kenyaemr.ushauri.home")
@@ -30,10 +36,13 @@ public class UshauriHomePageController {
 		
 		KenyaEMRILService ilService = Context.getService(KenyaEMRILService.class);
 		List<KenyaemrMhealthOutboxMessage> queueDataList = ilService.getAllMhealthOutboxMessages(false); // fetch for direct route
-		List<KenyaEMRILMessageErrorQueue> errorQueueList = ilService.fetchAllViralLoadErrors();
+		List<KenyaEMRILMessageErrorQueue> errorQueueList = ilService.fetchAllMhealthErrors();
 
 		List<SimpleObject> queueList = new ArrayList<SimpleObject>();
 		List<SimpleObject> generalErrorList = new ArrayList<SimpleObject>();
+
+		SimpleDateFormat yyyyMMdd = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat yyyyMMddWithoutHiphen = new SimpleDateFormat("yyyyMMdd");
 
 		ObjectMapper objectMapper = new ObjectMapper();
 		for (KenyaemrMhealthOutboxMessage kenyaEMRILMessage : queueDataList) { // get records in queue
@@ -48,7 +57,7 @@ public class UshauriHomePageController {
 			} else if (kenyaEMRILMessage.getHl7_type().equalsIgnoreCase(ILUtils.HL7_REGISTRATION_UPDATE_MESSAGE)) {
 				messageType = "Registration update";
 			}
-			SimpleDateFormat yyyyMMdd = new SimpleDateFormat("yyyy-MM-dd");
+
 			ILMessage ilMessage = objectMapper.readValue(kenyaEMRILMessage.getMessage().toLowerCase(), ILMessage.class);
 			// 1. Fetch the person to update using the CCC number
 			for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
@@ -75,8 +84,29 @@ public class UshauriHomePageController {
 				}
 			}
 
-			PATIENT_VISIT visitInfo = ilMessage.getPatient_visit();
+			String dataValue = null;
+			Date dateValue = null;
+			if (StringUtils.isNotBlank(messageType) && messageType.equalsIgnoreCase("Appointment")) {
+				APPOINTMENT_INFORMATION[] appointmentList = ilMessage.getAppointment_information();
+				if (appointmentList.length > 0) {
+					APPOINTMENT_INFORMATION appointmentInformation = appointmentList[0];
+					dataValue = appointmentInformation.getAppointment_date();
+				}
 
+
+			} else {
+				PATIENT_VISIT visitInfo = ilMessage.getPatient_visit();
+				dataValue = visitInfo.getVisit_date();
+
+			}
+
+			if (dataValue != null) {
+				try {
+					dateValue = yyyyMMddWithoutHiphen.parse(dataValue);
+				} catch (ParseException e) {
+					//throw new RuntimeException(e);
+				}
+			}
 
 			SimpleObject queueObject = SimpleObject.create(
 					"id", kenyaEMRILMessage.getId(),
@@ -84,14 +114,26 @@ public class UshauriHomePageController {
 					"cccNumber", cccNumber,
 					"patientName", fullName,
 					"messageType", messageType,
-					"visitDate", visitInfo.getVisit_date(),
+					"visitDate", dateValue != null ? yyyyMMdd.format(dateValue) : "",
 			    	"dateCreated", yyyyMMdd.format(kenyaEMRILMessage.getDateCreated()));
 			queueList.add(queueObject);
 		}
 
-		/*for (KenyaEMRILMessageErrorQueue errorItem : errorQueueList) { // get records in error
+
+		for (KenyaEMRILMessageErrorQueue errorItem : errorQueueList) { // get records in error
 
 			String cccNumber = "";
+
+			String messageType = "";
+
+			if (errorItem.getHl7_type().equalsIgnoreCase(ILUtils.HL7_APPOINTMENT_MESSAGE)) {
+				messageType = "Appointment";
+			} else if (errorItem.getHl7_type().equalsIgnoreCase(ILUtils.HL7_REGISTRATION_MESSAGE)) {
+				messageType = "Registration";
+			} else if (errorItem.getHl7_type().equalsIgnoreCase(ILUtils.HL7_REGISTRATION_UPDATE_MESSAGE)) {
+				messageType = "Registration update";
+			}
+
 			ILMessage ilErrorMessage = objectMapper.readValue(errorItem.getMessage(), ILMessage.class);
 			// 1. Fetch the person to update using the CCC number
 			for (INTERNAL_PATIENT_ID internalPatientId : ilErrorMessage.getPatient_identification().getInternal_patient_id()) {
@@ -101,37 +143,64 @@ public class UshauriHomePageController {
 				}
 			}
 
-			ViralLoadMessage viralLoadMessage = ilErrorMessage.extractViralLoadMessage();
-			VIRAL_LOAD_RESULT[] viralLoadResult = viralLoadMessage.getViral_load_result();
-			String dateSampleCollected = "";
-			String dateSampleTested= "";
-			String vlResult = "";
-			String sampleType = "";
-			for (VIRAL_LOAD_RESULT labInfo : viralLoadResult) { // there is only one result in the payload
-				dateSampleCollected = labInfo.getDate_sample_collected();
-				dateSampleTested = labInfo.getDate_sample_tested();
-				vlResult = labInfo.getVl_result();
-				sampleType = labInfo.getSample_type();
+			// get patient name
+			PATIENT_IDENTIFICATION patientIdentification = ilErrorMessage.getPatient_identification();
+
+			PATIENT_NAME patientName = patientIdentification.getPatient_name();
+			String fullName = "";
+			if (patientName != null) {
+				if (patientName.getFirst_name() != null) {
+					fullName = patientName.getFirst_name() + " ";
+				}
+				if (patientName.getMiddle_name() != null) {
+					fullName = fullName + patientName.getMiddle_name() + " ";
+				}
+				if (patientName.getLast_name() != null) {
+					fullName = fullName + patientName.getLast_name();
+				}
+			}
+
+			String dataValue = null;
+			Date dateValue = null;
+			if (StringUtils.isNotBlank(messageType) && messageType.equalsIgnoreCase("Appointment")) {
+				APPOINTMENT_INFORMATION[] appointmentList = ilErrorMessage.getAppointment_information();
+				if (appointmentList.length > 0) {
+					APPOINTMENT_INFORMATION appointmentInformation = appointmentList[0];
+					dataValue = appointmentInformation.getAppointment_date();
+				}
+
+
+			} else {
+				PATIENT_VISIT visitInfo = ilErrorMessage.getPatient_visit();
+				dataValue = visitInfo.getVisit_date();
 
 			}
 
-			int sampleTypeCode = Integer.valueOf(sampleType);
+			if (dataValue != null) {
+				try {
+					dateValue = yyyyMMddWithoutHiphen.parse(dataValue);
+				} catch (ParseException e) {
+					//throw new RuntimeException(e);
+				}
+			}
+
 			SimpleObject errorObject = SimpleObject.create(
 					"id", errorItem.getId(),
 					"uuid", errorItem.getUuid(),
 					"cccNumber", cccNumber,
-					"sampleCollectionDate", dateSampleCollected,
-					"testDate", dateSampleTested,
-					"sampleType", sampleTypeCode == 0 ? "EID" : "Viral Load",
+					"patientName", fullName,
+					"visitDate", dateValue != null ? yyyyMMdd.format(dateValue) : "",
+					"messageType", messageType,
 					"error", errorItem.getStatus(),
-					"result", vlResult);
+					"dateCreated", yyyyMMdd.format(errorItem.getDateCreated())
+			);
 			generalErrorList.add(errorObject);
-		}*/
+		}
 
 		model.put("queueList", ui.toJson(queueList));
 		model.put("queueListSize", queueList.size());
 		
 		model.put("generalErrorListSize", generalErrorList.size());
-		model.put("generalErrorList", generalErrorList);
+		model.put("generalErrorList", ui.toJson(generalErrorList));
 	}
 }

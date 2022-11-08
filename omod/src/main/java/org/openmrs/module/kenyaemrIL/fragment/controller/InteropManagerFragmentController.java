@@ -15,6 +15,7 @@ import org.openmrs.module.kenyaemrIL.api.ILPrescriptionMessage;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
+import org.openmrs.module.kenyaui.annotation.AppAction;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.ui.framework.UiUtils;
 import org.openmrs.ui.framework.fragment.FragmentModel;
@@ -269,5 +270,37 @@ public class InteropManagerFragmentController {
         Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
 
         return ret;
+    }
+
+    /**
+     * Requeue errors
+     *
+     * @param errorList - comma separated list of error uuids, or string 'all'
+     * @return the status
+     */
+    @AppAction("kenyaemr.ushauri.home")
+    public SimpleObject requeueErrors(@RequestParam("errorList") String errorList, UiUtils ui) {
+        KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
+        service.reQueueErrors(errorList);
+        return SimpleObject.create("status", "success");
+    }
+
+    /**
+     * Purge errors
+     *
+     * @param errorList - comma separated list of error uuids, or string 'all'
+     * @return the status
+     */
+    @AppAction("kenyaemr.ushauri.home")
+    public SimpleObject purgeErrors(@RequestParam("errorList") String errorList, UiUtils ui) {
+        //Check that the user has correct role to delete
+        if (/*Context.getAuthenticatedUser().containsRole(AfyastatSecurityMetadata._Role.APPLICATION_AFYASTAT_DELETE)
+                || */Context.getAuthenticatedUser().isSuperUser()) {
+            KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
+            service.purgeErrors(errorList);
+            return SimpleObject.create("status", "success");
+        } else {
+            return SimpleObject.create("status", "error");
+        }
     }
 }

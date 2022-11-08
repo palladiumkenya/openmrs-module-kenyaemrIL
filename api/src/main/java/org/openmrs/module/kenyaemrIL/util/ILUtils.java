@@ -33,6 +33,7 @@ import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.ILMessageType;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
 
 import javax.net.ssl.SSLContext;
@@ -325,6 +326,18 @@ public class ILUtils {
 		outboxMessage.setDescription("");
 		outboxMessage.setName("");
 		outboxMessage.setMessage_type(kenyaEMRILMessage.getMessage_type());
+		return outboxMessage;
+	}
+
+	public static KenyaemrMhealthOutboxMessage createMhealthOutboxMessageFromErrorMessage(KenyaEMRILMessageErrorQueue errorMessage) {
+
+		KenyaemrMhealthOutboxMessage outboxMessage = new KenyaemrMhealthOutboxMessage();
+		outboxMessage.setHl7_type(errorMessage.getHl7_type());
+		outboxMessage.setSource(errorMessage.getSource());
+		outboxMessage.setMessage(errorMessage.getMessage());
+		outboxMessage.setDescription("");
+		outboxMessage.setName("");
+		outboxMessage.setMessage_type(errorMessage.getMessage_type());
 		return outboxMessage;
 	}
 }

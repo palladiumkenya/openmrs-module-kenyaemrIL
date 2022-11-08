@@ -17,7 +17,7 @@ public class KenyaEMRILMessageErrorQueue extends BaseOpenmrsMetadata implements 
     private String source;
     private String message;
 
-    private String middleware; // IL or Direct
+    private String middleware; // IL, Hybrid, or Direct
 
     public String getSource() {
         return source;
