@@ -227,7 +227,6 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                             <th class="sampleTypeColumn">Message Type</th>
                                             <th class="sampleTypeColumn">Visit/Appointment Date</th>
                                             <th class="dateRequestColumn">Date created</th>
-                                            <th class="actionColumn"></th>
                                         </tr>
                                         </thead>
                                         <tbody id="queue-list">
@@ -259,7 +258,12 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                         <legend></legend>
                                         <table class="simple-table" width="100%">
                                             <thead>
-
+                                            <tr>
+                                                <div style="float: right; padding-right: 60px; padding-bottom: 10px;">
+                                                    <input type="button" id="requeueGeneralErrors" value="Re-queue" disabled/>
+                                                    <input type="button" id="deleteGeneralErrors" value="Delete" disabled/>
+                                                </div>
+                                            </tr>
                                             <tr>
                                                 <th class="clientNameColumn">Patient Identifier</th>
                                                 <th class="cccNumberColumn">Patient Name</th>
@@ -267,10 +271,8 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                                 <th class="sampleTypeColumn">Visit Date</th>
                                                 <th class="dateRequestColumn">Date created</th>
                                                 <th class="errorColumn">Error</th>
-                                                <th class="actionColumn">
-                                                    <input type="button" id="requeueGeneralErrors" value="Re-queue" disabled/>
-                                                    <input type="button" id="deleteGeneralErrors" value="Delete" disabled/>
-                                                </th>
+                                                <th class="selectColumn"><input type="checkbox" id="chk-general-select-all"/></th>
+
                                             </tr>
 
                                             </thead>
