@@ -163,7 +163,6 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         ilMessage.setMessage_header(messageHeader);
         ILPerson ilPerson = ilMessage.extractILRegistration();
         KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
-        KenyaEMRILMessageArchive kenyaEMRILMessageArchive = new KenyaEMRILMessageArchive();
 
         try {
             String messageString = mapper.writeValueAsString(ilPerson);
@@ -174,17 +173,9 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             kenyaEMRILMessage.setName("");
             kenyaEMRILMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
 
-            //Archive
-            kenyaEMRILMessageArchive.setHl7_type("ADT^A04");
-            kenyaEMRILMessageArchive.setSource("KENYAEMR");
-            kenyaEMRILMessageArchive.setMessage(messageString);
-            kenyaEMRILMessageArchive.setDescription("");
-            kenyaEMRILMessageArchive.setName("");
-            kenyaEMRILMessageArchive.setMessage_type(ILMessageType.OUTBOUND.getValue());
-
             KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
-            KenyaEMRILMessageArchive archiveInstance = saveKenyaEMRILMessageArchive(kenyaEMRILMessageArchive);
-            if (savedInstance != null || archiveInstance != null) {
+
+            if (savedInstance != null) {
                 isSuccessful = true;
             } else {
                 isSuccessful = false;
@@ -195,7 +186,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
             if (configuredMiddleware != null) {
                 if (configuredMiddleware.equalsIgnoreCase("Direct") || configuredMiddleware.equalsIgnoreCase("Hybrid")) {
-                    KenyaemrMhealthOutboxMessage directQueueMessage = ILUtils.replicateILMessage(kenyaEMRILMessage);
+                    KenyaemrMhealthOutboxMessage directQueueMessage = ILUtils.createMhealthOutboxFromILMessage(kenyaEMRILMessage);
                     saveMhealthOutboxMessage(directQueueMessage);
                 }
             }
@@ -215,7 +206,6 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         ilMessage.setMessage_header(messageHeader);
         ILPerson ilPerson = ilMessage.extractILRegistration();
         KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
-        KenyaEMRILMessageArchive kenyaEMRILMessageArchive = new KenyaEMRILMessageArchive();
 
         try {
             String messageString = mapper.writeValueAsString(ilPerson);
@@ -226,18 +216,8 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             kenyaEMRILMessage.setName("");
             kenyaEMRILMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
 
-            //Archive
-            kenyaEMRILMessageArchive.setHl7_type("ADT^A08");
-            kenyaEMRILMessageArchive.setSource("KENYAEMR");
-            kenyaEMRILMessageArchive.setMessage(messageString);
-            kenyaEMRILMessageArchive.setDescription("");
-            kenyaEMRILMessageArchive.setName("");
-            kenyaEMRILMessageArchive.setMessage_type(ILMessageType.OUTBOUND.getValue());
-
-
             KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
-            KenyaEMRILMessageArchive archiveInstance = saveKenyaEMRILMessageArchive(kenyaEMRILMessageArchive);
-            if (savedInstance != null || archiveInstance != null) {
+            if (savedInstance != null) {
                 isSuccessful = true;
             } else {
                 isSuccessful = false;
@@ -247,7 +227,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
             if (configuredMiddleware != null) {
                 if (configuredMiddleware.equalsIgnoreCase("Direct") || configuredMiddleware.equalsIgnoreCase("Hybrid")) {
-                    KenyaemrMhealthOutboxMessage directQueueMessage = ILUtils.replicateILMessage(kenyaEMRILMessage);
+                    KenyaemrMhealthOutboxMessage directQueueMessage = ILUtils.createMhealthOutboxFromILMessage(kenyaEMRILMessage);
                     saveMhealthOutboxMessage(directQueueMessage);
                 }
             }
@@ -956,13 +936,12 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
     @Override
     public boolean logAppointmentSchedule(ILMessage ilMessage) {
-        System.out.println("Generating Appointment message");
         boolean isSuccessful;
         //Message Header
         MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("SIU^S12");
         ilMessage.setMessage_header(messageHeader);
         KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
-        KenyaEMRILMessageArchive kenyaEMRILMessageArchive = new KenyaEMRILMessageArchive();
+
         try {
             AppointmentMessage appointmentMessage = ilMessage.extractAppointmentMessage();
             String messageString = mapper.writeValueAsString(appointmentMessage);
@@ -973,18 +952,9 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             kenyaEMRILMessage.setDescription("");
             kenyaEMRILMessage.setName("");
             kenyaEMRILMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
-
-            //Archive
-            kenyaEMRILMessageArchive.setHl7_type("SIU^S12");
-            kenyaEMRILMessageArchive.setSource("KENYAEMR");
-            kenyaEMRILMessageArchive.setMessage(messageString);
-            kenyaEMRILMessageArchive.setDescription("");
-            kenyaEMRILMessageArchive.setName("");
-            kenyaEMRILMessageArchive.setMessage_type(ILMessageType.OUTBOUND.getValue());
-
             KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
-            KenyaEMRILMessageArchive archiveInstance = saveKenyaEMRILMessageArchive(kenyaEMRILMessageArchive);
-            if (savedInstance != null || archiveInstance != null) {
+
+            if (savedInstance != null) {
                 isSuccessful = true;
             } else {
                 isSuccessful = false;
@@ -995,7 +965,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
             if (configuredMiddleware != null) {
                 if (configuredMiddleware.equalsIgnoreCase("Direct") || configuredMiddleware.equalsIgnoreCase("Hybrid")) {
-                    KenyaemrMhealthOutboxMessage directQueueMessage = ILUtils.replicateILMessage(kenyaEMRILMessage);
+                    KenyaemrMhealthOutboxMessage directQueueMessage = ILUtils.createMhealthOutboxFromILMessage(kenyaEMRILMessage);
                     saveMhealthOutboxMessage(directQueueMessage);
                 }
             }
@@ -1073,7 +1043,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("RDE^001");
         ilMessage.setMessage_header(messageHeader);
         KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
-        KenyaEMRILMessageArchive kenyaEMRILMessageArchive = new KenyaEMRILMessageArchive();
+
         try {
             OrderMessage orderMessage = ilMessage.extractPharmacyOrderMessage();
             String messageString = mapper.writeValueAsString(orderMessage);
@@ -1083,18 +1053,10 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             kenyaEMRILMessage.setDescription("");
             kenyaEMRILMessage.setName("");
             kenyaEMRILMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
-            //Archive
-            kenyaEMRILMessageArchive.setHl7_type("RDE^001");
-            kenyaEMRILMessageArchive.setSource("KENYAEMR");
-            kenyaEMRILMessageArchive.setMessage(messageString);
-            kenyaEMRILMessageArchive.setDescription("");
-            kenyaEMRILMessageArchive.setName("");
-            kenyaEMRILMessageArchive.setMessage_type(ILMessageType.OUTBOUND.getValue());
 
             KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
-            KenyaEMRILMessageArchive archiveInstance = saveKenyaEMRILMessageArchive(kenyaEMRILMessageArchive);
 
-            if (savedInstance != null || archiveInstance != null) {
+            if (savedInstance != null) {
                 isSuccessful = true;
             } else {
                 isSuccessful = false;
@@ -1154,6 +1116,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     @Override
     public void purgeErrors(String errorList) {
         dao.purgeErrors(errorList);
+    }
+
+    @Override
+    public List<KenyaEMRILMessageArchive> fetchRecentArchives() {
+        return dao.fetchRecentArchives();
     }
 
 

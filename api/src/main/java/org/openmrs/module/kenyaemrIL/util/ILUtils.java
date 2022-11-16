@@ -21,20 +21,28 @@ import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
 import org.openmrs.Form;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
+import org.openmrs.PatientIdentifierType;
 import org.openmrs.Person;
 import org.openmrs.Provider;
 import org.openmrs.User;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.kenyaemrIL.api.ILMessageType;
+import org.openmrs.module.kenyaemr.metadata.HivMetadata;
+import org.openmrs.module.kenyaemrIL.api.ILPatientRegistration;
+import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
+import org.openmrs.module.kenyaemrIL.il.ILMessage;
+import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
+import org.openmrs.module.metadatadeploy.MetadataUtils;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
@@ -47,6 +55,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -65,13 +74,16 @@ public class ILUtils {
 	public static final String GP_SSL_VERIFICATION_ENABLED = "kemrorder.ssl_verification_enabled";
     public static final String GP_USHAURI_SSL_VERIFICATION_ENABLED = "kemr.ushauri.ssl_verification_enabled";
     public static final String GP_USHAURI_PUSH_SERVER_URL = "kenyaemrIL.endpoint.ushauri.push";
-    public static String GP_MHEALTH_MIDDLEWARE_TO_USE = "kemr.mhealth.middlware";
+	public static final String CCC_NUMBER_IDENTIFIER_TYPE = "CCC_NUMBER";
+	public static String GP_MHEALTH_MIDDLEWARE_TO_USE = "kemr.mhealth.middlware";
     public static String HL7_REGISTRATION_MESSAGE = "ADT^A04";
     public static String HL7_REGISTRATION_UPDATE_MESSAGE = "ADT^A08";
     public static String HL7_APPOINTMENT_MESSAGE = "SIU^S12";
+	public static final String REGISTRATION_DOES_NOT_EXISTS_IN_THE_USHAURI_SYSTEM = "does not exists in the Ushauri system";
 
 
-    /**
+
+	/**
 	 * Checks whether a date has any time value
 	 * @param date the date
 	 * @return true if the date has time
@@ -317,7 +329,12 @@ public class ILUtils {
 		return null;
 	}
 
-	public static KenyaemrMhealthOutboxMessage replicateILMessage(KenyaEMRILMessage kenyaEMRILMessage) {
+	/**
+	 * Creates a copy of MhealthOutboxMessage from KenyaEMRILMessage
+	 * @param kenyaEMRILMessage
+	 * @return
+	 */
+	public static KenyaemrMhealthOutboxMessage createMhealthOutboxFromILMessage(KenyaEMRILMessage kenyaEMRILMessage) {
 
 		KenyaemrMhealthOutboxMessage outboxMessage = new KenyaemrMhealthOutboxMessage();
 		outboxMessage.setHl7_type(kenyaEMRILMessage.getHl7_type());
@@ -329,6 +346,12 @@ public class ILUtils {
 		return outboxMessage;
 	}
 
+	/**
+	 * Create MhealthOutboxMessage from an error message.
+	 * This is used when reconstructing the message from errors on re-queue
+	 * @param errorMessage
+	 * @return
+	 */
 	public static KenyaemrMhealthOutboxMessage createMhealthOutboxMessageFromErrorMessage(KenyaEMRILMessageErrorQueue errorMessage) {
 
 		KenyaemrMhealthOutboxMessage outboxMessage = new KenyaemrMhealthOutboxMessage();
@@ -339,5 +362,86 @@ public class ILUtils {
 		outboxMessage.setName("");
 		outboxMessage.setMessage_type(errorMessage.getMessage_type());
 		return outboxMessage;
+	}
+
+	/**
+	 * Create archive from mhealth outbox message
+	 * @param message
+	 * @return
+	 */
+	public static KenyaEMRILMessageArchive createArchiveForMhealthOutbox(KenyaemrMhealthOutboxMessage message) {
+
+		KenyaEMRILMessageArchive archiveMessage = new KenyaEMRILMessageArchive();
+		archiveMessage.setHl7_type(message.getHl7_type());
+		archiveMessage.setSource(message.getSource());
+		archiveMessage.setMessage(message.getMessage());
+		archiveMessage.setDescription("");
+		archiveMessage.setName("");
+		archiveMessage.setMessage_type(message.getMessage_type());
+		return archiveMessage;
+	}
+
+	/**
+	 * Create archive message from il message
+	 * @param message
+	 * @return
+	 */
+	public static KenyaEMRILMessageArchive createArchiveForIlMessage(KenyaEMRILMessage message) {
+
+		KenyaEMRILMessageArchive archiveMessage = new KenyaEMRILMessageArchive();
+		archiveMessage.setHl7_type(message.getHl7_type());
+		archiveMessage.setSource(message.getSource());
+		archiveMessage.setMessage(message.getMessage());
+		archiveMessage.setDescription("");
+		archiveMessage.setName("");
+		archiveMessage.setMessage_type(message.getMessage_type());
+		return archiveMessage;
+	}
+
+	/**
+	 * Extract CCC Number from IL payload
+	 * @param patientIdentifierType
+	 * @param payload
+	 * @return
+	 */
+	public static String getPatientIdentifierFromILPayload(String patientIdentifierType, String payload) {
+		if (StringUtils.isBlank(patientIdentifierType) || StringUtils.isBlank(payload)) {
+			return null;
+		}
+
+
+		ObjectMapper mapper = new ObjectMapper();
+		ILMessage ilMessage;
+		try {
+			ilMessage = mapper.readValue(payload.toLowerCase(), ILMessage.class);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		List<INTERNAL_PATIENT_ID> idList = ilMessage.getPatient_identification().getInternal_patient_id();
+		for (INTERNAL_PATIENT_ID id : idList) {
+			if (id.getIdentifier_type().equalsIgnoreCase(patientIdentifierType)) {
+				return id.getId();
+			}
+		}
+
+		return null;
+
+	}
+
+	public static void createRegistrationILMessage(KenyaEMRILMessageErrorQueue errorData) {
+		if (errorData.getStatus().contains(REGISTRATION_DOES_NOT_EXISTS_IN_THE_USHAURI_SYSTEM)) { // missing registration in Ushauri server
+			PatientIdentifierType cccIdType = MetadataUtils.existing(PatientIdentifierType.class, HivMetadata._PatientIdentifierType.UNIQUE_PATIENT_NUMBER);
+			String patientCCCNumberFromPayload = ILUtils.getPatientIdentifierFromILPayload(ILUtils.CCC_NUMBER_IDENTIFIER_TYPE, errorData.getMessage());
+			List<Patient> patients = Context.getPatientService().getPatients(null, patientCCCNumberFromPayload, Arrays.asList(cccIdType), true);
+			Patient patient = null;
+			if (patients.size() > 0) {
+				patient = patients.get(0);
+			}
+			if (patient != null) {
+				ILMessage ilMessage = ILPatientRegistration.iLPatientWrapper(patient);
+				KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
+				service.sendAddPersonRequest(ilMessage);
+			}
+		}
 	}
 }

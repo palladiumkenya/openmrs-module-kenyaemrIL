@@ -15,6 +15,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.ILMessageType;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
@@ -133,6 +134,7 @@ public class UshauriDirectPushTask extends AbstractTask {
             //verify the valid error code first
             int statusCode = response.getStatusLine().getStatusCode();
             //System.out.println("Server response: " + statusCode);
+            KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
             if (statusCode != 200) {
                 String errorsString = "";
                 JSONParser parser = new JSONParser();
@@ -159,12 +161,16 @@ public class UshauriDirectPushTask extends AbstractTask {
                 Context.getService(KenyaEMRILService.class).deleteMhealthOutboxMessage(outbox);
 
             } else {
+
+                KenyaEMRILMessageArchive messageArchive = ILUtils.createArchiveForMhealthOutbox(outbox);
+                messageArchive.setMiddleware("Direct");
+                service.saveKenyaEMRILMessageArchive(messageArchive);
+                //Purge from the il_messages table
+                service.deleteMhealthOutboxMessage(outbox);
+
                 log.info("Successfully sent message to USHAURI server");
                 System.out.println("Successfully sent message to USHAURI server");
-                outbox.setRetired(true);
-                Context.getService(KenyaEMRILService.class).saveMhealthOutboxMessage(outbox);
-                //Purge from the il_messages table
-                Context.getService(KenyaEMRILService.class).deleteMhealthOutboxMessage(outbox);
+
             }
         } catch (Exception e) {
             e.printStackTrace();

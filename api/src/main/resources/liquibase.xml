@@ -430,4 +430,18 @@
             <column name="middleware" type="varchar(50)" defaultValue="IL"> <constraints nullable="true"/> </column>
         </addColumn>
     </changeSet>
+
+    <changeSet id="${project.parent.artifactId}-20221109-1034" author="aojwang">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="il_message_archive" columnName="middleware" />
+            </not>
+        </preConditions>
+        <comment>
+            Add middleware column to the archive table
+        </comment>
+        <addColumn tableName="il_message_archive">
+            <column name="middleware" type="varchar(50)" defaultValue="IL"> <constraints nullable="true"/> </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

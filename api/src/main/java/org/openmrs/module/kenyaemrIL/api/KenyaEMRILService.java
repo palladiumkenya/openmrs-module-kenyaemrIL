@@ -217,4 +217,6 @@ public interface KenyaEMRILService extends OpenmrsService {
 
 
     void purgeErrors(final @RequestParam(value = "errorList") String errorList);
+
+    List<KenyaEMRILMessageArchive> fetchRecentArchives();
 }

@@ -17,6 +17,7 @@ public class KenyaEMRILMessageArchive extends BaseOpenmrsMetadata implements Ser
     private String source;
     private String message;
 
+    private String middleware; // IL, Direct
     public String getSource() {
         return source;
     }
@@ -82,5 +83,13 @@ public class KenyaEMRILMessageArchive extends BaseOpenmrsMetadata implements Ser
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getMiddleware() {
+        return middleware;
+    }
+
+    public void setMiddleware(String middleware) {
+        this.middleware = middleware;
     }
 }

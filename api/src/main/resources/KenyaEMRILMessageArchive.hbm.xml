@@ -52,5 +52,8 @@
 
         <property name="hl7_type" type="java.lang.String" column="hl7_type"
                   length="10"/>
+
+        <property name="middleware" type="java.lang.String" column="middleware"
+                  length="50"/>
     </class>
 </hibernate-mapping>

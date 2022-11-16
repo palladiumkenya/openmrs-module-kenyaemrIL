@@ -91,4 +91,6 @@ public interface KenyaEMRILDAO {
     KenyaEMRILMessageErrorQueue getKenyaEMRILErrorMessageByUuid(String uniqueId);
 
     void purgeErrors(String errorList);
+
+    List<KenyaEMRILMessageArchive> fetchRecentArchives();
 }

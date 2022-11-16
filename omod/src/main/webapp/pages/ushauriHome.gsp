@@ -49,6 +49,10 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 #queue-pager li{
     display: inline-block;
 }
+
+#archive-pager li{
+    display: inline-block;
+}
 #chk-general-select-all {
     display: block;
     margin-left: auto;
@@ -205,12 +209,14 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
             <div class="ke-tabmenu-item" data-tabid="queue_data">Outgoing queue</div>
 
+            <div class="ke-tabmenu-item" data-tabid="archive_data">Sent Messages</div>
+
             <div class="ke-tabmenu-item" data-tabid="general_error_queue">Error queue</div>
 
         </div>
 
         <div class="ke-tab" data-tabid="queue_data">
-            <table cellspacing="0" cellpadding="0" width="100%">
+            <table id="queue" cellspacing="0" cellpadding="0" width="100%">
                 <tr>
                     <td style="width: 99%; vertical-align: top">
                         <div class="ke-panel-frame">
@@ -237,6 +243,43 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
                                     <div id="queue-pager">
                                         <ul id="queuePagination" class="pagination-sm"></ul>
+                                    </div>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="ke-tab" data-tabid="archive_data">
+            <table id="archive" cellspacing="0" cellpadding="0" width="100%">
+                <tr>
+                    <td style="width: 99%; vertical-align: top">
+                        <div class="ke-panel-frame">
+                            <div class="ke-panel-heading"></div>
+
+                            <div class="ke-panel-content">
+                                <fieldset>
+                                    <legend></legend>
+                                    <table class="simple-table" width="100%">
+                                        <thead>
+                                        <tr>
+                                            <th class="clientNameColumn">Patient Identifier</th>
+                                            <th class="cccNumberColumn">Patient Name</th>
+                                            <th class="sampleTypeColumn">Message Type</th>
+                                            <th class="sampleTypeColumn">Visit/Appointment Date</th>
+                                            <th class="dateRequestColumn">Date created</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="archive-list">
+
+                                        </tbody>
+
+                                    </table>
+
+                                    <div id="archive-pager">
+                                        <ul id="archivePagination" class="pagination-sm"></ul>
                                     </div>
                                 </fieldset>
                             </div>
@@ -399,28 +442,37 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
         var generalErrorPaginationDiv = jq('#generalErrorPagination');
         var queuePaginationDiv = jq('#queuePagination');
+        var archivePaginationDiv = jq('#archivePagination');
 
         var generalErrorListDisplayArea = jq('#general-error-list');
         var queueListDisplayArea = jq('#queue-list');
+        var archiveListDisplayArea = jq('#archive-list');
 
         var numberOfGeneralErrorRecords = ${ generalErrorListSize };
         var numberOfRecordsToProcess = ${ queueListSize };
+        var numberOfArchivesToProcess = ${ archiveListSize };
 
         var generalErrorRecords = ${ generalErrorList };
         var queueRecords = ${ queueList };
+        var archiveRecords = ${ archiveList };
 
         var generalErrorDataDisplayRecords = [];
         var queueDataDisplayRecords = [];
+        var archiveDataDisplayRecords = [];
 
         var recPerPage = 10;
-        var generalErrorStartPage = 1;
 
+        var generalErrorStartPage = 1;
         var queueStartPage = 1;
+        var archiveStartPage = 1;
+
         var totalGeneralErrorPages = Math.ceil(numberOfGeneralErrorRecords / recPerPage);
         var totalQueuePages = Math.ceil(numberOfRecordsToProcess / recPerPage);
+        var totalArchivePages = Math.ceil(numberOfArchivesToProcess / recPerPage);
 
         var visibleGeneralErrorPages = 1;
         var visibleQueuePages = 1;
+        var visibleArchivePages = 1;
 
         var payloadEditor = {};
 
@@ -432,6 +484,11 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             visibleGeneralErrorPages = 5;
         }
 
+        if (totalArchivePages <= 5) {
+            visibleArchivePages = totalArchivePages;
+        } else {
+            visibleArchivePages = 5;
+        }
 
         if (totalQueuePages <= 5) {
             visibleQueuePages = totalQueuePages;
@@ -442,6 +499,10 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
         if(numberOfRecordsToProcess > 0) {
             apply_pagination(queuePaginationDiv, queueListDisplayArea, totalQueuePages, visibleQueuePages, queueRecords, queueDataDisplayRecords, 'queue', queueStartPage); // records in queue
+        }
+
+        if (numberOfArchivesToProcess > 0) {
+            apply_pagination(archivePaginationDiv, archiveListDisplayArea, totalArchivePages, visibleArchivePages, archiveRecords, archiveDataDisplayRecords, 'archive', archiveStartPage); // archives
         }
 
         if (numberOfGeneralErrorRecords > 0) {
