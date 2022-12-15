@@ -13,17 +13,21 @@
 <!DOCTYPE hibernate-mapping PUBLIC
         "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
         "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
-<hibernate-mapping package="org.openmrs.module.kenyaemrIL.il">
+<hibernate-mapping package="org.openmrs.module.kenyaemrIL.mhealth">
 
-    <class name="org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue" table="il_message_error_queue">
+    <class name="org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthPatientRegistration" table="mhealth_patient_registration">
 
         <id name="message_id" type="int" column="message_id" unsaved-value="0">
             <generator class="native">
-                <param name="sequence">il_message_error_id_seq</param>
+                <param name="sequence">mhealth_registration_message_id_seq</param>
             </generator>
         </id>
 
         <discriminator column="message_id" insert="false"/>
+
+        <property name="patient_id" type="int" column="patient_id"
+                  length="1" not-null="true"/>
+
 
         <property name="message" type="java.lang.String"
                   column="message" not-null="true" length="4000"/>
@@ -45,14 +49,12 @@
                   length="1" not-null="true"/>
 
         <property name="status" type="java.lang.String" column="status"
-                  length="200"  />
+                  length="100" not-null="true" insert="false" />
 
         <property name="source" type="java.lang.String" column="source"
                   length="50" />
 
         <property name="hl7_type" type="java.lang.String" column="hl7_type"
                   length="10"/>
-        <property name="middleware" type="java.lang.String" column="middleware"
-                  length="50"/>
     </class>
 </hibernate-mapping>

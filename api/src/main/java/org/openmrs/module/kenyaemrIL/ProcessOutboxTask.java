@@ -15,6 +15,8 @@ import org.openmrs.GlobalProperty;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
+import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
+import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.scheduler.tasks.AbstractTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,12 +88,15 @@ public class ProcessOutboxTask extends AbstractTask {
                 log.error("Error sending message to IL server! " + "Status code - " + statusCode + ". Msg" + errorObj.get("message"));
 
             } else {
+
+                //Purge from the il_messages table
+                KenyaEMRILMessageArchive messageArchive = ILUtils.createArchiveForIlMessage(outbox);
+                messageArchive.setMiddleware("IL");
+                getEMRILService().saveKenyaEMRILMessageArchive(messageArchive);
+                getEMRILService().deleteKenyaEMRILMessage(outbox);
+
                 log.info("Successfully sent message to IL server");
                 System.out.println("Successfully sent message to IL server");
-                outbox.setRetired(true);
-                getEMRILService().saveKenyaEMRILMessage(outbox);
-                //Purge from the il_messages table
-                getEMRILService().deleteKenyaEMRILMessage(outbox);
             }
         } catch (Exception e) {
             e.printStackTrace();

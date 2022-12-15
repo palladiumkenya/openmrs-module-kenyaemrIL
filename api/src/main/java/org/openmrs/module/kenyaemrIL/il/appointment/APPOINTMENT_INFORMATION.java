@@ -15,6 +15,7 @@ public class APPOINTMENT_INFORMATION {
     private String  appointment_date;
     private String  visit_date;
     private PLACER_APPOINTMENT_NUMBER  placer_appointment_number;
+    private String consent_for_reminder = "";
 
     public APPOINTMENT_INFORMATION() {
         this.placer_appointment_number = new PLACER_APPOINTMENT_NUMBER();
@@ -99,6 +100,14 @@ public class APPOINTMENT_INFORMATION {
 
     public void setPlacer_appointment_number(PLACER_APPOINTMENT_NUMBER placer_appointment_number) {
         this.placer_appointment_number = placer_appointment_number;
+    }
+
+    public String getConsent_for_reminder() {
+        return consent_for_reminder;
+    }
+
+    public void setConsent_for_reminder(String consent_for_reminder) {
+        this.consent_for_reminder = consent_for_reminder;
     }
 }
 

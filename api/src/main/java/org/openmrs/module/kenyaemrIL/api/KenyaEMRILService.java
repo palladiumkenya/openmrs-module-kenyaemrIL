@@ -22,7 +22,9 @@ import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
+import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -126,7 +128,11 @@ public interface KenyaEMRILService extends OpenmrsService {
 
     List<KenyaEMRILRegistration> getKenyaEMRILRegistration(Boolean includeRetired);
 
-   // List<KenyaEMRILRegistration> getAllKenyaEMRILRegistration(Boolean includeAll);
+    List<KenyaEMRILMessage> fetchAllViralLoadResults(boolean status);
+
+    List<KenyaEMRILMessageErrorQueue> fetchAllViralLoadErrors();
+
+    // List<KenyaEMRILRegistration> getAllKenyaEMRILRegistration(Boolean includeAll);
 
   //  List<KenyaEMRILRegistration> getKenyaEMRILRegistrationStatus(String status);
 
@@ -188,4 +194,29 @@ public interface KenyaEMRILService extends OpenmrsService {
      * @return true or false - depending on the processing outcome
      */
     boolean logPharmacyOrders(ILMessage ilMessage);
+
+    // additions to support for data exchange with mhealth apps
+
+    KenyaemrMhealthOutboxMessage getMhealthOutboxMessageByUuid(String uuid);
+
+    KenyaemrMhealthOutboxMessage saveMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthMessageOutbox);
+
+    void deleteMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthOutboxMessage);
+
+    List<KenyaemrMhealthOutboxMessage> getAllMhealthOutboxMessages(Boolean includeAll);
+
+    List<KenyaemrMhealthOutboxMessage> getKenyaEMROutboxMessagesToSend(Boolean includeRetired);//fetchAllViralLoadErrors
+
+    List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors();
+
+    void reQueueErrors(final @RequestParam(value = "errorList") String errorList);
+
+    void purgeILErrorQueueMessage(KenyaEMRILMessageErrorQueue kenyaEMRILMessageErrorQueue);
+
+    KenyaEMRILMessageErrorQueue getKenyaEMRILErrorMessageByUuid(String uniqueId);
+
+
+    void purgeErrors(final @RequestParam(value = "errorList") String errorList);
+
+    List<KenyaEMRILMessageArchive> fetchRecentArchives();
 }

@@ -17,6 +17,8 @@ public class KenyaEMRILMessageErrorQueue extends BaseOpenmrsMetadata implements 
     private String source;
     private String message;
 
+    private String middleware; // IL, Hybrid, or Direct
+
     public String getSource() {
         return source;
     }
@@ -82,5 +84,13 @@ public class KenyaEMRILMessageErrorQueue extends BaseOpenmrsMetadata implements 
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getMiddleware() {
+        return middleware;
+    }
+
+    public void setMiddleware(String middleware) {
+        this.middleware = middleware;
     }
 }

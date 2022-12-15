@@ -62,6 +62,11 @@ public class ILPatientAppointments {
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("PATIENT_CLINIC_NUMBER");
                 internalPatientIds.add(ipd);
+            } else if (patientIdentifier.getIdentifierType().getUuid().equalsIgnoreCase("f85081e2-b4be-4e48-b3a4-7994b69bb101")) { // this is NUPI
+                ipd.setAssigning_authority("MOH");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("NUPI");
+                internalPatientIds.add(ipd);
             }
         }
 
@@ -101,9 +106,13 @@ public class ILPatientAppointments {
 
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         Integer patientTCAConcept = 5096;
+        Integer consentForReminderConcept = 166607;
+        int yesConceptId = 1065;
+        int noConceptId = 1066;
         //Integer patientTCAReasonConcept = 160288;
         if (lastFollowUpEncounter != null) {
             for (Obs obs : lastFollowUpEncounter.getObs()) {
+                //TODO: We need a way to get obs for the concept ids of interest
                 if (obs.getConcept().getConceptId().equals(patientTCAConcept)) {
                     //we use encounter id to take care of changing appointment date for the same encounter
                     placerAppointmentNumber.setNumber(String.valueOf(lastFollowUpEncounter.getEncounterId().intValue()));
@@ -122,7 +131,14 @@ public class ILPatientAppointments {
 
                     appointments[0] = appointmentInformation;
                     ilMessage.setAppointment_information(appointments);
-                    break; // we are only interested on the tca observation
+                } else if (obs.getConcept().getConceptId().equals(consentForReminderConcept)) {
+                    if (obs.getValueCoded().getConceptId().equals(yesConceptId)) {
+                        appointmentInformation.setConsent_for_reminder("Y");
+                    } else {
+                        if (obs.getValueCoded().getConceptId().equals(noConceptId)) {
+                            appointmentInformation.setConsent_for_reminder("N");
+                        }
+                    }
                 }
             }
         }

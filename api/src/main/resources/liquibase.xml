@@ -315,4 +315,133 @@
         </delete>
     </changeSet>
 
+    <!--Adding scheduled task :Pull Mlab results-->
+    <changeSet id="${project.parent.artifactId}-20220804-0744" author="aojwang">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.MLabViralLoadResultsPullTask'
+                And name = 'Pull Mlab viral load results Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Add task for pulling viral load results from Mlab</comment>
+        <insert tableName="scheduler_task_config">
+            <column name="name" value="Pull Mlab viral load results Task" />
+            <column name="description" value="Periodically pulls viral load results from MLab" />
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.MLabViralLoadResultsPullTask" />
+            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
+            <column name="start_time" valueDate="2021-11-28T23:59:59" />
+            <column name="repeat_interval" value="18000" />
+            <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="0" />
+            <column name="started" value="0" />
+            <column name="uuid" value="2e16d6be-714b-42e3-9285-b163b1a4104b" />
+        </insert>
+    </changeSet>
+
+    <changeSet id="${project.parent.artifactId}-20220804-1629" author="aojwang">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.UshauriDirectPushTask'
+                And name = 'Push messages to Ushauri server'
+            </sqlCheck>
+        </preConditions>
+        <comment>Add task for pushing messages to Ushauri receiver</comment>
+        <insert tableName="scheduler_task_config">
+            <column name="name" value="Push messages to Ushauri server" />
+            <column name="description" value="Periodically pushes messages to Ushauri" />
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.UshauriDirectPushTask" />
+            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
+            <column name="start_time" valueDate="2021-11-28T23:59:59" />
+            <column name="repeat_interval" value="18000" />
+            <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="0" />
+            <column name="started" value="0" />
+            <column name="uuid" value="7351bb07-97a2-47a6-804b-c9c018c36609" />
+        </insert>
+    </changeSet>
+
+    <changeSet id="${project.parent.artifactId}-20220811-1016" author="aojwang">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="mhealth_message_outbox" /></not>
+        </preConditions>
+        <comment>
+            Create table for mhealth message outbox
+        </comment>
+        <createTable tableName="mhealth_message_outbox">
+            <column name="message_id" autoIncrement="true" type="int">
+                <constraints nullable="false" primaryKey="true" />
+            </column>
+            <column name="message" type="text"></column>
+            <column name="creator" type="int"></column>
+            <column name="message_type" type="int"></column>
+            <column name="hl7_type" type="varchar(20)"></column>
+            <column name="retired" type="int"></column>
+            <column name="status" type="varchar(100)" defaultValue="Success" ></column>
+            <column name="source" type="varchar(50)" ></column>
+            <column name="date_created" type="datetime"></column>
+            <column name="uuid" type="varchar(38)"></column>
+        </createTable>
+        <modifySql dbms="mysql">
+            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_unicode_ci"/>
+        </modifySql>
+    </changeSet>
+
+    <changeSet id="${project.parent.artifactId}-20220811-1020" author="aojwang">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="mhealth_patient_registration" /></not>
+        </preConditions>
+        <comment>
+            Create table for mhealth registration messages
+        </comment>
+        <createTable tableName="mhealth_patient_registration">
+            <column name="message_id" autoIncrement="true" type="int">
+                <constraints nullable="false" primaryKey="true" />
+            </column>
+            <column name="patient_id" type="int"></column>
+            <column name="message" type="text"></column>
+            <column name="creator" type="int"></column>
+            <column name="message_type" type="int"></column>
+            <column name="hl7_type" type="varchar(20)"></column>
+            <column name="retired" type="int"></column>
+            <column name="status" type="varchar(100)" defaultValue="Success" ></column>
+            <column name="source" type="varchar(50)" ></column>
+            <column name="date_created" type="datetime"></column>
+            <column name="uuid" type="varchar(38)"></column>
+        </createTable>
+        <modifySql dbms="mysql">
+            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_unicode_ci"/>
+        </modifySql>
+    </changeSet>
+
+    <changeSet id="${project.parent.artifactId}-20220819-1034" author="aojwang">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="il_message_error_queue" columnName="middleware"/>
+            </not>
+        </preConditions>
+        <comment>
+            Add middleware column
+        </comment>
+        <addColumn tableName="il_message_error_queue">
+            <column name="middleware" type="varchar(50)" defaultValue="IL"> <constraints nullable="true"/> </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="${project.parent.artifactId}-20221109-1034" author="aojwang">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="il_message_archive" columnName="middleware" />
+            </not>
+        </preConditions>
+        <comment>
+            Add middleware column to the archive table
+        </comment>
+        <addColumn tableName="il_message_archive">
+            <column name="middleware" type="varchar(50)" defaultValue="IL"> <constraints nullable="true"/> </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
