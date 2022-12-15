@@ -62,6 +62,11 @@ public class ILPatientAppointments {
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("PATIENT_CLINIC_NUMBER");
                 internalPatientIds.add(ipd);
+            } else if (patientIdentifier.getIdentifierType().getUuid().equalsIgnoreCase("f85081e2-b4be-4e48-b3a4-7994b69bb101")) { // this is NUPI
+                ipd.setAssigning_authority("MOH");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("NUPI");
+                internalPatientIds.add(ipd);
             }
         }
 
