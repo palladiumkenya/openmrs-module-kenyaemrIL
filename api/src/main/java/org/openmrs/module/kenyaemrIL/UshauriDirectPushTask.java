@@ -140,13 +140,21 @@ public class UshauriDirectPushTask extends AbstractTask {
                 JSONParser parser = new JSONParser();
                 JSONObject responseObj = (JSONObject) parser.parse(EntityUtils.toString(response.getEntity()));
                 JSONObject errorObj = (JSONObject) responseObj.get("response");
+                System.out.println("Error object" + errorObj.toJSONString());
+
                 if (errorObj != null) {
                     errorsString = (String) errorObj.get("msg");
                 }
-                System.out.println("Error sending message to USHAURI server! " + "Status code - " + statusCode + ". Msg" + errorsString);
-                log.error("Error sending message to USHAURI server! " + "Status code - " + statusCode + ". Msg" + errorsString);
-                if (errorsString.length() > 200) {
-                    errorsString = errorsString.substring(0, 199);
+                System.out.println("Error sending message to USHAURI server! " + "Status code - " + statusCode + ". Msg - " + errorsString);
+                log.error("Error sending message to USHAURI server! " + "Status code - " + statusCode + ". Msg - " + errorsString);
+                System.out.println("Error object" + errorObj.toJSONString());
+
+                if (StringUtils.isNotBlank(errorsString)) {
+                    if (errorsString.length() > 200) {
+                        errorsString = errorsString.substring(0, 199);
+                    }
+                } else {
+                    errorsString = "No error message";
                 }
                 KenyaEMRILMessageErrorQueue kenyaEMRILMessageErrorQueue = new KenyaEMRILMessageErrorQueue();
                 kenyaEMRILMessageErrorQueue.setHl7_type(outbox.getHl7_type().toUpperCase());
@@ -155,6 +163,7 @@ public class UshauriDirectPushTask extends AbstractTask {
                 kenyaEMRILMessageErrorQueue.setStatus(errorsString);
                 kenyaEMRILMessageErrorQueue.setMessage_type(ILMessageType.OUTBOUND.getValue());
                 kenyaEMRILMessageErrorQueue.setMiddleware("Direct");
+                kenyaEMRILMessageErrorQueue.setPatient(outbox.getPatient());
                 Context.getService(KenyaEMRILService.class).saveKenyaEMRILMessageErrorQueue(kenyaEMRILMessageErrorQueue);
 
                 //Purge from the il_messages table

@@ -62,6 +62,7 @@ public interface KenyaEMRILService extends OpenmrsService {
     boolean sendUpdateRequest(ILMessage ilMessage);
 
     boolean sendAddPersonRequest(ILMessage ilMessage);
+    boolean sendAddPersonRequest(ILMessage ilMessage, Patient patient);
 
     /**
      * Prepares registration updates message.
@@ -71,6 +72,7 @@ public interface KenyaEMRILService extends OpenmrsService {
      * @return
      */
     boolean sendUpdatePersonRequest(ILMessage ilMessage);
+    boolean sendUpdatePersonRequest(ILMessage ilMessage, Patient patient);
 
 
 
@@ -172,7 +174,7 @@ public interface KenyaEMRILService extends OpenmrsService {
      * @param ilMessage -  the message to populate and send
      * @return true or false - depending on the processing outcome
      */
-    boolean logAppointmentSchedule(ILMessage ilMessage);
+    boolean logAppointmentSchedule(ILMessage ilMessage, Patient patient);
 
     /**
      *

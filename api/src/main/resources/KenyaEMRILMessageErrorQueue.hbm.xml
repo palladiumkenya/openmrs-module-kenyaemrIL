@@ -54,5 +54,7 @@
                   length="10"/>
         <property name="middleware" type="java.lang.String" column="middleware"
                   length="50"/>
+        <many-to-one name="patient" class ="org.openmrs.Patient" column = "patient_id" />
+
     </class>
 </hibernate-mapping>

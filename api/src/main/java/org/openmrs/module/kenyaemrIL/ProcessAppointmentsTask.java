@@ -65,7 +65,7 @@ public class ProcessAppointmentsTask extends AbstractTask {
 
         SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
         String effectiveDate = sd.format(date);
-        StringBuilder q = new StringBuilder();
+        StringBuilder q = new StringBuilder(); //TODO: We should add extra filter on form since the encounter type uuid used is shared by a number of forms
         q.append("select e.encounter_id ");
         q.append("from encounter e inner join " +
                 "( " +
@@ -91,7 +91,7 @@ public class ProcessAppointmentsTask extends AbstractTask {
     private boolean appointmentsEvent(Patient patient, Encounter e) {
         ILMessage ilMessage = ILPatientAppointments.iLPatientWrapper(patient, e);
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
-        return service.logAppointmentSchedule(ilMessage);
+        return service.logAppointmentSchedule(ilMessage, e.getPatient());
     }
 
 

@@ -147,7 +147,7 @@ public class ProcessEnrollmentTask extends AbstractTask {
         } else{
             ILMessage ilMessage = ILPatientRegistration.iLPatientWrapper(patient);
             KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
-            service.sendAddPersonRequest(ilMessage);
+            service.sendAddPersonRequest(ilMessage, patient);
             notDuplicate = true;
         }
         return notDuplicate;
@@ -166,7 +166,7 @@ public class ProcessEnrollmentTask extends AbstractTask {
         } else{
             ILMessage ilMessage = ILPatientRegistration.iLPatientWrapper(patient);
             KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
-            service.sendUpdatePersonRequest(ilMessage);
+            service.sendUpdatePersonRequest(ilMessage, patient);
             notDuplicate = true;
         }
         return notDuplicate;
