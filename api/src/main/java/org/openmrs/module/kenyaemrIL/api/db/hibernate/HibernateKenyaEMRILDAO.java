@@ -251,11 +251,15 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
                 List<KenyaEMRILMessageErrorQueue> errors = fetchAllMhealthErrors();
 
                 for (KenyaEMRILMessageErrorQueue errorData : errors) {
+                    //TODO: fire this for the different message types
                     KenyaemrMhealthOutboxMessage queueData = ILUtils.createMhealthOutboxMessageFromErrorMessage(errorData);
 
                     ILUtils.createRegistrationILMessage(errorData);
+                    // we dont want to queue because a new message is generated. Assuming the CCC number has been updated to the required format
+                    if (errorData.getStatus() != null && (!errorData.getStatus().contains(ILUtils.INVALID_CCC_NUMBER_IN_USHAURI) || !errorData.getStatus().contains(ILUtils.CCC_NUMBER_ALREADY_EXISTS_IN_USHAURI))) {
+                        saveMhealthOutboxMessage(queueData);
+                    }
 
-                    saveMhealthOutboxMessage(queueData);
                     purgeILErrorQueueMessage(errorData);
                 }
             } else {
@@ -266,7 +270,10 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
 
                     ILUtils.createRegistrationILMessage(errorData);
 
-                    saveMhealthOutboxMessage(queueData);
+                    // we dont want to queue because a new message is generated. Assuming the CCC number has been updated to the required format
+                    if (errorData.getStatus() != null && (!errorData.getStatus().contains(ILUtils.INVALID_CCC_NUMBER_IN_USHAURI) || !errorData.getStatus().contains(ILUtils.CCC_NUMBER_ALREADY_EXISTS_IN_USHAURI))) {
+                        saveMhealthOutboxMessage(queueData);
+                    }
                     purgeILErrorQueueMessage(errorData);
                 }
             }

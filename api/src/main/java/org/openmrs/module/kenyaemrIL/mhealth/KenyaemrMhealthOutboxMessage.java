@@ -1,6 +1,7 @@
 package org.openmrs.module.kenyaemrIL.mhealth;
 
 import org.openmrs.BaseOpenmrsMetadata;
+import org.openmrs.Patient;
 
 import java.io.Serializable;
 
@@ -15,6 +16,8 @@ public class KenyaemrMhealthOutboxMessage extends BaseOpenmrsMetadata implements
     private String status;
     private String source;
     private String message;
+
+    private Patient patient;
 
     public String getSource() {
         return source;
@@ -81,5 +84,13 @@ public class KenyaemrMhealthOutboxMessage extends BaseOpenmrsMetadata implements
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Patient getPatient() {
+        return patient;
+    }
+
+    public void setPatient(Patient patient) {
+        this.patient = patient;
     }
 }

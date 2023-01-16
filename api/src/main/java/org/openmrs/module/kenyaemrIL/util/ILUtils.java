@@ -79,7 +79,9 @@ public class ILUtils {
     public static String HL7_REGISTRATION_MESSAGE = "ADT^A04";
     public static String HL7_REGISTRATION_UPDATE_MESSAGE = "ADT^A08";
     public static String HL7_APPOINTMENT_MESSAGE = "SIU^S12";
-	public static final String REGISTRATION_DOES_NOT_EXISTS_IN_THE_USHAURI_SYSTEM = "does not exists in the Ushauri system";
+	public static final String REGISTRATION_DOES_NOT_EXIST_IN_THE_USHAURI_SYSTEM = "does not exists in the Ushauri system";
+	public static final String INVALID_CCC_NUMBER_IN_USHAURI = "The CCC must be 10 digits"; // a substring in the error message
+	public static final String CCC_NUMBER_ALREADY_EXISTS_IN_USHAURI = "The CCC number already exists."; // a substring in the error message
 
 
 
@@ -342,6 +344,9 @@ public class ILUtils {
 		outboxMessage.setMessage(kenyaEMRILMessage.getMessage());
 		outboxMessage.setDescription("");
 		outboxMessage.setName("");
+		if (kenyaEMRILMessage.getPatient() != null) {
+			outboxMessage.setPatient(kenyaEMRILMessage.getPatient());
+		}
 		outboxMessage.setMessage_type(kenyaEMRILMessage.getMessage_type());
 		return outboxMessage;
 	}
@@ -360,6 +365,9 @@ public class ILUtils {
 		outboxMessage.setMessage(errorMessage.getMessage());
 		outboxMessage.setDescription("");
 		outboxMessage.setName("");
+		if (errorMessage.getPatient() != null) {
+			outboxMessage.setPatient(errorMessage.getPatient());
+		}
 		outboxMessage.setMessage_type(errorMessage.getMessage_type());
 		return outboxMessage;
 	}
@@ -429,14 +437,23 @@ public class ILUtils {
 	}
 
 	public static void createRegistrationILMessage(KenyaEMRILMessageErrorQueue errorData) {
-		if (errorData.getStatus().contains(REGISTRATION_DOES_NOT_EXISTS_IN_THE_USHAURI_SYSTEM)) { // missing registration in Ushauri server
-			PatientIdentifierType cccIdType = MetadataUtils.existing(PatientIdentifierType.class, HivMetadata._PatientIdentifierType.UNIQUE_PATIENT_NUMBER);
-			String patientCCCNumberFromPayload = ILUtils.getPatientIdentifierFromILPayload(ILUtils.CCC_NUMBER_IDENTIFIER_TYPE, errorData.getMessage());
-			List<Patient> patients = Context.getPatientService().getPatients(null, patientCCCNumberFromPayload, Arrays.asList(cccIdType), true);
+		if (errorData.getStatus() != null && (errorData.getStatus().contains(REGISTRATION_DOES_NOT_EXIST_IN_THE_USHAURI_SYSTEM) || errorData.getStatus().contains(INVALID_CCC_NUMBER_IN_USHAURI))) { // missing registration in Ushauri server
 			Patient patient = null;
-			if (patients.size() > 0) {
-				patient = patients.get(0);
+			// check first patient_id
+			if (errorData.getPatient() != null) {
+				patient = errorData.getPatient();
 			}
+
+			// check using CCC number
+			if (patient == null) {
+				PatientIdentifierType cccIdType = MetadataUtils.existing(PatientIdentifierType.class, HivMetadata._PatientIdentifierType.UNIQUE_PATIENT_NUMBER);
+				String patientCCCNumberFromPayload = ILUtils.getPatientIdentifierFromILPayload(ILUtils.CCC_NUMBER_IDENTIFIER_TYPE, errorData.getMessage());
+				List<Patient> patients = Context.getPatientService().getPatients(null, patientCCCNumberFromPayload, Arrays.asList(cccIdType), true);
+				if (patients.size() > 0) {
+					patient = patients.get(0);
+				}
+			}
+
 			if (patient != null) {
 				ILMessage ilMessage = ILPatientRegistration.iLPatientWrapper(patient);
 				KenyaEMRILService service = Context.getService(KenyaEMRILService.class);

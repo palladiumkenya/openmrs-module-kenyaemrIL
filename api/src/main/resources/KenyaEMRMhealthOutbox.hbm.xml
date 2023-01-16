@@ -52,5 +52,7 @@
 
         <property name="hl7_type" type="java.lang.String" column="hl7_type"
                   length="10"/>
+        <many-to-one name="patient" class ="org.openmrs.Patient" column = "patient_id" />
+
     </class>
 </hibernate-mapping>

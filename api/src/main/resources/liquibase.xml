@@ -444,4 +444,47 @@
             <column name="middleware" type="varchar(50)" defaultValue="IL"> <constraints nullable="true"/> </column>
         </addColumn>
     </changeSet>
+
+    <changeSet id="${project.parent.artifactId}-20221219-1034" author="aojwang">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="mhealth_message_outbox" columnName="patient_id"/>
+            </not>
+        </preConditions>
+        <comment>
+            Add link to patient
+        </comment>
+        <addColumn tableName="mhealth_message_outbox">
+            <column name="patient_id" type="int"> <constraints nullable="true"/> </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="${project.parent.artifactId}-20221219-1035" author="aojwang">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="il_message_error_queue" columnName="patient_id"/>
+            </not>
+        </preConditions>
+        <comment>
+            Add link to patient
+        </comment>
+        <addColumn tableName="il_message_error_queue">
+            <column name="patient_id" type="int"> <constraints nullable="true"/> </column>
+        </addColumn>
+    </changeSet>
+
+    <!--We need to easily get messages for a patient/person. The current way is to process the json payload-->
+    <changeSet id="${project.parent.artifactId}-20221219-1036" author="aojwang">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="il_message" columnName="patient_id"/>
+            </not>
+        </preConditions>
+        <comment>
+            Add link to patient
+        </comment>
+        <addColumn tableName="il_message">
+            <column name="patient_id" type="int"> <constraints nullable="true"/> </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

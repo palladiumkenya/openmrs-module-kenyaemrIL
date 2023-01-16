@@ -60,13 +60,13 @@
 		<constructor-arg value="530" />
 	</bean>
 
-	<bean id="kenyaemr.mhealth.mlab.home" factory-bean="kenyacore.appFactoryBean" factory-method="createInstance">
+<!--	<bean id="kenyaemr.mhealth.mlab.home" factory-bean="kenyacore.appFactoryBean" factory-method="createInstance">
 		<constructor-arg value="kenyaemr.mlab.home" />
 		<constructor-arg value="MLAB Service" />
 		<constructor-arg value="kenyaemrIL/mlabHome.page" />
 		<constructor-arg value="kenyaemrIL:apps/mlabLogo1.png" />
 		<constructor-arg value="535" />
-	</bean>
+	</bean>-->
 
 	<bean id="kenyaemr.mhealth.ushauri.home" factory-bean="kenyacore.appFactoryBean" factory-method="createInstance">
 		<constructor-arg value="kenyaemr.ushauri.home" />

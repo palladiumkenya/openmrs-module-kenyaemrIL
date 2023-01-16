@@ -1,6 +1,7 @@
 package org.openmrs.module.kenyaemrIL.il;
 
 import org.openmrs.BaseOpenmrsMetadata;
+import org.openmrs.Patient;
 
 import java.io.Serializable;
 
@@ -18,6 +19,8 @@ public class KenyaEMRILMessageErrorQueue extends BaseOpenmrsMetadata implements 
     private String message;
 
     private String middleware; // IL, Hybrid, or Direct
+
+    private Patient patient;
 
     public String getSource() {
         return source;
@@ -92,5 +95,13 @@ public class KenyaEMRILMessageErrorQueue extends BaseOpenmrsMetadata implements 
 
     public void setMiddleware(String middleware) {
         this.middleware = middleware;
+    }
+
+    public Patient getPatient() {
+        return patient;
+    }
+
+    public void setPatient(Patient patient) {
+        this.patient = patient;
     }
 }

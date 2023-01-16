@@ -197,6 +197,54 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         return isSuccessful;
     }
 
+    /**
+     * Passes and additional patient param
+     * @param ilMessage
+     * @param patient
+     * @return
+     */
+    @Override
+    public boolean sendAddPersonRequest(ILMessage ilMessage, Patient patient) {
+        boolean isSuccessful;
+        //Message Header
+        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("ADT^A04");
+        ilMessage.setMessage_header(messageHeader);
+        ILPerson ilPerson = ilMessage.extractILRegistration();
+        KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
+
+        try {
+            String messageString = mapper.writeValueAsString(ilPerson);
+            kenyaEMRILMessage.setHl7_type("ADT^A04");
+            kenyaEMRILMessage.setSource("KENYAEMR");
+            kenyaEMRILMessage.setMessage(messageString);
+            kenyaEMRILMessage.setDescription("");
+            kenyaEMRILMessage.setName("");
+            kenyaEMRILMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
+            kenyaEMRILMessage.setPatient(patient);
+            KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
+
+            if (savedInstance != null) {
+                isSuccessful = true;
+            } else {
+                isSuccessful = false;
+            }
+
+            // check the configured middleware
+            String configuredMiddleware = ILUtils.getMiddlewareInuse();
+
+            if (configuredMiddleware != null) {
+                if (configuredMiddleware.equalsIgnoreCase("Direct") || configuredMiddleware.equalsIgnoreCase("Hybrid")) {
+                    KenyaemrMhealthOutboxMessage directQueueMessage = ILUtils.createMhealthOutboxFromILMessage(kenyaEMRILMessage);
+                    saveMhealthOutboxMessage(directQueueMessage);
+                }
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            isSuccessful = false;
+        }
+        return isSuccessful;
+    }
+
 
     @Override
     public boolean sendUpdatePersonRequest(ILMessage ilMessage) {
@@ -215,6 +263,54 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             kenyaEMRILMessage.setDescription("");
             kenyaEMRILMessage.setName("");
             kenyaEMRILMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
+
+            KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
+            if (savedInstance != null) {
+                isSuccessful = true;
+            } else {
+                isSuccessful = false;
+            }
+            // check the configured middleware
+            String configuredMiddleware = ILUtils.getMiddlewareInuse();
+
+            if (configuredMiddleware != null) {
+                if (configuredMiddleware.equalsIgnoreCase("Direct") || configuredMiddleware.equalsIgnoreCase("Hybrid")) {
+                    KenyaemrMhealthOutboxMessage directQueueMessage = ILUtils.createMhealthOutboxFromILMessage(kenyaEMRILMessage);
+                    saveMhealthOutboxMessage(directQueueMessage);
+                }
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            isSuccessful = false;
+        }
+        return isSuccessful;
+    }
+
+    /**
+     * TODO: remove the duplicate code
+     * Adds an additional patient param
+     * @param ilMessage
+     * @param patient
+     * @return
+     */
+    @Override
+    public boolean sendUpdatePersonRequest(ILMessage ilMessage, Patient patient) {
+        boolean isSuccessful;
+        //Message Header
+        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("ADT^A08");
+        ilMessage.setMessage_header(messageHeader);
+        ILPerson ilPerson = ilMessage.extractILRegistration();
+        KenyaEMRILMessage kenyaEMRILMessage = new KenyaEMRILMessage();
+
+        try {
+            String messageString = mapper.writeValueAsString(ilPerson);
+            kenyaEMRILMessage.setHl7_type("ADT^A08");
+            kenyaEMRILMessage.setSource("KENYAEMR");
+            kenyaEMRILMessage.setMessage(messageString);
+            kenyaEMRILMessage.setDescription("");
+            kenyaEMRILMessage.setName("");
+            kenyaEMRILMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
+            kenyaEMRILMessage.setPatient(patient);
 
             KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
             if (savedInstance != null) {
@@ -935,7 +1031,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public boolean logAppointmentSchedule(ILMessage ilMessage) {
+    public boolean logAppointmentSchedule(ILMessage ilMessage, Patient patient) {
         boolean isSuccessful;
         //Message Header
         MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("SIU^S12");
@@ -951,6 +1047,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             kenyaEMRILMessage.setMessage(messageString);
             kenyaEMRILMessage.setDescription("");
             kenyaEMRILMessage.setName("");
+            kenyaEMRILMessage.setPatient(patient);
             kenyaEMRILMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
             KenyaEMRILMessage savedInstance = saveKenyaEMRILMessage(kenyaEMRILMessage);
 
