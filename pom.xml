@@ -51,7 +51,7 @@
         <serializationxstreamVersion>0.2.14</serializationxstreamVersion>
         <uiframeworkVersion>3.15.0</uiframeworkVersion>
         <legacyUiVersion>1.5.0</legacyUiVersion>
-        <jacksonVersion>2.10.1</jacksonVersion>
+        <jacksonVersion>2.12.7.1</jacksonVersion>
         <apacheHttpClientVersion>4.5.10</apacheHttpClientVersion>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
