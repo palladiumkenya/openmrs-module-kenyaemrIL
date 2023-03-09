@@ -24,6 +24,7 @@
         <require_module version="${kenyacoreVersion}">
             org.openmrs.module.kenyacore
         </require_module>
+        <require_module>org.openmrs.module.fhir2</require_module>
     </require_modules>
     <!-- Adds link to admin page -->
     <extension>
@@ -166,6 +167,31 @@
         <defaultValue>IL</defaultValue>
         <description>
             Configures how KenyaEMR sends messages to Mhealth servers. Valid options are IL or Direct
+        </description>
+    </globalProperty>
+
+    <!--configuration for shr endpoint-->
+    <globalProperty>
+        <property>kemr.shr.serverUrl</property>
+        <defaultValue></defaultValue>
+        <description>
+            Server URL for the Shared Health Record
+        </description>
+    </globalProperty>
+
+    <globalProperty>
+        <property>kemr.shr.username</property>
+        <defaultValue></defaultValue>
+        <description>
+            Username for the SHR server
+        </description>
+    </globalProperty>
+
+    <globalProperty>
+        <property>kemr.shr.password</property>
+        <defaultValue></defaultValue>
+        <description>
+            Password for the SHR server
         </description>
     </globalProperty>
     <!-- /Internationalization -->

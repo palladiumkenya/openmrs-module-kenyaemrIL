@@ -83,7 +83,11 @@ public class ILUtils {
 	public static final String INVALID_CCC_NUMBER_IN_USHAURI = "The CCC must be 10 digits"; // a substring in the error message
 	public static final String CCC_NUMBER_ALREADY_EXISTS_IN_USHAURI = "The CCC number already exists."; // a substring in the error message
 
+	public static final String GP_SHR_SERVER_URL = "kemr.shr.serverUrl";
 
+	public static final String GP_SHR_USER_NAME = "kemr.shr.username";
+
+	public static final String GP_SHR_PASSWORD = "kemr.shr.password";
 
 	/**
 	 * Checks whether a date has any time value
@@ -460,5 +464,21 @@ public class ILUtils {
 				service.sendAddPersonRequest(ilMessage);
 			}
 		}
+	}
+
+	public static boolean shrConnectionEnabled() {
+		return StringUtils.isNotBlank(getShrServerUrl());
+	}
+
+	public static String getShrServerUrl() {
+		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_SERVER_URL);
+	}
+
+	public static String getShrUserName() {
+		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_USER_NAME);
+	}
+
+	public static String getShrPassword() {
+		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_PASSWORD);
 	}
 }
