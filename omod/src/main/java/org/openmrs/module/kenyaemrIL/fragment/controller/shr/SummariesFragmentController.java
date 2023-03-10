@@ -34,8 +34,12 @@ import org.openmrs.PatientIdentifier;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.shr.FhirConfig;
+import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.ui.framework.annotation.FragmentParam;
 import org.openmrs.ui.framework.fragment.FragmentModel;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by codehub on 10/30/15.
@@ -48,11 +52,8 @@ public class SummariesFragmentController {
 
 
     public void controller(@FragmentParam("patient") Patient patient, FragmentModel model) {
-
-
         PatientIdentifier patientIdentifier = patient.getPatientIdentifier(Context.getPatientService().getPatientIdentifierTypeByUuid(NATIONAL_UNIQUE_PATIENT_IDENTIFIER));
         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
-
 
         // get the patient encounters based on this unique ID
         Bundle patientResourceBundle;
@@ -61,32 +62,32 @@ public class SummariesFragmentController {
         org.hl7.fhir.r4.model.Resource fhirObservationResource;
         org.hl7.fhir.r4.model.Patient fhirPatient = null;
         org.hl7.fhir.r4.model.Observation fhirObservation = null;
+        List<SimpleObject> vitalObs = new ArrayList<SimpleObject>();
         if(patientIdentifier != null) {
             patientResourceBundle = fhirConfig.fetchPatientResource(patientIdentifier.getIdentifier());
 
-            if (patientResourceBundle == null || patientResourceBundle.getEntry().isEmpty()) {
-                return;
-            }
-            fhirResource = patientResourceBundle.getEntry().get(0).getResource();
-            if(fhirResource.getResourceType().toString().equals("Patient")) {
-                fhirPatient = (org.hl7.fhir.r4.model.Patient) fhirResource;
-            }
+            if (patientResourceBundle != null && !patientResourceBundle.getEntry().isEmpty()) {
+                fhirResource = patientResourceBundle.getEntry().get(0).getResource();
+                if(fhirResource.getResourceType().toString().equals("Patient")) {
+                    fhirPatient = (org.hl7.fhir.r4.model.Patient) fhirResource;
+                }
 
-            if (fhirPatient != null) {
-                observationResourceBundle = fhirConfig.fetchObservationResource(fhirPatient);
-                if (!observationResourceBundle.getEntry().isEmpty()) {
-                    for (int i = 0; i < observationResourceBundle.getEntry().size(); i++) {
-                        fhirObservationResource = observationResourceBundle.getEntry().get(i).getResource();
-                        fhirObservation = (org.hl7.fhir.r4.model.Observation) fhirObservationResource;
-
-                        System.out.println("Obs: " + fhirObservation.getCode().getCodingFirstRep().getDisplay() + ", value: " + getObservationValue(fhirObservation));
+                if (fhirPatient != null) {
+                    observationResourceBundle = fhirConfig.fetchObservationResource(fhirPatient);
+                    if (!observationResourceBundle.getEntry().isEmpty()) {
+                        for (int i = 0; i < observationResourceBundle.getEntry().size(); i++) {
+                            fhirObservationResource = observationResourceBundle.getEntry().get(i).getResource();
+                            fhirObservation = (org.hl7.fhir.r4.model.Observation) fhirObservationResource;
+                            vitalObs.add(SimpleObject.create(
+                                    "display",fhirObservation.getCode().getCodingFirstRep().getDisplay(),
+                                    "value", getObservationValue(fhirObservation)));
+                        }
                     }
                 }
             }
-
         }
 
-        model.addAttribute("patient", fhirPatient != null? fhirPatient.getBirthDate() : "Not found");
+        model.addAttribute("vitalsObs", vitalObs);
     }
 
     private String getObservationValue(org.hl7.fhir.r4.model.Observation fhirObservation) {
