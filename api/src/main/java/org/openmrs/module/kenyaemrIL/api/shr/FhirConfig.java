@@ -14,6 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import static org.hibernate.search.util.AnalyzerUtils.log;
 
 @Slf4j
@@ -71,6 +74,28 @@ public class FhirConfig {
                     .returnBundle(Bundle.class).execute();
 
             //System.out.println("Observation bundle: " + fhirContext.newJsonParser().setPrettyPrint(true).encodeResourceToString(observationResource));
+            return observationResource;
+        }
+        catch (Exception e) {
+            log.error(String.format("Failed fetching FHIR encounter resource %s", e));
+            return null;
+        }
+    }
+
+    /**
+     * Gets a patient's observations after a date provided
+     * @param patient
+     * @param fromDate
+     * @return
+     */
+    public Bundle fetchObservationResource(Patient patient, Date fromDate) {
+        try {
+            IGenericClient client = getFhirClient();
+            Bundle observationResource = client.search()
+                    .forResource(Observation.class)
+                    .where(Observation.PATIENT.hasId(patient.getIdElement().getIdPart()))
+                    .where(Observation.DATE.after().day(new SimpleDateFormat("yyyy-MM-dd").format(fromDate))) // same as encounter date
+                    .returnBundle(Bundle.class).execute();
             return observationResource;
         }
         catch (Exception e) {

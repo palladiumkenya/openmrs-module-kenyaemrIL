@@ -31,14 +31,17 @@ import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.StringType;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
+import org.openmrs.Visit;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.shr.FhirConfig;
+import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.ui.framework.annotation.FragmentParam;
 import org.openmrs.ui.framework.fragment.FragmentModel;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -54,7 +57,10 @@ public class SummariesFragmentController {
     public void controller(@FragmentParam("patient") Patient patient, FragmentModel model) {
         PatientIdentifier patientIdentifier = patient.getPatientIdentifier(Context.getPatientService().getPatientIdentifierTypeByUuid(NATIONAL_UNIQUE_PATIENT_IDENTIFIER));
         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
+        List<Visit> allVisits = Context.getVisitService().getVisitsByPatient(patient);
+        Date lastVisitDate = !allVisits.isEmpty() ? allVisits.get(0).getStartDatetime() : null;
 
+        System.out.println("Last visit date: " + lastVisitDate.toString());
         // get the patient encounters based on this unique ID
         Bundle patientResourceBundle;
         Bundle observationResourceBundle;
@@ -73,14 +79,19 @@ public class SummariesFragmentController {
                 }
 
                 if (fhirPatient != null) {
-                    observationResourceBundle = fhirConfig.fetchObservationResource(fhirPatient);
+                    if (lastVisitDate != null) {
+                        observationResourceBundle = fhirConfig.fetchObservationResource(fhirPatient, lastVisitDate);
+                    } else {
+                        observationResourceBundle = fhirConfig.fetchObservationResource(fhirPatient);
+                    }
                     if (!observationResourceBundle.getEntry().isEmpty()) {
                         for (int i = 0; i < observationResourceBundle.getEntry().size(); i++) {
                             fhirObservationResource = observationResourceBundle.getEntry().get(i).getResource();
                             fhirObservation = (org.hl7.fhir.r4.model.Observation) fhirObservationResource;
                             vitalObs.add(SimpleObject.create(
                                     "display",fhirObservation.getCode().getCodingFirstRep().getDisplay(),
-                                    "value", getObservationValue(fhirObservation)));
+                                    "date", ILUtils.getObservationValue(fhirObservation),
+                                    "value", fhirObservation.getEffectiveDateTimeType().toCalendar().getTime().toString()));
                         }
                     }
                 }
@@ -90,23 +101,5 @@ public class SummariesFragmentController {
         model.addAttribute("vitalsObs", vitalObs);
     }
 
-    private String getObservationValue(org.hl7.fhir.r4.model.Observation fhirObservation) {
-        if (fhirObservation != null) {
-            if (fhirObservation.getValue() instanceof Quantity) {
-                return fhirObservation.getValueQuantity().getValue().toString();
-            } else if (fhirObservation.getValue() instanceof CodeableConcept) {
-                return fhirObservation.getValueCodeableConcept().getCodingFirstRep().getDisplay();
-            } else if (fhirObservation.getValue() instanceof DateTimeType) {
-                return fhirObservation.getValueDateTimeType().getValue().toString();
-            } else if (fhirObservation.getValue() instanceof IntegerType) {
-                return fhirObservation.getValueIntegerType().getValue().toString();
-            } else if (fhirObservation.getValue() instanceof BooleanType) {
-                return fhirObservation.getValueBooleanType().getValue().toString();
-            } else if (fhirObservation.getValue() instanceof StringType) {
-                return fhirObservation.getValueStringType().getValue();
-            }
-        }
-        return "";
-    }
 
 }

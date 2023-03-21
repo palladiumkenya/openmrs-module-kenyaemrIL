@@ -29,7 +29,8 @@
                         <% vitalsObs.each { it -> %>
                         <tr>
                             <td>${it.display}</td>
-                            <td colspan="2">${it.value}</td>
+                            <td>${it.value}</td>
+                            <td>${it.date}</td>
                         </tr>
                         <% } %>
 
