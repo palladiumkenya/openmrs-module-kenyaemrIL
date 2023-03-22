@@ -40,6 +40,7 @@ import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.ui.framework.annotation.FragmentParam;
 import org.openmrs.ui.framework.fragment.FragmentModel;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -54,7 +55,8 @@ public class SummariesFragmentController {
     public static final String NATIONAL_UNIQUE_PATIENT_IDENTIFIER = "f85081e2-b4be-4e48-b3a4-7994b69bb101";
 
 
-    public void controller(@FragmentParam("patient") Patient patient, FragmentModel model) {
+    public void controller(FragmentModel model) {
+        Patient patient = Context.getPatientService().getPatientByUuid("9c3ca7bf-8110-43d8-a35d-f6f2509f3c05");
         PatientIdentifier patientIdentifier = patient.getPatientIdentifier(Context.getPatientService().getPatientIdentifierTypeByUuid(NATIONAL_UNIQUE_PATIENT_IDENTIFIER));
         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
         List<Visit> allVisits = Context.getVisitService().getVisitsByPatient(patient);
@@ -84,14 +86,17 @@ public class SummariesFragmentController {
                     } else {
                         observationResourceBundle = fhirConfig.fetchObservationResource(fhirPatient);
                     }
+
                     if (!observationResourceBundle.getEntry().isEmpty()) {
                         for (int i = 0; i < observationResourceBundle.getEntry().size(); i++) {
                             fhirObservationResource = observationResourceBundle.getEntry().get(i).getResource();
                             fhirObservation = (org.hl7.fhir.r4.model.Observation) fhirObservationResource;
-                            vitalObs.add(SimpleObject.create(
-                                    "display",fhirObservation.getCode().getCodingFirstRep().getDisplay(),
-                                    "date", ILUtils.getObservationValue(fhirObservation),
-                                    "value", fhirObservation.getEffectiveDateTimeType().toCalendar().getTime().toString()));
+                            if (fhirConfig.vitalConcepts().contains(fhirObservation.getCode().getCodingFirstRep().getCode())) {
+                                vitalObs.add(SimpleObject.create(
+                                        "display",fhirObservation.getCode().getCodingFirstRep().getDisplay(),
+                                        "date", ILUtils.getObservationValue(fhirObservation),
+                                        "value", new SimpleDateFormat("yyyy-MM-dd").format(fhirObservation.getEffectiveDateTimeType().toCalendar().getTime())));
+                            }
                         }
                     }
                 }

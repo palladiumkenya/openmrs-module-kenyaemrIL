@@ -4,6 +4,7 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.client.interceptor.BasicAuthInterceptor;
 import groovy.util.logging.Slf4j;
+import org.apache.xmlbeans.impl.xb.xsdschema.Public;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.Observation;
@@ -16,6 +17,10 @@ import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 
 import static org.hibernate.search.util.AnalyzerUtils.log;
 
@@ -26,6 +31,9 @@ public class FhirConfig {
     @Qualifier("fhirR4")
     private FhirContext fhirContext;
 
+    public FhirContext getFhirContext() {
+        return fhirContext;
+    }
     public IGenericClient getFhirClient() throws Exception {
         IGenericClient fhirClient = fhirContext.newRestfulGenericClient(ILUtils.getShrServerUrl());
         if (!ILUtils.getShrUserName().isEmpty()) {
@@ -95,6 +103,7 @@ public class FhirConfig {
                     .forResource(Observation.class)
                     .where(Observation.PATIENT.hasId(patient.getIdElement().getIdPart()))
                     .where(Observation.DATE.after().day(new SimpleDateFormat("yyyy-MM-dd").format(fromDate))) // same as encounter date
+                    //.where(Observation.DATE.after().day(new SimpleDateFormat("yyyy-MM-dd").format(fromDate))) // same as encounter date
                     .returnBundle(Bundle.class).execute();
             return observationResource;
         }
@@ -102,5 +111,9 @@ public class FhirConfig {
             log.error(String.format("Failed fetching FHIR encounter resource %s", e));
             return null;
         }
+    }
+
+    public List<String> vitalConcepts() {
+        return Arrays.asList("5089","5090","5088");
     }
 }
