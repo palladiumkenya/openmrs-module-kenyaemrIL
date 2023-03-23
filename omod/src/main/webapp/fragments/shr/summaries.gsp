@@ -91,7 +91,15 @@
                 <fieldset>
                     <legend>Appointments</legend>
                     <table>
+                        <% if (appointments) { %>
+                        <% appointments.each { it -> %>
+                        <tr>
+                            <td>${it.appointmentType}</td>
+                            <td>${it.appointmentDate}</td>
+                        </tr>
+                        <% } %>
 
+                        <% } %>
                     </table>
                 </fieldset>
                 <fieldset>

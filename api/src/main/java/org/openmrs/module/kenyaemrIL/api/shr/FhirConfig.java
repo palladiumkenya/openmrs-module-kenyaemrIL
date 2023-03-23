@@ -5,6 +5,7 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.client.interceptor.BasicAuthInterceptor;
 import groovy.util.logging.Slf4j;
 import org.apache.xmlbeans.impl.xb.xsdschema.Public;
+import org.hl7.fhir.r4.model.Appointment;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Condition;
 import org.hl7.fhir.r4.model.Encounter;
@@ -119,6 +120,21 @@ public class FhirConfig {
             IGenericClient client = getFhirClient();
             Bundle conditionsBundle = client.search()
                     .forResource(Condition.class)
+                    .where(Condition.PATIENT.hasId(patient.getIdElement().getIdPart()))
+                    .returnBundle(Bundle.class).execute();
+            return conditionsBundle;
+
+        }catch (Exception e) {
+            log.error(String.format("Failed fetching FHIR encounter resource %s", e));
+            return null;
+        }
+    }
+
+    public Bundle fetchAppointments(Patient patient) {
+        try {
+            IGenericClient client = getFhirClient();
+            Bundle conditionsBundle = client.search()
+                    .forResource(Appointment.class)
                     .where(Condition.PATIENT.hasId(patient.getIdElement().getIdPart()))
                     .returnBundle(Bundle.class).execute();
             return conditionsBundle;

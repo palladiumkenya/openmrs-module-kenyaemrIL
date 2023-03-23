@@ -21,6 +21,7 @@ package org.openmrs.module.kenyaemrIL.fragment.controller.shr;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hl7.fhir.dstu3.model.Observation;
+import org.hl7.fhir.r4.model.Appointment;
 import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CodeableConcept;
@@ -76,6 +77,7 @@ public class SummariesFragmentController {
         List<SimpleObject> labObs = new ArrayList<SimpleObject>();
         List<SimpleObject> complaints = new ArrayList<SimpleObject>();
         List<SimpleObject> diagnosis = new ArrayList<SimpleObject>();
+        List<SimpleObject> appointments = new ArrayList<SimpleObject>();
         if (patientIdentifier != null) {
             patientResourceBundle = fhirConfig.fetchPatientResource(patientIdentifier.getIdentifier());
 
@@ -139,6 +141,17 @@ public class SummariesFragmentController {
                     });
                 }
 
+                //Appointment
+                Bundle appointmentBundle = fhirConfig.fetchAppointments(fhirPatient);
+                if (appointmentBundle.hasEntry()) {
+                    appointmentBundle.getEntry().forEach(app -> {
+                        Appointment appointment = (Appointment) app.getResource();
+                        appointments.add(SimpleObject.create(
+                                "appointmentType", appointment.getServiceTypeFirstRep().getCodingFirstRep().getDisplay(),
+                                "appointmentDate", new SimpleDateFormat("yyyy-MM-dd").format(appointment.getStart())));
+                    });
+                }
+
 
             }
         }
@@ -147,6 +160,7 @@ public class SummariesFragmentController {
         model.addAttribute("labObs", labObs);
         model.addAttribute("complaints", complaints);
         model.addAttribute("diagnosis", diagnosis);
+        model.addAttribute("appointments", appointments);
     }
 
 
