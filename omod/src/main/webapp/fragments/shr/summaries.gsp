@@ -40,13 +40,46 @@
                 <fieldset>
                     <legend>Complaints</legend>
                     <table>
+                        <% if (complaints) { %>
+                        <% complaints.each { it -> %>
+                        <tr>
+                            <td>${it.display}</td>
+                            <td>${it.value}</td>
+                            <td>${it.date}</td>
+                        </tr>
+                        <% } %>
 
+                        <% } %>
                     </table>
                 </fieldset>
                 <fieldset>
-                    <legend>Investigations</legend>
+                    <legend>Diagnosis</legend>
                     <table>
+                        <% if (diagnosis) { %>
+                        <% diagnosis.each { it -> %>
+                        <tr>
+                            <td>${it.display}</td>
+                            <td>${it.value}</td>
+                            <td>${it.date}</td>
+                        </tr>
+                        <% } %>
 
+                        <% } %>
+                    </table>
+                </fieldset>
+                <fieldset>
+                    <legend>Lab Investigations</legend>
+                    <table>
+                        <% if (labObs) { %>
+                        <% labObs.each { it -> %>
+                        <tr>
+                            <td>${it.display}</td>
+                            <td>${it.value}</td>
+                            <td>${it.date}</td>
+                        </tr>
+                        <% } %>
+
+                        <% } %>
                     </table>
                 </fieldset>
                 <fieldset>
@@ -57,6 +90,12 @@
                 </fieldset>
                 <fieldset>
                     <legend>Appointments</legend>
+                    <table>
+
+                    </table>
+                </fieldset>
+                <fieldset>
+                    <legend>Allergies</legend>
                     <table>
 
                     </table>

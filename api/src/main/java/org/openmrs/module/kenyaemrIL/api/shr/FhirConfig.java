@@ -6,6 +6,7 @@ import ca.uhn.fhir.rest.client.interceptor.BasicAuthInterceptor;
 import groovy.util.logging.Slf4j;
 import org.apache.xmlbeans.impl.xb.xsdschema.Public;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Condition;
 import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Patient;
@@ -102,7 +103,7 @@ public class FhirConfig {
             Bundle observationResource = client.search()
                     .forResource(Observation.class)
                     .where(Observation.PATIENT.hasId(patient.getIdElement().getIdPart()))
-                    .where(Observation.DATE.after().day(new SimpleDateFormat("yyyy-MM-dd").format(fromDate))) // same as encounter date
+                    .count(200)
                     //.where(Observation.DATE.after().day(new SimpleDateFormat("yyyy-MM-dd").format(fromDate))) // same as encounter date
                     .returnBundle(Bundle.class).execute();
             return observationResource;
@@ -113,7 +114,37 @@ public class FhirConfig {
         }
     }
 
+    public Bundle fetchConditions(Patient patient) {
+        try {
+            IGenericClient client = getFhirClient();
+            Bundle conditionsBundle = client.search()
+                    .forResource(Condition.class)
+                    .where(Condition.PATIENT.hasId(patient.getIdElement().getIdPart()))
+                    .returnBundle(Bundle.class).execute();
+            return conditionsBundle;
+
+        }catch (Exception e) {
+            log.error(String.format("Failed fetching FHIR encounter resource %s", e));
+            return null;
+        }
+    }
+
     public List<String> vitalConcepts() {
-        return Arrays.asList("5089","5090","5088");
+        return Arrays.asList("5088AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","5087AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","5242AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                "5092AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","5089AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","163300AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                "5090AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "1343AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+    }
+
+    public List<String> labConcepts() {
+        return Arrays.asList("12AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","162202AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                "1659AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","307AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+    }
+
+    public List<String> presentingComplaints() {
+        return Arrays.asList("5219AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+    }
+
+    public List<String> diagnosisObs() {
+        return Arrays.asList("6042AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
     }
 }
