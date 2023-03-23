@@ -16,6 +16,6 @@
         <h2>IL Messages Page</h2>
     </div>
     <div>
-        ${ ui.includeFragment("kenyaemrIL", "interopManager") }
+        ${ ui.includeFragment("kenyaemrIL", "shr/summaries") }
     </div>
 </div>

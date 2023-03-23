@@ -61,6 +61,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -501,7 +502,7 @@ public class ILUtils {
 			} else if (fhirObservation.getValue() instanceof CodeableConcept) {
 				return fhirObservation.getValueCodeableConcept().getCodingFirstRep().getDisplay();
 			} else if (fhirObservation.getValue() instanceof DateTimeType) {
-				return fhirObservation.getValueDateTimeType().getValue().toString();
+				return new SimpleDateFormat("yyyy-MM-dd").format(fhirObservation.getValueDateTimeType().getValue().toString());
 			} else if (fhirObservation.getValue() instanceof IntegerType) {
 				return fhirObservation.getValueIntegerType().getValue().toString();
 			} else if (fhirObservation.getValue() instanceof BooleanType) {

@@ -21,9 +21,12 @@ package org.openmrs.module.kenyaemrIL.fragment.controller.shr;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hl7.fhir.dstu3.model.Observation;
+import org.hl7.fhir.r4.model.Appointment;
 import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.Condition;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.IntegerType;
@@ -40,6 +43,7 @@ import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.ui.framework.annotation.FragmentParam;
 import org.openmrs.ui.framework.fragment.FragmentModel;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -54,7 +58,8 @@ public class SummariesFragmentController {
     public static final String NATIONAL_UNIQUE_PATIENT_IDENTIFIER = "f85081e2-b4be-4e48-b3a4-7994b69bb101";
 
 
-    public void controller(@FragmentParam("patient") Patient patient, FragmentModel model) {
+    public void controller(FragmentModel model) {
+        Patient patient = Context.getPatientService().getPatientByUuid("9c3ca7bf-8110-43d8-a35d-f6f2509f3c05");
         PatientIdentifier patientIdentifier = patient.getPatientIdentifier(Context.getPatientService().getPatientIdentifierTypeByUuid(NATIONAL_UNIQUE_PATIENT_IDENTIFIER));
         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
         List<Visit> allVisits = Context.getVisitService().getVisitsByPatient(patient);
@@ -69,36 +74,89 @@ public class SummariesFragmentController {
         org.hl7.fhir.r4.model.Patient fhirPatient = null;
         org.hl7.fhir.r4.model.Observation fhirObservation = null;
         List<SimpleObject> vitalObs = new ArrayList<SimpleObject>();
-        if(patientIdentifier != null) {
+        List<SimpleObject> labObs = new ArrayList<SimpleObject>();
+        List<SimpleObject> complaints = new ArrayList<SimpleObject>();
+        List<SimpleObject> diagnosis = new ArrayList<SimpleObject>();
+        List<SimpleObject> appointments = new ArrayList<SimpleObject>();
+        if (patientIdentifier != null) {
             patientResourceBundle = fhirConfig.fetchPatientResource(patientIdentifier.getIdentifier());
 
             if (patientResourceBundle != null && !patientResourceBundle.getEntry().isEmpty()) {
                 fhirResource = patientResourceBundle.getEntry().get(0).getResource();
-                if(fhirResource.getResourceType().toString().equals("Patient")) {
+                if (fhirResource.getResourceType().toString().equals("Patient")) {
                     fhirPatient = (org.hl7.fhir.r4.model.Patient) fhirResource;
                 }
 
                 if (fhirPatient != null) {
+                    //Observations
                     if (lastVisitDate != null) {
                         observationResourceBundle = fhirConfig.fetchObservationResource(fhirPatient, lastVisitDate);
                     } else {
                         observationResourceBundle = fhirConfig.fetchObservationResource(fhirPatient);
                     }
+
                     if (!observationResourceBundle.getEntry().isEmpty()) {
                         for (int i = 0; i < observationResourceBundle.getEntry().size(); i++) {
                             fhirObservationResource = observationResourceBundle.getEntry().get(i).getResource();
                             fhirObservation = (org.hl7.fhir.r4.model.Observation) fhirObservationResource;
-                            vitalObs.add(SimpleObject.create(
-                                    "display",fhirObservation.getCode().getCodingFirstRep().getDisplay(),
-                                    "date", ILUtils.getObservationValue(fhirObservation),
-                                    "value", fhirObservation.getEffectiveDateTimeType().toCalendar().getTime().toString()));
+                            for (Coding c : fhirObservation.getCode().getCoding()) {
+                                if (fhirConfig.vitalConcepts().contains(c.getCode())) {
+                                    vitalObs.add(SimpleObject.create(
+                                            "display", c.getDisplay(),
+                                            "date", ILUtils.getObservationValue(fhirObservation),
+                                            "value", new SimpleDateFormat("yyyy-MM-dd").format(fhirObservation.getEffectiveDateTimeType().toCalendar().getTime())));
+                                }
+
+                                if (fhirConfig.labConcepts().contains(c.getCode())) {
+                                    labObs.add(SimpleObject.create(
+                                            "display", c.getDisplay(),
+                                            "date", ILUtils.getObservationValue(fhirObservation),
+                                            "value", new SimpleDateFormat("yyyy-MM-dd").format(fhirObservation.getEffectiveDateTimeType().toCalendar().getTime())));
+                                }
+                            }
                         }
                     }
                 }
+
+                //Conditions
+                Bundle complaintsBundle = fhirConfig.fetchConditions(fhirPatient);
+                if (complaintsBundle.hasEntry()) {
+                    complaintsBundle.getEntry().forEach(e -> {
+                        Condition condition = (Condition) e.getResource();
+                        if (!condition.hasExtension()) {
+                            complaints.add(SimpleObject.create(
+                                    "display", condition.getCode().getCodingFirstRep().getDisplay(),
+                                    "onsetDate", new SimpleDateFormat("yyyy-MM-dd").format(condition.getOnsetDateTimeType().toCalendar().getTime())));
+                        } else {
+                            CodeableConcept codeableConcept = (CodeableConcept) condition.getExtensionByUrl("interop.system.url.configuration").getValue();
+                            diagnosis.add(SimpleObject.create(
+                                    "display", condition.getCode().getCodingFirstRep().getDisplay(),
+                                    "treatmentPlan", codeableConcept.getCodingFirstRep().getDisplay()));
+                        }
+
+                    });
+                }
+
+                //Appointment
+                Bundle appointmentBundle = fhirConfig.fetchAppointments(fhirPatient);
+                if (appointmentBundle.hasEntry()) {
+                    appointmentBundle.getEntry().forEach(app -> {
+                        Appointment appointment = (Appointment) app.getResource();
+                        appointments.add(SimpleObject.create(
+                                "appointmentType", appointment.getServiceTypeFirstRep().getCodingFirstRep().getDisplay(),
+                                "appointmentDate", new SimpleDateFormat("yyyy-MM-dd").format(appointment.getStart())));
+                    });
+                }
+
+
             }
         }
 
         model.addAttribute("vitalsObs", vitalObs);
+        model.addAttribute("labObs", labObs);
+        model.addAttribute("complaints", complaints);
+        model.addAttribute("diagnosis", diagnosis);
+        model.addAttribute("appointments", appointments);
     }
 
 
