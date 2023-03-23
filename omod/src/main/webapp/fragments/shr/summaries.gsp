@@ -44,8 +44,7 @@
                         <% complaints.each { it -> %>
                         <tr>
                             <td>${it.display}</td>
-                            <td>${it.value}</td>
-                            <td>${it.date}</td>
+                            <td>${it.onsetDate}</td>
                         </tr>
                         <% } %>
 
@@ -59,8 +58,7 @@
                         <% diagnosis.each { it -> %>
                         <tr>
                             <td>${it.display}</td>
-                            <td>${it.value}</td>
-                            <td>${it.date}</td>
+                            <td>${it.treatmentPlan}</td>
                         </tr>
                         <% } %>
 

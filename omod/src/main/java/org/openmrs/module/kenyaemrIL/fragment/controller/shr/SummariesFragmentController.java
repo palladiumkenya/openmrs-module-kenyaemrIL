@@ -113,20 +113,6 @@ public class SummariesFragmentController {
                                             "date", ILUtils.getObservationValue(fhirObservation),
                                             "value", new SimpleDateFormat("yyyy-MM-dd").format(fhirObservation.getEffectiveDateTimeType().toCalendar().getTime())));
                                 }
-
-                                if (fhirConfig.presentingComplaints().contains(c.getCode())) {
-                                    complaints.add(SimpleObject.create(
-                                            "display", c.getDisplay(),
-                                            "date", ILUtils.getObservationValue(fhirObservation),
-                                            "value", new SimpleDateFormat("yyyy-MM-dd").format(fhirObservation.getEffectiveDateTimeType().toCalendar().getTime())));
-                                }
-
-                                if (fhirConfig.diagnosisObs().contains(c.getCode())) {
-                                    diagnosis.add(SimpleObject.create(
-                                            "display", c.getDisplay(),
-                                            "date", ILUtils.getObservationValue(fhirObservation),
-                                            "value", new SimpleDateFormat("yyyy-MM-dd").format(fhirObservation.getEffectiveDateTimeType().toCalendar().getTime())));
-                                }
                             }
                         }
                     }
@@ -137,6 +123,16 @@ public class SummariesFragmentController {
                 if (complaintsBundle.hasEntry()) {
                     complaintsBundle.getEntry().forEach(e -> {
                         Condition condition = (Condition) e.getResource();
+                        if (!condition.hasExtension()) {
+                            complaints.add(SimpleObject.create(
+                                    "display", condition.getCode().getCodingFirstRep().getDisplay(),
+                                    "onsetDate", new SimpleDateFormat("yyyy-MM-dd").format(condition.getOnsetDateTimeType().toCalendar().getTime())));
+                        } else {
+                            CodeableConcept codeableConcept = (CodeableConcept) condition.getExtensionByUrl("interop.system.url.configuration").getValue();
+                            diagnosis.add(SimpleObject.create(
+                                    "display", condition.getCode().getCodingFirstRep().getDisplay(),
+                                    "treatmentPlan", codeableConcept.getCodingFirstRep().getDisplay()));
+                        }
 
                     });
                 }

@@ -121,6 +121,7 @@ public class FhirConfig {
             Bundle conditionsBundle = client.search()
                     .forResource(Condition.class)
                     .where(Condition.PATIENT.hasId(patient.getIdElement().getIdPart()))
+                    .count(100)
                     .returnBundle(Bundle.class).execute();
             return conditionsBundle;
 
