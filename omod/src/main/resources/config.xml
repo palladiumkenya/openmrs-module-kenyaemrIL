@@ -163,10 +163,17 @@
 
     <globalProperty>
         <property>kemr.mhealth.middlware</property>
-        <defaultValue>IL</defaultValue>
+        <defaultValue>OpenHIM</defaultValue>
         <description>
             Configures how KenyaEMR sends messages to Mhealth servers. Valid options are IL or Direct
         </description>
+    </globalProperty>
+
+    <!-- OpenHIM configuration-->
+    <globalProperty>
+        <property>kenyaemrIL.openHIMILBaseURL</property>
+        <description>OpenHIM base URL e.g http://localhost:5001</description>
+        <defaultValue>localhost</defaultValue>
     </globalProperty>
     <!-- /Internationalization -->
 </module>
