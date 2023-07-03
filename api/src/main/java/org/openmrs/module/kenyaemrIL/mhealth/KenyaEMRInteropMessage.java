@@ -6,9 +6,9 @@ import org.openmrs.Patient;
 import java.io.Serializable;
 
 /**
- * model for mhealth message outbox sent directly to the mhealth remote servers
+ * model for EMRInterop Message send through OpenHIM
  */
-public class KenyaemrMhealthOutboxMessage extends BaseOpenmrsMetadata implements Serializable {
+public class KenyaEMRInteropMessage extends BaseOpenmrsMetadata implements Serializable {
     private static final long serialVersionUID = 3062136520728193225L;
     private Integer message_id;
     private Integer message_type;
@@ -27,10 +27,10 @@ public class KenyaemrMhealthOutboxMessage extends BaseOpenmrsMetadata implements
         this.source = source;
     }
 
-    public KenyaemrMhealthOutboxMessage() {
+    public KenyaEMRInteropMessage() {
     }
 
-    public KenyaemrMhealthOutboxMessage(Integer messageId) {
+    public KenyaEMRInteropMessage(Integer messageId) {
         this.message_id = messageId;
     }
 

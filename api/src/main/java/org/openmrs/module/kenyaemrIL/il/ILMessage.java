@@ -1,5 +1,7 @@
 package org.openmrs.module.kenyaemrIL.il;
 
+import org.openmrs.module.kenyaemrIL.artReferral.PATIENT_REFERRAL_INFORMATION;
+import org.openmrs.module.kenyaemrIL.artReferral.PatientReferralMessage;
 import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
 import org.openmrs.module.kenyaemrIL.il.appointment.AppointmentMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
@@ -28,6 +30,7 @@ public class ILMessage {
     private COMMON_ORDER_DETAILS common_order_details;
     private PHARMACY_ENCODED_ORDER[] pharmacy_encoded_order;
     private PHARMACY_DISPENSE[] pharmacy_dispense;
+    private PATIENT_REFERRAL_INFORMATION patient_referral;
 
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
@@ -93,7 +96,14 @@ public class ILMessage {
         this.patient_identification_simple = patient_identification_simple;
     }
 
-//    public COMMON_ORDER_DETAILS getCommon_Order_Details() {
+    public PATIENT_REFERRAL_INFORMATION getPatient_referral() {
+        return patient_referral;
+    }
+
+    public void setPatient_referral(PATIENT_REFERRAL_INFORMATION patient_referral) {
+        this.patient_referral = patient_referral;
+    }
+    //    public COMMON_ORDER_DETAILS getCommon_Order_Details() {
 //        return common_order_details; }
 //
 //    public void setCommon_Order_Details(COMMON_ORDER_DETAILS common_order_details) {
@@ -141,6 +151,14 @@ public class ILMessage {
         appointmentMessage.setPatient_identification(this.getPatient_identification());
         appointmentMessage.setAppointment_information(this.getAppointment_information());
         return appointmentMessage;
+    }
+
+    public PatientReferralMessage extractReferralMessage() {
+        PatientReferralMessage patientReferralMessage = new PatientReferralMessage();
+        patientReferralMessage.setMessage_header(this.getMessage_header());
+        patientReferralMessage.setPatient_identification(this.getPatient_identification());
+        patientReferralMessage.setServiceRequest(this.getPatient_referral());
+        return patientReferralMessage;
     }
 
     public ObservationMessage extractORUMessage() {

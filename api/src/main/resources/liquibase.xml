@@ -360,7 +360,7 @@
             <column name="created_by" value="1" />
             <column name="start_on_startup" value="0" />
             <column name="started" value="0" />
-            <column name="uuid" value="7351bb07-97a2-47a6-804b-c9c018c36609" />
+                <column name="uuid" value="7351bb07-97a2-47a6-804b-c9c018c36609" />
         </insert>
     </changeSet>
 
@@ -486,5 +486,57 @@
         <addColumn tableName="il_message">
             <column name="patient_id" type="int"> <constraints nullable="true"/> </column>
         </addColumn>
+    </changeSet>
+
+    <!--Adding scheduled task :Set program discontinuation task-->
+    <changeSet id="${project.parent.artifactId}-202306271030" author="jecihjoy">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.ProgramDiscontinuationTask'
+                And name = 'Program Discontinuation Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Inserting program discontinuation 'schedule_task_config' table</comment>
+        <insert tableName="scheduler_task_config">
+            <column name="name" value="Program Discontinuation Task" />
+            <column name="description" value="Periodically Process Program Discontinuations" />
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.ProgramDiscontinuationTask" />
+            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
+            <column name="start_time" valueDate="2023-01-01T23:59:59" />
+            <column name="repeat_interval" value="7200" />
+            <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="0" />
+            <column name="started" value="0" />
+            <column name="uuid" value="9143b4e6-16c5-11ee-be56-0242ac120002" />
+        </insert>
+    </changeSet>
+
+    <!--Reuse existing structure to support additional message types: Rename mhealth_message_outbox to emr_interop_message-->
+    <changeSet id="${project.parent.artifactId}-202307031030" author="jecihjoy">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="mhealth_message_outbox"/>
+        </preConditions>
+        <comment>
+            Reuse existing structure to support additional message types: Rename mhealth_message_outbox to emr_interop_message
+        </comment>
+        <renameTable oldTableName="mhealth_message_outbox" newTableName="emr_interop_message"/>
+    </changeSet>
+
+    <!--Reuse existing structure to support additional message types: Rename UshauriDirectPushTask to KenyaEmrInteropDirectPushTask-->
+    <changeSet id="${project.parent.artifactId}-202307030440" author="jecihjoy">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.UshauriDirectPushTask'
+                And name = 'Push messages to Ushauri server'
+            </sqlCheck>
+        </preConditions>
+        <comment>Rename UshauriDirectPushTask scheduler to KenyaEmrInteropDirectPushTask</comment>
+        <sql>
+            UPDATE openmrs.scheduler_task_config SET schedulable_class = 'org.openmrs.module.kenyaemrIL.KenyaEmrInteropDirectPushTask',
+            name = 'Send message to configured server' where uuid = '7351bb07-97a2-47a6-804b-c9c018c36609'
+        </sql>
     </changeSet>
 </databaseChangeLog>

@@ -22,7 +22,7 @@ import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
-import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
+import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -199,17 +199,19 @@ public interface KenyaEMRILService extends OpenmrsService {
 
     // additions to support for data exchange with mhealth apps
 
-    KenyaemrMhealthOutboxMessage getMhealthOutboxMessageByUuid(String uuid);
+    KenyaEMRInteropMessage getMhealthOutboxMessageByUuid(String uuid);
 
-    KenyaemrMhealthOutboxMessage saveMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthMessageOutbox);
+    KenyaEMRInteropMessage saveMhealthOutboxMessage(KenyaEMRInteropMessage KenyaemrMhealthMessageOutbox);
 
-    void deleteMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthOutboxMessage);
+    void deleteMhealthOutboxMessage(KenyaEMRInteropMessage KenyaEMRInteropMessage);
 
-    List<KenyaemrMhealthOutboxMessage> getAllMhealthOutboxMessages(Boolean includeAll);
+    List<KenyaEMRInteropMessage> getAllMhealthOutboxMessages(Boolean includeAll);
 
-    List<KenyaemrMhealthOutboxMessage> getKenyaEMROutboxMessagesToSend(Boolean includeRetired);//fetchAllViralLoadErrors
+    List<KenyaEMRInteropMessage> getKenyaEMROutboxMessagesToSend(Boolean includeRetired);//fetchAllViralLoadErrors
 
     List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors();
+
+    boolean logPatientReferrals(ILMessage ilMessage, Patient patient);
 
     void reQueueErrors(final @RequestParam(value = "errorList") String errorList);
 

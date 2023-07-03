@@ -14,10 +14,9 @@ import org.openmrs.GlobalProperty;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.ILMessageType;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
-import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
-import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
+import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.scheduler.tasks.AbstractTask;
 import org.slf4j.Logger;
@@ -30,30 +29,30 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Directly push messages to Ushauri server
+ * Directly push messages to interop server
  */
-public class UshauriDirectPushTask extends AbstractTask {
+public class KenyaEmrInteropDirectPushTask extends AbstractTask {
 
-    private static final Logger log = LoggerFactory.getLogger(UshauriDirectPushTask.class);
+    private static final Logger log = LoggerFactory.getLogger(KenyaEmrInteropDirectPushTask.class);
     private String url = "http://www.google.com:80/index.html";
 
     /**
      * @see AbstractTask#execute()
      */
     public void execute() {
-        System.out.println("USHAURI DIRECT PUSH: Scheduler started....");
+        System.out.println("EmrInterop DIRECT PUSH: Scheduler started....");
 
         try {
             Context.openSession();
 
-            GlobalProperty gpUshauriServerUrl = Context.getAdministrationService().getGlobalPropertyObject(ILUtils.GP_USHAURI_PUSH_SERVER_URL);
-            if (gpUshauriServerUrl == null) {
-                System.out.println("USHAURI DIRECT PUSH: There is no global property for USHAURI server URL!");
+            GlobalProperty gpMiddlewareServerUrl = Context.getAdministrationService().getGlobalPropertyObject(ILUtils.GP_USHAURI_PUSH_SERVER_URL);
+            if (gpMiddlewareServerUrl == null) {
+                System.out.println("EmrInterop DIRECT PUSH: There is no global property for interop server URL!");
                 return;
             }
 
-            if (StringUtils.isBlank(gpUshauriServerUrl.getPropertyValue())) {
-                System.out.println("USHAURI DIRECT PUSH: The server URL has not been set!");
+            if (StringUtils.isBlank(gpMiddlewareServerUrl.getPropertyValue())) {
+                System.out.println("EmrInterop DIRECT PUSH: The server URL has not been set!");
                 return;
             }
 
@@ -70,14 +69,14 @@ public class UshauriDirectPushTask extends AbstractTask {
             connection.connect();
 
             if (!useILMiddleware) {
-                List<KenyaemrMhealthOutboxMessage> pendingOutboxes = Context.getService(KenyaEMRILService.class).getKenyaEMROutboxMessagesToSend(false);
+                List<KenyaEMRInteropMessage> pendingOutboxes = Context.getService(KenyaEMRILService.class).getKenyaEMROutboxMessagesToSend(false);
                 if (pendingOutboxes.size() < 1) {
-                    System.out.println("USHAURI Direct PUSH: There are no messages to send to Ushauri");
+                    System.out.println("EmrInterop Direct PUSH: There are no messages to send to interop server");
                     return;
                 }
 
-                for (KenyaemrMhealthOutboxMessage pendingOutbox : pendingOutboxes) {
-                    sendMessageDirectToUshauriServer(pendingOutbox, gpUshauriServerUrl.getPropertyValue());
+                for (KenyaEMRInteropMessage pendingOutbox : pendingOutboxes) {
+                    sendMessageDirectToMhealthServer(pendingOutbox, gpMiddlewareServerUrl.getPropertyValue());
                 }
 
             }
@@ -86,10 +85,10 @@ public class UshauriDirectPushTask extends AbstractTask {
         } catch (IOException ioe) {
 
             try {
-                String text = "IL - USHAURI PUSH: At " + new Date() + " there was connectivity error. ";
+                String text = "IL - EmrInterop PUSH: At " + new Date() + " there was connectivity error. ";
                 log.warn(text);
             } catch (Exception e) {
-                log.error("IL - USHAURI PUSH: Failed to check internet connectivity", e);
+                log.error("IL - EmrInterop PUSH: Failed to check internet connectivity", e);
             }
         } finally {
             Context.closeSession();
@@ -98,10 +97,10 @@ public class UshauriDirectPushTask extends AbstractTask {
     }
 
     /**
-     * Send message direct to Ushauri server
+     * Send message direct to Mhealth server
      * @param outbox
      */
-    private void sendMessageDirectToUshauriServer(KenyaemrMhealthOutboxMessage outbox, String ushauriServerUrl) {
+    private void sendMessageDirectToMhealthServer(KenyaEMRInteropMessage outbox, String serverUrl) {
 
         SSLConnectionSocketFactory sslsf = null;
         GlobalProperty gpSslVerification = Context.getAdministrationService().getGlobalPropertyObject(ILUtils.GP_USHAURI_SSL_VERIFICATION_ENABLED);
@@ -121,7 +120,7 @@ public class UshauriDirectPushTask extends AbstractTask {
 
         try {
 
-            HttpPost postRequest = new HttpPost(ushauriServerUrl);
+            HttpPost postRequest = new HttpPost(serverUrl);
 
             //Set the API media type in http content-type header
             postRequest.addHeader("content-type", "application/json");
@@ -145,8 +144,8 @@ public class UshauriDirectPushTask extends AbstractTask {
                 if (errorObj != null) {
                     errorsString = (String) errorObj.get("msg");
                 }
-                System.out.println("Error sending message to USHAURI server! " + "Status code - " + statusCode + ". Msg - " + errorsString);
-                log.error("Error sending message to USHAURI server! " + "Status code - " + statusCode + ". Msg - " + errorsString);
+                System.out.println("Error sending message to interop server! " + "Status code - " + statusCode + ". Msg - " + errorsString);
+                log.error("Error sending message to interop server! " + "Status code - " + statusCode + ". Msg - " + errorsString);
                 System.out.println("Error object" + errorObj.toJSONString());
 
                 if (StringUtils.isNotBlank(errorsString)) {
@@ -177,8 +176,8 @@ public class UshauriDirectPushTask extends AbstractTask {
                 //Purge from the il_messages table
                 service.deleteMhealthOutboxMessage(outbox);
 
-                log.info("Successfully sent message to USHAURI server");
-                System.out.println("Successfully sent message to USHAURI server");
+                log.info("Successfully sent message to interop server");
+                System.out.println("Successfully sent message to interop server");
 
             }
         } catch (Exception e) {
