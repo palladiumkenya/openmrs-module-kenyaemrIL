@@ -15,7 +15,6 @@ package org.openmrs.module.kenyaemrIL.api;
 
 import org.openmrs.Patient;
 import org.openmrs.api.OpenmrsService;
-import org.openmrs.module.kenyaemrIL.artReferral.KenyaEMRArtReferralMessage;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
@@ -23,7 +22,7 @@ import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
-import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
+import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -200,31 +199,19 @@ public interface KenyaEMRILService extends OpenmrsService {
 
     // additions to support for data exchange with mhealth apps
 
-    KenyaemrMhealthOutboxMessage getMhealthOutboxMessageByUuid(String uuid);
+    KenyaEMRInteropMessage getMhealthOutboxMessageByUuid(String uuid);
 
-    KenyaemrMhealthOutboxMessage saveMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthMessageOutbox);
+    KenyaEMRInteropMessage saveMhealthOutboxMessage(KenyaEMRInteropMessage KenyaemrMhealthMessageOutbox);
 
-    void deleteMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthOutboxMessage);
+    void deleteMhealthOutboxMessage(KenyaEMRInteropMessage KenyaEMRInteropMessage);
 
-    List<KenyaemrMhealthOutboxMessage> getAllMhealthOutboxMessages(Boolean includeAll);
+    List<KenyaEMRInteropMessage> getAllMhealthOutboxMessages(Boolean includeAll);
 
-    List<KenyaemrMhealthOutboxMessage> getKenyaEMROutboxMessagesToSend(Boolean includeRetired);//fetchAllViralLoadErrors
-
-    // Api methods to support data exchange with art directory
-
-    KenyaEMRArtReferralMessage getArtReferralOutboxMessageByUuid(String uuid);
-
-    KenyaEMRArtReferralMessage saveArtReferralOutboxMessage(KenyaEMRArtReferralMessage kenyaEMRArtReferralMessage);
-
-    void deleteArtReferralOutboxMessage(KenyaEMRArtReferralMessage kenyaEMRArtReferralMessage);
-
-    List<KenyaEMRArtReferralMessage> getAllArtReferralOutboxMessage(Boolean includeAll);
-
-    List<KenyaEMRArtReferralMessage> getArtReferralOutboxMessageToSend(Boolean includeRetired);
-
-    boolean logPatientReferrals(ILMessage ilMessage, Patient patient);
+    List<KenyaEMRInteropMessage> getKenyaEMROutboxMessagesToSend(Boolean includeRetired);//fetchAllViralLoadErrors
 
     List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors();
+
+    boolean logPatientReferrals(ILMessage ilMessage, Patient patient);
 
     void reQueueErrors(final @RequestParam(value = "errorList") String errorList);
 

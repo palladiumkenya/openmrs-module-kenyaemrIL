@@ -38,10 +38,8 @@
         KenyaEMRILRegistration.hbm.xml
         KenyaEMRILMessageArchive.hbm.xml
         KenyaEMRILMessageErrorQueue.hbm.xml
-        KenyaEMRMhealthOutbox.hbm.xml
+        KenyaEMRInteropMessage.hbm.xml
         KenyaEMRMhealthPatientRegistration.hbm.xml
-        KenyaEMRArtReferralMessage.hbm.xml
-
     </mappingFiles>
 
 

@@ -68,6 +68,8 @@ public class ILPatientReferral {
         patientIdentification.setInternal_patient_id(internalPatientIds);
         patientIdentification.setExternal_patient_id(epd);
 
+        ilMessage.setPatient_identification(patientIdentification);
+
         ilMessage.setPatient_referral(referralInfo(encounter));
         return ilMessage;
     }
@@ -85,20 +87,8 @@ public class ILPatientReferral {
         referralInformation.setStatus(ServiceRequest.ServiceRequestStatus.ACTIVE);
         referralInformation.setIntent(ServiceRequest.ServiceRequestIntent.ORDER);
         referralInformation.setPriority(ServiceRequest.ServiceRequestPriority.ASAP);
-        referralInformation.setToFacilityName("");
         referralInformation.setToFacilityMflCode(facilityMfl);
-        referralInformation.setTiFacilityPhone("");
-        referralInformation.setTiFacilityName("");
         referralInformation.setTiFacilityMflCode("");
-        referralInformation.setTiFacilityMflCode("");
-
-        /**
-         * Improve TO form
-         * 1. Transfer to facility is value text - it'll be hard to know which facility this is hence prefer using mfl code instead
-         * 2. Make transfer to facility required
-         * 3. Use mfl codes for both requester and transfer to facility
-         * 4. Concept for patient referral category and code - use discontinuation reason - align with nhdd
-         */
 
         return referralInformation;
     }

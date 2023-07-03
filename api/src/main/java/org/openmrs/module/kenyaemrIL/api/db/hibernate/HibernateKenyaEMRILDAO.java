@@ -23,12 +23,11 @@ import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
-import org.openmrs.module.kenyaemrIL.artReferral.KenyaEMRArtReferralMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
-import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
+import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import java.util.List;
 
@@ -173,36 +172,36 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     }
 
     @Override
-    public KenyaemrMhealthOutboxMessage getMhealthOutboxMessageByUuid(String uuid) {
-        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaemrMhealthOutboxMessage.class);
+    public KenyaEMRInteropMessage getMhealthOutboxMessageByUuid(String uuid) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRInteropMessage.class);
         crit.add(Restrictions.eq("uuid", uuid));
-        KenyaemrMhealthOutboxMessage mhealthOutboxMessage = (KenyaemrMhealthOutboxMessage) crit.uniqueResult();
+        KenyaEMRInteropMessage mhealthOutboxMessage = (KenyaEMRInteropMessage) crit.uniqueResult();
         return mhealthOutboxMessage;
     }
 
     @Override
-    public KenyaemrMhealthOutboxMessage saveMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthMessageOutbox) {
+    public KenyaEMRInteropMessage saveMhealthOutboxMessage(KenyaEMRInteropMessage KenyaemrMhealthMessageOutbox) {
         this.sessionFactory.getCurrentSession().saveOrUpdate(KenyaemrMhealthMessageOutbox);
         return KenyaemrMhealthMessageOutbox;
     }
 
     @Override
-    public void deleteMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthOutboxMessage) {
-        this.sessionFactory.getCurrentSession().delete(KenyaemrMhealthOutboxMessage);
+    public void deleteMhealthOutboxMessage(KenyaEMRInteropMessage KenyaEMRInteropMessage) {
+        this.sessionFactory.getCurrentSession().delete(KenyaEMRInteropMessage);
     }
 
     @Override
-    public List<KenyaemrMhealthOutboxMessage> getAllMhealthOutboxMessages(Boolean includeAll) {
-        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaemrMhealthOutboxMessage.class);
+    public List<KenyaEMRInteropMessage> getAllMhealthOutboxMessages(Boolean includeAll) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRInteropMessage.class);
         crit.add(Restrictions.eq("retired", false));
         return crit.list();
     }
 
     @Override
-    public List<KenyaemrMhealthOutboxMessage> getKenyaEMROutboxMessagesToSend(boolean b) {
+    public List<KenyaEMRInteropMessage> getKenyaEMROutboxMessagesToSend(boolean b) {
         String IL_MESSAGES_MAX_BATCH_FETCH_SIZE = "kenyaemrIL.ilMessagesMaxBatchFetch";
         GlobalProperty batchSize = Context.getAdministrationService().getGlobalPropertyObject(IL_MESSAGES_MAX_BATCH_FETCH_SIZE);
-        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaemrMhealthOutboxMessage.class);
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRInteropMessage.class);
         crit.add(Restrictions.eq("message_type", 2));
         crit.add(Restrictions.eq("retired", false));
         crit.setMaxResults(Integer.parseInt(batchSize.getValue().toString()));
@@ -242,7 +241,7 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
 
                 for (KenyaEMRILMessageErrorQueue errorData : errors) {
                     //TODO: fire this for the different message types
-                    KenyaemrMhealthOutboxMessage queueData = ILUtils.createMhealthOutboxMessageFromErrorMessage(errorData);
+                    KenyaEMRInteropMessage queueData = ILUtils.createMhealthOutboxMessageFromErrorMessage(errorData);
 
                     ILUtils.createRegistrationILMessage(errorData);
                     // we dont want to queue because a new message is generated. Assuming the CCC number has been updated to the required format
@@ -256,7 +255,7 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
                 String[] uuidList = errorList.split(",");
                 for (String uuid : uuidList) {
                     KenyaEMRILMessageErrorQueue errorData = getKenyaEMRILErrorMessageByUuid(uuid);
-                    KenyaemrMhealthOutboxMessage queueData = ILUtils.createMhealthOutboxMessageFromErrorMessage(errorData);
+                    KenyaEMRInteropMessage queueData = ILUtils.createMhealthOutboxMessageFromErrorMessage(errorData);
 
                     ILUtils.createRegistrationILMessage(errorData);
 
@@ -311,36 +310,5 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         crit.addOrder(Order.desc("message_id"));
         crit.setMaxResults(500);
         return crit.list();
-    }
-
-    @Override
-    public KenyaEMRArtReferralMessage getArtReferralOutboxMessageByUuid(String uuid) {
-        Criteria criteria = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRArtReferralMessage.class);
-        return (KenyaEMRArtReferralMessage) criteria.add(Restrictions.eq("uuid", uuid)).uniqueResult();
-    }
-
-    @Override
-    public KenyaEMRArtReferralMessage saveArtReferralOutboxMessage(KenyaEMRArtReferralMessage kenyaEMRArtReferralMessage) {
-        this.sessionFactory.getCurrentSession().saveOrUpdate(kenyaEMRArtReferralMessage);
-        return kenyaEMRArtReferralMessage;
-    }
-
-    @Override
-    public void deleteArtReferralOutboxMessage(KenyaEMRArtReferralMessage kenyaEMRArtReferralMessage) {
-        this.sessionFactory.getCurrentSession().delete(kenyaEMRArtReferralMessage);
-    }
-
-    @Override
-    public List<KenyaEMRArtReferralMessage> getAllArtReferralOutboxMessage(Boolean includeAll) {
-        Criteria criteria = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRArtReferralMessage.class);
-        criteria.add(Restrictions.eq("retired", false));
-        return criteria.list();
-    }
-
-    @Override
-    public List<KenyaEMRArtReferralMessage> getArtReferralOutboxMessageToSend(Boolean includeRetired) {
-        Criteria criteria = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRArtReferralMessage.class);
-        criteria.add(Restrictions.eq("retired", includeRetired));
-        return criteria.list();
     }
 }

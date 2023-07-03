@@ -360,7 +360,7 @@
             <column name="created_by" value="1" />
             <column name="start_on_startup" value="0" />
             <column name="started" value="0" />
-            <column name="uuid" value="7351bb07-97a2-47a6-804b-c9c018c36609" />
+                <column name="uuid" value="7351bb07-97a2-47a6-804b-c9c018c36609" />
         </insert>
     </changeSet>
 
@@ -488,36 +488,8 @@
         </addColumn>
     </changeSet>
 
-    <!--Create table il_art_referral_outbox-->
-    <changeSet id="${project.parent.artifactId}-000000000000000000" author="jecihjoy">
-        <preConditions onFail="MARK_RAN">
-            <not><tableExists tableName="il_art_referral_outbox" /></not>
-        </preConditions>
-        <comment>
-            Create table for art referral message outbox
-        </comment>
-        <createTable tableName="il_art_referral_outbox">
-            <column name="message_id" autoIncrement="true" type="int">
-                <constraints nullable="false" primaryKey="true" />
-            </column>
-            <column name="message" type="text"></column>
-            <column name="creator" type="int"></column>
-            <column name="message_type" type="int"></column>
-            <column name="hl7_type" type="varchar(20)"></column>
-            <column name="retired" type="int"></column>
-            <column name="status" type="varchar(100)" defaultValue="Success" ></column>
-            <column name="source" type="varchar(50)" ></column>
-            <column name="date_created" type="datetime"></column>
-            <column name="uuid" type="varchar(38)"></column>
-            <column name="patient_id" type="int"> <constraints nullable="true"/> </column>
-        </createTable>
-        <modifySql dbms="mysql">
-            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_unicode_ci"/>
-        </modifySql>
-    </changeSet>
-
     <!--Adding scheduled task :Set program discontinuation task-->
-    <changeSet id="${project.parent.artifactId}-20230629000000000000000" author="jecihjoy">
+    <changeSet id="${project.parent.artifactId}-202306271030" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
                 SELECT COUNT(*) FROM scheduler_task_config
@@ -541,28 +513,30 @@
         </insert>
     </changeSet>
 
-    <!--Adding scheduled task :Set art referral direct push task-->
-    <changeSet id="${project.parent.artifactId}-1000000000000000" author="jecihjoy">
+    <!--Reuse existing structure to support additional message types: Rename mhealth_message_outbox to emr_interop_message-->
+    <changeSet id="${project.parent.artifactId}-202307031030" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
-            <sqlCheck expectedResult="0">
+            <tableExists tableName="mhealth_message_outbox"/>
+        </preConditions>
+        <comment>
+            Reuse existing structure to support additional message types: Rename mhealth_message_outbox to emr_interop_message
+        </comment>
+        <renameTable oldTableName="mhealth_message_outbox" newTableName="emr_interop_message"/>
+    </changeSet>
+
+    <!--Reuse existing structure to support additional message types: Rename UshauriDirectPushTask to KenyaEmrInteropDirectPushTask-->
+    <changeSet id="${project.parent.artifactId}-202307030440" author="jecihjoy">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
                 SELECT COUNT(*) FROM scheduler_task_config
-                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.ArtReferralDirectPush'
-                And name = 'Art Referral Task'
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.UshauriDirectPushTask'
+                And name = 'Push messages to Ushauri server'
             </sqlCheck>
         </preConditions>
-        <comment>Inserting art directory push task to 'schedule_task_config' table</comment>
-        <insert tableName="scheduler_task_config">
-            <column name="name" value="Art Referral Task" />
-            <column name="description" value="Periodically Process Art Referrals" />
-            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.ArtReferralDirectPush" />
-            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
-            <column name="start_time" valueDate="2023-01-01T23:59:59" />
-            <column name="repeat_interval" value="7200" />
-            <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
-            <column name="created_by" value="1" />
-            <column name="start_on_startup" value="0" />
-            <column name="started" value="0" />
-            <column name="uuid" value="26b80f20-16c8-11ee-be56-0242ac120002" />
-        </insert>
+        <comment>Rename UshauriDirectPushTask scheduler to KenyaEmrInteropDirectPushTask</comment>
+        <sql>
+            UPDATE openmrs.scheduler_task_config SET schedulable_class = 'org.openmrs.module.kenyaemrIL.KenyaEmrInteropDirectPushTask',
+            name = 'Send message to configured server' where uuid = '7351bb07-97a2-47a6-804b-c9c018c36609'
+        </sql>
     </changeSet>
 </databaseChangeLog>

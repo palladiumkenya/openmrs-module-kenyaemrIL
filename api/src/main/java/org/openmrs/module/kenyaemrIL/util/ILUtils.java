@@ -41,7 +41,7 @@ import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
-import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
+import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 
 import javax.net.ssl.SSLContext;
@@ -336,9 +336,9 @@ public class ILUtils {
 	 * @param kenyaEMRILMessage
 	 * @return
 	 */
-	public static KenyaemrMhealthOutboxMessage createMhealthOutboxFromILMessage(KenyaEMRILMessage kenyaEMRILMessage) {
+	public static KenyaEMRInteropMessage createMhealthOutboxFromILMessage(KenyaEMRILMessage kenyaEMRILMessage) {
 
-		KenyaemrMhealthOutboxMessage outboxMessage = new KenyaemrMhealthOutboxMessage();
+		KenyaEMRInteropMessage outboxMessage = new KenyaEMRInteropMessage();
 		outboxMessage.setHl7_type(kenyaEMRILMessage.getHl7_type());
 		outboxMessage.setSource(kenyaEMRILMessage.getSource());
 		outboxMessage.setMessage(kenyaEMRILMessage.getMessage());
@@ -357,9 +357,9 @@ public class ILUtils {
 	 * @param errorMessage
 	 * @return
 	 */
-	public static KenyaemrMhealthOutboxMessage createMhealthOutboxMessageFromErrorMessage(KenyaEMRILMessageErrorQueue errorMessage) {
+	public static KenyaEMRInteropMessage createMhealthOutboxMessageFromErrorMessage(KenyaEMRILMessageErrorQueue errorMessage) {
 
-		KenyaemrMhealthOutboxMessage outboxMessage = new KenyaemrMhealthOutboxMessage();
+		KenyaEMRInteropMessage outboxMessage = new KenyaEMRInteropMessage();
 		outboxMessage.setHl7_type(errorMessage.getHl7_type());
 		outboxMessage.setSource(errorMessage.getSource());
 		outboxMessage.setMessage(errorMessage.getMessage());
@@ -377,7 +377,7 @@ public class ILUtils {
 	 * @param message
 	 * @return
 	 */
-	public static KenyaEMRILMessageArchive createArchiveForMhealthOutbox(KenyaemrMhealthOutboxMessage message) {
+	public static KenyaEMRILMessageArchive createArchiveForMhealthOutbox(KenyaEMRInteropMessage message) {
 
 		KenyaEMRILMessageArchive archiveMessage = new KenyaEMRILMessageArchive();
 		archiveMessage.setHl7_type(message.getHl7_type());

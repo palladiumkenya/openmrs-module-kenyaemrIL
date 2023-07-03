@@ -1,22 +1,25 @@
 <?xml version="1.0"?>
 <!--
+
     This Source Code Form is subject to the terms of the Mozilla Public License,
     v. 2.0. If a copy of the MPL was not distributed with this file, You can
     obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
     the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
+
     Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
     graphic logo is a trademark of OpenMRS Inc.
+
 -->
 <!DOCTYPE hibernate-mapping PUBLIC
         "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
         "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
-<hibernate-mapping package="org.openmrs.module.kenyaemrIL.artReferral">
+<hibernate-mapping package="org.openmrs.module.kenyaemrIL.mhealth">
 
-    <class name="KenyaEMRArtReferralMessage" table="il_art_referral_outbox">
+    <class name="KenyaEMRInteropMessage" table="emr_interop_message">
 
         <id name="message_id" type="int" column="message_id" unsaved-value="0">
             <generator class="native">
-                <param name="sequence">il_art_referral_outbox_id_seq</param>
+                <param name="sequence">mhealth_message_outbox_id_seq</param>
             </generator>
         </id>
 
@@ -50,5 +53,6 @@
         <property name="hl7_type" type="java.lang.String" column="hl7_type"
                   length="10"/>
         <many-to-one name="patient" class ="org.openmrs.Patient" column = "patient_id" />
+
     </class>
 </hibernate-mapping>
