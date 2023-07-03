@@ -15,31 +15,21 @@ package org.openmrs.module.kenyaemrIL.api.db.hibernate;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.hibernate.Criteria;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
-import org.openmrs.PatientIdentifierType;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
-import org.openmrs.module.kenyaemr.metadata.HivMetadata;
-import org.openmrs.module.kenyaemrIL.api.ILPatientRegistration;
-import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
-import org.openmrs.module.kenyaemrIL.il.ILMessage;
+import org.openmrs.module.kenyaemrIL.artReferral.KenyaEMRArtReferralMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
-import org.openmrs.module.metadatadeploy.MetadataUtils;
-
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -323,4 +313,34 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         return crit.list();
     }
 
+    @Override
+    public KenyaEMRArtReferralMessage getArtReferralOutboxMessageByUuid(String uuid) {
+        Criteria criteria = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRArtReferralMessage.class);
+        return (KenyaEMRArtReferralMessage) criteria.add(Restrictions.eq("uuid", uuid)).uniqueResult();
+    }
+
+    @Override
+    public KenyaEMRArtReferralMessage saveArtReferralOutboxMessage(KenyaEMRArtReferralMessage kenyaEMRArtReferralMessage) {
+        this.sessionFactory.getCurrentSession().saveOrUpdate(kenyaEMRArtReferralMessage);
+        return kenyaEMRArtReferralMessage;
+    }
+
+    @Override
+    public void deleteArtReferralOutboxMessage(KenyaEMRArtReferralMessage kenyaEMRArtReferralMessage) {
+        this.sessionFactory.getCurrentSession().delete(kenyaEMRArtReferralMessage);
+    }
+
+    @Override
+    public List<KenyaEMRArtReferralMessage> getAllArtReferralOutboxMessage(Boolean includeAll) {
+        Criteria criteria = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRArtReferralMessage.class);
+        criteria.add(Restrictions.eq("retired", false));
+        return criteria.list();
+    }
+
+    @Override
+    public List<KenyaEMRArtReferralMessage> getArtReferralOutboxMessageToSend(Boolean includeRetired) {
+        Criteria criteria = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRArtReferralMessage.class);
+        criteria.add(Restrictions.eq("retired", includeRetired));
+        return criteria.list();
+    }
 }

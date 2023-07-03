@@ -47,6 +47,8 @@ import org.openmrs.module.kenyaemr.api.KenyaEmrService;
 import org.openmrs.module.kenyaemrIL.api.ILMessageType;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
+import org.openmrs.module.kenyaemrIL.artReferral.KenyaEMRArtReferralMessage;
+import org.openmrs.module.kenyaemrIL.artReferral.PatientReferralMessage;
 import org.openmrs.module.kenyaemrIL.il.EXTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
@@ -1188,6 +1190,65 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     @Override
     public List<KenyaemrMhealthOutboxMessage> getKenyaEMROutboxMessagesToSend(Boolean includeRetired) {
         return dao.getKenyaEMROutboxMessagesToSend(false);
+    }
+
+    @Override
+    public KenyaEMRArtReferralMessage getArtReferralOutboxMessageByUuid(String uuid) {
+        return dao.getArtReferralOutboxMessageByUuid(uuid);
+    }
+
+    @Override
+    public KenyaEMRArtReferralMessage saveArtReferralOutboxMessage(KenyaEMRArtReferralMessage kenyaEMRArtReferralMessage) {
+        return dao.saveArtReferralOutboxMessage(kenyaEMRArtReferralMessage);
+    }
+
+    @Override
+    public void deleteArtReferralOutboxMessage(KenyaEMRArtReferralMessage kenyaEMRArtReferralMessage) {
+        dao.deleteArtReferralOutboxMessage(kenyaEMRArtReferralMessage);
+    }
+
+    @Override
+    public List<KenyaEMRArtReferralMessage> getAllArtReferralOutboxMessage(Boolean includeAll) {
+        return dao.getAllArtReferralOutboxMessage(includeAll);
+    }
+
+    @Override
+    public List<KenyaEMRArtReferralMessage> getArtReferralOutboxMessageToSend(Boolean includeRetired) {
+        return dao.getArtReferralOutboxMessageToSend(includeRetired);
+    }
+
+    @Override
+    public boolean logPatientReferrals(ILMessage ilMessage, Patient patient) {
+        boolean isSuccessful;
+        //Message Header
+        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("SIU^S12");
+        ilMessage.setMessage_header(messageHeader);
+        KenyaEMRArtReferralMessage artReferralOutboxMessage = new KenyaEMRArtReferralMessage();
+
+        try {
+            PatientReferralMessage patientReferralMessage = ilMessage.extractReferralMessage();
+            String messageString = mapper.writeValueAsString(patientReferralMessage);
+
+            artReferralOutboxMessage.setHl7_type("SIU^S12");
+            artReferralOutboxMessage.setSource("KENYAEMR");
+            artReferralOutboxMessage.setMessage(messageString);
+            artReferralOutboxMessage.setDescription("");
+            artReferralOutboxMessage.setName("");
+            artReferralOutboxMessage.setPatient(patient);
+            artReferralOutboxMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
+            KenyaEMRArtReferralMessage savedInstance = saveArtReferralOutboxMessage(artReferralOutboxMessage);
+
+            if (savedInstance != null) {
+                isSuccessful = true;
+            } else {
+                isSuccessful = false;
+            }
+
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            isSuccessful = false;
+        }
+        return isSuccessful;
     }
 
     @Override

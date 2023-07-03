@@ -15,7 +15,7 @@ package org.openmrs.module.kenyaemrIL.api.db;
 
 import org.openmrs.Patient;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
-import org.openmrs.module.kenyaemrIL.il.ILMessage;
+import org.openmrs.module.kenyaemrIL.artReferral.KenyaEMRArtReferralMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
@@ -93,4 +93,16 @@ public interface KenyaEMRILDAO {
     void purgeErrors(String errorList);
 
     List<KenyaEMRILMessageArchive> fetchRecentArchives();
+
+    // Api methods to support data exchange with art directory
+
+    KenyaEMRArtReferralMessage getArtReferralOutboxMessageByUuid(String uuid);
+
+    KenyaEMRArtReferralMessage saveArtReferralOutboxMessage(KenyaEMRArtReferralMessage kenyaEMRArtReferralMessage);
+
+    void deleteArtReferralOutboxMessage(KenyaEMRArtReferralMessage kenyaEMRArtReferralMessage);
+
+    List<KenyaEMRArtReferralMessage> getAllArtReferralOutboxMessage(Boolean includeAll);
+
+    List<KenyaEMRArtReferralMessage> getArtReferralOutboxMessageToSend(Boolean includeRetired);
 }
