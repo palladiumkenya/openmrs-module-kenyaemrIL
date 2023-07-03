@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<module configVersion="1.2">
+
+    <!-- Module Properties -->
+    <id>${project.parent.artifactId}</id>
+    <name>${project.parent.name}</name>
+    <version>${project.parent.version}</version>
+    <package>${project.parent.groupId}.${project.parent.artifactId}</package>
+    <author>Palladium Developers</author>
+    <description>
+        ${project.parent.description}
+    </description>
+    <updateURL>https://modules.openmrs.org/modules/download/${project.parent.artifactId}/update.rdf</updateURL>
+    <require_version>${openMRSVersion}</require_version>
+    <!-- / Module Properties -->
+
+
+    <!-- Module Activator -->
+    <activator>${project.parent.groupId}.${project.parent.artifactId}.KenyaEMRILActivator</activator>
+    <require_modules>
+        <require_module version="${kenyaemrVersion}">org.openmrs.module.kenyaemr</require_module>
+        <require_module version="2.1">org.openmrs.module.webservices.rest</require_module>
+        <require_module version="${kenyacoreVersion}">org.openmrs.module.kenyacore</require_module>
+        <require_module version="${fhir2Version}">org.openmrs.module.fhir2</require_module>
+    </require_modules>
+    <!-- Adds link to admin page -->
+    <extension>
+        <point>org.openmrs.admin.list</point>
+        <class>${project.parent.groupId}.${project.parent.artifactId}.extension.html.AdminList</class>
+    </extension>
+
+    <!-- Maps hibernate file's, if present -->
+    <mappingFiles>
+
+        KenyaEMRIL.hbm.xml
+        KenyaEMRILMessage.hbm.xml
+        KenyaEMRILRegistration.hbm.xml
+        KenyaEMRILMessageArchive.hbm.xml
+        KenyaEMRILMessageErrorQueue.hbm.xml
+        KenyaEMRMhealthOutbox.hbm.xml
+        KenyaEMRMhealthPatientRegistration.hbm.xml
+        KenyaEMRArtReferralMessage.hbm.xml
+
+    </mappingFiles>
+
+
+    <!-- Internationalization -->
+    <!-- All message codes should start with ${project.parent.artifactId}. -->
+    <messages>
+        <lang>en</lang>
+        <file>messages.properties</file>
+    </messages>
+    <messages>
+        <lang>fr</lang>
+        <file>messages_fr.properties</file>
+    </messages>
+    <messages>
+        <lang>es</lang>
+        <file>messages_es.properties</file>
+    </messages>
+    <globalProperty>
+        <property>enrolmentTask.lastFetchDateAndTime</property>
+        <defaultValue>20190226120000</defaultValue>
+        <description>
+            The last date and time that the last fetch was done for enrollment task
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <property>appointmentTask.lastFetchDateAndTime</property>
+        <defaultValue>20190226120000</defaultValue>
+        <description>
+            The last date and time that the last fetch was done for appointment task
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <property>discontinuationTask.lastFetchDateAndTime</property>
+        <defaultValue>20230226120000</defaultValue>
+        <description>
+            The last date and time that the last fetch was done for discontinuation task
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <property>virallaodTask.lastFetchDateAndTime</property>
+        <defaultValue>20190226120000</defaultValue>
+        <description>
+            The last date and time that the last fetch was done for viral load task
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <property>oruTask.lastFetchDateAndTime</property>
+        <defaultValue>20190226120000</defaultValue>
+        <description>
+            The last date and time that the last fetch was done for unsolicited results task
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <property>pharmacyOrderTask.lastFetchDateAndTime</property>
+        <defaultValue>20190226120000</defaultValue>
+        <description>
+            The last date and time that the last fetch was done for orders task
+        </description>
+    </globalProperty>
+
+
+    <globalProperty>
+        <property>enrolmentTask.lastFetchId</property>
+        <defaultValue>1</defaultValue>
+        <description>
+            The last id indicting if an encounter is a new one or not.
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <property>ilServer.address</property>
+        <defaultValue>127.0.0.1:5000</defaultValue>
+        <description>
+            This is where IL Outbox messages will be routed to
+        </description>
+    </globalProperty>
+
+    <globalProperty>
+        <property>kenyaemrIL.lastPharmacyMessageEncounter</property>
+        <defaultValue></defaultValue>
+        <description>
+            The last encounter id to help track the last time pharmacy message is generated
+        </description>
+    </globalProperty>
+
+    <globalProperty>
+        <property>kenyaemrIL.ilMessagesMaxBatchFetch</property>
+        <defaultValue>25</defaultValue>
+        <description>
+            The maximum batch fetch for processing for inbox and outbox tasks
+        </description>
+    </globalProperty>
+
+    <globalProperty>
+        <property>kenyaemrIL.viral_load_result_end_point</property>
+        <defaultValue></defaultValue>
+        <description>
+            End point for processing viral load results from the lab
+        </description>
+    </globalProperty>
+
+    <!--configuration for mlab endpoint-->
+    <globalProperty>
+        <property>kenyaemrIL.endpoint.mlab.pull</property>
+        <defaultValue>https://mlab.mhealthkenya.co.ke/api/get/il/viral_loads</defaultValue>
+        <description>
+            End point for pulling viral load results from mlab server
+        </description>
+    </globalProperty>
+
+    <!--configuration for ushauri endpoint-->
+    <globalProperty>
+        <property>kenyaemrIL.endpoint.ushauri.push</property>
+        <defaultValue>https://il.mhealthkenya.co.ke/hl7_message</defaultValue>
+        <description>
+            End point for pushing messages to ushauri
+        </description>
+    </globalProperty>
+
+    <globalProperty>
+        <property>kemr.ushauri.ssl_verification_enabled</property>
+        <defaultValue>true</defaultValue>
+        <description>
+            Switch that enables/disables ssl verification when pushing data to Ushauri
+        </description>
+    </globalProperty>
+
+    <globalProperty>
+        <property>kemr.mhealth.middlware</property>
+        <defaultValue>IL</defaultValue>
+        <description>
+            Configures how KenyaEMR sends messages to Mhealth servers. Valid options are IL or Direct
+        </description>
+    </globalProperty>
+    <!-- /Internationalization -->
+</module>
+

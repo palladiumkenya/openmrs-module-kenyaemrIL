@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<!--
+
+    This Source Code Form is subject to the terms of the Mozilla Public License,
+    v. 2.0. If a copy of the MPL was not distributed with this file, You can
+    obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
+    the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
+
+    Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
+    graphic logo is a trademark of OpenMRS Inc.
+
+-->
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="org.openmrs.module.kenyaemrIL.il">
+
+    <class name="org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration" table="il_registration">
+
+        <id name="message_id" type="int" column="message_id" unsaved-value="0">
+            <generator class="native">
+                <param name="sequence">il_message_message_id_seq</param>
+            </generator>
+        </id>
+
+        <discriminator column="message_id" insert="false"/>
+
+        <property name="patient_id" type="int" column="patient_id"
+                  length="1" not-null="true"/>
+
+
+        <property name="message" type="java.lang.String"
+                  column="message" not-null="true" length="4000"/>
+
+        <many-to-one name="creator" class="org.openmrs.User" not-null="true">
+            <column name="creator"/>
+        </many-to-one>
+
+        <property name="dateCreated" type="java.util.Date"
+                  column="date_created" not-null="true" length="19"/>
+
+        <property name="uuid" type="java.lang.String"
+                  column="uuid" length="38" unique="true"/>
+
+        <property name="retired" type="boolean" column="retired"
+                  length="1" not-null="true"/>
+
+        <property name="message_type" type="int" column="message_type"
+                  length="1" not-null="true"/>
+
+        <property name="status" type="java.lang.String" column="status"
+                  length="100" not-null="true" insert="false" />
+
+        <property name="source" type="java.lang.String" column="source"
+                  length="50" />
+
+        <property name="hl7_type" type="java.lang.String" column="hl7_type"
+                  length="10"/>
+    </class>
+</hibernate-mapping>
