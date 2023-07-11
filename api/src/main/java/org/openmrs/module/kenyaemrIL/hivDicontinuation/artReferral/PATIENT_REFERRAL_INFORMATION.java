@@ -1,4 +1,4 @@
-package org.openmrs.module.kenyaemrIL.artReferral;
+package org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral;
 
 
 import org.hl7.fhir.r4.model.ServiceRequest;

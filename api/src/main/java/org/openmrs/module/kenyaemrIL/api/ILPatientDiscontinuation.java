@@ -4,18 +4,23 @@ import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.ServiceRequest;
 import org.openmrs.Encounter;
+import org.openmrs.Obs;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PersonName;
-import org.openmrs.module.kenyaemrIL.artReferral.PATIENT_REFERRAL_INFORMATION;
+import org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral.PATIENT_REFERRAL_INFORMATION;
+import org.openmrs.module.kenyaemrIL.hivDicontinuation.HivProgramDiscontinuationMessage;
 import org.openmrs.module.kenyaemrIL.il.*;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
-public class ILPatientReferral {
+public class ILPatientDiscontinuation {
 
     public static ILMessage iLPatientWrapper(Patient patient, Encounter encounter) {
         ILMessage ilMessage = new ILMessage();
@@ -23,7 +28,6 @@ public class ILPatientReferral {
         List<INTERNAL_PATIENT_ID> internalPatientIds = new ArrayList<INTERNAL_PATIENT_ID>();
         EXTERNAL_PATIENT_ID epd = new EXTERNAL_PATIENT_ID();
         INTERNAL_PATIENT_ID ipd;
-//set external identifier if available
 
 //        Form the internal patient IDs
         for (PatientIdentifier patientIdentifier : patient.getIdentifiers()) {
@@ -68,16 +72,47 @@ public class ILPatientReferral {
         patientIdentification.setInternal_patient_id(internalPatientIds);
         patientIdentification.setExternal_patient_id(epd);
 
+
+        String pattern = "MM/dd/yyyy HH:mm:ss";
+        DateFormat df = new SimpleDateFormat(pattern);
+
+        HivProgramDiscontinuationMessage hivProgramDiscontinuationMessage = new HivProgramDiscontinuationMessage();
+        for (Obs ob : encounter.getObs()) {
+            if (ob.getConcept().getUuid().equals("161555AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                if (ob.getValueCoded().getUuid().equals("159492AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                    hivProgramDiscontinuationMessage.setDiscontinuation_reason("Transfer Out");
+                    hivProgramDiscontinuationMessage.setService_request(referralInfo(encounter));
+                }
+                if (ob.getValueCoded().getUuid().equals("160034AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                    hivProgramDiscontinuationMessage.setDiscontinuation_reason("Death");
+                }
+                if (ob.getValueCoded().getUuid().equals("5240AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                    hivProgramDiscontinuationMessage.setDiscontinuation_reason("LTFU");
+                }
+                if (ob.getValueCoded().getUuid().equals("164349AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                    hivProgramDiscontinuationMessage.setDiscontinuation_reason("Stopped Treatment");
+                }
+            }
+            if (ob.getConcept().getUuid().equals("164384AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                hivProgramDiscontinuationMessage.setEffective_discontinuation_date(df.format(ob.getValueDatetime()));
+            }
+            if (ob.getConcept().getUuid().equals("1543AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                patientIdentification.setDeath_date(df.format(ob.getValueDatetime()));
+            }
+            if (ob.getConcept().getUuid().equals("1599AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                patientIdentification.setDeath_indicator(ob.getValueCoded().getName().getName());
+            }
+        }
         ilMessage.setPatient_identification(patientIdentification);
 
-        ilMessage.setPatient_referral(referralInfo(encounter));
+        ilMessage.setPatient_hiv_discontinuation_message(hivProgramDiscontinuationMessage);
         return ilMessage;
     }
 
     public static PATIENT_REFERRAL_INFORMATION referralInfo(Encounter encounter) {
         //Service Request Message
         ServiceRequest referralRequest = new ServiceRequest();
-        CodeableConcept codeableConcept = new CodeableConcept().addCoding(new Coding("https://hl7.org/fhir/r4/","OR23","TestCode"));
+        CodeableConcept codeableConcept = new CodeableConcept().addCoding(new Coding("https://hl7.org/fhir/r4/", "", ""));
         referralRequest.setId(encounter.getUuid());
         referralRequest.setCategory(Arrays.asList(codeableConcept));
         referralRequest.setCode(codeableConcept);

@@ -47,7 +47,7 @@ import org.openmrs.module.kenyaemr.api.KenyaEmrService;
 import org.openmrs.module.kenyaemrIL.api.ILMessageType;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
-import org.openmrs.module.kenyaemrIL.artReferral.PatientReferralMessage;
+import org.openmrs.module.kenyaemrIL.hivDicontinuation.PatientHivDiscontinuationMessage;
 import org.openmrs.module.kenyaemrIL.il.EXTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
@@ -1200,8 +1200,8 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         KenyaEMRInteropMessage artReferralOutboxMessage = new KenyaEMRInteropMessage();
 
         try {
-            PatientReferralMessage patientReferralMessage = ilMessage.extractReferralMessage();
-            String messageString = mapper.writeValueAsString(patientReferralMessage);
+            PatientHivDiscontinuationMessage patientHivDiscontinuationMessage = ilMessage.extractHivDiscontinuationMessage();
+            String messageString = mapper.writeValueAsString(patientHivDiscontinuationMessage);
 
             artReferralOutboxMessage.setHl7_type("SIU^S20");
             artReferralOutboxMessage.setSource("KENYAEMR");

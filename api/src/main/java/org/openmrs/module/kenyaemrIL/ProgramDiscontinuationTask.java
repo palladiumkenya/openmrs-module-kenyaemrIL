@@ -2,7 +2,7 @@ package org.openmrs.module.kenyaemrIL;
 
 import org.openmrs.*;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.kenyaemrIL.api.ILPatientReferral;
+import org.openmrs.module.kenyaemrIL.api.ILPatientDiscontinuation;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.scheduler.tasks.AbstractTask;
@@ -15,7 +15,7 @@ import java.util.List;
 public class ProgramDiscontinuationTask extends AbstractTask {
     @Override
     public void execute() {
-        System.out.println("INSIDE ProgramDiscontinuationTask ProgramDiscontinuationTask ProgramDiscontinuationTask ProgramDiscontinuationTask");
+        System.out.println("Executing hiv program discontinuation task");
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         /**Fetch the last date of sync*/
         Date fetchDate = null;
@@ -29,14 +29,8 @@ public class ProgramDiscontinuationTask extends AbstractTask {
         }
         // Fetch all discontinuation encounters
         List<Encounter> pendingEnrollments = fetchPendingUnEnrollments(fetchDate);
-        System.out.println("SIZE ========================== "+pendingEnrollments.size());
         for (Encounter e : pendingEnrollments) {
-            for (Obs ob : e.getObs()) {
-                // check for TO discontinuation
-                if (ob.getConcept().getUuid().equals("161555AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") && ob.getValueCoded().getUuid().equals("159492AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                    discontinuationEvent(e.getPatient(), e);
-                }
-            }
+            discontinuationEvent(e.getPatient(), e);
         }
 
         Date nextProcessingDate = new Date();
@@ -58,9 +52,9 @@ public class ProgramDiscontinuationTask extends AbstractTask {
         q.append("from encounter e inner join " +
                 "( " +
                 " select encounter_type_id, uuid, name from encounter_type where uuid ='2bdada65-4c72-4a48-8730-859890e25cee' " +
-                " ) et on et.encounter_type_id = e.encounter_type and e.voided = 0 ");
+                " ) et on et.encounter_type_id = e.encounter_type and e.voided = 0 " +
+                " where e.date_created >= ' "+effectiveDate+" ' or e.date_changed >= ' "+effectiveDate+" ' ");
         q.append(" group by e.patient_id ");
-        q.append("having min(e.date_created) >= '2023-2-23 12:00:00' or min(e.date_changed) >= '2023-2-23 12:00:00' ");
 
         List<Encounter> encounters = new ArrayList<>();
         List<List<Object>> queryData = Context.getAdministrationService().executeSQL(q.toString(), true);
@@ -74,8 +68,7 @@ public class ProgramDiscontinuationTask extends AbstractTask {
     }
 
     private boolean discontinuationEvent(Patient patient, Encounter e) {
-        System.out.println("discontinuationEvent patient = " + patient + ", e = " + e);
-        ILMessage ilMessage = ILPatientReferral.iLPatientWrapper(patient, e);
+        ILMessage ilMessage = ILPatientDiscontinuation.iLPatientWrapper(patient, e);
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
         return service.logPatientReferrals(ilMessage, e.getPatient());
     }
