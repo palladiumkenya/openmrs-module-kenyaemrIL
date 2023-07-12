@@ -1,7 +1,9 @@
 package org.openmrs.module.kenyaemrIL.il;
 
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.HivProgramDiscontinuationMessage;
+import org.openmrs.module.kenyaemrIL.hivDicontinuation.HivProgramEnrolmentMessage;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.PatientHivDiscontinuationMessage;
+import org.openmrs.module.kenyaemrIL.hivDicontinuation.PatientHivEnrollmentMessage;
 import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
 import org.openmrs.module.kenyaemrIL.il.appointment.AppointmentMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
@@ -31,6 +33,7 @@ public class ILMessage {
     private PHARMACY_ENCODED_ORDER[] pharmacy_encoded_order;
     private PHARMACY_DISPENSE[] pharmacy_dispense;
     private HivProgramDiscontinuationMessage patient_hiv_discontinuation_message;
+    private HivProgramEnrolmentMessage hiv_enrollment_message;
 
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
@@ -103,7 +106,16 @@ public class ILMessage {
     public void setPatient_hiv_discontinuation_message(HivProgramDiscontinuationMessage patient_hiv_discontinuation_message) {
         this.patient_hiv_discontinuation_message = patient_hiv_discontinuation_message;
     }
-//    public COMMON_ORDER_DETAILS getCommon_Order_Details() {
+
+    public HivProgramEnrolmentMessage getHiv_enrollment_message() {
+        return hiv_enrollment_message;
+    }
+
+    public void setHiv_enrollment_message(HivProgramEnrolmentMessage hiv_enrollment_message) {
+        this.hiv_enrollment_message = hiv_enrollment_message;
+    }
+
+    //    public COMMON_ORDER_DETAILS getCommon_Order_Details() {
 //        return common_order_details; }
 //
 //    public void setCommon_Order_Details(COMMON_ORDER_DETAILS common_order_details) {
@@ -158,6 +170,14 @@ public class ILMessage {
         patientHivDiscontinuationMessage.setMessage_header(this.getMessage_header());
         patientHivDiscontinuationMessage.setPatient_identification(this.getPatient_identification());
         patientHivDiscontinuationMessage.setPatient_hiv_discontinuation_message(this.getPatient_hiv_discontinuation_message());
+        return patientHivDiscontinuationMessage;
+    }
+
+    public PatientHivEnrollmentMessage extractHivEnrollmentMessage() {
+        PatientHivEnrollmentMessage patientHivDiscontinuationMessage = new PatientHivEnrollmentMessage();
+        patientHivDiscontinuationMessage.setMessage_header(this.getMessage_header());
+        patientHivDiscontinuationMessage.setPatient_identification(this.getPatient_identification());
+        patientHivDiscontinuationMessage.setHiv_enrollment_message(this.getHiv_enrollment_message());
         return patientHivDiscontinuationMessage;
     }
 

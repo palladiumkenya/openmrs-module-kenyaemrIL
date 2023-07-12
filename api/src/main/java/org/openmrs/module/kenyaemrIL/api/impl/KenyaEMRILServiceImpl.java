@@ -48,6 +48,7 @@ import org.openmrs.module.kenyaemrIL.api.ILMessageType;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.PatientHivDiscontinuationMessage;
+import org.openmrs.module.kenyaemrIL.hivDicontinuation.PatientHivEnrollmentMessage;
 import org.openmrs.module.kenyaemrIL.il.EXTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
@@ -1192,25 +1193,59 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public boolean logPatientReferrals(ILMessage ilMessage, Patient patient) {
+    public boolean logCompletedPatientReferrals(ILMessage ilMessage, Patient patient) {
         boolean isSuccessful;
         //Message Header
         MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("SIU^S20");
         ilMessage.setMessage_header(messageHeader);
-        KenyaEMRInteropMessage artReferralOutboxMessage = new KenyaEMRInteropMessage();
+        KenyaEMRInteropMessage kenyaEMRInteropMessage = new KenyaEMRInteropMessage();
+
+        try {
+            PatientHivEnrollmentMessage hivEnrollmentMessage = ilMessage.extractHivEnrollmentMessage();
+            String messageString = mapper.writeValueAsString(hivEnrollmentMessage);
+
+            kenyaEMRInteropMessage.setHl7_type("SIU^S20");
+            kenyaEMRInteropMessage.setSource("KENYAEMR");
+            kenyaEMRInteropMessage.setMessage(messageString);
+            kenyaEMRInteropMessage.setDescription("");
+            kenyaEMRInteropMessage.setName("");
+            kenyaEMRInteropMessage.setPatient(patient);
+            kenyaEMRInteropMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
+            KenyaEMRInteropMessage savedInstance = saveMhealthOutboxMessage(kenyaEMRInteropMessage);
+
+            if (savedInstance != null) {
+                isSuccessful = true;
+            } else {
+                isSuccessful = false;
+            }
+
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            isSuccessful = false;
+        }
+        return isSuccessful;
+    }
+
+    @Override
+    public boolean logActivePatientReferrals(ILMessage ilMessage, Patient patient) {
+        boolean isSuccessful;
+        //Message Header
+        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("SIU^S20");
+        ilMessage.setMessage_header(messageHeader);
+        KenyaEMRInteropMessage kenyaEMRInteropMessage = new KenyaEMRInteropMessage();
 
         try {
             PatientHivDiscontinuationMessage patientHivDiscontinuationMessage = ilMessage.extractHivDiscontinuationMessage();
             String messageString = mapper.writeValueAsString(patientHivDiscontinuationMessage);
 
-            artReferralOutboxMessage.setHl7_type("SIU^S20");
-            artReferralOutboxMessage.setSource("KENYAEMR");
-            artReferralOutboxMessage.setMessage(messageString);
-            artReferralOutboxMessage.setDescription("");
-            artReferralOutboxMessage.setName("");
-            artReferralOutboxMessage.setPatient(patient);
-            artReferralOutboxMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
-            KenyaEMRInteropMessage savedInstance = saveMhealthOutboxMessage(artReferralOutboxMessage);
+            kenyaEMRInteropMessage.setHl7_type("SIU^S20");
+            kenyaEMRInteropMessage.setSource("KENYAEMR");
+            kenyaEMRInteropMessage.setMessage(messageString);
+            kenyaEMRInteropMessage.setDescription("");
+            kenyaEMRInteropMessage.setName("");
+            kenyaEMRInteropMessage.setPatient(patient);
+            kenyaEMRInteropMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
+            KenyaEMRInteropMessage savedInstance = saveMhealthOutboxMessage(kenyaEMRInteropMessage);
 
             if (savedInstance != null) {
                 isSuccessful = true;

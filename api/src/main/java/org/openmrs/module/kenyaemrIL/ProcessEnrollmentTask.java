@@ -10,6 +10,8 @@ import org.openmrs.PersonAttribute;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.kenyaemrIL.api.ILPatientDiscontinuation;
+import org.openmrs.module.kenyaemrIL.api.ILPatientEnrollment;
 import org.openmrs.module.kenyaemrIL.api.ILPatientRegistration;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
@@ -36,6 +38,7 @@ public class ProcessEnrollmentTask extends AbstractTask {
      */
     @Override
     public void execute() {
+        System.out.println("EXECUTING ENROLLMENT TASK");
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
 //        Fetch enrollment encounter
 //        Fetch the last date of fetch
@@ -64,6 +67,9 @@ public class ProcessEnrollmentTask extends AbstractTask {
                 }
             }
             boolean b = registrationEvent(p);
+
+            //process transfer ins and transit patients
+            hivEnrollmentEvent(e.getPatient(), e);
         }
 
         if (patientsStartedOnArt != null && patientsStartedOnArt.size() > 0) {
@@ -172,5 +178,10 @@ public class ProcessEnrollmentTask extends AbstractTask {
         return notDuplicate;
     }
 
+    private boolean hivEnrollmentEvent(Patient patient, Encounter e) {
+        ILMessage ilMessage = ILPatientEnrollment.iLPatientWrapper(patient, e);
+        KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
+        return service.logCompletedPatientReferrals(ilMessage, e.getPatient());
+    }
 
 }

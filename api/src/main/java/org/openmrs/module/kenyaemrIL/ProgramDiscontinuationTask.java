@@ -70,6 +70,6 @@ public class ProgramDiscontinuationTask extends AbstractTask {
     private boolean discontinuationEvent(Patient patient, Encounter e) {
         ILMessage ilMessage = ILPatientDiscontinuation.iLPatientWrapper(patient, e);
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
-        return service.logPatientReferrals(ilMessage, e.getPatient());
+        return service.logActivePatientReferrals(ilMessage, e.getPatient());
     }
 }
