@@ -13,6 +13,12 @@ public class SERVICE_REQUEST_SUPPORTING_INFO {
     private String date_first_enrolled;
     private String entry_point;
     private String date_started_art_at_transferring_facility;
+    private String tpt_start_date;
+    private String tpt_end_date;
+    private String tpt_end_reason;
+    private String tb_start_date;
+    private String tb_end_date;
+    private String tb_end_reason;
 
     public String getAppointment_date() {
         return appointment_date;
@@ -108,5 +114,53 @@ public class SERVICE_REQUEST_SUPPORTING_INFO {
 
     public void setEntry_point(String entry_point) {
         this.entry_point = entry_point;
+    }
+
+    public String getTpt_start_date() {
+        return tpt_start_date;
+    }
+
+    public void setTpt_start_date(String tpt_start_date) {
+        this.tpt_start_date = tpt_start_date;
+    }
+
+    public String getTpt_end_date() {
+        return tpt_end_date;
+    }
+
+    public void setTpt_end_date(String tpt_end_date) {
+        this.tpt_end_date = tpt_end_date;
+    }
+
+    public String getTpt_end_reason() {
+        return tpt_end_reason;
+    }
+
+    public void setTpt_end_reason(String tpt_end_reason) {
+        this.tpt_end_reason = tpt_end_reason;
+    }
+
+    public String getTb_start_date() {
+        return tb_start_date;
+    }
+
+    public void setTb_start_date(String tb_start_date) {
+        this.tb_start_date = tb_start_date;
+    }
+
+    public String getTb_end_date() {
+        return tb_end_date;
+    }
+
+    public void setTb_end_date(String tb_end_date) {
+        this.tb_end_date = tb_end_date;
+    }
+
+    public String getTb_end_reason() {
+        return tb_end_reason;
+    }
+
+    public void setTb_end_reason(String tb_end_reason) {
+        this.tb_end_reason = tb_end_reason;
     }
 }

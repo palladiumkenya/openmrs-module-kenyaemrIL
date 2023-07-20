@@ -7,8 +7,13 @@ import org.openmrs.Encounter;
 import org.openmrs.Obs;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
+import org.openmrs.PatientProgram;
 import org.openmrs.PersonName;
+import org.openmrs.Program;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.kenyaemr.metadata.IPTMetadata;
+import org.openmrs.module.kenyaemr.metadata.TbMetadata;
+import org.openmrs.module.kenyaemr.util.EmrUtils;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.Program_Discontinuation_Message;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral.PATIENT_REFERRAL_INFORMATION;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral.SERVICE_REQUEST_SUPPORTING_INFO;
@@ -22,6 +27,7 @@ import org.openmrs.module.kenyaemrIL.il.PATIENT_NAME;
 import org.openmrs.module.kenyaemrIL.il.PHYSICAL_ADDRESS;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
+import org.openmrs.module.metadatadeploy.MetadataUtils;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -148,7 +154,6 @@ public class ILPatientDiscontinuation {
         //Set patient's last vl and current regimen
         Encounter lastLabResultsEncounter = ILUtils.lastEncounter(encounter.getPatient(), Context.getEncounterService().getEncounterTypeByUuid("17a381d1-7e29-406a-b782-aa903b963c28"));
         Encounter lastDrugOrderEncounter = ILUtils.lastEncounter(encounter.getPatient(), Context.getEncounterService().getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3"));
-        Encounter lastEnrolmentEncounter = ILUtils.lastEncounter(encounter.getPatient(), Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc"));
         List<Encounter> followUpEncounters = Context.getEncounterService().getEncounters(encounter.getPatient(), null, null, null, null, Arrays.asList(Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e")), null, null, null, false);
         List<Encounter> enrolmentEncounters = Context.getEncounterService().getEncounters(encounter.getPatient(), null, null, null, null, Arrays.asList(Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc")), null, null, null, false);
         Encounter latestFollowUpEncounter = followUpEncounters.get(followUpEncounters.size() - 1);
@@ -216,13 +221,47 @@ public class ILPatientDiscontinuation {
                             serviceRequestSupportingInfo.setDate_first_enrolled(formatter.format(obs.getValueDatetime()));
                         }
                         if (obs.getConcept().getUuid().equals("159599AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                            serviceRequestSupportingInfo.setDate_started_art_at_transferring_facility(formatter.format(lastEnrolmentEncounter.getEncounterDatetime()));
+                            serviceRequestSupportingInfo.setDate_started_art_at_transferring_facility(formatter.format(enrolment.getEncounterDatetime()));
                         }
                         if (obs.getConcept().getUuid().equals("160540AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                             serviceRequestSupportingInfo.setEntry_point(obs.getValueCoded().getName().getName());
                         }
                     }
                 }
+            }
+        }
+
+        //IPT Data
+        Program iptProgram = MetadataUtils.existing(Program.class, IPTMetadata._Program.IPT);
+        Encounter lastIptOutcomeEncounter = EmrUtils.lastEncounter(encounter.getPatient(), Context.getEncounterService().getEncounterTypeByUuid(IPTMetadata._EncounterType.IPT_OUTCOME));
+        List<PatientProgram> patientPrograms = Context.getProgramWorkflowService().getPatientPrograms(encounter.getPatient(), iptProgram, null,null,null,null,false);
+        List<PatientProgram> patientIptProgram = patientPrograms.stream()
+                .filter(pp -> pp.getProgram().getUuid().equals(IPTMetadata._Program.IPT))
+                .collect(Collectors.toList());
+        if (!patientIptProgram.isEmpty()) {
+            serviceRequestSupportingInfo.setTpt_start_date(formatter.format(patientIptProgram.get(0).getDateEnrolled()));
+            if (lastIptOutcomeEncounter != null) {
+                serviceRequestSupportingInfo.setTpt_end_date(formatter.format(patientIptProgram.get(0).getDateCompleted()));
+                if (lastIptOutcomeEncounter != null) {
+                    List<Obs> stopReasonList = lastIptOutcomeEncounter.getObs().stream().filter(ob -> ob.getConcept().getUuid().equals("161555AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")).collect(Collectors.toList());
+                    serviceRequestSupportingInfo.setTpt_end_reason(stopReasonList.get(0).getValueCoded().getName().getName());
+                }
+            }
+        }
+
+        //TB Data
+        Program tbProgram = MetadataUtils.existing(Program.class, TbMetadata._Program.TB);
+        Encounter lastTbOutcomeEncounter = EmrUtils.lastEncounter(encounter.getPatient(), Context.getEncounterService().getEncounterTypeByUuid(TbMetadata._EncounterType.TB_DISCONTINUATION));
+        List<PatientProgram> patientTbPrograms = Context.getProgramWorkflowService().getPatientPrograms(encounter.getPatient(), tbProgram, null,null,null,null,false);
+        List<PatientProgram> patientTbProgram = patientTbPrograms.stream()
+                .filter(pp -> pp.getProgram().getUuid().equals(TbMetadata._Program.TB))
+                .collect(Collectors.toList());
+        if (!patientTbProgram.isEmpty()) {
+            serviceRequestSupportingInfo.setTb_start_date(formatter.format(patientTbProgram.get(0).getDateEnrolled()));
+            if (lastTbOutcomeEncounter != null) {
+                serviceRequestSupportingInfo.setTb_end_date(formatter.format(patientTbProgram.get(0).getDateCompleted()));
+                List<Obs> stopReasonList = lastTbOutcomeEncounter.getObs().stream().filter(ob -> ob.getConcept().getUuid().equals("159786AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")).collect(Collectors.toList());
+                serviceRequestSupportingInfo.setTb_end_reason(stopReasonList.get(0).getValueCoded().getName().getName());
             }
         }
 
