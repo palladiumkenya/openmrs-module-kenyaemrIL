@@ -7,15 +7,11 @@ public class PATIENT_REFERRAL_INFORMATION {
     private ServiceRequest.ServiceRequestStatus transfer_status;
     private ServiceRequest.ServiceRequestIntent transfer_intent;
     private ServiceRequest.ServiceRequestPriority transfer_priority;
-    private String appointment_date;
-    private String drug_days;
-    private String viral_load;
-    private String last_vl_date;
-    private String current_regimen;
     private String transfer_out_date;
     private String to_acceptance_date;
     private String sending_facility_mflCode;
     private String receiving_facility_mflCode;
+    private SERVICE_REQUEST_SUPPORTING_INFO supporting_info;
 
 
     public ServiceRequest.ServiceRequestStatus getTransfer_status() {
@@ -40,46 +36,6 @@ public class PATIENT_REFERRAL_INFORMATION {
 
     public void setTransfer_priority(ServiceRequest.ServiceRequestPriority transfer_priority) {
         this.transfer_priority = transfer_priority;
-    }
-
-    public String getAppointment_date() {
-        return appointment_date;
-    }
-
-    public void setAppointment_date(String appointment_date) {
-        this.appointment_date = appointment_date;
-    }
-
-    public String getDrug_days() {
-        return drug_days;
-    }
-
-    public void setDrug_days(String drug_days) {
-        this.drug_days = drug_days;
-    }
-
-    public String getViral_load() {
-        return viral_load;
-    }
-
-    public void setViral_load(String viral_load) {
-        this.viral_load = viral_load;
-    }
-
-    public String getLast_vl_date() {
-        return last_vl_date;
-    }
-
-    public void setLast_vl_date(String last_vl_date) {
-        this.last_vl_date = last_vl_date;
-    }
-
-    public String getCurrent_regimen() {
-        return current_regimen;
-    }
-
-    public void setCurrent_regimen(String current_regimen) {
-        this.current_regimen = current_regimen;
     }
 
     public String getTransfer_out_date() {
@@ -112,5 +68,13 @@ public class PATIENT_REFERRAL_INFORMATION {
 
     public void setReceiving_facility_mflCode(String receiving_facility_mflCode) {
         this.receiving_facility_mflCode = receiving_facility_mflCode;
+    }
+
+    public SERVICE_REQUEST_SUPPORTING_INFO getSupporting_info() {
+        return supporting_info;
+    }
+
+    public void setSupporting_info(SERVICE_REQUEST_SUPPORTING_INFO supporting_info) {
+        this.supporting_info = supporting_info;
     }
 }
