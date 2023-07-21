@@ -15,6 +15,7 @@ import org.openmrs.module.kenyaemr.metadata.IPTMetadata;
 import org.openmrs.module.kenyaemr.metadata.TbMetadata;
 import org.openmrs.module.kenyaemr.util.EmrUtils;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.Program_Discontinuation_Message;
+import org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral.PATIENT_NCD;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral.PATIENT_REFERRAL_INFORMATION;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral.SERVICE_REQUEST_SUPPORTING_INFO;
 import org.openmrs.module.kenyaemrIL.il.EXTERNAL_PATIENT_ID;
@@ -158,6 +159,9 @@ public class ILPatientDiscontinuation {
         List<Encounter> enrolmentEncounters = Context.getEncounterService().getEncounters(encounter.getPatient(), null, null, null, null, Arrays.asList(Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc")), null, null, null, false);
         Encounter latestFollowUpEncounter = followUpEncounters.get(followUpEncounters.size() - 1);
 
+        StringBuilder drugAllergies = new StringBuilder();
+        StringBuilder otherAllergies = new StringBuilder();
+        List<PATIENT_NCD> patientNcds = new ArrayList<>();
         for (Obs obs : latestFollowUpEncounter.getObs()) {
             if (obs.getConcept().getConceptId() == 5096) {
                 serviceRequestSupportingInfo.setAppointment_date(formatter.format(obs.getValueDatetime()));
@@ -173,7 +177,29 @@ public class ILPatientDiscontinuation {
             if (obs.getConcept().getUuid().equals("5090AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                 serviceRequestSupportingInfo.setHeight(Double.toString(obs.getValueNumeric()));
             }
+            if (obs.getConcept().getUuid().equals("1658AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                serviceRequestSupportingInfo.setArv_adherence(obs.getValueCoded().getName().getName());
+            }
+            if (obs.getConcept().getUuid().equals("1193AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                drugAllergies.append(" " +obs.getValueCoded().getName().getName());
+            }
+            if (obs.getConcept().getUuid().equals("160643AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                otherAllergies.append(" " +obs.getValueCoded().getName().getName());
+            }
+            if (obs.getConcept().getUuid().equals("1284AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                List<Obs> onsetDate = obs.getGroupMembers(false)
+                        .stream()
+                        .filter(c -> c.getConcept().getUuid().equals("159948AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
+                        .collect(Collectors.toList());
+                if (!onsetDate.isEmpty()) {
+                    patientNcds.add(new PATIENT_NCD(obs.getValueCoded().getName().getName(), formatter.format(onsetDate.get(0).getValueDatetime()), ""));
+                }
+            }
         }
+
+        serviceRequestSupportingInfo.setDrug_allergies(drugAllergies.toString());
+        serviceRequestSupportingInfo.setOther_allergies(otherAllergies.toString());
+        serviceRequestSupportingInfo.setPatient_ncds(patientNcds);
 
         Integer latestVLConcept = 856;
         Integer LDLQuestionConcept = 1305;
@@ -234,7 +260,7 @@ public class ILPatientDiscontinuation {
         //IPT Data
         Program iptProgram = MetadataUtils.existing(Program.class, IPTMetadata._Program.IPT);
         Encounter lastIptOutcomeEncounter = EmrUtils.lastEncounter(encounter.getPatient(), Context.getEncounterService().getEncounterTypeByUuid(IPTMetadata._EncounterType.IPT_OUTCOME));
-        List<PatientProgram> patientPrograms = Context.getProgramWorkflowService().getPatientPrograms(encounter.getPatient(), iptProgram, null,null,null,null,false);
+        List<PatientProgram> patientPrograms = Context.getProgramWorkflowService().getPatientPrograms(encounter.getPatient(), iptProgram, null, null, null, null, false);
         List<PatientProgram> patientIptProgram = patientPrograms.stream()
                 .filter(pp -> pp.getProgram().getUuid().equals(IPTMetadata._Program.IPT))
                 .collect(Collectors.toList());
@@ -252,7 +278,7 @@ public class ILPatientDiscontinuation {
         //TB Data
         Program tbProgram = MetadataUtils.existing(Program.class, TbMetadata._Program.TB);
         Encounter lastTbOutcomeEncounter = EmrUtils.lastEncounter(encounter.getPatient(), Context.getEncounterService().getEncounterTypeByUuid(TbMetadata._EncounterType.TB_DISCONTINUATION));
-        List<PatientProgram> patientTbPrograms = Context.getProgramWorkflowService().getPatientPrograms(encounter.getPatient(), tbProgram, null,null,null,null,false);
+        List<PatientProgram> patientTbPrograms = Context.getProgramWorkflowService().getPatientPrograms(encounter.getPatient(), tbProgram, null, null, null, null, false);
         List<PatientProgram> patientTbProgram = patientTbPrograms.stream()
                 .filter(pp -> pp.getProgram().getUuid().equals(TbMetadata._Program.TB))
                 .collect(Collectors.toList());

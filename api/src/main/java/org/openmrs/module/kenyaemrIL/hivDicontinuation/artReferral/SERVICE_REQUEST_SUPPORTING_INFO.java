@@ -1,10 +1,14 @@
 package org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral;
 
+import java.util.List;
+
 public class SERVICE_REQUEST_SUPPORTING_INFO {
     private String appointment_date;
     private String drug_days;
     private String viral_load;
     private String last_vl_date;
+    private String cd4_value;
+    private String cd4_date;
     private String current_regimen;
     private String who_stage;
     private String height;
@@ -19,6 +23,11 @@ public class SERVICE_REQUEST_SUPPORTING_INFO {
     private String tb_start_date;
     private String tb_end_date;
     private String tb_end_reason;
+    private String drug_allergies;
+    private String other_allergies;
+    private List<PATIENT_NCD> patient_ncds;
+    private String adherence_outcome;
+    private String arv_adherence;
 
     public String getAppointment_date() {
         return appointment_date;
@@ -50,6 +59,14 @@ public class SERVICE_REQUEST_SUPPORTING_INFO {
 
     public void setLast_vl_date(String last_vl_date) {
         this.last_vl_date = last_vl_date;
+    }
+
+    public void setCd4_value(String cd4_value) {
+        this.cd4_value = cd4_value;
+    }
+
+    public void setCd4_date(String cd4_date) {
+        this.cd4_date = cd4_date;
     }
 
     public String getCurrent_regimen() {
@@ -162,5 +179,41 @@ public class SERVICE_REQUEST_SUPPORTING_INFO {
 
     public void setTb_end_reason(String tb_end_reason) {
         this.tb_end_reason = tb_end_reason;
+    }
+
+    public String getDrug_allergies() {
+        return drug_allergies;
+    }
+
+    public void setDrug_allergies(String drug_allergies) {
+        this.drug_allergies = drug_allergies;
+    }
+
+    public String getOther_allergies() {
+        return other_allergies;
+    }
+
+    public void setOther_allergies(String other_allergies) {
+        this.other_allergies = other_allergies;
+    }
+
+    public List<PATIENT_NCD> getPatient_ncds() {
+        return patient_ncds;
+    }
+
+    public void setPatient_ncds(List<PATIENT_NCD> patient_ncds) {
+        this.patient_ncds = patient_ncds;
+    }
+
+    public String getAdherence_outcome() {
+        return adherence_outcome;
+    }
+
+    public void setAdherence_outcome(String adherence_outcome) {
+        this.adherence_outcome = adherence_outcome;
+    }
+
+    public void setArv_adherence(String arv_adherence) {
+        this.arv_adherence = arv_adherence;
     }
 }
