@@ -1,5 +1,7 @@
 package org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral;
 
+import org.openmrs.ui.framework.SimpleObject;
+
 import java.util.List;
 
 public class SERVICE_REQUEST_SUPPORTING_INFO {
@@ -26,8 +28,8 @@ public class SERVICE_REQUEST_SUPPORTING_INFO {
     private String drug_allergies;
     private String other_allergies;
     private List<PATIENT_NCD> patient_ncds;
-    private String adherence_outcome;
-    private String arv_adherence;
+    private String arv_adherence_outcome;
+    private List<SimpleObject> regimen_change_history;
 
     public String getAppointment_date() {
         return appointment_date;
@@ -205,15 +207,27 @@ public class SERVICE_REQUEST_SUPPORTING_INFO {
         this.patient_ncds = patient_ncds;
     }
 
-    public String getAdherence_outcome() {
-        return adherence_outcome;
+    public String getArv_adherence_outcome() {
+        return arv_adherence_outcome;
     }
 
-    public void setAdherence_outcome(String adherence_outcome) {
-        this.adherence_outcome = adherence_outcome;
+    public void setArv_adherence_outcome(String arv_adherence_outcome) {
+        this.arv_adherence_outcome = arv_adherence_outcome;
     }
 
-    public void setArv_adherence(String arv_adherence) {
-        this.arv_adherence = arv_adherence;
+    public void setRegimen_change_history(List<SimpleObject> regimen_change_history) {
+        this.regimen_change_history = regimen_change_history;
+    }
+
+    public String getCd4_value() {
+        return cd4_value;
+    }
+
+    public String getCd4_date() {
+        return cd4_date;
+    }
+
+    public List<SimpleObject> getRegimen_change_history() {
+        return regimen_change_history;
     }
 }

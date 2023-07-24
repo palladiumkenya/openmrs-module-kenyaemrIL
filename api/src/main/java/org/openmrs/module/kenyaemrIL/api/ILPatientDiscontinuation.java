@@ -11,9 +11,16 @@ import org.openmrs.PatientProgram;
 import org.openmrs.PersonName;
 import org.openmrs.Program;
 import org.openmrs.api.context.Context;
+import org.openmrs.calculation.patient.PatientCalculationContext;
+import org.openmrs.calculation.patient.PatientCalculationService;
+import org.openmrs.calculation.result.CalculationResult;
+import org.openmrs.module.kenyaemr.calculation.EmrCalculationUtils;
+import org.openmrs.module.kenyaemr.calculation.library.hiv.LastWhoStageCalculation;
+import org.openmrs.module.kenyaemr.calculation.library.hiv.art.LastCd4CountDateCalculation;
 import org.openmrs.module.kenyaemr.metadata.IPTMetadata;
 import org.openmrs.module.kenyaemr.metadata.TbMetadata;
 import org.openmrs.module.kenyaemr.util.EmrUtils;
+import org.openmrs.module.kenyaemr.util.EncounterBasedRegimenUtils;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.Program_Discontinuation_Message;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral.PATIENT_NCD;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral.PATIENT_REFERRAL_INFORMATION;
@@ -29,11 +36,13 @@ import org.openmrs.module.kenyaemrIL.il.PHYSICAL_ADDRESS;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
+import org.openmrs.ui.framework.SimpleObject;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -154,7 +163,6 @@ public class ILPatientDiscontinuation {
 
         //Set patient's last vl and current regimen
         Encounter lastLabResultsEncounter = ILUtils.lastEncounter(encounter.getPatient(), Context.getEncounterService().getEncounterTypeByUuid("17a381d1-7e29-406a-b782-aa903b963c28"));
-        Encounter lastDrugOrderEncounter = ILUtils.lastEncounter(encounter.getPatient(), Context.getEncounterService().getEncounterTypeByUuid("7df67b83-1b84-4fe2-b1b7-794b4e9bfcc3"));
         List<Encounter> followUpEncounters = Context.getEncounterService().getEncounters(encounter.getPatient(), null, null, null, null, Arrays.asList(Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e")), null, null, null, false);
         List<Encounter> enrolmentEncounters = Context.getEncounterService().getEncounters(encounter.getPatient(), null, null, null, null, Arrays.asList(Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc")), null, null, null, false);
         Encounter latestFollowUpEncounter = followUpEncounters.get(followUpEncounters.size() - 1);
@@ -168,9 +176,6 @@ public class ILPatientDiscontinuation {
                 long difference_In_Time = obs.getValueDatetime().getTime() - latestFollowUpEncounter.getEncounterDatetime().getTime();
                 serviceRequestSupportingInfo.setDrug_days(String.valueOf(TimeUnit.MILLISECONDS.toDays(difference_In_Time) % 365));
             }
-            if (obs.getConcept().getUuid().equals("5356AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                serviceRequestSupportingInfo.setWho_stage(obs.getValueCoded().getName().getName());
-            }
             if (obs.getConcept().getUuid().equals("5089AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                 serviceRequestSupportingInfo.setWeight(Double.toString(obs.getValueNumeric()));
             }
@@ -178,32 +183,61 @@ public class ILPatientDiscontinuation {
                 serviceRequestSupportingInfo.setHeight(Double.toString(obs.getValueNumeric()));
             }
             if (obs.getConcept().getUuid().equals("1658AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                serviceRequestSupportingInfo.setArv_adherence(obs.getValueCoded().getName().getName());
+                serviceRequestSupportingInfo.setArv_adherence_outcome(obs.getValueCoded().getName().getName());
             }
             if (obs.getConcept().getUuid().equals("1193AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                drugAllergies.append(" " +obs.getValueCoded().getName().getName());
+                drugAllergies.append(" " + obs.getValueCoded().getName().getName());
             }
             if (obs.getConcept().getUuid().equals("160643AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                otherAllergies.append(" " +obs.getValueCoded().getName().getName());
+                otherAllergies.append(" " + obs.getValueCoded().getName().getName());
             }
             if (obs.getConcept().getUuid().equals("1284AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                List<Obs> onsetDate = obs.getGroupMembers(false)
+                List<Obs> onsetDate = latestFollowUpEncounter.getObs()
                         .stream()
-                        .filter(c -> c.getConcept().getUuid().equals("159948AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
+                        .filter(c -> c.getConcept().getUuid().equals("159948AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") && c.getObsGroup().getUuid().equals(obs.getObsGroup().getUuid()))
                         .collect(Collectors.toList());
                 if (!onsetDate.isEmpty()) {
                     patientNcds.add(new PATIENT_NCD(obs.getValueCoded().getName().getName(), formatter.format(onsetDate.get(0).getValueDatetime()), ""));
                 }
             }
         }
-
+        
         serviceRequestSupportingInfo.setDrug_allergies(drugAllergies.toString());
         serviceRequestSupportingInfo.setOther_allergies(otherAllergies.toString());
         serviceRequestSupportingInfo.setPatient_ncds(patientNcds);
 
+
+        PatientCalculationContext context = Context.getService(PatientCalculationService.class).createCalculationContext();
+        context.setNow(new Date());
+
+        // current who staging
+        CalculationResult currentWhoStaging = EmrCalculationUtils.evaluateForPatient(LastWhoStageCalculation.class, null, encounter.getPatient());
+        if (currentWhoStaging != null) {
+            serviceRequestSupportingInfo.setWho_stage(((Obs) currentWhoStaging.getValue()).getValueCoded().getName().getName());
+        } else {
+            serviceRequestSupportingInfo.setWho_stage("");
+        }
+
+        // Current regimen
+        Encounter lastDrugRegimenEditorEncounter = EncounterBasedRegimenUtils.getLastEncounterForCategory(encounter.getPatient(), "ARV");
+        if (lastDrugRegimenEditorEncounter != null) {
+            SimpleObject o = EncounterBasedRegimenUtils.buildRegimenChangeObject(lastDrugRegimenEditorEncounter.getAllObs(), lastDrugRegimenEditorEncounter);
+            serviceRequestSupportingInfo.setCurrent_regimen(o.get("regimenShortDisplay").toString());
+        }
+
+        // current cd4
+        CalculationResult cd4Results = EmrCalculationUtils.evaluateForPatient(LastCd4CountDateCalculation.class, null, encounter.getPatient());
+        if (cd4Results != null && cd4Results.getValue() != null) {
+            serviceRequestSupportingInfo.setCd4_value(((Obs) cd4Results.getValue()).getValueNumeric().toString());
+            serviceRequestSupportingInfo.setCd4_date(formatter.format(((Obs) cd4Results.getValue()).getObsDatetime()));
+        }
+
+        // regimen change history
+        List<SimpleObject> regimenChangeHistory = EncounterBasedRegimenUtils.getRegimenHistoryFromObservations(encounter.getPatient(), "ARV");
+        serviceRequestSupportingInfo.setRegimen_change_history(regimenChangeHistory);
+
         Integer latestVLConcept = 856;
         Integer LDLQuestionConcept = 1305;
-        Integer ARVConcept = 1085;
         if (lastLabResultsEncounter != null) {
             for (Obs obs : lastLabResultsEncounter.getObs()) {
                 //set vl sample collection date
@@ -218,15 +252,6 @@ public class ILPatientDiscontinuation {
                     serviceRequestSupportingInfo.setViral_load(String.valueOf(obs.getValueNumeric()));
                 } else if (obs.getConcept().getConceptId().equals(LDLQuestionConcept)) {
                     serviceRequestSupportingInfo.setViral_load("LDL");
-                }
-            }
-        }
-        if (lastDrugOrderEncounter != null) {
-            for (Obs obs : lastDrugOrderEncounter.getObs()) {
-                if (obs != null) {
-                    if (obs.getConcept().getConceptId().equals(ARVConcept)) {    //set current regimen
-                        serviceRequestSupportingInfo.setCurrent_regimen(obs.getValueText());
-                    }
                 }
             }
         }
