@@ -1,7 +1,7 @@
 package org.openmrs.module.kenyaemrIL.il;
 
-import org.openmrs.module.kenyaemrIL.artReferral.PATIENT_REFERRAL_INFORMATION;
-import org.openmrs.module.kenyaemrIL.artReferral.PatientReferralMessage;
+import org.openmrs.module.kenyaemrIL.hivDicontinuation.Program_Discontinuation_Message;
+import org.openmrs.module.kenyaemrIL.hivDicontinuation.Patient_Program_Discontinuation_Message;
 import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
 import org.openmrs.module.kenyaemrIL.il.appointment.AppointmentMessage;
 import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
@@ -30,7 +30,7 @@ public class ILMessage {
     private COMMON_ORDER_DETAILS common_order_details;
     private PHARMACY_ENCODED_ORDER[] pharmacy_encoded_order;
     private PHARMACY_DISPENSE[] pharmacy_dispense;
-    private PATIENT_REFERRAL_INFORMATION patient_referral;
+    private Program_Discontinuation_Message discontinuation_message;
 
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
@@ -96,13 +96,14 @@ public class ILMessage {
         this.patient_identification_simple = patient_identification_simple;
     }
 
-    public PATIENT_REFERRAL_INFORMATION getPatient_referral() {
-        return patient_referral;
+    public Program_Discontinuation_Message getDiscontinuation_message() {
+        return discontinuation_message;
     }
 
-    public void setPatient_referral(PATIENT_REFERRAL_INFORMATION patient_referral) {
-        this.patient_referral = patient_referral;
+    public void setDiscontinuation_message(Program_Discontinuation_Message discontinuation_message) {
+        this.discontinuation_message = discontinuation_message;
     }
+
     //    public COMMON_ORDER_DETAILS getCommon_Order_Details() {
 //        return common_order_details; }
 //
@@ -153,12 +154,12 @@ public class ILMessage {
         return appointmentMessage;
     }
 
-    public PatientReferralMessage extractReferralMessage() {
-        PatientReferralMessage patientReferralMessage = new PatientReferralMessage();
-        patientReferralMessage.setMessage_header(this.getMessage_header());
-        patientReferralMessage.setPatient_identification(this.getPatient_identification());
-        patientReferralMessage.setServiceRequest(this.getPatient_referral());
-        return patientReferralMessage;
+    public Patient_Program_Discontinuation_Message extractHivDiscontinuationMessage() {
+        Patient_Program_Discontinuation_Message patientProgramDiscontinuationMessage = new Patient_Program_Discontinuation_Message();
+        patientProgramDiscontinuationMessage.setMessage_header(this.getMessage_header());
+        patientProgramDiscontinuationMessage.setPatient_identification(this.getPatient_identification());
+        patientProgramDiscontinuationMessage.setDiscontinuation_message(this.getDiscontinuation_message());
+        return patientProgramDiscontinuationMessage;
     }
 
     public ObservationMessage extractORUMessage() {

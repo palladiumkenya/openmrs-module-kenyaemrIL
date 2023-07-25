@@ -1,12 +1,12 @@
-package org.openmrs.module.kenyaemrIL.artReferral;
+package org.openmrs.module.kenyaemrIL.hivDicontinuation;
 
 import org.openmrs.module.kenyaemrIL.il.MESSAGE_HEADER;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
 
-public class PatientReferralMessage {
+public class Patient_Program_Discontinuation_Message {
     private MESSAGE_HEADER message_header;
     private PATIENT_IDENTIFICATION patient_identification;
-    private PATIENT_REFERRAL_INFORMATION serviceRequest;
+    private Program_Discontinuation_Message discontinuation_message;
 
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
@@ -24,11 +24,11 @@ public class PatientReferralMessage {
         this.patient_identification = patient_identification;
     }
 
-    public PATIENT_REFERRAL_INFORMATION getServiceRequest() {
-        return serviceRequest;
+    public Program_Discontinuation_Message getDiscontinuation_message() {
+        return discontinuation_message;
     }
 
-    public void setServiceRequest(PATIENT_REFERRAL_INFORMATION serviceRequest) {
-        this.serviceRequest = serviceRequest;
+    public void setDiscontinuation_message(Program_Discontinuation_Message discontinuation_message) {
+        this.discontinuation_message = discontinuation_message;
     }
 }
