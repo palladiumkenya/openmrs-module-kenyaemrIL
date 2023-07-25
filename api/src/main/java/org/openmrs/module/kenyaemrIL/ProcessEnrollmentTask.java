@@ -10,6 +10,7 @@ import org.openmrs.PersonAttribute;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.kenyaemrIL.api.ILPatientEnrollment;
 import org.openmrs.module.kenyaemrIL.api.ILPatientRegistration;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
@@ -64,6 +65,8 @@ public class ProcessEnrollmentTask extends AbstractTask {
                 }
             }
             boolean b = registrationEvent(p);
+            //process transfer in patients
+            programEnrollmentEvent(e.getPatient(), e);
         }
 
         if (patientsStartedOnArt != null && patientsStartedOnArt.size() > 0) {
@@ -126,7 +129,7 @@ public class ProcessEnrollmentTask extends AbstractTask {
         q.append(" group by e.patient_id ");
         q.append("having min(e.date_created) >= '" + effectiveDate + "'");
 
-
+        
         List<Patient> patients = new ArrayList<>();
         PatientService patientService = Context.getPatientService();
         List<List<Object>> queryData = Context.getAdministrationService().executeSQL(q.toString(), true);
@@ -170,6 +173,12 @@ public class ProcessEnrollmentTask extends AbstractTask {
             notDuplicate = true;
         }
         return notDuplicate;
+    }
+
+    private boolean programEnrollmentEvent(Patient patient, Encounter e) {
+        ILMessage ilMessage = ILPatientEnrollment.iLPatientWrapper(patient, e);
+        KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
+        return service.logCompletedPatientReferrals(ilMessage, e.getPatient());
     }
 
 
