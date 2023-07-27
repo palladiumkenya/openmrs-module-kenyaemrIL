@@ -38,7 +38,7 @@ public class PopulatePatientFromErrorPayload extends AbstractChore {
     @Override
     public void perform(PrintWriter out) {
 
-        List<KenyaEMRILMessageErrorQueue> errors = Context.getService(KenyaEMRILService.class).fetchAllMhealthErrors();
+        List<KenyaEMRILMessageErrorQueue> errors = Context.getService(KenyaEMRILService.class).fetchAllMhealthErrors(Arrays.asList(ILUtils.HL7_APPOINTMENT_MESSAGE));
         PatientIdentifierType cccIdType = MetadataUtils.existing(PatientIdentifierType.class, HivMetadata._PatientIdentifierType.UNIQUE_PATIENT_NUMBER);
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
 

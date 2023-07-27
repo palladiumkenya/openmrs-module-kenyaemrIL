@@ -25,6 +25,7 @@ import org.openmrs.ui.framework.page.PageModel;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -34,8 +35,8 @@ public class UshauriHomePageController {
 	public void get(@SpringBean KenyaUiUtils kenyaUi, UiUtils ui, PageModel model) throws JsonProcessingException {
 		
 		KenyaEMRILService ilService = Context.getService(KenyaEMRILService.class);
-		List<KenyaEMRInteropMessage> queueDataList = ilService.getAllMhealthOutboxMessages(false); // fetch for direct route
-		List<KenyaEMRILMessageErrorQueue> errorQueueList = ilService.fetchAllMhealthErrors();
+		List<KenyaEMRInteropMessage> queueDataList = ilService.getAllMhealthOutboxMessagesByHl7Type(Arrays.asList(ILUtils.HL7_APPOINTMENT_MESSAGE, ILUtils.HL7_REGISTRATION_MESSAGE, ILUtils.HL7_REGISTRATION_UPDATE_MESSAGE), false); // fetch for direct route
+		List<KenyaEMRILMessageErrorQueue> errorQueueList = ilService.fetchAllMhealthErrors(Arrays.asList(ILUtils.HL7_APPOINTMENT_MESSAGE));
 		List<KenyaEMRILMessageArchive> archiveRecordList = ilService.fetchRecentArchives();
 
 		List<SimpleObject> queueList = new ArrayList<SimpleObject>();

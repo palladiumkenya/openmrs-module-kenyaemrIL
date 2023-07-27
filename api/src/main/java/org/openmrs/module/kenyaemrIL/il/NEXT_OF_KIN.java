@@ -1,7 +1,6 @@
 package org.openmrs.module.kenyaemrIL.il;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.hl7.fhir.r4.model.ServiceRequest;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
