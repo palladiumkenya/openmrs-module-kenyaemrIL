@@ -207,9 +207,11 @@ public interface KenyaEMRILService extends OpenmrsService {
 
     List<KenyaEMRInteropMessage> getAllMhealthOutboxMessages(Boolean includeAll);
 
+    List<KenyaEMRInteropMessage> getAllMhealthOutboxMessagesByHl7Type(List<String> hl7Types, Boolean includeAll);
+
     List<KenyaEMRInteropMessage> getKenyaEMROutboxMessagesToSend(Boolean includeRetired);//fetchAllViralLoadErrors
 
-    List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors();
+    List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors(List<String> hl7MessageTypes);
 
     boolean logPatientReferrals(ILMessage ilMessage, Patient patient);
 

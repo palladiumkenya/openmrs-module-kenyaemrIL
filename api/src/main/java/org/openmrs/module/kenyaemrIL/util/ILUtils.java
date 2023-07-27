@@ -79,6 +79,8 @@ public class ILUtils {
     public static String HL7_REGISTRATION_MESSAGE = "ADT^A04";
     public static String HL7_REGISTRATION_UPDATE_MESSAGE = "ADT^A08";
     public static String HL7_APPOINTMENT_MESSAGE = "SIU^S12";
+    public static String HL7_ACTIVE_REFERRAL_MESSAGE = "SIU^S20";
+    public static String HL7_COMPLETE_REFERRAL_MESSAGE = "SIU^S21";
 	public static final String REGISTRATION_DOES_NOT_EXIST_IN_THE_USHAURI_SYSTEM = "does not exists in the Ushauri system";
 	public static final String INVALID_CCC_NUMBER_IN_USHAURI = "The CCC must be 10 digits"; // a substring in the error message
 	public static final String CCC_NUMBER_ALREADY_EXISTS_IN_USHAURI = "The CCC number already exists."; // a substring in the error message

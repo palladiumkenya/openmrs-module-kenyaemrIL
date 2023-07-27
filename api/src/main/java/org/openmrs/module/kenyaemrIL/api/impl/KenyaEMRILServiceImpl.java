@@ -1188,6 +1188,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
+    public List<KenyaEMRInteropMessage> getAllMhealthOutboxMessagesByHl7Type(List<String> hl7Types, Boolean includeAll) {
+        return dao.getAllMhealthOutboxMessagesByHl7Type(hl7Types, includeAll);
+    }
+
+    @Override
     public List<KenyaEMRInteropMessage> getKenyaEMROutboxMessagesToSend(Boolean includeRetired) {
         return dao.getKenyaEMROutboxMessagesToSend(false);
     }
@@ -1261,8 +1266,8 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors() {
-        return dao.fetchAllMhealthErrors();
+    public List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors(List<String> hl7MessageTypes) {
+        return dao.fetchAllMhealthErrors(hl7MessageTypes);
     }
 
     @Override

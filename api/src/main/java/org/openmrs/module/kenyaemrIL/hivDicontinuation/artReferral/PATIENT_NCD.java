@@ -5,6 +5,9 @@ public class PATIENT_NCD {
     private String onsetDate;
     private String isControlled;
 
+    public PATIENT_NCD() {
+
+    }
     public PATIENT_NCD(String illness, String onsetDate, String isControlled) {
         this.illness = illness;
         this.onsetDate = onsetDate;

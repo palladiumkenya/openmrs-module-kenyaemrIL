@@ -19,6 +19,7 @@ import org.hibernate.Criteria;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.query.Query;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
@@ -29,6 +30,8 @@ import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
+
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -198,6 +201,27 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     }
 
     @Override
+    public List<KenyaEMRInteropMessage> getAllMhealthOutboxMessagesByHl7Type(List<String> hl7MessageTypes, Boolean includeAll) {
+        String stringQuery = "SELECT kenyaEMRInteropMessage FROM KenyaEMRInteropMessage AS kenyaEMRInteropMessage WHERE ";
+        if (includeAll) {
+            stringQuery += " retired = 1";
+        } else {
+            stringQuery += " retired = 0";
+        }
+
+        if (!hl7MessageTypes.isEmpty()) {
+            stringQuery += " AND kenyaEMRInteropMessage.hl7_type IN (:hl7MessageTypes)";
+        }
+
+        Query query = this.sessionFactory.getCurrentSession().createQuery(
+                stringQuery);
+        if (!hl7MessageTypes.isEmpty()) {
+            query.setParameter("hl7MessageTypes", hl7MessageTypes);
+        }
+        return query.list();
+    }
+
+    @Override
     public List<KenyaEMRInteropMessage> getKenyaEMROutboxMessagesToSend(boolean b) {
         String IL_MESSAGES_MAX_BATCH_FETCH_SIZE = "kenyaemrIL.ilMessagesMaxBatchFetch";
         GlobalProperty batchSize = Context.getAdministrationService().getGlobalPropertyObject(IL_MESSAGES_MAX_BATCH_FETCH_SIZE);
@@ -226,10 +250,19 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     }
 
     @Override
-    public List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors() {
-        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessageErrorQueue.class);
-        crit.add(Restrictions.eq("middleware", "Direct"));
-        return crit.list();
+    public List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors(List<String> hl7MessageTypes) {
+        String stringQuery = "SELECT kenyaEMRILMessageErrorQueue FROM KenyaEMRILMessageErrorQueue AS kenyaEMRILMessageErrorQueue WHERE retired = 0 and middleware = 'Direct' ";
+
+        if (!hl7MessageTypes.isEmpty()) {
+            stringQuery += " AND kenyaEMRILMessageErrorQueue.hl7_type IN (:hl7MessageTypes)";
+        }
+
+        Query query = this.sessionFactory.getCurrentSession().createQuery(
+                stringQuery);
+        if (!hl7MessageTypes.isEmpty()) {
+            query.setParameter("hl7MessageTypes", hl7MessageTypes);
+        }
+        return query.list();
     }
 
     @Override
@@ -237,7 +270,7 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         if (Context.isAuthenticated()) {
 
             if (errorList.equals("all")) {
-                List<KenyaEMRILMessageErrorQueue> errors = fetchAllMhealthErrors();
+                List<KenyaEMRILMessageErrorQueue> errors = fetchAllMhealthErrors(Arrays.asList(ILUtils.HL7_APPOINTMENT_MESSAGE));
 
                 for (KenyaEMRILMessageErrorQueue errorData : errors) {
                     //TODO: fire this for the different message types
@@ -288,7 +321,7 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         if (Context.isAuthenticated()) {
 
             if (errorList.equals("all")) {
-                List<KenyaEMRILMessageErrorQueue> errors = fetchAllMhealthErrors();
+                List<KenyaEMRILMessageErrorQueue> errors = fetchAllMhealthErrors(Arrays.asList(ILUtils.HL7_APPOINTMENT_MESSAGE));
 
                 for (KenyaEMRILMessageErrorQueue errorData : errors) {
                     purgeILErrorQueueMessage(errorData);

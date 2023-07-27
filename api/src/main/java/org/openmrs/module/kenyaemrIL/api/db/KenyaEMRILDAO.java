@@ -75,13 +75,15 @@ public interface KenyaEMRILDAO {
 
     List<KenyaEMRInteropMessage> getAllMhealthOutboxMessages(Boolean includeAll);
 
+    public List<KenyaEMRInteropMessage> getAllMhealthOutboxMessagesByHl7Type(List<String> hl7MessageType, Boolean includeAll);
+
     List<KenyaEMRInteropMessage> getKenyaEMROutboxMessagesToSend(boolean b);
 
     List<KenyaEMRILMessage> fetchAllViralLoadResults(boolean status);
 
     List<KenyaEMRILMessageErrorQueue> fetchAllViralLoadErrors();
 
-    List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors();
+    List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors(List<String> hl7MessageTypes);
 
     void reQueueErrors(String errorList);
 
