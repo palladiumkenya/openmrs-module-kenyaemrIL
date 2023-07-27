@@ -78,6 +78,7 @@ import org.openmrs.module.kenyaemrIL.il.utils.ViralLoadProcessorUtil;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 import org.openmrs.module.kenyaemrIL.kenyaemrUtils.Utils;
 import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
+import org.openmrs.module.kenyaemrIL.programEnrollment.Patient_Program_Enrollment_Message;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1204,6 +1205,40 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             String messageString = mapper.writeValueAsString(patientProgramDiscontinuationMessage);
 
             kenyaEMRInteropMessage.setHl7_type("SIU^S20");
+            kenyaEMRInteropMessage.setSource("KENYAEMR");
+            kenyaEMRInteropMessage.setMessage(messageString);
+            kenyaEMRInteropMessage.setDescription("");
+            kenyaEMRInteropMessage.setName("");
+            kenyaEMRInteropMessage.setPatient(patient);
+            kenyaEMRInteropMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
+            KenyaEMRInteropMessage savedInstance = saveMhealthOutboxMessage(kenyaEMRInteropMessage);
+
+            if (savedInstance != null) {
+                isSuccessful = true;
+            } else {
+                isSuccessful = false;
+            }
+
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            isSuccessful = false;
+        }
+        return isSuccessful;
+    }
+
+    @Override
+    public boolean logCompletedPatientReferrals(ILMessage ilMessage, Patient patient) {
+        boolean isSuccessful;
+        //Message Header
+        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("SIU^S21");
+        ilMessage.setMessage_header(messageHeader);
+        KenyaEMRInteropMessage kenyaEMRInteropMessage = new KenyaEMRInteropMessage();
+
+        try {
+            Patient_Program_Enrollment_Message patientProgramEnrollmentMessage = ilMessage.extractProgramEnrollmentMessage();
+            String messageString = mapper.writeValueAsString(patientProgramEnrollmentMessage);
+
+            kenyaEMRInteropMessage.setHl7_type("SIU^S21");
             kenyaEMRInteropMessage.setSource("KENYAEMR");
             kenyaEMRInteropMessage.setMessage(messageString);
             kenyaEMRInteropMessage.setDescription("");

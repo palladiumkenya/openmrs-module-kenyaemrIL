@@ -13,6 +13,8 @@ import org.openmrs.module.kenyaemrIL.il.pharmacy.OrderMessage;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_DISPENSE;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.PHARMACY_ENCODED_ORDER;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
+import org.openmrs.module.kenyaemrIL.programEnrollment.Patient_Program_Enrollment_Message;
+import org.openmrs.module.kenyaemrIL.programEnrollment.Program_Enrollment_Message;
 
 /**
  * @author Stanslaus Odhiambo
@@ -31,6 +33,7 @@ public class ILMessage {
     private PHARMACY_ENCODED_ORDER[] pharmacy_encoded_order;
     private PHARMACY_DISPENSE[] pharmacy_dispense;
     private Program_Discontinuation_Message discontinuation_message;
+    private Program_Enrollment_Message program_enrollment_message;
 
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
@@ -104,6 +107,14 @@ public class ILMessage {
         this.discontinuation_message = discontinuation_message;
     }
 
+    public void setProgram_enrollment_message(Program_Enrollment_Message program_enrollment_message) {
+        this.program_enrollment_message = program_enrollment_message;
+    }
+
+    public Program_Enrollment_Message getProgram_enrollment_message() {
+        return program_enrollment_message;
+    }
+
     //    public COMMON_ORDER_DETAILS getCommon_Order_Details() {
 //        return common_order_details; }
 //
@@ -160,6 +171,14 @@ public class ILMessage {
         patientProgramDiscontinuationMessage.setPatient_identification(this.getPatient_identification());
         patientProgramDiscontinuationMessage.setDiscontinuation_message(this.getDiscontinuation_message());
         return patientProgramDiscontinuationMessage;
+    }
+
+    public Patient_Program_Enrollment_Message extractProgramEnrollmentMessage() {
+        Patient_Program_Enrollment_Message patientProgramEnrollmentMessage = new Patient_Program_Enrollment_Message();
+        patientProgramEnrollmentMessage.setMessage_header(this.getMessage_header());
+        patientProgramEnrollmentMessage.setPatient_identification(this.getPatient_identification());
+        patientProgramEnrollmentMessage.setProgram_enrollment_message(this.getProgram_enrollment_message());
+        return patientProgramEnrollmentMessage;
     }
 
     public ObservationMessage extractORUMessage() {

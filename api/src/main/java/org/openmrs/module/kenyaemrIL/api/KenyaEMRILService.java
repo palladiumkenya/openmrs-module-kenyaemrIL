@@ -213,6 +213,8 @@ public interface KenyaEMRILService extends OpenmrsService {
 
     boolean logPatientReferrals(ILMessage ilMessage, Patient patient);
 
+    boolean logCompletedPatientReferrals(ILMessage ilMessage, Patient patient);
+
     void reQueueErrors(final @RequestParam(value = "errorList") String errorList);
 
     void purgeILErrorQueueMessage(KenyaEMRILMessageErrorQueue kenyaEMRILMessageErrorQueue);
