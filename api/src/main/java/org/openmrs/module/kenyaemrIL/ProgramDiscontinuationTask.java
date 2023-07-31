@@ -45,7 +45,7 @@ public class ProgramDiscontinuationTask extends AbstractTask {
      * @return
      */
     private List<Encounter> fetchPendingHivDiscontinuations(Date date) {
-        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String effectiveDate = sd.format(date);
         StringBuilder q = new StringBuilder();
         q.append("select e.encounter_id ");
@@ -53,7 +53,7 @@ public class ProgramDiscontinuationTask extends AbstractTask {
                 "( " +
                 " select encounter_type_id, uuid, name from encounter_type where uuid ='2bdada65-4c72-4a48-8730-859890e25cee' " +
                 " ) et on et.encounter_type_id = e.encounter_type and e.voided = 0 " +
-                " where e.date_created >=  '2023-02-23 12:00:00' or e.date_changed >=  '2023-02-23 12:00:00' ");
+                " where e.date_created >=  '" + effectiveDate + "' or e.date_changed >=  '" + effectiveDate + "' ");
         q.append(" group by e.patient_id ");
 
         List<Encounter> encounters = new ArrayList<>();

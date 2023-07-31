@@ -29,7 +29,7 @@ public class SERVICE_REQUEST_SUPPORTING_INFO {
     private String other_allergies;
     private List<PATIENT_NCD> patient_ncds;
     private String arv_adherence_outcome;
-    private List<SimpleObject> regimen_change_history;
+    private List<REGIMEN_SWITCH_HISTORY> regimen_change_history;
 
     public String getAppointment_date() {
         return appointment_date;
@@ -215,7 +215,7 @@ public class SERVICE_REQUEST_SUPPORTING_INFO {
         this.arv_adherence_outcome = arv_adherence_outcome;
     }
 
-    public void setRegimen_change_history(List<SimpleObject> regimen_change_history) {
+    public void setRegimen_change_history(List<REGIMEN_SWITCH_HISTORY> regimen_change_history) {
         this.regimen_change_history = regimen_change_history;
     }
 
@@ -227,7 +227,7 @@ public class SERVICE_REQUEST_SUPPORTING_INFO {
         return cd4_date;
     }
 
-    public List<SimpleObject> getRegimen_change_history() {
+    public List<REGIMEN_SWITCH_HISTORY> getRegimen_change_history() {
         return regimen_change_history;
     }
 }

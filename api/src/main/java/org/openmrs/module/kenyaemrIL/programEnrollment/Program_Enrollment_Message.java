@@ -1,7 +1,5 @@
 package org.openmrs.module.kenyaemrIL.programEnrollment;
 
-import org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral.PATIENT_REFERRAL_INFORMATION;
-
 public class Program_Enrollment_Message {
     private String patient_type;
     private String entry_point;
