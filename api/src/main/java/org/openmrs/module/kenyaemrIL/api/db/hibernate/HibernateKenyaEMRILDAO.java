@@ -16,10 +16,10 @@ package org.openmrs.module.kenyaemrIL.api.db.hibernate;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
+import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
-import org.hibernate.query.Query;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
@@ -31,6 +31,7 @@ import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -216,7 +217,7 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         Query query = this.sessionFactory.getCurrentSession().createQuery(
                 stringQuery);
         if (!hl7MessageTypes.isEmpty()) {
-            query.setParameter("hl7MessageTypes", hl7MessageTypes);
+            query.setParameterList("hl7MessageTypes", hl7MessageTypes);
         }
         return query.list();
     }
@@ -260,7 +261,7 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         Query query = this.sessionFactory.getCurrentSession().createQuery(
                 stringQuery);
         if (!hl7MessageTypes.isEmpty()) {
-            query.setParameter("hl7MessageTypes", hl7MessageTypes);
+            query.setParameterList("hl7MessageTypes", hl7MessageTypes);
         }
         return query.list();
     }
@@ -337,11 +338,19 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     }
 
     @Override
-    public List<KenyaEMRILMessageArchive> fetchRecentArchives() {
-        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessageArchive.class);
-        crit.add(Restrictions.eq("middleware", "Direct"));
-        crit.addOrder(Order.desc("message_id"));
-        crit.setMaxResults(500);
-        return crit.list();
+    public List<KenyaEMRILMessageArchive> fetchRecentArchives(List<String> hl7MessageTypes) {
+        String stringQuery = "SELECT kenyaEMRILMessageArchive FROM KenyaEMRILMessageArchive AS kenyaEMRILMessageArchive WHERE retired = 0 and middleware = 'Direct' ";
+
+        if (!hl7MessageTypes.isEmpty()) {
+            stringQuery += " AND kenyaEMRILMessageArchive.hl7_type IN (:hl7MessageTypes) order by kenyaEMRILMessageArchive.message_id desc ";
+        }
+
+        Query query = this.sessionFactory.getCurrentSession().createQuery(
+                stringQuery).setMaxResults(500);
+        if (!hl7MessageTypes.isEmpty()) {
+            query.setParameterList("hl7MessageTypes", hl7MessageTypes);
+        }
+        return query.list();
+
     }
 }

@@ -37,7 +37,7 @@ public class ReferralsHomePageController {
         KenyaEMRILService ilService = Context.getService(KenyaEMRILService.class);
         List<KenyaEMRInteropMessage> queueDataList = ilService.getAllMhealthOutboxMessagesByHl7Type(Arrays.asList(ILUtils.HL7_ACTIVE_REFERRAL_MESSAGE, ILUtils.HL7_COMPLETE_REFERRAL_MESSAGE), false);
         List<KenyaEMRILMessageErrorQueue> errorQueueList = ilService.fetchAllMhealthErrors(Arrays.asList(ILUtils.HL7_ACTIVE_REFERRAL_MESSAGE, ILUtils.HL7_COMPLETE_REFERRAL_MESSAGE));
-        List<KenyaEMRILMessageArchive> archiveRecordList = ilService.fetchRecentArchives();
+        List<KenyaEMRILMessageArchive> archiveRecordList = ilService.fetchRecentArchives(Arrays.asList(ILUtils.HL7_ACTIVE_REFERRAL_MESSAGE, ILUtils.HL7_COMPLETE_REFERRAL_MESSAGE));
 
         List<SimpleObject> queueList = new ArrayList<SimpleObject>();
         List<SimpleObject> archiveList = new ArrayList<SimpleObject>();
