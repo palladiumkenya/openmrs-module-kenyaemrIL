@@ -2,6 +2,7 @@ package org.openmrs.module.kenyaemrIL.il.appointment;
 
 import org.openmrs.module.kenyaemrIL.il.MESSAGE_HEADER;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
+import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
 
 /**
  * @author Stanslaus Odhiambo
@@ -11,8 +12,7 @@ public class AppointmentMessage {
     private MESSAGE_HEADER message_header;
     private PATIENT_IDENTIFICATION patient_identification;
     private APPOINTMENT_INFORMATION[] appointment_information;
-
-
+    private OBSERVATION_RESULT[] observation_result;
     public MESSAGE_HEADER getMessage_header() {
         return message_header;
     }
@@ -37,4 +37,11 @@ public class AppointmentMessage {
         this.appointment_information = appointment_information;
     }
 
+    public OBSERVATION_RESULT[] getObservation_result() {
+        return observation_result;
+    }
+
+    public void setObservation_result(OBSERVATION_RESULT[] observation_result) {
+        this.observation_result = observation_result;
+    }
 }

@@ -4,6 +4,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
 import org.openmrs.GlobalProperty;
+import org.openmrs.Obs;
 import org.openmrs.Patient;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
@@ -51,9 +52,17 @@ public class ProcessAppointmentsTask extends AbstractTask {
         encounterTypes.add(encounterTypeGreencard);
         List<Encounter> pendingAppointments = fetchPendingAppointments(encounterTypes, fetchDate);
 
+        Integer patientTCAConcept = 5096;
+        Integer patientRefillConcept = 162549;
         for (Encounter e : pendingAppointments) {
             Patient p = e.getPatient();
-            boolean b = appointmentsEvent(p, e);
+            for (Obs obs : e.getObs()) {
+                if (obs.getConcept().getConceptId().equals(patientTCAConcept)) {
+                    appointmentsEvent(p, e, patientTCAConcept);
+                } else if (obs.getConcept().getConceptId().equals(patientRefillConcept)) {
+                    appointmentsEvent(p, e, patientRefillConcept);
+                }
+            }
         }
         Date nextProcessingDate = new Date();
         globalPropertyObject.setPropertyValue(formatter.format(nextProcessingDate));
@@ -63,7 +72,7 @@ public class ProcessAppointmentsTask extends AbstractTask {
 
     private List<Encounter> fetchPendingAppointments(List<EncounterType> encounterTypes, Date date) {
 
-        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String effectiveDate = sd.format(date);
         StringBuilder q = new StringBuilder(); //TODO: We should add extra filter on form since the encounter type uuid used is shared by a number of forms
         q.append("select e.encounter_id ");
@@ -88,8 +97,8 @@ public class ProcessAppointmentsTask extends AbstractTask {
 
     }
 
-    private boolean appointmentsEvent(Patient patient, Encounter e) {
-        ILMessage ilMessage = ILPatientAppointments.iLPatientWrapper(patient, e);
+    private boolean appointmentsEvent(Patient patient, Encounter e, Integer appointmentType) {
+        ILMessage ilMessage = ILPatientAppointments.iLPatientWrapper(patient, e, appointmentType);
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
         return service.logAppointmentSchedule(ilMessage, e.getPatient());
     }
