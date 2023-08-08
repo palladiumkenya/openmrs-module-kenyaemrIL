@@ -54,6 +54,7 @@ public class ReferralsHomePageController {
             String transferOutDate = "";
             String appointmentDate = "";
             String to_acceptance_date = "";
+            String discontinuationReason = "";
 
             ILMessage ilMessage = objectMapper.readValue(kenyaEMRILMessage.getMessage(), ILMessage.class);
 
@@ -61,8 +62,11 @@ public class ReferralsHomePageController {
                 messageType = "Discontinuation";
 
                 Patient_Program_Discontinuation_Message patientProgramDiscontinuationMessage = ilMessage.extractHivDiscontinuationMessage();
-                transferOutDate = patientProgramDiscontinuationMessage.getDiscontinuation_message().getService_request().getTransfer_out_date();
-                appointmentDate = patientProgramDiscontinuationMessage.getDiscontinuation_message().getService_request().getSupporting_info().getAppointment_date();
+                discontinuationReason = patientProgramDiscontinuationMessage.getDiscontinuation_message().getDiscontinuation_reason();
+                if (patientProgramDiscontinuationMessage.getDiscontinuation_message().getDiscontinuation_reason().equals("Transfer Out")) {
+                    transferOutDate = patientProgramDiscontinuationMessage.getDiscontinuation_message().getService_request().getTransfer_out_date();
+                    appointmentDate = patientProgramDiscontinuationMessage.getDiscontinuation_message().getService_request().getSupporting_info().getAppointment_date();
+                }
             } else if (kenyaEMRILMessage.getHl7_type().equalsIgnoreCase(ILUtils.HL7_COMPLETE_REFERRAL_MESSAGE)) {
                 messageType = "Enrollment";
                 Program_Enrollment_Message programEnrollmentMessage = ilMessage.getProgram_enrollment_message();
@@ -101,6 +105,7 @@ public class ReferralsHomePageController {
                     "cccNumber", cccNumber,
                     "patientName", fullName,
                     "messageType", messageType,
+                    "discontinuationReason", discontinuationReason,
                     "transferOutDate", Strings.isNullOrEmpty(transferOutDate) ? "" : yyyyMMdd.format(yyyyMMddWithoutHiphen.parse(transferOutDate)),
                     "appointmentDate", Strings.isNullOrEmpty(appointmentDate) ? "" : yyyyMMdd.format(yyyyMMddWithoutHiphen.parse(appointmentDate)),
                     "toAcceptanceDate", Strings.isNullOrEmpty(to_acceptance_date) ? "" : yyyyMMdd.format(yyyyMMddWithoutHiphen.parse(to_acceptance_date)),
@@ -115,6 +120,7 @@ public class ReferralsHomePageController {
             String transferOutDate = "";
             String appointmentDate = "";
             String to_acceptance_date = "";
+            String discontinuationReason = "";
 
             ILMessage ilMessage = objectMapper.readValue(kenyaEMRILMessage.getMessage(), ILMessage.class);
 
@@ -122,8 +128,11 @@ public class ReferralsHomePageController {
                 messageType = "Discontinuation";
 
                 Patient_Program_Discontinuation_Message patientProgramDiscontinuationMessage = ilMessage.extractHivDiscontinuationMessage();
-                transferOutDate = patientProgramDiscontinuationMessage.getDiscontinuation_message().getService_request().getTransfer_out_date();
-                appointmentDate = patientProgramDiscontinuationMessage.getDiscontinuation_message().getService_request().getSupporting_info().getAppointment_date();
+                discontinuationReason = patientProgramDiscontinuationMessage.getDiscontinuation_message().getDiscontinuation_reason();
+                if (patientProgramDiscontinuationMessage.getDiscontinuation_message().getDiscontinuation_reason().equals("Transfer Out")) {
+                    transferOutDate = patientProgramDiscontinuationMessage.getDiscontinuation_message().getService_request().getTransfer_out_date();
+                    appointmentDate = patientProgramDiscontinuationMessage.getDiscontinuation_message().getService_request().getSupporting_info().getAppointment_date();
+                }
             } else if (kenyaEMRILMessage.getHl7_type().equalsIgnoreCase(ILUtils.HL7_COMPLETE_REFERRAL_MESSAGE)) {
                 messageType = "Enrollment";
                 Program_Enrollment_Message programEnrollmentMessage = ilMessage.getProgram_enrollment_message();
@@ -162,6 +171,7 @@ public class ReferralsHomePageController {
                     "cccNumber", cccNumber,
                     "patientName", fullName,
                     "messageType", messageType,
+                    "discontinuationReason", discontinuationReason,
                     "transferOutDate", Strings.isNullOrEmpty(transferOutDate) ? "" : yyyyMMdd.format(yyyyMMddWithoutHiphen.parse(transferOutDate)),
                     "appointmentDate", Strings.isNullOrEmpty(appointmentDate) ? "" : yyyyMMdd.format(yyyyMMddWithoutHiphen.parse(appointmentDate)),
                     "toAcceptanceDate", Strings.isNullOrEmpty(to_acceptance_date) ? "" : yyyyMMdd.format(yyyyMMddWithoutHiphen.parse(to_acceptance_date)),
@@ -176,6 +186,7 @@ public class ReferralsHomePageController {
             String transferOutDate = "";
             String appointmentDate = "";
             String to_acceptance_date = "";
+            String discontinuationReason = "";
 
             ILMessage ilMessage = objectMapper.readValue(errorItem.getMessage(), ILMessage.class);
 
@@ -183,8 +194,11 @@ public class ReferralsHomePageController {
                 messageType = "Discontinuation";
 
                 Patient_Program_Discontinuation_Message patientProgramDiscontinuationMessage = ilMessage.extractHivDiscontinuationMessage();
-                transferOutDate = patientProgramDiscontinuationMessage.getDiscontinuation_message().getService_request().getTransfer_out_date();
-                appointmentDate = patientProgramDiscontinuationMessage.getDiscontinuation_message().getService_request().getSupporting_info().getAppointment_date();
+                discontinuationReason = patientProgramDiscontinuationMessage.getDiscontinuation_message().getDiscontinuation_reason();
+                if (patientProgramDiscontinuationMessage.getDiscontinuation_message().getDiscontinuation_reason().equals("Transfer Out")) {
+                    transferOutDate = patientProgramDiscontinuationMessage.getDiscontinuation_message().getService_request().getTransfer_out_date();
+                    appointmentDate = patientProgramDiscontinuationMessage.getDiscontinuation_message().getService_request().getSupporting_info().getAppointment_date();
+                }
             } else if (errorItem.getHl7_type().equalsIgnoreCase(ILUtils.HL7_COMPLETE_REFERRAL_MESSAGE)) {
                 messageType = "Enrollment";
                 Program_Enrollment_Message programEnrollmentMessage = ilMessage.getProgram_enrollment_message();
@@ -223,6 +237,7 @@ public class ReferralsHomePageController {
                     "cccNumber", cccNumber,
                     "patientName", fullName,
                     "messageType", messageType,
+                    "discontinuationReason", discontinuationReason,
                     "transferOutDate", Strings.isNullOrEmpty(transferOutDate) ? "" : yyyyMMdd.format(yyyyMMddWithoutHiphen.parse(transferOutDate)),
                     "appointmentDate", Strings.isNullOrEmpty(appointmentDate) ? "" : yyyyMMdd.format(yyyyMMddWithoutHiphen.parse(appointmentDate)),
                     "toAcceptanceDate", Strings.isNullOrEmpty(to_acceptance_date) ? "" : yyyyMMdd.format(yyyyMMddWithoutHiphen.parse(to_acceptance_date)),

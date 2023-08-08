@@ -184,43 +184,48 @@ public class ILPatientDiscontinuation {
         Encounter lastLabResultsEncounter = ILUtils.lastEncounter(encounter.getPatient(), Context.getEncounterService().getEncounterTypeByUuid("17a381d1-7e29-406a-b782-aa903b963c28"));
         List<Encounter> followUpEncounters = Context.getEncounterService().getEncounters(encounter.getPatient(), null, null, null, null, Arrays.asList(Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e")), null, null, null, false);
         List<Encounter> enrolmentEncounters = Context.getEncounterService().getEncounters(encounter.getPatient(), null, null, null, null, Arrays.asList(Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc")), null, null, null, false);
-        Encounter latestFollowUpEncounter = followUpEncounters.get(followUpEncounters.size() - 1);
+        Encounter latestFollowUpEncounter = null;
+        if (!followUpEncounters.isEmpty()) {
+            latestFollowUpEncounter = followUpEncounters.get(followUpEncounters.size() - 1);
+        }
 
         StringBuilder drugAllergies = new StringBuilder();
         StringBuilder otherAllergies = new StringBuilder();
         List<PATIENT_NCD> patientNcds = new ArrayList<>();
-        for (Obs obs : latestFollowUpEncounter.getObs()) {
-            if (obs.getConcept().getConceptId() == 5096) {
-                serviceRequestSupportingInfo.setAppointment_date(formatter.format(obs.getValueDatetime()));
-                long difference_In_Time = obs.getValueDatetime().getTime() - latestFollowUpEncounter.getEncounterDatetime().getTime();
-                serviceRequestSupportingInfo.setDrug_days(String.valueOf(TimeUnit.MILLISECONDS.toDays(difference_In_Time) % 365));
-            }
-            if (obs.getConcept().getUuid().equals("5089AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                serviceRequestSupportingInfo.setWeight(Double.toString(obs.getValueNumeric()));
-            }
-            if (obs.getConcept().getUuid().equals("5090AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                serviceRequestSupportingInfo.setHeight(Double.toString(obs.getValueNumeric()));
-            }
-            if (obs.getConcept().getUuid().equals("1658AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                serviceRequestSupportingInfo.setArv_adherence_outcome(obs.getValueCoded().getName().getName());
-            }
-            if (obs.getConcept().getUuid().equals("1193AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                drugAllergies.append(" " + obs.getValueCoded().getName().getName());
-            }
-            if (obs.getConcept().getUuid().equals("160643AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                otherAllergies.append(" " + obs.getValueCoded().getName().getName());
-            }
-            if (obs.getConcept().getUuid().equals("1284AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                List<Obs> onsetDate = latestFollowUpEncounter.getObs()
-                        .stream()
-                        .filter(c -> c.getConcept().getUuid().equals("159948AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") && c.getObsGroup().getUuid().equals(obs.getObsGroup().getUuid()))
-                        .collect(Collectors.toList());
-                if (!onsetDate.isEmpty()) {
-                    patientNcds.add(new PATIENT_NCD(obs.getValueCoded().getName().getName(), formatter.format(onsetDate.get(0).getValueDatetime()), ""));
+        if (latestFollowUpEncounter != null) {
+            for (Obs obs : latestFollowUpEncounter.getObs()) {
+                if (obs.getConcept().getConceptId() == 5096) {
+                    serviceRequestSupportingInfo.setAppointment_date(formatter.format(obs.getValueDatetime()));
+                    long difference_In_Time = obs.getValueDatetime().getTime() - latestFollowUpEncounter.getEncounterDatetime().getTime();
+                    serviceRequestSupportingInfo.setDrug_days(String.valueOf(TimeUnit.MILLISECONDS.toDays(difference_In_Time) % 365));
+                }
+                if (obs.getConcept().getUuid().equals("5089AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                    serviceRequestSupportingInfo.setWeight(Double.toString(obs.getValueNumeric()));
+                }
+                if (obs.getConcept().getUuid().equals("5090AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                    serviceRequestSupportingInfo.setHeight(Double.toString(obs.getValueNumeric()));
+                }
+                if (obs.getConcept().getUuid().equals("1658AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                    serviceRequestSupportingInfo.setArv_adherence_outcome(obs.getValueCoded().getName().getName());
+                }
+                if (obs.getConcept().getUuid().equals("1193AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                    drugAllergies.append(" " + obs.getValueCoded().getName().getName());
+                }
+                if (obs.getConcept().getUuid().equals("160643AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                    otherAllergies.append(" " + obs.getValueCoded().getName().getName());
+                }
+                if (obs.getConcept().getUuid().equals("1284AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                    List<Obs> onsetDate = latestFollowUpEncounter.getObs()
+                            .stream()
+                            .filter(c -> c.getConcept().getUuid().equals("159948AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") && c.getObsGroup().getUuid().equals(obs.getObsGroup().getUuid()))
+                            .collect(Collectors.toList());
+                    if (!onsetDate.isEmpty()) {
+                        patientNcds.add(new PATIENT_NCD(obs.getValueCoded().getName().getName(), formatter.format(onsetDate.get(0).getValueDatetime()), ""));
+                    }
                 }
             }
-        }
 
+        }
         serviceRequestSupportingInfo.setDrug_allergies(drugAllergies.toString());
         serviceRequestSupportingInfo.setOther_allergies(otherAllergies.toString());
         serviceRequestSupportingInfo.setPatient_ncds(patientNcds);
@@ -275,32 +280,33 @@ public class ILPatientDiscontinuation {
             }
         }
 
-        for (Encounter enrolment : enrolmentEncounters) {
-            //Filter patient type obs record
-            List<Obs> patientType = enrolment.getObs()
-                    .stream()
-                    .filter(c -> c.getConcept().getConceptId() == 164932)
-                    .collect(Collectors.toList());
-            if (!patientType.isEmpty()) {
-                if (!Arrays.asList(new Integer[]{164931, 159833}).contains(patientType.get(0).getValueCoded().getConceptId())) {
-                    for (Obs obs : enrolment.getObs()) {
-                        if (obs.getConcept().getUuid().equals("160554AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                            serviceRequestSupportingInfo.setDate_confirmed_positive(formatter.format(obs.getValueDatetime()));
-                        }
-                        if (obs.getConcept().getUuid().equals("160555AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                            serviceRequestSupportingInfo.setDate_first_enrolled(formatter.format(obs.getValueDatetime()));
-                        }
-                        if (obs.getConcept().getUuid().equals("159599AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                            serviceRequestSupportingInfo.setDate_started_art_at_transferring_facility(formatter.format(enrolment.getEncounterDatetime()));
-                        }
-                        if (obs.getConcept().getUuid().equals("160540AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                            serviceRequestSupportingInfo.setEntry_point(obs.getValueCoded().getName().getName());
+        if (!enrolmentEncounters.isEmpty()) {
+            for (Encounter enrolment : enrolmentEncounters) {
+                //Filter patient type obs record
+                List<Obs> patientType = enrolment.getObs()
+                        .stream()
+                        .filter(c -> c.getConcept().getConceptId() == 164932)
+                        .collect(Collectors.toList());
+                if (!patientType.isEmpty()) {
+                    if (!Arrays.asList(new Integer[]{164931, 159833}).contains(patientType.get(0).getValueCoded().getConceptId())) {
+                        for (Obs obs : enrolment.getObs()) {
+                            if (obs.getConcept().getUuid().equals("160554AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                                serviceRequestSupportingInfo.setDate_confirmed_positive(formatter.format(obs.getValueDatetime()));
+                            }
+                            if (obs.getConcept().getUuid().equals("160555AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                                serviceRequestSupportingInfo.setDate_first_enrolled(formatter.format(obs.getValueDatetime()));
+                            }
+                            if (obs.getConcept().getUuid().equals("159599AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                                serviceRequestSupportingInfo.setDate_started_art_at_transferring_facility(formatter.format(enrolment.getEncounterDatetime()));
+                            }
+                            if (obs.getConcept().getUuid().equals("160540AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                                serviceRequestSupportingInfo.setEntry_point(obs.getValueCoded().getName().getName());
+                            }
                         }
                     }
                 }
             }
         }
-
         //IPT Data
         Program iptProgram = MetadataUtils.existing(Program.class, IPTMetadata._Program.IPT);
         Encounter lastIptOutcomeEncounter = EmrUtils.lastEncounter(encounter.getPatient(), Context.getEncounterService().getEncounterTypeByUuid(IPTMetadata._EncounterType.IPT_OUTCOME));
@@ -335,7 +341,6 @@ public class ILPatientDiscontinuation {
             }
         }
 
-        messageFormatter(serviceRequestSupportingInfo);
 
         referralInformation.setSupporting_info(serviceRequestSupportingInfo);
 
@@ -487,79 +492,6 @@ public class ILPatientDiscontinuation {
     public static String getRegimenConceptJson() {
         String json = "[\n  {\n    \"name\": \"TDF/3TC/NVP\",\n    \"conceptRef\": \"162565AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"adult_first\"\n  },\n  {\n    \"name\": \"TDF/3TC/EFV\",\n    \"conceptRef\": \"164505AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"adult_first\"\n  },\n  {\n    \"name\": \"AZT/3TC/NVP\",\n    \"conceptRef\": \"1652AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"adult_first\"\n  },\n  {\n    \"name\": \"AZT/3TC/EFV\",\n    \"conceptRef\": \"160124AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"adult_first\"\n  },\n  {\n    \"name\": \"D4T/3TC/NVP\",\n    \"conceptRef\": \"792AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"adult_first\"\n  },\n  {\n    \"name\": \"D4T/3TC/EFV\",\n    \"conceptRef\": \"160104AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"adult_first\"\n  },\n  {\n    \"name\": \"TDF/3TC/AZT\",\n    \"conceptRef\": \"98e38a9c-435d-4a94-9b66-5ca524159d0e\",\n    \"regimenLine\": \"adult_first\"\n  },\n  {\n    \"name\": \"AZT/3TC/DTG\",\n    \"conceptRef\": \"6dec7d7d-0fda-4e8d-8295-cb6ef426878d\",\n    \"regimenLine\": \"adult_first\"\n  },\n  {\n    \"name\": \"TDF/3TC/DTG\",\n    \"conceptRef\": \"9fb85385-b4fb-468c-b7c1-22f75834b4b0\",\n    \"regimenLine\": \"adult_first\"\n  },\n  {\n    \"name\": \"ABC/3TC/DTG\",\n    \"conceptRef\": \"4dc0119b-b2a6-4565-8d90-174b97ba31db\",\n    \"regimenLine\": \"adult_first\"\n  },\n  {\n    \"name\": \"AZT/3TC/LPV/r\",\n    \"conceptRef\": \"162561AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"adult_second\"\n  },\n  {\n    \"name\": \"AZT/3TC/ATV/r\",\n    \"conceptRef\": \"164511AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"adult_second\"\n  },\n  {\n    \"name\": \"TDF/3TC/LPV/r\",\n    \"conceptRef\": \"162201AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"adult_second\"\n  },\n  {\n    \"name\": \"TDF/3TC/ATV/r\",\n    \"conceptRef\": \"164512AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"adult_second\"\n  },\n  {\n    \"name\": \"D4T/3TC/LPV/r\",\n    \"conceptRef\": \"162560AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"adult_second\"\n  },\n  {\n    \"name\": \"AZT/TDF/3TC/LPV/r\",\n    \"conceptRef\": \"c421d8e7-4f43-43b4-8d2f-c7d4cfb976a4\",\n    \"regimenLine\": \"adult_second\"\n  },\n  {\n    \"name\": \"ETR/RAL/DRV/RTV\",\n    \"conceptRef\": \"337b6cfd-9fa7-47dc-82b4-d479c39ef355\",\n    \"regimenLine\": \"adult_second\"\n  },\n  {\n    \"name\": \"ETR/TDF/3TC/LPV/r\",\n    \"conceptRef\": \"7a6c51c4-2b68-4d5a-b5a2-7ba420dde203\",\n    \"regimenLine\": \"adult_second\"\n  },\n  {\n    \"name\": \"ABC/3TC/LPV/r\",\n    \"conceptRef\": \"162200AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"adult_second\"\n  },\n  {\n    \"name\": \"ABC/3TC/ATV/r\",\n    \"conceptRef\": \"dddd9cf2-2b9c-4c52-84b3-38cfe652529a\",\n    \"regimenLine\": \"adult_second\"\n  },\n  {\n    \"name\": \"ABC/3TC/LPV/r\",\n    \"conceptRef\": \"162200AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"child_first\"\n  },\n  {\n    \"name\": \"ABC/3TC/NVP\",\n    \"conceptRef\": \"162199AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"child_first\"\n  },\n  {\n    \"name\": \"ABC/3TC/EFV\",\n    \"conceptRef\": \"162563AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"child_first\"\n  },\n  {\n    \"name\": \"AZT/3TC/ABC\",\n    \"conceptRef\": \"817AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"child_first\"\n  },\n  {\n    \"name\": \"D4T/3TC/ABC\",\n    \"conceptRef\": \"b9fea00f-e462-4ea5-8d40-cc10e4be697e\",\n    \"regimenLine\": \"child_first\"\n  },\n  {\n    \"name\": \"TDF/ABC/LPV/r\",\n    \"conceptRef\": \"162562AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"child_first\"\n  },\n  {\n    \"name\": \"ABC/DDI/LPV/r\",\n    \"conceptRef\": \"162559AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"child_first\"\n  },\n  {\n    \"name\": \"ABC/TDF/3TC/LPV/r\",\n    \"conceptRef\": \"077966a6-4fbd-40ce-9807-2d5c2e8eb685\",\n    \"regimenLine\": \"child_first\"\n  },\n  {\n    \"name\": \"RHZE\",\n    \"conceptRef\": \"1675AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"adult_intensive\"\n  },\n  {\n    \"name\": \"RHZ\",\n    \"conceptRef\": \"768AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"adult_intensive\"\n  },\n  {\n    \"name\": \"SRHZE\",\n    \"conceptRef\": \"1674AAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"adult_intensive\"\n  },\n  {\n    \"name\": \"RfbHZE\",\n    \"conceptRef\": \"07c72be8-c575-4e26-af09-9a98624bce67\",\n    \"regimenLine\": \"adult_intensive\"\n  },\n  {\n    \"name\": \"RfbHZ\",\n    \"conceptRef\": \"9ba203ec-516f-4493-9b2c-4ded6cc318bc\",\n    \"regimenLine\": \"adult_intensive\"\n  },\n  {\n    \"name\": \"SRfbHZE\",\n    \"conceptRef\": \"fce8ba26-8524-43d1-b0e1-53d8a3c06c00\",\n    \"regimenLine\": \"adult_intensive\"\n  },\n  {\n    \"name\": \"S (1 gm vial)\",\n    \"conceptRef\": \"84360AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"adult_intensive\"\n  },\n  {\n    \"name\": \"E\",\n    \"conceptRef\": \"75948AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"child_intensive\"\n  },\n  {\n    \"name\": \"RH\",\n    \"conceptRef\": \"1194AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"child_intensive\"\n  },\n  {\n    \"name\": \"RHE\",\n    \"conceptRef\": \"159851AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"child_intensive\"\n  },\n  {\n    \"name\": \"EH\",\n    \"conceptRef\": \"1108AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"child_intensive\"\n  },\n  {\n    \"name\": \"RAL/3TC/DRV/RTV\",\n    \"conceptRef\": \"5b8e4955-897a-423b-ab66-7e202b9c304c\",\n    \"regimenLine\": \"Adult (third line)\"\n  },\n  {\n    \"name\": \"RAL/3TC/DRV/RTV/AZT\",\n    \"conceptRef\": \"092604d3-e9cb-4589-824e-9e17e3cb4f5e\",\n    \"regimenLine\": \"Adult (third line)\"\n  },\n  {\n    \"name\": \"RAL/3TC/DRV/RTV/TDF\",\n    \"conceptRef\": \"c6372744-9e06-40cf-83e5-c794c985b6bf\",\n    \"regimenLine\": \"Adult (third line)\"\n  },\n  {\n    \"name\": \"ETV/3TC/DRV/RTV\",\n    \"conceptRef\": \"1995c4a1-a625-4449-ab28-aae88d0f80e6\",\n    \"regimenLine\": \"Adult (third line)\"\n  },\n  {\n    \"name\": \"AZT/3TC/LPV/r\",\n    \"conceptRef\": \"162561AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"Child (second line)\"\n  },\n  {\n    \"name\": \"AZT/3TC/ATV/r\",\n    \"conceptRef\": \"164511AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"Child (second line)\"\n  },\n  {\n    \"name\": \"ABC/3TC/ATV/r\",\n    \"conceptRef\": \"dddd9cf2-2b9c-4c52-84b3-38cfe652529a\",\n    \"regimenLine\": \"Child (third line)\"\n  },\n  {\n    \"name\": \"RAL/3TC/DRV/RTV\",\n    \"conceptRef\": \"5b8e4955-897a-423b-ab66-7e202b9c304c\",\n    \"regimenLine\": \"Child (third line)\"\n  },\n  {\n    \"name\": \"RAL/3TC/DRV/RTV/AZT\",\n    \"conceptRef\": \"092604d3-e9cb-4589-824e-9e17e3cb4f5e\",\n    \"regimenLine\": \"Child (third line)\"\n  },\n  {\n    \"name\": \"ETV/3TC/DRV/RTV\",\n    \"conceptRef\": \"1995c4a1-a625-4449-ab28-aae88d0f80e6\",\n    \"regimenLine\": \"Child (third line)\"\n  },\n  {\n    \"name\": \"RAL/3TC/DRV/RTV/ABC\",\n    \"conceptRef\": \"0e74f7aa-85ab-4e92-9f97-79e76e618689\",\n    \"regimenLine\": \"Child (third line)\"\n  },\n  {\n    \"name\": \"AZT/3TC/RAL/DRV/r\",\n    \"conceptRef\": \"a1183b26-8e87-457c-8d7d-00a96b17e046\",\n    \"regimenLine\": \"Child (third line)\"\n  },\n  {\n    \"name\": \"ABC/3TC/RAL/DRV/r\",\n    \"conceptRef\": \"02302ab5-dcb2-4337-a792-d6cf1082fc1d\",\n    \"regimenLine\": \"Child (third line)\"\n  },\n  {\n    \"name\": \"TDF/3TC/DTG/DRV/r\",\n    \"conceptRef\": \"5f429c76-2976-4374-a69e-d2d138dd16bf\",\n    \"regimenLine\": \"Adult (third line)\"\n  },\n  {\n    \"name\": \"TDF/3TC/RAL/DRV/r\",\n    \"conceptRef\": \"9b9817dd-4c84-4093-95c3-690d65d24b99\",\n    \"regimenLine\": \"Adult (third line)\"\n  },\n  {\n    \"name\": \"TDF/3TC/DTG/ATV/r\",\n    \"conceptRef\": \"64b63993-1479-4714-9389-312072f26704\",\n    \"regimenLine\": \"Adult (third line)\"\n  },\n  {\n    \"name\": \"TDF/3TC/DTG/ETV/DRV/r\",\n    \"conceptRef\": \"9de6367e-479b-4d50-a0f9-2a9987c6dce0\",\n    \"regimenLine\": \"Adult (third line)\"\n  },\n  {\n    \"name\": \"ABC/3TC/DTG/DRV/r\",\n    \"conceptRef\": \"cc728487-2f54-4d5e-ae0f-22ef617a8cfd\",\n    \"regimenLine\": \"Adult (third line)\"\n  },\n  {\n    \"name\": \"TDF/3TC/DTG/EFV/DRV/r\",\n    \"conceptRef\": \"f2acaf9b-3da9-4d71-b0cf-fd6af1073c9e\",\n    \"regimenLine\": \"Adult (third line)\"\n  },\n  {\n    \"name\": \"B/F/TAF\",\n    \"conceptRef\": \"167206AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"regimenLine\": \"Adult (first line)\"\n  },\n  {\n    \"name\": \"ABC/3TC/RAL\",\n    \"conceptRef\": \"7af7ebbe-99da-4a43-a23a-c3866c5d08db\",\n    \"regimenLine\": \"Child (first line)\"\n  }\n]";
         return json;
-    }
-
-    public static void messageFormatter(SERVICE_REQUEST_SUPPORTING_INFO serviceRequestSupportingInfo) {
-        if (serviceRequestSupportingInfo.getAppointment_date() == null) {
-            serviceRequestSupportingInfo.setAppointment_date("");
-        }
-        if (serviceRequestSupportingInfo.getWho_stage() == null) {
-            serviceRequestSupportingInfo.setWho_stage("");
-        }
-        if (serviceRequestSupportingInfo.getCd4_date() == null) {
-            serviceRequestSupportingInfo.setCd4_date("");
-        }
-        if (serviceRequestSupportingInfo.getArv_adherence_outcome() == null) {
-            serviceRequestSupportingInfo.setArv_adherence_outcome("");
-        }
-        if (serviceRequestSupportingInfo.getCurrent_regimen() == null) {
-            serviceRequestSupportingInfo.setCurrent_regimen("");
-        }
-        if (serviceRequestSupportingInfo.getCd4_value() == null) {
-            serviceRequestSupportingInfo.setCd4_value("");
-        }
-        if (serviceRequestSupportingInfo.getViral_load() == null) {
-            serviceRequestSupportingInfo.setViral_load("");
-        }
-        if (serviceRequestSupportingInfo.getLast_vl_date() == null) {
-            serviceRequestSupportingInfo.setLast_vl_date("");
-        }
-        if (serviceRequestSupportingInfo.getDate_confirmed_positive() == null) {
-            serviceRequestSupportingInfo.setDate_confirmed_positive("");
-        }
-        if (serviceRequestSupportingInfo.getTpt_end_date() == null) {
-            serviceRequestSupportingInfo.setTb_end_date("");
-        }
-
-        if (serviceRequestSupportingInfo.getDate_first_enrolled() == null) {
-            serviceRequestSupportingInfo.setDate_first_enrolled("");
-        }
-
-        if (serviceRequestSupportingInfo.getDrug_days() == null) {
-            serviceRequestSupportingInfo.setDrug_days("");
-        }
-        if (serviceRequestSupportingInfo.getHeight() == null) {
-            serviceRequestSupportingInfo.setHeight("");
-        }
-        if (serviceRequestSupportingInfo.getWeight() == null) {
-            serviceRequestSupportingInfo.setWeight("");
-        }
-
-        if (serviceRequestSupportingInfo.getEntry_point() == null) {
-            serviceRequestSupportingInfo.setEntry_point("");
-        }
-        if (serviceRequestSupportingInfo.getDate_started_art_at_transferring_facility() == null) {
-            serviceRequestSupportingInfo.setDate_started_art_at_transferring_facility("");
-        }
-        if (serviceRequestSupportingInfo.getTpt_start_date() == null) {
-            serviceRequestSupportingInfo.setTb_start_date("");
-        }
-        if (serviceRequestSupportingInfo.getTpt_end_date() == null) {
-            serviceRequestSupportingInfo.setTpt_end_date("");
-        }
-        if (serviceRequestSupportingInfo.getTpt_end_reason() == null) {
-            serviceRequestSupportingInfo.setTb_end_reason("");
-        }
-
-        if (serviceRequestSupportingInfo.getTb_start_date() == null) {
-            serviceRequestSupportingInfo.setTb_start_date("");
-        }
-        if (serviceRequestSupportingInfo.getTb_end_date() == null) {
-            serviceRequestSupportingInfo.setTb_end_date("");
-        }
-        if (serviceRequestSupportingInfo.getTb_end_reason() == null) {
-            serviceRequestSupportingInfo.setTb_end_reason("");
-        }
     }
 
 }

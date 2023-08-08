@@ -239,6 +239,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                             <th class="clientNameColumn">Patient Identifier</th>
                                             <th class="cccNumberColumn">Patient Name</th>
                                             <th class="sampleTypeColumn">Message Type</th>
+                                            <th class="sampleTypeColumn">Discontinuation Reason</th>
                                             <th class="sampleTypeColumn">TransferOut Date</th>
                                             <th class="dateRequestColumn">Appointment Date</th>
                                             <th class="dateRequestColumn">TO Acceptance Date</th>
@@ -278,6 +279,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                             <th class="clientNameColumn">Patient Identifier</th>
                                             <th class="cccNumberColumn">Patient Name</th>
                                             <th class="sampleTypeColumn">Message Type</th>
+                                            <th class="sampleTypeColumn">Discontinuation Reason</th>
                                             <th class="sampleTypeColumn">TransferOut Date</th>
                                             <th class="dateRequestColumn">Appointment Date</th>
                                             <th class="dateRequestColumn">TO Acceptance Date</th>
@@ -323,6 +325,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                                 <th class="clientNameColumn">Patient Identifier</th>
                                                 <th class="cccNumberColumn">Patient Name</th>
                                                 <th class="sampleTypeColumn">Message Type</th>
+                                                <th class="sampleTypeColumn">Discontinuation Reason</th>
                                                 <th class="sampleTypeColumn">TransferOut Date</th>
                                                 <th class="dateRequestColumn">Appointment Date</th>
                                                 <th class="dateRequestColumn">TO Acceptance Date</th>
@@ -835,6 +838,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
             tr.append("<td>" + displayRecords[i].patientName + "</td>");
             tr.append("<td>" + displayRecords[i].messageType + "</td>");
+            tr.append("<td>" + displayRecords[i].discontinuationReason + "</td>");
             tr.append("<td>" + displayRecords[i].transferOutDate + "</td>");
             tr.append("<td>" + displayRecords[i].appointmentDate + "</td>");
             tr.append("<td>" + displayRecords[i].toAcceptanceDate + "</td>");

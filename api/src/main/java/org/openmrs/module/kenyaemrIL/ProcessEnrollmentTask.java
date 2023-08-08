@@ -5,6 +5,7 @@ import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
 import org.openmrs.Form;
 import org.openmrs.GlobalProperty;
+import org.openmrs.Obs;
 import org.openmrs.Patient;
 import org.openmrs.PersonAttribute;
 import org.openmrs.api.EncounterService;
@@ -22,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of a task that processes enrollments tasks and marks them for sending to IL.
@@ -58,7 +60,11 @@ public class ProcessEnrollmentTask extends AbstractTask {
         List<Patient> patientsStartedOnArt = getArtInitiations(fetchDate);
         for (Encounter e : pendingEnrollments) {
             Patient p = e.getPatient();
-            programEnrollmentEvent(e.getPatient(), e);
+            List<Obs> tiPatientType = e.getObs().stream().filter(obs -> obs.getConcept().getConceptId().equals(164932) &&
+                    obs.getValueCoded().getConceptId().equals(160563)).collect(Collectors.toList());
+            if (!tiPatientType.isEmpty()) {
+                programEnrollmentEvent(e.getPatient(), e);
+            }
             // check if the patient is also in the list for updates.
             if (patientsStartedOnArt != null && patientsStartedOnArt.size() > 0) {
                 if (patientsStartedOnArt.contains(p)) {

@@ -59,7 +59,7 @@ public class ValidateTransferOutsTasks extends AbstractTask {
             System.out.println("ART Directory server URL has not been set!");
             return;
         }
-        String serverUrl = "http://prod.kenyahmis.org:8002/api/patients/referral-status/";
+        String serverUrl = "http://192.168.1.44:8002/api/patients/referral-status/";
         String cccParam = String.join(", ", trfCccNumbers);
         String mflParam = MessageHeaderSingleton.getDefaultLocationMflCode(MessageHeaderSingleton.getDefaultLocation());
 
@@ -100,7 +100,7 @@ public class ValidateTransferOutsTasks extends AbstractTask {
 
     private List<Patient> fetchTransferOutPatients() {
         LocalDateTime today = LocalDateTime.now();
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String effectiveToday = today.format(dateTimeFormatter);
         String effectivePastDate = today.minusDays(90).format(dateTimeFormatter);
         StringBuilder q = new StringBuilder();
