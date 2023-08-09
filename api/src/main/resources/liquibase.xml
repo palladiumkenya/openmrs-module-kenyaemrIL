@@ -340,7 +340,7 @@
         </insert>
     </changeSet>
 
-    <changeSet id="${project.parent.artifactId}-20220804-1629" author="aojwang">
+    <!-- <changeSet id="${project.parent.artifactId}-20220804-1629" author="aojwang">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
                 SELECT COUNT(*) FROM scheduler_task_config
@@ -362,7 +362,7 @@
             <column name="started" value="0" />
                 <column name="uuid" value="7351bb07-97a2-47a6-804b-c9c018c36609" />
         </insert>
-    </changeSet>
+    </changeSet> -->
 
     <changeSet id="${project.parent.artifactId}-20220811-1016" author="aojwang">
         <preConditions onFail="MARK_RAN">
@@ -514,7 +514,7 @@
     </changeSet>
 
     <!--Reuse existing structure to support additional message types: Rename mhealth_message_outbox to emr_interop_message-->
-    <changeSet id="${project.parent.artifactId}-202307031030" author="jecihjoy">
+    <!-- <changeSet id="${project.parent.artifactId}-202307031030" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="mhealth_message_outbox"/>
         </preConditions>
@@ -522,10 +522,10 @@
             Reuse existing structure to support additional message types: Rename mhealth_message_outbox to emr_interop_message
         </comment>
         <renameTable oldTableName="mhealth_message_outbox" newTableName="emr_interop_message"/>
-    </changeSet>
+    </changeSet> -->
 
     <!--Reuse existing structure to support additional message types: Rename UshauriDirectPushTask to KenyaEmrInteropDirectPushTask-->
-    <changeSet id="${project.parent.artifactId}-202307030440" author="jecihjoy">
+    <!-- <changeSet id="${project.parent.artifactId}-202307030440" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="1">
                 SELECT COUNT(*) FROM scheduler_task_config
@@ -538,7 +538,7 @@
             UPDATE openmrs.scheduler_task_config SET schedulable_class = 'org.openmrs.module.kenyaemrIL.KenyaEmrInteropDirectPushTask',
             name = 'OpenHIM Message Publisher' where uuid = '7351bb07-97a2-47a6-804b-c9c018c36609'
         </sql>
-    </changeSet>
+    </changeSet> -->
 
     <!-- Adding scheduled task : Validate transfer out patients -->
     <changeSet id="${project.parent.artifactId}-202308020430" author="jecihjoy">

@@ -68,6 +68,11 @@ public class ILPatientDiscontinuation {
                 epd.setAssigning_authority("MPI");
                 epd.setIdentifier_type("GODS_NUMBER");
                 patientIdentification.setExternal_patient_id(epd);
+            } else if (patientIdentifier.getIdentifierType().getUuid().equalsIgnoreCase("f85081e2-b4be-4e48-b3a4-7994b69bb101")) { // this is NUPI
+                ipd.setAssigning_authority("MOH");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("NUPI");
+                internalPatientIds.add(ipd);
             }
         }
         //Set the patient name

@@ -79,6 +79,13 @@
         </description>
     </globalProperty>
     <globalProperty>
+        <property>transferInFetchTask.lastFetchDateAndTime</property>
+        <defaultValue>20230226120000</defaultValue>
+        <description>
+            The last date and time that the last fetch was done for discontinuation task
+        </description>
+    </globalProperty>
+    <globalProperty>
         <property>virallaodTask.lastFetchDateAndTime</property>
         <defaultValue>20190226120000</defaultValue>
         <description>
