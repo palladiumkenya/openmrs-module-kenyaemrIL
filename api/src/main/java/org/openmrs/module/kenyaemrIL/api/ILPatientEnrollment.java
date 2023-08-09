@@ -90,9 +90,6 @@ public class ILPatientEnrollment {
                 referralInformation.setSending_facility_mflCode(ob.getValueText().split("-")[0]);
 
             }
-            if (Strings.isNullOrEmpty(referralInformation.getSending_facility_mflCode())) {
-                referralInformation.setSending_facility_mflCode("");
-            }
         }
         hivProgramEnrolmentMessage.setService_request(referralInformation);
         ilMessage.setPatient_identification(patientIdentification);

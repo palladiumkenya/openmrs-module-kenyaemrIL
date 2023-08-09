@@ -35,7 +35,7 @@ public class ValidateTransferOutsTasks extends AbstractTask {
 
     @Override
     public void execute() {
-        System.out.println("PROCESSING ValidateTransferOutPatients =============================================");
+        System.out.println("Executing ValidateTransferOutsTasks ........");
 
         /*Collect CCC numbers for transfer out patients*/
         List<String> trfCccNumbers = new ArrayList<>();
@@ -72,8 +72,6 @@ public class ValidateTransferOutsTasks extends AbstractTask {
             HttpResponse httpResponse = httpClient.execute(httpGet);
             if (httpResponse.getStatusLine().getStatusCode() == 200) {
                 String res = EntityUtils.toString(httpResponse.getEntity());
-                System.out.println("RESPONSE " + res);
-                System.out.println();
                 JSONParser parser = new JSONParser();
                 JSONObject responseObj = (JSONObject) parser.parse(res);
                 List<JSONObject> message = (List<JSONObject>) responseObj.get("message");
