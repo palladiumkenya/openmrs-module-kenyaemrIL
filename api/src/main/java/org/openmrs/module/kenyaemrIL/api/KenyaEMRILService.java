@@ -23,6 +23,7 @@ import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyDispense;
 import org.openmrs.module.kenyaemrIL.il.pharmacy.ILPharmacyOrder;
 import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
+import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -227,4 +228,10 @@ public interface KenyaEMRILService extends OpenmrsService {
     void purgeErrors(final @RequestParam(value = "errorList") String errorList);
 
     List<KenyaEMRILMessageArchive> fetchRecentArchives(List<String> hl7MessageTypes);
+
+    ExpectedTransferInPatients createPatient(ExpectedTransferInPatients patient);
+
+    List<ExpectedTransferInPatients> getAllTransferIns();
+    
+    ExpectedTransferInPatients getTransferInPatient(Patient patient);
 }
