@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -54,13 +55,18 @@ public class ProcessAppointmentsTask extends AbstractTask {
 
         Integer patientTCAConcept = 5096;
         Integer patientRefillConcept = 162549;
+        List<String> prepEncounterTypes = Arrays.asList("c4a2be28-6673-4c36-b886-ea89b0a42116", "706a8b12-c4ce-40e4-aec3-258b989bf6d3");
         for (Encounter e : pendingAppointments) {
             Patient p = e.getPatient();
             for (Obs obs : e.getObs()) {
-                if (obs.getConcept().getConceptId().equals(patientTCAConcept)) {
+                if (prepEncounterTypes.contains(e.getEncounterType().getUuid()) &&
+                        obs.getConcept().getConceptId().equals(patientTCAConcept)) {
                     appointmentsEvent(p, e, patientTCAConcept);
                 } else if (obs.getConcept().getConceptId().equals(patientRefillConcept)) {
                     appointmentsEvent(p, e, patientRefillConcept);
+                } else if (e.getEncounterType().getUuid().equals("a0034eee-1940-4e35-847f-97537a35d05e") &&
+                        obs.getConcept().getConceptId().equals(patientTCAConcept)) {
+                    appointmentsEvent(p, e, patientTCAConcept);
                 }
             }
         }
@@ -78,7 +84,7 @@ public class ProcessAppointmentsTask extends AbstractTask {
         q.append("select e.encounter_id ");
         q.append("from encounter e inner join " +
                 "( " +
-                " select encounter_type_id, uuid, name from encounter_type where uuid = 'a0034eee-1940-4e35-847f-97537a35d05e' " +
+                " select encounter_type_id, uuid, name from encounter_type where uuid in ( 'a0034eee-1940-4e35-847f-97537a35d05e', 'c4a2be28-6673-4c36-b886-ea89b0a42116', '706a8b12-c4ce-40e4-aec3-258b989bf6d3') " +
                 " ) et on et.encounter_type_id = e.encounter_type " +
                 " inner join obs o on o.encounter_id = e.encounter_id and o.voided = 0 " +
                 " and o.concept_id = 5096 and date(o.value_datetime) >= curdate() ");
