@@ -35,7 +35,7 @@ public class ValidateTransferOutsTasks extends AbstractTask {
 
     @Override
     public void execute() {
-        System.out.println("Executing ValidateTransferOutsTasks ........");
+        System.out.println("Executing ValidateTransferOutPatients Task .................");
 
         /*Collect CCC numbers for transfer out patients*/
         List<String> trfCccNumbers = new ArrayList<>();

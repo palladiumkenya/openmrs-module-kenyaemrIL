@@ -1,6 +1,7 @@
 package org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.hl7.fhir.r4.model.ServiceRequest;
 
 public class PATIENT_REFERRAL_INFORMATION {
@@ -9,8 +10,8 @@ public class PATIENT_REFERRAL_INFORMATION {
     private ServiceRequest.ServiceRequestPriority transfer_priority;
     private String transfer_out_date;
     private String to_acceptance_date;
-    private String sending_facility_mflCode;
-    private String receiving_facility_mflCode;
+    private String sending_facility_mflcode;
+    private String receiving_facility_mflcode;
     private SERVICE_REQUEST_SUPPORTING_INFO supporting_info;
 
 
@@ -18,24 +19,24 @@ public class PATIENT_REFERRAL_INFORMATION {
         return transfer_status;
     }
 
-    public void setTransfer_status(ServiceRequest.ServiceRequestStatus transfer_status) {
-        this.transfer_status = transfer_status;
+    public void setTransfer_status(String transfer_status) {
+        this.transfer_status = ServiceRequest.ServiceRequestStatus.fromCode(transfer_status.toLowerCase());
     }
 
     public ServiceRequest.ServiceRequestIntent getTransfer_intent() {
         return transfer_intent;
     }
 
-    public void setTransfer_intent(ServiceRequest.ServiceRequestIntent transfer_intent) {
-        this.transfer_intent = transfer_intent;
+    public void setTransfer_intent(String transfer_intent) {
+        this.transfer_intent = ServiceRequest.ServiceRequestIntent.fromCode(transfer_intent.toLowerCase());
     }
 
     public ServiceRequest.ServiceRequestPriority getTransfer_priority() {
         return transfer_priority;
     }
 
-    public void setTransfer_priority(ServiceRequest.ServiceRequestPriority transfer_priority) {
-        this.transfer_priority = transfer_priority;
+    public void setTransfer_priority(String transfer_priority) {
+        this.transfer_priority = ServiceRequest.ServiceRequestPriority.fromCode(transfer_priority.toLowerCase());
     }
 
     public String getTransfer_out_date() {
@@ -54,20 +55,20 @@ public class PATIENT_REFERRAL_INFORMATION {
         this.to_acceptance_date = to_acceptance_date;
     }
 
-    public String getSending_facility_mflCode() {
-        return sending_facility_mflCode;
+    public String getSending_facility_mflcode() {
+        return sending_facility_mflcode;
     }
 
-    public void setSending_facility_mflCode(String sending_facility_mflCode) {
-        this.sending_facility_mflCode = sending_facility_mflCode;
+    public void setSending_facility_mflcode(String sending_facility_mflcode) {
+        this.sending_facility_mflcode = sending_facility_mflcode;
     }
 
-    public String getReceiving_facility_mflCode() {
-        return receiving_facility_mflCode;
+    public String getReceiving_facility_mflcode() {
+        return receiving_facility_mflcode;
     }
 
-    public void setReceiving_facility_mflCode(String receiving_facility_mflCode) {
-        this.receiving_facility_mflCode = receiving_facility_mflCode;
+    public void setReceiving_facility_mflcode(String receiving_facility_mflcode) {
+        this.receiving_facility_mflcode = receiving_facility_mflcode;
     }
 
     public SERVICE_REQUEST_SUPPORTING_INFO getSupporting_info() {

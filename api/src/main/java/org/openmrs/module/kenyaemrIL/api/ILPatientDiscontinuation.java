@@ -150,14 +150,13 @@ public class ILPatientDiscontinuation {
 
         PATIENT_REFERRAL_INFORMATION referralInformation = new PATIENT_REFERRAL_INFORMATION();
         SERVICE_REQUEST_SUPPORTING_INFO serviceRequestSupportingInfo = new SERVICE_REQUEST_SUPPORTING_INFO();
-        referralInformation.setTransfer_status(ServiceRequest.ServiceRequestStatus.ACTIVE);
-        referralInformation.setTransfer_intent(ServiceRequest.ServiceRequestIntent.ORDER);
-        referralInformation.setTransfer_priority(ServiceRequest.ServiceRequestPriority.ASAP);
-        referralInformation.setSending_facility_mflCode(facilityMfl);
-        referralInformation.setReceiving_facility_mflCode("");
+        referralInformation.setTransfer_status("active");
+        referralInformation.setTransfer_intent("order");
+        referralInformation.setTransfer_priority("asap");
+        referralInformation.setSending_facility_mflcode(facilityMfl);
         for (Obs obs : encounter.getObs()) {
             if (obs.getConcept().getUuid().equals("159495AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                referralInformation.setReceiving_facility_mflCode(obs.getValueText().split("-")[0]);
+                referralInformation.setReceiving_facility_mflcode(obs.getValueText().split("-")[0]);
             }
             if (obs.getConcept().getUuid().equals("160649AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                 referralInformation.setTransfer_out_date(formatter.format(obs.getValueDatetime()));
@@ -229,8 +228,8 @@ public class ILPatientDiscontinuation {
         // Current regimen
         Encounter lastDrugRegimenEditorEncounter = EncounterBasedRegimenUtils.getLastEncounterForCategory(encounter.getPatient(), "ARV");
         if (lastDrugRegimenEditorEncounter != null) {
-            SimpleObject o = EncounterBasedRegimenUtils.buildRegimenChangeObject(lastDrugRegimenEditorEncounter.getAllObs(), lastDrugRegimenEditorEncounter);
-            serviceRequestSupportingInfo.setCurrent_regimen(o.get("regimenShortDisplay").toString());
+            SimpleObject simpleObject = EncounterBasedRegimenUtils.buildRegimenChangeObject(lastDrugRegimenEditorEncounter.getAllObs(), lastDrugRegimenEditorEncounter);
+            serviceRequestSupportingInfo.setCurrent_regimen(simpleObject.get("regimenShortDisplay").toString());
         }
 
         // current cd4

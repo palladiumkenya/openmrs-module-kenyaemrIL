@@ -15,7 +15,7 @@ import java.util.List;
 public class ProgramDiscontinuationTask extends AbstractTask {
     @Override
     public void execute() {
-        System.out.println("Executing ProgramDiscontinuationTask TASK .........");
+        System.out.println("Executing ProgramDiscontinuationTask TASK .................");
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         /**Fetch the last date of sync*/
         Date fetchDate = null;

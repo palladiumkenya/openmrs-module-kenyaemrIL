@@ -340,7 +340,7 @@
         </insert>
     </changeSet>
 
-    <!-- <changeSet id="${project.parent.artifactId}-20220804-1629" author="aojwang">
+    <changeSet id="${project.parent.artifactId}-20220804-1629" author="aojwang">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
                 SELECT COUNT(*) FROM scheduler_task_config
@@ -362,7 +362,7 @@
             <column name="started" value="0" />
                 <column name="uuid" value="7351bb07-97a2-47a6-804b-c9c018c36609" />
         </insert>
-    </changeSet> -->
+    </changeSet>
 
     <changeSet id="${project.parent.artifactId}-20220811-1016" author="aojwang">
         <preConditions onFail="MARK_RAN">
@@ -514,7 +514,7 @@
     </changeSet>
 
     <!--Reuse existing structure to support additional message types: Rename mhealth_message_outbox to emr_interop_message-->
-    <!-- <changeSet id="${project.parent.artifactId}-202307031030" author="jecihjoy">
+    <changeSet id="${project.parent.artifactId}-202307031030" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="mhealth_message_outbox"/>
         </preConditions>
@@ -522,10 +522,10 @@
             Reuse existing structure to support additional message types: Rename mhealth_message_outbox to emr_interop_message
         </comment>
         <renameTable oldTableName="mhealth_message_outbox" newTableName="emr_interop_message"/>
-    </changeSet> -->
+    </changeSet>
 
     <!--Reuse existing structure to support additional message types: Rename UshauriDirectPushTask to KenyaEmrInteropDirectPushTask-->
-    <!-- <changeSet id="${project.parent.artifactId}-202307030440" author="jecihjoy">
+    <changeSet id="${project.parent.artifactId}-202307030440" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="1">
                 SELECT COUNT(*) FROM scheduler_task_config
@@ -538,7 +538,7 @@
             UPDATE openmrs.scheduler_task_config SET schedulable_class = 'org.openmrs.module.kenyaemrIL.KenyaEmrInteropDirectPushTask',
             name = 'OpenHIM Message Publisher' where uuid = '7351bb07-97a2-47a6-804b-c9c018c36609'
         </sql>
-    </changeSet> -->
+    </changeSet>
 
     <!-- Adding scheduled task : Validate transfer out patients -->
     <changeSet id="${project.parent.artifactId}-202308020430" author="jecihjoy">
@@ -564,7 +564,7 @@
             <column name="uuid" value="5fdedec8-1b32-11ee-be56-0242ac120002"/>
         </insert>
     </changeSet>
-    <changeSet id="${project.parent.artifactId}-20230808-2050" author="jecihjoy">
+    <changeSet id="${project.parent.artifactId}-20230808-0001" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
             <not><tableExists tableName="expected_transfer_ins" /></not>
         </preConditions>
@@ -577,7 +577,7 @@
             </column>
             <column name="patient_id" type="int"/>
             <column name="transfer_out_date" type="datetime"/>
-            <column name="transfer_out_facility" type="int"/>
+            <column name="transfer_out_facility" type="text"/>
             <column name="appointment_date" type="datetime"/>
             <column name="effective_discontinuation_date" type="datetime"/>
             <column name="to_acceptance_date" type="datetime"/>
@@ -591,5 +591,29 @@
         <modifySql dbms="mysql">
             <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_unicode_ci"/>
         </modifySql>
+    </changeSet>
+    <!--Adding scheduled task :Set program discontinuation task-->
+    <changeSet id="${project.parent.artifactId}-202308080930" author="jecihjoy">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.PullExpectedTransferInsTask'
+                And name = 'Expected Transfer Ins Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Inserting Transfer Ins Task to 'schedule_task_config' table</comment>
+        <insert tableName="scheduler_task_config">
+            <column name="name" value="Expected Transfer Ins Task" />
+            <column name="description" value="Periodically Fetch expected transfer ins" />
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.PullExpectedTransferInsTask" />
+            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
+            <column name="start_time" valueDate="2023-01-01T23:59:59" />
+            <column name="repeat_interval" value="3" />
+            <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="1" />
+            <column name="started" value="1" />
+            <column name="uuid" value="9143b4e6-16c5-11ee-be56-0342ac120002" />
+        </insert>
     </changeSet>
 </databaseChangeLog>
