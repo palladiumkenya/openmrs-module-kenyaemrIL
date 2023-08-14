@@ -93,6 +93,6 @@ public interface KenyaEMRILDAO {
 
     void purgeErrors(String errorList);
 
-    List<KenyaEMRILMessageArchive> fetchRecentArchives();
+    List<KenyaEMRILMessageArchive> fetchRecentArchives(List<String> hl7MessageTypes);
 
 }

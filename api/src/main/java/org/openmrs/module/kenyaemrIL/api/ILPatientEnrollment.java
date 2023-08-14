@@ -1,5 +1,6 @@
 package org.openmrs.module.kenyaemrIL.api;
 
+import com.google.common.base.Strings;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.ServiceRequest;
@@ -78,22 +79,19 @@ public class ILPatientEnrollment {
         patientIdentification.setExternal_patient_id(epd);
 
         Program_Enrollment_Message hivProgramEnrolmentMessage = new Program_Enrollment_Message();
+        PATIENT_REFERRAL_INFORMATION referralInformation = referralInfo(encounter);
+        hivProgramEnrolmentMessage.setPatient_type("Transfer In");
+        hivProgramEnrolmentMessage.setTarget_program("HIV");
         for (Obs ob : encounter.getObs()) {
-            if (ob.getConcept().getUuid().equals("423c034e-14ac-4243-ae75-80d1daddce55")) {
-                if (ob.getValueCoded().getUuid().equals("160563AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                    hivProgramEnrolmentMessage.setPatient_type("Transfer In");
-                }
-            }
-            hivProgramEnrolmentMessage.setTarget_program("HIV");
             if (ob.getConcept().getUuid().equals("160540AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                 hivProgramEnrolmentMessage.setEntry_point(ob.getValueCoded().getName().getName());
             }
-            PATIENT_REFERRAL_INFORMATION referralInformation = referralInfo(encounter);
             if (ob.getConcept().getUuid().equals("160535AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                 referralInformation.setSending_facility_mflCode(ob.getValueText().split("-")[0]);
+
             }
-            hivProgramEnrolmentMessage.setService_request(referralInformation);
         }
+        hivProgramEnrolmentMessage.setService_request(referralInformation);
         ilMessage.setPatient_identification(patientIdentification);
 
         ilMessage.setProgram_enrollment_message(hivProgramEnrolmentMessage);
@@ -116,7 +114,6 @@ public class ILPatientEnrollment {
         referralInformation.setTo_acceptance_date(formatter.format(encounter.getEncounterDatetime()));
         referralInformation.setTransfer_out_date("");
         referralInformation.setReceiving_facility_mflCode(facilityMfl);
-        referralInformation.setSupporting_info(null);
 
         return referralInformation;
     }

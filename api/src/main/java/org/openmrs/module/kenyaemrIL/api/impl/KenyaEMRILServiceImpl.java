@@ -1291,8 +1291,8 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public List<KenyaEMRILMessageArchive> fetchRecentArchives() {
-        return dao.fetchRecentArchives();
+    public List<KenyaEMRILMessageArchive> fetchRecentArchives(List<String> hl7MessageTypes) {
+        return dao.fetchRecentArchives(hl7MessageTypes);
     }
 
 

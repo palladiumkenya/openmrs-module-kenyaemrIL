@@ -36,8 +36,8 @@ public class UshauriHomePageController {
 		
 		KenyaEMRILService ilService = Context.getService(KenyaEMRILService.class);
 		List<KenyaEMRInteropMessage> queueDataList = ilService.getAllMhealthOutboxMessagesByHl7Type(Arrays.asList(ILUtils.HL7_APPOINTMENT_MESSAGE, ILUtils.HL7_REGISTRATION_MESSAGE, ILUtils.HL7_REGISTRATION_UPDATE_MESSAGE), false); // fetch for direct route
-		List<KenyaEMRILMessageErrorQueue> errorQueueList = ilService.fetchAllMhealthErrors(Arrays.asList(ILUtils.HL7_APPOINTMENT_MESSAGE));
-		List<KenyaEMRILMessageArchive> archiveRecordList = ilService.fetchRecentArchives();
+		List<KenyaEMRILMessageErrorQueue> errorQueueList = ilService.fetchAllMhealthErrors(Arrays.asList(ILUtils.HL7_APPOINTMENT_MESSAGE, ILUtils.HL7_REGISTRATION_MESSAGE, ILUtils.HL7_REGISTRATION_UPDATE_MESSAGE));
+		List<KenyaEMRILMessageArchive> archiveRecordList = ilService.fetchRecentArchives(Arrays.asList(ILUtils.HL7_APPOINTMENT_MESSAGE, ILUtils.HL7_REGISTRATION_MESSAGE, ILUtils.HL7_REGISTRATION_UPDATE_MESSAGE));
 
 		List<SimpleObject> queueList = new ArrayList<SimpleObject>();
 		List<SimpleObject> archiveList = new ArrayList<SimpleObject>();

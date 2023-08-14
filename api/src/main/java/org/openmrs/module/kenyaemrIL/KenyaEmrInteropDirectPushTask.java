@@ -1,5 +1,6 @@
 package org.openmrs.module.kenyaemrIL;
 
+import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -126,7 +127,7 @@ public class KenyaEmrInteropDirectPushTask extends AbstractTask {
             postRequest.addHeader("content-type", "application/json");
             //Set the request post body
             String payload = outbox.getMessage().toUpperCase();
-            StringEntity userEntity = new StringEntity(payload);
+            StringEntity userEntity = new StringEntity(payload.replace("NULL", "null"));
             postRequest.setEntity(userEntity);
             HttpResponse response = httpClient.execute(postRequest);
 

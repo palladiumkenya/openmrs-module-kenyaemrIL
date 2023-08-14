@@ -215,10 +215,6 @@ public class SERVICE_REQUEST_SUPPORTING_INFO {
         this.arv_adherence_outcome = arv_adherence_outcome;
     }
 
-    public void setRegimen_change_history(List<SimpleObject> regimen_change_history) {
-        this.regimen_change_history = regimen_change_history;
-    }
-
     public String getCd4_value() {
         return cd4_value;
     }
@@ -229,5 +225,9 @@ public class SERVICE_REQUEST_SUPPORTING_INFO {
 
     public List<SimpleObject> getRegimen_change_history() {
         return regimen_change_history;
+    }
+
+    public void setRegimen_change_history(List<SimpleObject> regimen_change_history) {
+        this.regimen_change_history = regimen_change_history;
     }
 }

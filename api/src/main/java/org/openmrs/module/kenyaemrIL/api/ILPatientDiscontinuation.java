@@ -38,7 +38,6 @@ import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.ui.framework.SimpleObject;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,7 +47,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class ILPatientDiscontinuation {
-    static DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
     static SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
 
     public static ILMessage iLPatientWrapper(Patient patient, Encounter encounter) {
@@ -165,43 +163,48 @@ public class ILPatientDiscontinuation {
         Encounter lastLabResultsEncounter = ILUtils.lastEncounter(encounter.getPatient(), Context.getEncounterService().getEncounterTypeByUuid("17a381d1-7e29-406a-b782-aa903b963c28"));
         List<Encounter> followUpEncounters = Context.getEncounterService().getEncounters(encounter.getPatient(), null, null, null, null, Arrays.asList(Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e")), null, null, null, false);
         List<Encounter> enrolmentEncounters = Context.getEncounterService().getEncounters(encounter.getPatient(), null, null, null, null, Arrays.asList(Context.getEncounterService().getEncounterTypeByUuid("de78a6be-bfc5-4634-adc3-5f1a280455cc")), null, null, null, false);
-        Encounter latestFollowUpEncounter = followUpEncounters.get(followUpEncounters.size() - 1);
+        Encounter latestFollowUpEncounter = null;
+        if (!followUpEncounters.isEmpty()) {
+            latestFollowUpEncounter = followUpEncounters.get(followUpEncounters.size() - 1);
+        }
 
         StringBuilder drugAllergies = new StringBuilder();
         StringBuilder otherAllergies = new StringBuilder();
         List<PATIENT_NCD> patientNcds = new ArrayList<>();
-        for (Obs obs : latestFollowUpEncounter.getObs()) {
-            if (obs.getConcept().getConceptId() == 5096) {
-                serviceRequestSupportingInfo.setAppointment_date(formatter.format(obs.getValueDatetime()));
-                long difference_In_Time = obs.getValueDatetime().getTime() - latestFollowUpEncounter.getEncounterDatetime().getTime();
-                serviceRequestSupportingInfo.setDrug_days(String.valueOf(TimeUnit.MILLISECONDS.toDays(difference_In_Time) % 365));
-            }
-            if (obs.getConcept().getUuid().equals("5089AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                serviceRequestSupportingInfo.setWeight(Double.toString(obs.getValueNumeric()));
-            }
-            if (obs.getConcept().getUuid().equals("5090AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                serviceRequestSupportingInfo.setHeight(Double.toString(obs.getValueNumeric()));
-            }
-            if (obs.getConcept().getUuid().equals("1658AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                serviceRequestSupportingInfo.setArv_adherence_outcome(obs.getValueCoded().getName().getName());
-            }
-            if (obs.getConcept().getUuid().equals("1193AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                drugAllergies.append(" " + obs.getValueCoded().getName().getName());
-            }
-            if (obs.getConcept().getUuid().equals("160643AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                otherAllergies.append(" " + obs.getValueCoded().getName().getName());
-            }
-            if (obs.getConcept().getUuid().equals("1284AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                List<Obs> onsetDate = latestFollowUpEncounter.getObs()
-                        .stream()
-                        .filter(c -> c.getConcept().getUuid().equals("159948AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") && c.getObsGroup().getUuid().equals(obs.getObsGroup().getUuid()))
-                        .collect(Collectors.toList());
-                if (!onsetDate.isEmpty()) {
-                    patientNcds.add(new PATIENT_NCD(obs.getValueCoded().getName().getName(), formatter.format(onsetDate.get(0).getValueDatetime()), ""));
+        if (latestFollowUpEncounter != null) {
+            for (Obs obs : latestFollowUpEncounter.getObs()) {
+                if (obs.getConcept().getConceptId() == 5096) {
+                    serviceRequestSupportingInfo.setAppointment_date(formatter.format(obs.getValueDatetime()));
+                    long difference_In_Time = obs.getValueDatetime().getTime() - latestFollowUpEncounter.getEncounterDatetime().getTime();
+                    serviceRequestSupportingInfo.setDrug_days(String.valueOf(TimeUnit.MILLISECONDS.toDays(difference_In_Time) % 365));
+                }
+                if (obs.getConcept().getUuid().equals("5089AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                    serviceRequestSupportingInfo.setWeight(Double.toString(obs.getValueNumeric()));
+                }
+                if (obs.getConcept().getUuid().equals("5090AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                    serviceRequestSupportingInfo.setHeight(Double.toString(obs.getValueNumeric()));
+                }
+                if (obs.getConcept().getUuid().equals("1658AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                    serviceRequestSupportingInfo.setArv_adherence_outcome(obs.getValueCoded().getName().getName());
+                }
+                if (obs.getConcept().getUuid().equals("1193AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                    drugAllergies.append(" " + obs.getValueCoded().getName().getName());
+                }
+                if (obs.getConcept().getUuid().equals("160643AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                    otherAllergies.append(" " + obs.getValueCoded().getName().getName());
+                }
+                if (obs.getConcept().getUuid().equals("1284AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                    List<Obs> onsetDate = latestFollowUpEncounter.getObs()
+                            .stream()
+                            .filter(c -> c.getConcept().getUuid().equals("159948AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") && c.getObsGroup().getUuid().equals(obs.getObsGroup().getUuid()))
+                            .collect(Collectors.toList());
+                    if (!onsetDate.isEmpty()) {
+                        patientNcds.add(new PATIENT_NCD(obs.getValueCoded().getName().getName(), formatter.format(onsetDate.get(0).getValueDatetime()), ""));
+                    }
                 }
             }
+
         }
-        
         serviceRequestSupportingInfo.setDrug_allergies(drugAllergies.toString());
         serviceRequestSupportingInfo.setOther_allergies(otherAllergies.toString());
         serviceRequestSupportingInfo.setPatient_ncds(patientNcds);
@@ -235,7 +238,7 @@ public class ILPatientDiscontinuation {
         // regimen change history
         List<SimpleObject> regimenChangeHistory = EncounterBasedRegimenUtils.getRegimenHistoryFromObservations(encounter.getPatient(), "ARV");
         serviceRequestSupportingInfo.setRegimen_change_history(regimenChangeHistory);
-
+        
         Integer latestVLConcept = 856;
         Integer LDLQuestionConcept = 1305;
         if (lastLabResultsEncounter != null) {
@@ -256,32 +259,33 @@ public class ILPatientDiscontinuation {
             }
         }
 
-        for (Encounter enrolment : enrolmentEncounters) {
-            //Filter patient type obs record
-            List<Obs> patientType = enrolment.getObs()
-                    .stream()
-                    .filter(c -> c.getConcept().getConceptId() == 164932)
-                    .collect(Collectors.toList());
-            if (!patientType.isEmpty()) {
-                if (!Arrays.asList(new Integer[]{164931, 159833}).contains(patientType.get(0).getValueCoded().getConceptId())) {
-                    for (Obs obs : enrolment.getObs()) {
-                        if (obs.getConcept().getUuid().equals("160554AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                            serviceRequestSupportingInfo.setDate_confirmed_positive(formatter.format(obs.getValueDatetime()));
-                        }
-                        if (obs.getConcept().getUuid().equals("160555AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                            serviceRequestSupportingInfo.setDate_first_enrolled(formatter.format(obs.getValueDatetime()));
-                        }
-                        if (obs.getConcept().getUuid().equals("159599AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                            serviceRequestSupportingInfo.setDate_started_art_at_transferring_facility(formatter.format(enrolment.getEncounterDatetime()));
-                        }
-                        if (obs.getConcept().getUuid().equals("160540AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                            serviceRequestSupportingInfo.setEntry_point(obs.getValueCoded().getName().getName());
+        if (!enrolmentEncounters.isEmpty()) {
+            for (Encounter enrolment : enrolmentEncounters) {
+                //Filter patient type obs record
+                List<Obs> patientType = enrolment.getObs()
+                        .stream()
+                        .filter(c -> c.getConcept().getConceptId() == 164932)
+                        .collect(Collectors.toList());
+                if (!patientType.isEmpty()) {
+                    if (!Arrays.asList(new Integer[]{164931, 159833}).contains(patientType.get(0).getValueCoded().getConceptId())) {
+                        for (Obs obs : enrolment.getObs()) {
+                            if (obs.getConcept().getUuid().equals("160554AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                                serviceRequestSupportingInfo.setDate_confirmed_positive(formatter.format(obs.getValueDatetime()));
+                            }
+                            if (obs.getConcept().getUuid().equals("160555AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                                serviceRequestSupportingInfo.setDate_first_enrolled(formatter.format(obs.getValueDatetime()));
+                            }
+                            if (obs.getConcept().getUuid().equals("159599AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                                serviceRequestSupportingInfo.setDate_started_art_at_transferring_facility(formatter.format(enrolment.getEncounterDatetime()));
+                            }
+                            if (obs.getConcept().getUuid().equals("160540AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                                serviceRequestSupportingInfo.setEntry_point(obs.getValueCoded().getName().getName());
+                            }
                         }
                     }
                 }
             }
         }
-
         //IPT Data
         Program iptProgram = MetadataUtils.existing(Program.class, IPTMetadata._Program.IPT);
         Encounter lastIptOutcomeEncounter = EmrUtils.lastEncounter(encounter.getPatient(), Context.getEncounterService().getEncounterTypeByUuid(IPTMetadata._EncounterType.IPT_OUTCOME));
@@ -316,9 +320,9 @@ public class ILPatientDiscontinuation {
             }
         }
 
+
         referralInformation.setSupporting_info(serviceRequestSupportingInfo);
 
         return referralInformation;
     }
-
 }
