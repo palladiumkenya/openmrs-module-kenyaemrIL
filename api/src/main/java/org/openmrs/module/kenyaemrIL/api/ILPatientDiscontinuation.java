@@ -68,6 +68,11 @@ public class ILPatientDiscontinuation {
                 epd.setAssigning_authority("MPI");
                 epd.setIdentifier_type("GODS_NUMBER");
                 patientIdentification.setExternal_patient_id(epd);
+            } else if (patientIdentifier.getIdentifierType().getUuid().equalsIgnoreCase("f85081e2-b4be-4e48-b3a4-7994b69bb101")) { // this is NUPI
+                ipd.setAssigning_authority("MOH");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("NUPI");
+                internalPatientIds.add(ipd);
             }
         }
         //Set the patient name
@@ -107,14 +112,11 @@ public class ILPatientDiscontinuation {
                 if (ob.getValueCoded().getUuid().equals("159492AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                     programDiscontinuationMessage.setDiscontinuation_reason("Transfer Out");
                     programDiscontinuationMessage.setService_request(referralInfo(encounter));
-                }
-                if (ob.getValueCoded().getUuid().equals("160034AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                }else if (ob.getValueCoded().getUuid().equals("160034AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                     programDiscontinuationMessage.setDiscontinuation_reason("Death");
-                }
-                if (ob.getValueCoded().getUuid().equals("5240AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                } else if (ob.getValueCoded().getUuid().equals("5240AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                     programDiscontinuationMessage.setDiscontinuation_reason("LTFU");
-                }
-                if (ob.getValueCoded().getUuid().equals("164349AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                }else if (ob.getValueCoded().getUuid().equals("164349AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                     programDiscontinuationMessage.setDiscontinuation_reason("Stopped Treatment");
                 }
             }
@@ -145,14 +147,13 @@ public class ILPatientDiscontinuation {
 
         PATIENT_REFERRAL_INFORMATION referralInformation = new PATIENT_REFERRAL_INFORMATION();
         SERVICE_REQUEST_SUPPORTING_INFO serviceRequestSupportingInfo = new SERVICE_REQUEST_SUPPORTING_INFO();
-        referralInformation.setTransfer_status(ServiceRequest.ServiceRequestStatus.ACTIVE);
-        referralInformation.setTransfer_intent(ServiceRequest.ServiceRequestIntent.ORDER);
-        referralInformation.setTransfer_priority(ServiceRequest.ServiceRequestPriority.ASAP);
-        referralInformation.setSending_facility_mflCode(facilityMfl);
-        referralInformation.setReceiving_facility_mflCode("");
+        referralInformation.setTransfer_status("active");
+        referralInformation.setTransfer_intent("order");
+        referralInformation.setTransfer_priority("asap");
+        referralInformation.setSending_facility_mflcode(facilityMfl);
         for (Obs obs : encounter.getObs()) {
             if (obs.getConcept().getUuid().equals("159495AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                referralInformation.setReceiving_facility_mflCode(obs.getValueText().split("-")[0]);
+                referralInformation.setReceiving_facility_mflcode(obs.getValueText().split("-")[0]);
             }
             if (obs.getConcept().getUuid().equals("160649AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                 referralInformation.setTransfer_out_date(formatter.format(obs.getValueDatetime()));
@@ -224,8 +225,8 @@ public class ILPatientDiscontinuation {
         // Current regimen
         Encounter lastDrugRegimenEditorEncounter = EncounterBasedRegimenUtils.getLastEncounterForCategory(encounter.getPatient(), "ARV");
         if (lastDrugRegimenEditorEncounter != null) {
-            SimpleObject o = EncounterBasedRegimenUtils.buildRegimenChangeObject(lastDrugRegimenEditorEncounter.getAllObs(), lastDrugRegimenEditorEncounter);
-            serviceRequestSupportingInfo.setCurrent_regimen(o.get("regimenShortDisplay").toString());
+            SimpleObject simpleObject = EncounterBasedRegimenUtils.buildRegimenChangeObject(lastDrugRegimenEditorEncounter.getAllObs(), lastDrugRegimenEditorEncounter);
+            serviceRequestSupportingInfo.setCurrent_regimen(simpleObject.get("regimenShortDisplay").toString());
         }
 
         // current cd4

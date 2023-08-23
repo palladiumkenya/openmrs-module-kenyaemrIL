@@ -7,10 +7,11 @@ import java.io.Serializable;
 import java.util.Date;
 
 public class ExpectedTransferInPatients extends BaseOpenmrsMetadata implements Serializable {
+    private static final long serialVersionUID = 3062136588828193225L;
     private Integer id;
     private Patient patient;
     private Date transferOutDate;
-    private Integer transferOutFacility;
+    private String transferOutFacility;
     private Date appointmentDate;
     private Date effectiveDiscontinuationDate;
     private String referralStatus;
@@ -57,11 +58,11 @@ public class ExpectedTransferInPatients extends BaseOpenmrsMetadata implements S
         this.effectiveDiscontinuationDate = effectiveDiscontinuationDate;
     }
 
-    public Integer getTransferOutFacility() {
+    public String getTransferOutFacility() {
         return transferOutFacility;
     }
 
-    public void setTransferOutFacility(Integer transferOutFacility) {
+    public void setTransferOutFacility(String transferOutFacility) {
         this.transferOutFacility = transferOutFacility;
     }
 

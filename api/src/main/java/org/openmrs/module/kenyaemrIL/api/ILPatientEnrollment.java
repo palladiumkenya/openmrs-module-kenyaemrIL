@@ -86,10 +86,10 @@ public class ILPatientEnrollment {
             if (ob.getConcept().getUuid().equals("160540AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                 hivProgramEnrolmentMessage.setEntry_point(ob.getValueCoded().getName().getName());
             }
-            if (ob.getConcept().getUuid().equals("160535AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                referralInformation.setSending_facility_mflCode(ob.getValueText().split("-")[0]);
+           if (ob.getConcept().getUuid().equals("160535AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+               referralInformation.setSending_facility_mflcode(ob.getValueText().split("-")[0]);
 
-            }
+           }
         }
         hivProgramEnrolmentMessage.setService_request(referralInformation);
         ilMessage.setPatient_identification(patientIdentification);
@@ -108,12 +108,12 @@ public class ILPatientEnrollment {
         String facilityMfl = MessageHeaderSingleton.getDefaultLocationMflCode(MessageHeaderSingleton.getDefaultLocation());
 
         PATIENT_REFERRAL_INFORMATION referralInformation = new PATIENT_REFERRAL_INFORMATION();
-        referralInformation.setTransfer_status(ServiceRequest.ServiceRequestStatus.COMPLETED);
-        referralInformation.setTransfer_intent(ServiceRequest.ServiceRequestIntent.ORDER);
-        referralInformation.setTransfer_priority(ServiceRequest.ServiceRequestPriority.ASAP);
+        referralInformation.setTransfer_status("completed");
+        referralInformation.setTransfer_intent("order");
+        referralInformation.setTransfer_priority("asap");
         referralInformation.setTo_acceptance_date(formatter.format(encounter.getEncounterDatetime()));
         referralInformation.setTransfer_out_date("");
-        referralInformation.setReceiving_facility_mflCode(facilityMfl);
+        referralInformation.setReceiving_facility_mflcode(facilityMfl);
 
         return referralInformation;
     }

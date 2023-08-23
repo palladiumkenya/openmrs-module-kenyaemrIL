@@ -2,16 +2,17 @@ package org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral;
 
 public class PATIENT_NCD {
     private String illness;
-    private String onsetDate;
-    private String isControlled;
+    private String onset_date;
+    private String is_controlled;
 
     public PATIENT_NCD() {
 
     }
-    public PATIENT_NCD(String illness, String onsetDate, String isControlled) {
+
+    public PATIENT_NCD(String illness, String onset_date, String is_controlled) {
         this.illness = illness;
-        this.onsetDate = onsetDate;
-        this.isControlled = isControlled;
+        this.onset_date = onset_date;
+        this.is_controlled = is_controlled;
     }
 
     public String getIllness() {
@@ -22,19 +23,19 @@ public class PATIENT_NCD {
         this.illness = illness;
     }
 
-    public String getOnsetDate() {
-        return onsetDate;
+    public String getOnset_date() {
+        return onset_date;
     }
 
-    public void setOnsetDate(String onsetDate) {
-        this.onsetDate = onsetDate;
+    public void setOnset_date(String onset_date) {
+        this.onset_date = onset_date;
     }
 
-    public String getIsControlled() {
-        return isControlled;
+    public String getIs_controlled() {
+        return is_controlled;
     }
 
-    public void setIsControlled(String isControlled) {
-        this.isControlled = isControlled;
+    public void setIs_controlled(String is_controlled) {
+        this.is_controlled = is_controlled;
     }
 }

@@ -40,6 +40,7 @@
         KenyaEMRILMessageErrorQueue.hbm.xml
         KenyaEMRInteropMessage.hbm.xml
         KenyaEMRMhealthPatientRegistration.hbm.xml
+        ExpectedTransferInPatients.hbm.xml
     </mappingFiles>
 
 
@@ -73,6 +74,13 @@
     </globalProperty>
     <globalProperty>
         <property>discontinuationTask.lastFetchDateAndTime</property>
+        <defaultValue>20230226120000</defaultValue>
+        <description>
+            The last date and time that the last fetch was done for discontinuation task
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <property>transferInsFetchTask.lastFetchDateAndTime</property>
         <defaultValue>20230226120000</defaultValue>
         <description>
             The last date and time that the last fetch was done for discontinuation task

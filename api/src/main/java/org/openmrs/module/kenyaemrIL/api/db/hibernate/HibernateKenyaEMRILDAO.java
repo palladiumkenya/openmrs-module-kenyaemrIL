@@ -357,13 +357,8 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
 
     @Override
     public ExpectedTransferInPatients createPatient(ExpectedTransferInPatients expectedTransferInPatient) {
-        ExpectedTransferInPatients existingPatient = getTransferInPatient(expectedTransferInPatient.getPatient());
-        if (existingPatient != null) {
-            existingPatient.setRetired(true);
-            this.sessionFactory.getCurrentSession().saveOrUpdate(existingPatient);
-        }
-        this.sessionFactory.getCurrentSession().saveOrUpdate(existingPatient);
-        return existingPatient;
+        this.sessionFactory.getCurrentSession().saveOrUpdate(expectedTransferInPatient);
+        return expectedTransferInPatient;
     }
 
     @Override

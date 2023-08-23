@@ -9,13 +9,15 @@ import org.openmrs.scheduler.tasks.AbstractTask;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ProgramDiscontinuationTask extends AbstractTask {
     @Override
     public void execute() {
-        System.out.println("Executing ProgramDiscontinuationTask TASK .........");
+        System.out.println("Executing ProgramDiscontinuationTask TASK .................");
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         /**Fetch the last date of sync*/
         Date fetchDate = null;
@@ -28,10 +30,17 @@ public class ProgramDiscontinuationTask extends AbstractTask {
             e.printStackTrace();
         }
         // Fetch all discontinuation encounters
-        List<Encounter> pendingEnrollments = fetchPendingHivDiscontinuations(fetchDate);
-        for (Encounter e : pendingEnrollments) {
-
-            discontinuationEvent(e.getPatient(), e);
+        List<Encounter> pendingHivDiscontinuations = fetchPendingHivDiscontinuations(fetchDate);
+        List<String> capturedDiscontinuations = Arrays.asList("159492AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "160034AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                "5240AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "164349AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        for (Encounter e : pendingHivDiscontinuations) {
+            List<Obs> discontinuationTypeObs = e.getObs().stream().filter(ob -> ob.getConcept().getUuid()
+                    .equals("161555AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")).collect(Collectors.toList());
+            if (!discontinuationTypeObs.isEmpty()) {
+                if (capturedDiscontinuations.contains(discontinuationTypeObs.get(0).getValueCoded().getUuid())) {
+                    discontinuationEvent(e.getPatient(), e);
+                }
+            }
         }
 
         Date nextProcessingDate = new Date();

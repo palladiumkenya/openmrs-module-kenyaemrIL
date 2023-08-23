@@ -564,7 +564,7 @@
             <column name="uuid" value="5fdedec8-1b32-11ee-be56-0242ac120002"/>
         </insert>
     </changeSet>
-    <changeSet id="${project.parent.artifactId}-20230808-2050" author="jecihjoy">
+    <changeSet id="${project.parent.artifactId}-20230808-0001" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
             <not><tableExists tableName="expected_transfer_ins" /></not>
         </preConditions>
@@ -577,7 +577,7 @@
             </column>
             <column name="patient_id" type="int"/>
             <column name="transfer_out_date" type="datetime"/>
-            <column name="transfer_out_facility" type="int"/>
+            <column name="transfer_out_facility" type="text"/>
             <column name="appointment_date" type="datetime"/>
             <column name="effective_discontinuation_date" type="datetime"/>
             <column name="to_acceptance_date" type="datetime"/>
@@ -591,5 +591,29 @@
         <modifySql dbms="mysql">
             <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_unicode_ci"/>
         </modifySql>
+    </changeSet>
+    <!--Adding scheduled task :Set program discontinuation task-->
+    <changeSet id="${project.parent.artifactId}-202308080930" author="jecihjoy">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.PullExpectedTransferInsTask'
+                And name = 'Expected Transfer Ins Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Inserting Transfer Ins Task to 'schedule_task_config' table</comment>
+        <insert tableName="scheduler_task_config">
+            <column name="name" value="Expected Transfer Ins Task" />
+            <column name="description" value="Periodically Fetch expected transfer ins" />
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.PullExpectedTransferInsTask" />
+            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
+            <column name="start_time" valueDate="2023-01-01T23:59:59" />
+            <column name="repeat_interval" value="3" />
+            <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="1" />
+            <column name="started" value="1" />
+            <column name="uuid" value="9143b4e6-16c5-11ee-be56-0342ac120002" />
+        </insert>
     </changeSet>
 </databaseChangeLog>
