@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<!--
+
+    This Source Code Form is subject to the terms of the Mozilla Public License,
+    v. 2.0. If a copy of the MPL was not distributed with this file, You can
+    obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
+    the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
+
+    Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
+    graphic logo is a trademark of OpenMRS Inc.
+
+-->
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="org.openmrs.module.kenyaemrIL.programEnrollment">
+
+    <class name="org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients" table="expected_transfer_ins">
+
+        <id name="id" type="int" column="id" unsaved-value="0">
+            <generator class="native">
+                <param name="sequence">il_expected_transfer_ins_id_seq</param>
+            </generator>
+        </id>
+
+        <discriminator column="id" insert="false"/>
+
+        <many-to-one name="patient" class ="org.openmrs.Patient" column = "patient_id" />
+
+        <property name="transferOutDate" type="java.util.Date"
+                  column="transfer_out_date" not-null="true" length="19"/>
+
+        <property name="transferOutFacility" type="int" column="transfer_out_facility"
+                  length="1" not-null="true"/>
+
+        <property name="appointmentDate" type="java.util.Date"
+                  column="appointment_date" not-null="true" length="19"/>
+
+        <property name="effectiveDiscontinuationDate" type="java.util.Date"
+                  column="effective_discontinuation_date" not-null="true" length="19"/>
+
+        <property name="toAcceptanceDate" type="java.util.Date"
+                  column="to_acceptance_date" not-null="true" length="19"/>
+
+        <property name="referralStatus" type="java.lang.String" column="referral_status"
+                  length="100" not-null="true" insert="false" />
+
+        <property name="patientSummary" type="java.lang.String"
+                  column="patient_summary" not-null="true" length="4000"/>
+
+        <many-to-one name="creator" class="org.openmrs.User" not-null="true">
+            <column name="creator"/>
+        </many-to-one>
+
+        <property name="dateCreated" type="java.util.Date"
+                  column="date_created" not-null="true" length="19"/>
+
+        <property name="uuid" type="java.lang.String"
+                  column="uuid" length="38" unique="true"/>
+
+        <property name="retired" type="boolean" column="retired"
+                  length="1" not-null="true"/>
+
+    </class>
+</hibernate-mapping>

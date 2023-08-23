@@ -564,4 +564,32 @@
             <column name="uuid" value="5fdedec8-1b32-11ee-be56-0242ac120002"/>
         </insert>
     </changeSet>
+    <changeSet id="${project.parent.artifactId}-20230808-2050" author="jecihjoy">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="expected_transfer_ins" /></not>
+        </preConditions>
+        <comment>
+            Create table for expected TI patients
+        </comment>
+        <createTable tableName="expected_transfer_ins">
+            <column name="id" autoIncrement="true" type="int">
+                <constraints nullable="false" primaryKey="true" />
+            </column>
+            <column name="patient_id" type="int"/>
+            <column name="transfer_out_date" type="datetime"/>
+            <column name="transfer_out_facility" type="int"/>
+            <column name="appointment_date" type="datetime"/>
+            <column name="effective_discontinuation_date" type="datetime"/>
+            <column name="to_acceptance_date" type="datetime"/>
+            <column name="referral_status" type="int"/>
+            <column name="patient_summary" type="text"/>
+            <column name="creator" type="int"/>
+            <column name="date_created" type="datetime"></column>
+            <column name="uuid" type="varchar(38)"></column>
+            <column name="retired" type="int"></column>
+        </createTable>
+        <modifySql dbms="mysql">
+            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_unicode_ci"/>
+        </modifySql>
+    </changeSet>
 </databaseChangeLog>

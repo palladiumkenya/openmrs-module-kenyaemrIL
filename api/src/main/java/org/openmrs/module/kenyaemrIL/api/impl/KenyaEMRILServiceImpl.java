@@ -78,6 +78,7 @@ import org.openmrs.module.kenyaemrIL.il.utils.ViralLoadProcessorUtil;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 import org.openmrs.module.kenyaemrIL.kenyaemrUtils.Utils;
 import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
+import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
 import org.openmrs.module.kenyaemrIL.programEnrollment.Patient_Program_Enrollment_Message;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
@@ -1295,6 +1296,20 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         return dao.fetchRecentArchives(hl7MessageTypes);
     }
 
+    @Override
+    public ExpectedTransferInPatients createPatient(ExpectedTransferInPatients patient) {
+        return dao.createPatient(patient);
+    }
+
+    @Override
+    public List<ExpectedTransferInPatients> getAllTransferIns() {
+        return dao.getAllTransferIns();
+    }
+
+    @Override
+    public ExpectedTransferInPatients getTransferInPatient(Patient patient) {
+        return dao.getTransferInPatient(patient);
+    }
 
     private Patient wrapIlPerson(ILMessage ilPerson, KenyaEMRILMessage kenyaEMRILMessage) {
 

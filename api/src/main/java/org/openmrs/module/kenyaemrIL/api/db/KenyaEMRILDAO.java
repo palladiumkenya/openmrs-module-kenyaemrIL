@@ -20,6 +20,7 @@ import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
+import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
 
 import java.util.List;
 
@@ -94,5 +95,11 @@ public interface KenyaEMRILDAO {
     void purgeErrors(String errorList);
 
     List<KenyaEMRILMessageArchive> fetchRecentArchives(List<String> hl7MessageTypes);
+
+    ExpectedTransferInPatients createPatient(ExpectedTransferInPatients patient);
+
+    List<ExpectedTransferInPatients> getAllTransferIns();
+    
+    ExpectedTransferInPatients getTransferInPatient(Patient patient);
 
 }

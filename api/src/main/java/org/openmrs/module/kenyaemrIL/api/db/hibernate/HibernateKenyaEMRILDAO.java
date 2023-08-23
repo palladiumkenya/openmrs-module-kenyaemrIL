@@ -29,6 +29,7 @@ import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
 import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
+import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 
 import java.util.ArrayList;
@@ -352,5 +353,36 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         }
         return query.list();
 
+    }
+
+    @Override
+    public ExpectedTransferInPatients createPatient(ExpectedTransferInPatients expectedTransferInPatient) {
+        ExpectedTransferInPatients existingPatient = getTransferInPatient(expectedTransferInPatient.getPatient());
+        if (existingPatient != null) {
+            existingPatient.setRetired(true);
+            this.sessionFactory.getCurrentSession().saveOrUpdate(existingPatient);
+        }
+        this.sessionFactory.getCurrentSession().saveOrUpdate(existingPatient);
+        return existingPatient;
+    }
+
+    @Override
+    public List<ExpectedTransferInPatients> getAllTransferIns() {
+        Criteria criteria = this.sessionFactory.getCurrentSession().createCriteria(ExpectedTransferInPatients.class);
+        return criteria.list();
+    }
+
+    @Override
+    public ExpectedTransferInPatients getTransferInPatient(Patient patient) {
+        if (patient == null) return null;
+        String stringQuery = "SELECT expectedTransferInPatient FROM ExpectedTransferInPatients AS expectedTransferInPatient WHERE patient = :patient AND retired = 0";
+        Query query = this.sessionFactory.getCurrentSession().createQuery(
+                stringQuery);
+        query.setParameter("patient", patient);
+        List<ExpectedTransferInPatients> expectedTransferInPatients = query.list();
+        if (!expectedTransferInPatients.isEmpty()) {
+            return expectedTransferInPatients.get(0);
+        }
+        return null;
     }
 }
