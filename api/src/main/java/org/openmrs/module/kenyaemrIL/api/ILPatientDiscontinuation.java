@@ -112,14 +112,11 @@ public class ILPatientDiscontinuation {
                 if (ob.getValueCoded().getUuid().equals("159492AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                     programDiscontinuationMessage.setDiscontinuation_reason("Transfer Out");
                     programDiscontinuationMessage.setService_request(referralInfo(encounter));
-                }
-                if (ob.getValueCoded().getUuid().equals("160034AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                }else if (ob.getValueCoded().getUuid().equals("160034AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                     programDiscontinuationMessage.setDiscontinuation_reason("Death");
-                }
-                if (ob.getValueCoded().getUuid().equals("5240AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                } else if (ob.getValueCoded().getUuid().equals("5240AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                     programDiscontinuationMessage.setDiscontinuation_reason("LTFU");
-                }
-                if (ob.getValueCoded().getUuid().equals("164349AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                }else if (ob.getValueCoded().getUuid().equals("164349AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                     programDiscontinuationMessage.setDiscontinuation_reason("Stopped Treatment");
                 }
             }

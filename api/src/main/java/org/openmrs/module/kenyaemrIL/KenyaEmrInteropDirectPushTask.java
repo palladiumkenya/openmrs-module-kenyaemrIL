@@ -126,8 +126,9 @@ public class KenyaEmrInteropDirectPushTask extends AbstractTask {
             //Set the API media type in http content-type header
             postRequest.addHeader("content-type", "application/json");
             //Set the request post body
-            String payload = outbox.getMessage().toUpperCase();
-            StringEntity userEntity = new StringEntity(payload.replace("NULL", "null"));
+            String payload = outbox.getMessage().toUpperCase().replace("NULL", "null")
+                    .replace("FALSE", "false").replace("TRUE", "true");
+            StringEntity userEntity = new StringEntity(payload);
             postRequest.setEntity(userEntity);
             HttpResponse response = httpClient.execute(postRequest);
 

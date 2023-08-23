@@ -37,6 +37,17 @@ public class ValidateTransferOutsTasks extends AbstractTask {
     public void execute() {
         System.out.println("Executing ValidateTransferOutPatients Task .................");
 
+        GlobalProperty gpMiddlewareServerUrl = Context.getAdministrationService().getGlobalPropertyObject(ILUtils.GP_USHAURI_PUSH_SERVER_URL);
+        if (gpMiddlewareServerUrl == null) {
+            System.out.println("EmrInterop DIRECT PUSH: There is no global property for interop server URL!");
+            return;
+        }
+
+        if (StringUtils.isBlank(gpMiddlewareServerUrl.getPropertyValue())) {
+            System.out.println("EmrInterop DIRECT PUSH: The server URL has not been set!");
+            return;
+        }
+
         /*Collect CCC numbers for transfer out patients*/
         List<String> trfCccNumbers = new ArrayList<>();
         for (Patient patient : this.fetchTransferOutPatients()) {
@@ -59,6 +70,8 @@ public class ValidateTransferOutsTasks extends AbstractTask {
             System.out.println("ART Directory server URL has not been set!");
             return;
         }
+        //String serverUrl =   gpMiddlewareServerUrl.getPropertyValue() + "referral-status/"; // SERVER URL
+//        String serverUrl =   "https://prod.kenyahmis.org:8002/api/patients/referral-status/"; // LOCAL URL
         String serverUrl = "http://192.168.1.44:8002/api/patients/referral-status/";
         String cccParam = String.join(", ", trfCccNumbers);
         String mflParam = MessageHeaderSingleton.getDefaultLocationMflCode(MessageHeaderSingleton.getDefaultLocation());
