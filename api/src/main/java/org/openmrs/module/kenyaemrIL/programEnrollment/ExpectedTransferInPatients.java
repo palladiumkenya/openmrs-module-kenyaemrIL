@@ -17,6 +17,7 @@ public class ExpectedTransferInPatients extends BaseOpenmrsMetadata implements S
     private String referralStatus;
     private Date toAcceptanceDate;
     private String patientSummary;
+    private String serviceType;
 
     public Integer getId() {
         return id;
@@ -89,5 +90,14 @@ public class ExpectedTransferInPatients extends BaseOpenmrsMetadata implements S
     public void setPatientSummary(String patientSummary) {
         this.patientSummary = patientSummary;
     }
+
+    public String getServiceType() {
+        return serviceType;
+    }
+
+    public void setServiceType(String serviceType) {
+        this.serviceType = serviceType;
+    }
+
 }
 

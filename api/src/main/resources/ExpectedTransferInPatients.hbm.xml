@@ -61,5 +61,7 @@
         <property name="retired" type="boolean" column="retired"
                   length="1" not-null="true"/>
 
+        <property name="serviceType" type="java.lang.String"
+                  column="service_type" not-null="true" length="50"/>
     </class>
 </hibernate-mapping>

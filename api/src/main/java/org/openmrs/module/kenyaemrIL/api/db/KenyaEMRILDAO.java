@@ -99,7 +99,9 @@ public interface KenyaEMRILDAO {
     ExpectedTransferInPatients createPatient(ExpectedTransferInPatients patient);
 
     List<ExpectedTransferInPatients> getAllTransferIns();
-    
+
+    List<ExpectedTransferInPatients> getAllTransferInsByServiceType(String serviceType);
+
     ExpectedTransferInPatients getTransferInPatient(Patient patient);
 
 }

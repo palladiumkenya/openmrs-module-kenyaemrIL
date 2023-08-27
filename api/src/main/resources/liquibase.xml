@@ -592,6 +592,23 @@
             <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_unicode_ci"/>
         </modifySql>
     </changeSet>
+
+    <!-- Add service_type field to the expected_transfer_ins table -->
+    <changeSet author="pwangoo" id="${project.parent.artifactId}-20230823-0002">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="expected_transfer_ins"/>
+            <not>
+                <columnExists columnName="service_type" tableName="expected_transfer_ins"/>
+            </not>
+        </preConditions>
+        <comment>Adding service_type column</comment>
+        <addColumn tableName="expected_transfer_ins" >
+            <column name="service_type"
+                    type="varchar(50)" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+    </changeSet>
     <!--Adding scheduled task :Set program discontinuation task-->
     <changeSet id="${project.parent.artifactId}-202308080930" author="jecihjoy">
         <preConditions onFail="MARK_RAN">

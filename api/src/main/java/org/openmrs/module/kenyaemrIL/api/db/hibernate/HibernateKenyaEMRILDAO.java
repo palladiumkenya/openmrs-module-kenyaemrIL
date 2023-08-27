@@ -20,6 +20,7 @@ import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
+import org.hl7.fhir.r4.model.codesystems.ServiceType;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
@@ -365,6 +366,14 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     public List<ExpectedTransferInPatients> getAllTransferIns() {
         Criteria criteria = this.sessionFactory.getCurrentSession().createCriteria(ExpectedTransferInPatients.class);
         return criteria.list();
+    }
+
+    @Override
+    public List<ExpectedTransferInPatients> getAllTransferInsByServiceType(String serviceType) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(ExpectedTransferInPatients.class);
+        crit.add(Restrictions.eq("service_type", serviceType));
+        return crit.list();
+
     }
 
     @Override
