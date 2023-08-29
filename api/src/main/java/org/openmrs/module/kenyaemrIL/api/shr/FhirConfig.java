@@ -38,6 +38,7 @@ public class FhirConfig {
 
 
 
+    /**TODO - Change this to fetch from CR instead*/
     public Bundle fetchPatientResource(String identifier) {
         try {
             IGenericClient client = getFhirClient();
