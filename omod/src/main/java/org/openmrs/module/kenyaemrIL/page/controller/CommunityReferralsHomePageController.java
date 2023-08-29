@@ -16,7 +16,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
-@AppPage("kenyaemrilladmin.home")
+@AppPage("kenyaemr.referral.home")
 public class CommunityReferralsHomePageController {
 
     public void get(@SpringBean KenyaUiUtils kenyaUi, UiUtils ui, PageModel model) throws JsonProcessingException, ParseException {

@@ -85,7 +85,7 @@ public class ILUtils {
 	public static final String INVALID_CCC_NUMBER_IN_USHAURI = "The CCC must be 10 digits"; // a substring in the error message
 	public static final String CCC_NUMBER_ALREADY_EXISTS_IN_USHAURI = "The CCC number already exists."; // a substring in the error message
 
-	public static final String GP_SHR_SERVER_URL = "http://localhost:8098/fhir/";
+	public static final String GP_SHR_SERVER_URL = "kenyaemril.fhir.server.url";
 	public static final String GP_SHR_USER_NAME = "";
 	public static final String GP_SHR_PASSWORD = "";
 
@@ -467,8 +467,7 @@ public class ILUtils {
 	}
 
 	public static String getShrServerUrl() {
-		//return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_SERVER_URL);
-		return ILUtils.GP_SHR_SERVER_URL;
+		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_SERVER_URL);
 	}
 
 	public static String getShrUserName() {
