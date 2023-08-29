@@ -102,6 +102,6 @@ public interface KenyaEMRILDAO {
 
     List<ExpectedTransferInPatients> getAllTransferInsByServiceType(String serviceType);
 
-    ExpectedTransferInPatients getTransferInPatient(Patient patient);
+    List<ExpectedTransferInPatients> getTransferInPatient(Patient patient);
 
 }

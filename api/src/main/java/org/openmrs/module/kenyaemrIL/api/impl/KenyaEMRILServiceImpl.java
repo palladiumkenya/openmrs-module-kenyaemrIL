@@ -1312,7 +1312,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public ExpectedTransferInPatients getTransferInPatient(Patient patient) {
+    public List<ExpectedTransferInPatients> getTransferInPatient(Patient patient) {
         return dao.getTransferInPatient(patient);
     }
 
