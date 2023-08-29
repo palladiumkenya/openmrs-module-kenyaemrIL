@@ -18,16 +18,15 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.openmrs.module.kenyaemrIL.fragment.controller.ReferralsDataExchangeFragmentController.NUPI;
-
 @AppPage("kenyaemr.referral.home")
 public class CommunityReferralsHomePageController {
+    public static final String NUPI = "f85081e2-b4be-4e48-b3a4-7994b69bb101";
 
     public void get(@SpringBean KenyaUiUtils kenyaUi, UiUtils ui, PageModel model) throws JsonProcessingException, ParseException {
 
         List<SimpleObject> activeReferrals = new ArrayList<SimpleObject>();
         List<SimpleObject> completedReferrals = new ArrayList<SimpleObject>();
-
+        PatientIdentifierType nupiIdType = MetadataUtils.existing(PatientIdentifierType.class, NUPI);
         PersonAttributeType communityReferralSourcePA = Context.getPersonService().getPersonAttributeTypeByUuid(ILMetadata._PersonAttributeType.REFERRAL_SOURCE);
         PersonAttributeType communityRefrralStatusPA = Context.getPersonService().getPersonAttributeTypeByUuid(ILMetadata._PersonAttributeType.REFERRAL_STATUS);
         List<Patient> allPatients = Context.getPatientService().getAllPatients();
@@ -36,12 +35,11 @@ public class CommunityReferralsHomePageController {
             if (patient.getAttribute(communityReferralSourcePA) != null && patient.getAttribute(communityRefrralStatusPA) != null) {
                 String networkError = "";
                     // Get all active community referrals
-                PatientIdentifierType nupiIdType = MetadataUtils.existing(PatientIdentifierType.class, NUPI);
                 if (patient.getAttribute(communityReferralSourcePA).getValue().trim().equalsIgnoreCase("Community")) {
                     if (patient.getAttribute(communityRefrralStatusPA).getValue().trim().equalsIgnoreCase("Active")) {
                         // Get person details for community referrals
 
-                        SimpleObject patientPendingObject = SimpleObject.create("id", patient.getId(), "uuid", patient.getUuid(), "nupi",patient.getPatientIdentifier(nupiIdType), "givenName", patient
+                        SimpleObject patientPendingObject = SimpleObject.create("id", patient.getId(), "uuid", patient.getUuid(), "nupi", patient.getPatientIdentifier(nupiIdType).getIdentifier(), "givenName", patient
                                         .getGivenName(), "middleName", patient.getMiddleName() != null ? patient.getMiddleName() : "", "familyName", patient.getFamilyName(), "birthdate", kenyaUi.formatDate(patient.getBirthdate()), "gender", patient.getGender(),
                                 "status", patient.getAttribute(communityRefrralStatusPA).getValue().trim());
                         activeReferrals.add(patientPendingObject);
@@ -51,7 +49,7 @@ public class CommunityReferralsHomePageController {
                 if (patient.getAttribute(communityReferralSourcePA).getValue().trim().equalsIgnoreCase("Community")) {
                     if (patient.getAttribute(communityRefrralStatusPA).getValue().trim().equalsIgnoreCase("Completed")) {
                         // Get person details for community referrals
-                        SimpleObject completedReferralsObject = SimpleObject.create("id", patient.getId(), "uuid", patient.getUuid(),"nupi", patient.getPatientIdentifier(nupiIdType), "givenName", patient
+                        SimpleObject completedReferralsObject = SimpleObject.create("id", patient.getId(), "uuid", patient.getUuid(),"nupi", patient.getPatientIdentifier(nupiIdType).getIdentifier(), "givenName", patient
                                         .getGivenName(), "middleName", patient.getMiddleName() != null ? patient.getMiddleName() : "", "familyName", patient.getFamilyName(), "birthdate", kenyaUi.formatDate(patient.getBirthdate()), "gender", patient.getGender(),
                                 "status", patient.getAttribute(communityRefrralStatusPA).getValue().trim());
                         completedReferrals.add(completedReferralsObject);
