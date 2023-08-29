@@ -5,7 +5,7 @@
     ]
 
     def messageCategories = [
-        [label: "Art Referral Messages", iconProvider: "kenyaui", icon: "", label: "Art Referral Messages", href: ui.pageLink("kenyaemrIL", "referralsHome")],
+        [label: "Facility Referral", iconProvider: "kenyaui", icon: "", label: "Facility Referral", href: ui.pageLink("kenyaemrIL", "referralsHome")],
         [label: "Community Referral", iconProvider: "kenyaui", icon: "", label: "Community Referral", href: ui.pageLink("kenyaemrIL", "communityReferralsHome")]
     ]
 
@@ -226,7 +226,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
             <div class="ke-tabmenu-item" data-tabid="completed_queue_data">Completed referrals</div>
 
-            <div class="ke-tabmenu-item" data-tabid="general_error_active_queue">Error active_queue</div>
+            <div class="ke-tabmenu-item" data-tabid="general_error_active_queue">Error queue</div>
 
         </div>
 
@@ -248,6 +248,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                             <th class="lastNameColumn">Last Name</th>
                                             <th class="genderColumn">Sex</th>
                                             <th class="dateOfBirthColumn">DOB</th>
+                                            <th class="nupiColumn">NUPI</th>
                                             <th class="status">Status</th>
                                             <th class="action">Action</th>
                                         </tr>
@@ -287,6 +288,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                             <th class="lastNameColumn">Last Name</th>
                                             <th class="genderColumn">Sex</th>
                                             <th class="dateOfBirthColumn">DOB</th>
+                                            <th class="nupiColumn">NUPI</th>
                                             <th class="status">Status</th>
                                             <th class="action">Action</th>
                                         </tr>
@@ -490,6 +492,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             tr.append("<td>" + displayRecords[i].familyName + "</td>");
             tr.append("<td>" + displayRecords[i].gender +"</td>");
             tr.append("<td>" + displayRecords[i].birthdate + "</td>");
+            tr.append("<td>" + displayRecords[i].nupi + "</td>");
             tr.append("<td>" + displayRecords[i].status +"</td>");
             var actionTd = jq('<td/>');
 
@@ -518,6 +521,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             tr.append("<td>" + displayRecords[i].familyName + "</td>");
             tr.append("<td>" + displayRecords[i].gender +"</td>");
             tr.append("<td>" + displayRecords[i].birthdate + "</td>");
+            tr.append("<td>" + displayRecords[i].nupi + "</td>");
             tr.append("<td>" + displayRecords[i].status +"</td>");
             var actionTd = jq('<td/>');
 
