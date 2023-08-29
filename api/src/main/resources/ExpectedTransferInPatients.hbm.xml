@@ -28,25 +28,25 @@
         <many-to-one name="patient" class ="org.openmrs.Patient" column = "patient_id" />
 
         <property name="transferOutDate" type="java.util.Date"
-                  column="transfer_out_date" not-null="true" length="19"/>
+                  column="transfer_out_date" length="19"/>
 
         <property name="transferOutFacility" type="java.lang.String" column="transfer_out_facility"
-                  length="200" not-null="true"/>
+                  length="200"/>
 
         <property name="appointmentDate" type="java.util.Date"
-                  column="appointment_date" not-null="true" length="19"/>
+                  column="appointment_date" length="19"/>
 
         <property name="effectiveDiscontinuationDate" type="java.util.Date"
-                  column="effective_discontinuation_date" not-null="true" length="19"/>
+                  column="effective_discontinuation_date" length="19"/>
 
         <property name="referralStatus" type="java.lang.String" column="referral_status"
-                  length="100" not-null="true" insert="false" />
+                  length="100" insert="false" />
 
         <property name="toAcceptanceDate" type="java.util.Date"
-                  column="to_acceptance_date" not-null="false" length="19"/>
+                  column="to_acceptance_date" length="19"/>
 
         <property name="patientSummary" type="java.lang.String"
-                  column="patient_summary" not-null="true" length="4000"/>
+                  column="patient_summary" length="4000"/>
 
         <many-to-one name="creator" class="org.openmrs.User" not-null="true">
             <column name="creator"/>

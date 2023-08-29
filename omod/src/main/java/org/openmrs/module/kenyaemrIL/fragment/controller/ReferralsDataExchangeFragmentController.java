@@ -16,7 +16,9 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.fhir2.providers.r4.PatientFhirResourceProvider;
 import org.openmrs.module.idgen.service.IdentifierSourceService;
 import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
+import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.shr.FhirConfig;
+import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.ui.framework.SimpleObject;
@@ -79,7 +81,7 @@ public class ReferralsDataExchangeFragmentController {
                  // Persist service request
                  String nupiNumber = fhirServiceRequest.getSubject().getDisplay();
                  System.out.println("NUPI :  ==>"+nupiNumber);
-                 // Use UPI to get Patient,
+                 // Use UPI to get Patient, /**TODO - Change this to fetch from CR instead*/
                  patientResourceBundle = fhirConfig.fetchPatientResource(nupiNumber);
 
                  System.out.println(fhirConfig.getFhirContext().newJsonParser().encodeResourceToString(patientResourceBundle));
@@ -93,8 +95,15 @@ public class ReferralsDataExchangeFragmentController {
                          System.out.println("Fhir patient exists:  ==>");
                          PatientIdentifierType nupiIdType = MetadataUtils.existing(PatientIdentifierType.class, NUPI);
                          PatientIdentifier fetchedNupi = new PatientIdentifier(nupiNumber, nupiIdType, getDefaultLocation());
-                         addPatientObjectToBundle(fhirPatient,fetchedNupi);
-
+                         Patient savedPatient = addPatientObjectToBundle(fhirPatient,fetchedNupi);
+                         if (savedPatient.getPatientId() != null) {
+                             ExpectedTransferInPatients expectedTransferInPatients = new ExpectedTransferInPatients();
+                             expectedTransferInPatients.setPatient(savedPatient);
+                             expectedTransferInPatients.setReferralStatus("ACTIVE");
+                             expectedTransferInPatients.setPatientSummary(fhirConfig.getFhirContext().newJsonParser().encodeResourceToString(fhirServiceRequest));
+                             expectedTransferInPatients.setServiceType("COMMUNITY");
+                             Context.getService(KenyaEMRILService.class).createPatient(expectedTransferInPatients);
+                         }
                      }
 
 
@@ -124,7 +133,7 @@ public class ReferralsDataExchangeFragmentController {
 
     }
 
-    public void addPatientObjectToBundle(org.hl7.fhir.r4.model.Patient fhirPatient, PatientIdentifier fetchedNupi) {
+    public Patient addPatientObjectToBundle(org.hl7.fhir.r4.model.Patient fhirPatient, PatientIdentifier fetchedNupi) {
 
         PatientFhirResourceProvider patientResourceProvider = Context.getRegisteredComponent(
                 "patientFhirR4ResourceProvider", PatientFhirResourceProvider.class);
@@ -200,6 +209,7 @@ public class ReferralsDataExchangeFragmentController {
         // MethodOutcome results = patientResourceProvider.createPatient(fhirPatient);
         System.out.println("Error occured ==>"+errorOccured);
 
+        return patient;
     }
 
     public void completeClientReferral(@RequestParam("patientId") Integer patientId) {
