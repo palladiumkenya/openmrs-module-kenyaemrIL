@@ -156,6 +156,15 @@ public class FhirConfig {
         return null;
     }
 
+    public void updateReferral(ServiceRequest request) throws Exception {
+        System.out.println("Fhir: Update Referral Data ==>");
+        IGenericClient client = getFhirClient();
+        if(client != null) {
+            System.out.println("Fhir: client is not null ==>");
+            client.update().resource(request).execute();
+        }
+    }
+
     public List<String> vitalConcepts() {
         return Arrays.asList("5088AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","5087AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","5242AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
                 "5092AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","5089AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","163300AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
