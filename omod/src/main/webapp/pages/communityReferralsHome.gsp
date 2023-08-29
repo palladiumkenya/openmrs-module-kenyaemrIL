@@ -52,11 +52,11 @@ tr:nth-child(even) {background-color: #f2f2f2;}
     display: inline-block;
 }
 
-#queue-pager li{
+#active_queue-pager li{
     display: inline-block;
 }
 
-#archive-pager li{
+#completed-pager li{
     display: inline-block;
 }
 #chk-general-select-all {
@@ -199,12 +199,12 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                     </thead>
                     <tbody>
                     <tr>
-                        <td width="15%">Total data in queue</td>
-                        <td>${queueListSize}</td>
+                        <td width="15%">Total active referrals</td>
+                        <td>${activeReferralListSize}</td>
                     </tr>
                     <tr>
-                        <td width="15%">Total errors</td>
-                        <td>${generalErrorListSize}</td>
+                        <td width="15%">Total completed referrals</td>
+                        <td>${completedReferralListSize}</td>
                     </tr>
                     <tr>
                         <td width="15%"> <button id="pullCommunityReferrals">Pull Community Referrals</button></td>
@@ -224,16 +224,16 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
         <div class="ke-tabmenu">
 
-            <div class="ke-tabmenu-item" data-tabid="queue_data">Incoming referrals</div>
+            <div class="ke-tabmenu-item" data-tabid="active_queue_data">Active referrals</div>
 
-            <div class="ke-tabmenu-item" data-tabid="archive_data">Outgoing referrals</div>
+            <div class="ke-tabmenu-item" data-tabid="completed_queue_data">Completed referrals</div>
 
-            <div class="ke-tabmenu-item" data-tabid="general_error_queue">Error queue</div>
+            <div class="ke-tabmenu-item" data-tabid="general_error_active_queue">Error active_queue</div>
 
         </div>
 
-        <div class="ke-tab" data-tabid="queue_data">
-            <table id="queue" cellspacing="0" cellpadding="0" width="100%">
+        <div class="ke-tab" data-tabid="active_queue_data">
+            <table id="active_queue" cellspacing="0" cellpadding="0" width="100%">
                 <tr>
                     <td style="width: 99%; vertical-align: top">
                         <div class="ke-panel-frame">
@@ -245,24 +245,23 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                     <table class="simple-table" width="100%">
                                         <thead>
                                         <tr>
-                                            <th class="clientNameColumn">Patient Identifier</th>
-                                            <th class="cccNumberColumn">Patient Name</th>
-                                            <th class="sampleTypeColumn">Message Type</th>
-                                            <th class="sampleTypeColumn">Discontinuation Reason</th>
-                                            <th class="sampleTypeColumn">TransferOut Date</th>
-                                            <th class="dateRequestColumn">Appointment Date</th>
-                                            <th class="dateRequestColumn">TO Acceptance Date</th>
-                                            <th class="dateRequestColumn">Date created</th>
+                                            <th class="firstNameColumn">First Name</th>
+                                            <th class="givenNameColumn">Middle Name</th>
+                                            <th class="lastNameColumn">Last Name</th>
+                                            <th class="genderColumn">Sex</th>
+                                            <th class="dateOfBirthColumn">DOB</th>
+                                            <th class="status">Status</th>
+                                            <th class="action">Action</th>
                                         </tr>
                                         </thead>
-                                        <tbody id="queue-list">
+                                        <tbody id="active_queue-list">
 
                                         </tbody>
 
                                     </table>
 
-                                    <div id="queue-pager">
-                                        <ul id="queuePagination" class="pagination-sm"></ul>
+                                    <div id="active_queue-pager">
+                                        <ul id="active_queuePagination" class="pagination-sm"></ul>
                                     </div>
                                 </fieldset>
                             </div>
@@ -272,8 +271,8 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             </table>
         </div>
 
-        <div class="ke-tab" data-tabid="archive_data">
-            <table id="archive" cellspacing="0" cellpadding="0" width="100%">
+        <div class="ke-tab" data-tabid="completed_queue_data">
+            <table id="completed_queue" cellspacing="0" cellpadding="0" width="100%">
                 <tr>
                     <td style="width: 99%; vertical-align: top">
                         <div class="ke-panel-frame">
@@ -285,24 +284,23 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                     <table class="simple-table" width="100%">
                                         <thead>
                                         <tr>
-                                            <th class="clientNameColumn">Patient Identifier</th>
-                                            <th class="cccNumberColumn">Patient Name</th>
-                                            <th class="sampleTypeColumn">Message Type</th>
-                                            <th class="sampleTypeColumn">Discontinuation Reason</th>
-                                            <th class="sampleTypeColumn">TransferOut Date</th>
-                                            <th class="dateRequestColumn">Appointment Date</th>
-                                            <th class="dateRequestColumn">TO Acceptance Date</th>
-                                            <th class="dateRequestColumn">Date created</th>
+                                            <th class="firstNameColumn">First Name</th>
+                                            <th class="givenNameColumn">Middle Name</th>
+                                            <th class="lastNameColumn">Last Name</th>
+                                            <th class="genderColumn">Sex</th>
+                                            <th class="dateOfBirthColumn">DOB</th>
+                                            <th class="status">Status</th>
+                                            <th class="action">Action</th>
                                         </tr>
                                         </thead>
-                                        <tbody id="archive-list">
+                                        <tbody id="completed_queue-list">
 
                                         </tbody>
 
                                     </table>
 
-                                    <div id="archive-pager">
-                                        <ul id="archivePagination" class="pagination-sm"></ul>
+                                    <div id="completed-pager">
+                                        <ul id="completed_queuePagination" class="pagination-sm"></ul>
                                     </div>
                                 </fieldset>
                             </div>
@@ -311,230 +309,76 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                 </tr>
             </table>
         </div>
-        
-        <div class="ke-tab" data-tabid="general_error_queue">
-            <table id="general-error" cellspacing="0" cellpadding="0" width="100%">
-                <tr>
-                    <td style="width: 99%; vertical-align: top">
-                        <div class="ke-panel-frame">
-                            <div class="ke-panel-heading"></div>
-
-                            <div class="ke-panel-content">
-                                    <fieldset>
-                                        <legend></legend>
-                                        <table class="simple-table" width="100%">
-                                            <thead>
-                                            <tr>
-                                                <div style="float: right; padding-right: 60px; padding-bottom: 10px;">
-                                                    <input type="button" id="requeueGeneralErrors" value="Re-queue" disabled/>
-                                                    <input type="button" id="deleteGeneralErrors" value="Delete" disabled/>
-                                                </div>
-                                            </tr>
-                                            <tr>
-                                                <th class="clientNameColumn">Patient Identifier</th>
-                                                <th class="cccNumberColumn">Patient Name</th>
-                                                <th class="sampleTypeColumn">Message Type</th>
-                                                <th class="sampleTypeColumn">Discontinuation Reason</th>
-                                                <th class="sampleTypeColumn">TransferOut Date</th>
-                                                <th class="dateRequestColumn">Appointment Date</th>
-                                                <th class="dateRequestColumn">TO Acceptance Date</th>
-                                                <th class="errorColumn">Error</th>
-                                                <th class="selectColumn"><input type="checkbox" id="chk-general-select-all"/></th>
-                                            </tr>
-
-                                            </thead>
-                                            <tbody id="general-error-list">
-
-                                            </tbody>
-
-                                        </table>
-
-                                        <div id="pager">
-                                            <ul id="generalErrorPagination" class="pagination-sm"></ul>
-                                        </div>
-                                    </fieldset>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            </table>
-        </div>
     </div>
-
-    <div class="bootstrap-iso">
-
-        <div class="modal fade" id="showViewPayloadDialog" tabindex="-1" role="dialog" aria-labelledby="backdropLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
-                <div class="modal-content">
-                    <div class="modal-header modal-header-primary">
-                        <h5 class="modal-title" id="backdropLabel">View Payload</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <span style="color: firebrick" id="msgBox"></span>
-                        <pre id="json-view-display"></pre>
-                    </div>
-                    <div class="modal-footer modal-footer-primary">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="modal fade" id="showEditPayloadDialog" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
-                <div class="modal-content">
-                    <div class="modal-header modal-header-primary">
-                        <h5 class="modal-title" id="staticBackdropLabel">Edit Payload</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <span style="color: firebrick" id="msgBox"></span>
-                        <pre id="json-edit-display"></pre>
-                    </div>
-                    <div class="modal-footer modal-footer-primary">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="button" class="savePayloadButton btn btn-primary">Save and Requeue</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="modal fade" id="showConfirmationBox" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="staticConfirmLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
-                <div class="modal-content">
-                    <div class="modal-header modal-header-primary">
-                        <h5 class="modal-title" id="staticConfirmLabel">Please Confirm</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <span style="color: firebrick" id="msgBox"></span>
-                        <pre id="json-confirm-display"></pre>
-                    </div>
-                    <div class="modal-footer modal-footer-primary">
-                        <button type="button" class="confirmNoButton btn btn-secondary" data-bs-dismiss="modal">No</button>
-                        <button type="button" class="confirmYesButton btn btn-primary">Yes</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="modal" id="showWaitBox" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="staticConfirmLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
-                <div class="modal-content">
-                    <div class="modal-header modal-header-primary">
-                        <h5 class="modal-title" id="staticConfirmLabel">Please Wait</h5>
-                    </div>
-                    <div class="modal-body">
-                        <div>
-                            <span style="padding:2px; display:inline-block;"> <img src="${ui.resourceLink("afyastat", "images/loading.gif")}" /> </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="modal" id="showInfoBox" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="staticInfoLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
-                <div class="modal-content">
-                    <div class="modal-header modal-header-primary">
-                        <h5 class="modal-title" id="staticInfoLabel">Info</h5>
-                    </div>
-                    <div class="modal-body">
-                        <span style="color: firebrick" id="msgBox"></span>
-                        <pre id="json-info-display"></pre>
-                    </div>
-                    <div class="modal-footer modal-footer-primary">
-                        <button type="button" class="confirmOkButton btn btn-secondary" data-bs-dismiss="modal">OK</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
 </div>
 
 <script type="text/javascript">
-
+    var loadingImageURL = ui.resourceLink("kenyaemr", "images/loading.gif");
+    var showLoadingImage = '<span style="padding:2px; display:inline-block;"> <img src="' + loadingImageURL + '" /> </span>';
     var selectedGeneralErrors = [];
     var selectedRegistrationErrors = [];
     //On ready
     jq = jQuery;
     jq(function () {
-        var loadingImageURL = ui.resourceLink("kenyaemr", "images/loading.gif");
-        var showLoadingImage = '<span style="padding:2px; display:inline-block;"> <img src="' + loadingImageURL + '" /> </span>';
-        // apply pagination
 
-        var generalErrorPaginationDiv = jq('#generalErrorPagination');
-        var queuePaginationDiv = jq('#queuePagination');
-        var archivePaginationDiv = jq('#archivePagination');
+        // apply pagination for active referrals
+        var active_queuePaginationDiv = jq('#active_queuePagination');
+        var active_queueListDisplayArea = jq('#active_queue-list');
 
-        var generalErrorListDisplayArea = jq('#general-error-list');
-        var queueListDisplayArea = jq('#queue-list');
-        var archiveListDisplayArea = jq('#archive-list');
+        var numberOfRecordsToProcess = ${ activeReferralListSize };
+        var active_queueRecords = ${ activeReferralList };
+        var active_queueDataDisplayRecords = [];
 
-        var numberOfGeneralErrorRecords = ${ generalErrorListSize };
-        var numberOfRecordsToProcess = ${ queueListSize };
-        var numberOfArchivesToProcess = ${ archiveListSize };
-
-        var generalErrorRecords = ${ generalErrorList };
-        var queueRecords = ${ queueList };
-        var archiveRecords = ${ archiveList };
-
-        var generalErrorDataDisplayRecords = [];
-        var queueDataDisplayRecords = [];
-        var archiveDataDisplayRecords = [];
 
         var recPerPage = 10;
+        var active_queueStartPage = 1;
+        var totalactive_queuePages = Math.ceil(numberOfRecordsToProcess / recPerPage);
 
-        var generalErrorStartPage = 1;
-        var queueStartPage = 1;
-        var archiveStartPage = 1;
-
-        var totalGeneralErrorPages = Math.ceil(numberOfGeneralErrorRecords / recPerPage);
-        var totalQueuePages = Math.ceil(numberOfRecordsToProcess / recPerPage);
-        var totalArchivePages = Math.ceil(numberOfArchivesToProcess / recPerPage);
-
-        var visibleGeneralErrorPages = 1;
-        var visibleQueuePages = 1;
-        var visibleArchivePages = 1;
+        var visibleactive_queuePages = 1;
 
         var payloadEditor = {};
 
         var sendCount = 0;
 
-        if (totalGeneralErrorPages <= 5) {
-            visibleGeneralErrorPages = totalGeneralErrorPages;
-        } else {
-            visibleGeneralErrorPages = 5;
-        }
 
-        if (totalArchivePages <= 5) {
-            visibleArchivePages = totalArchivePages;
+        if (totalactive_queuePages <= 5) {
+            visibleactive_queuePages = totalactive_queuePages;
         } else {
-            visibleArchivePages = 5;
-        }
-
-        if (totalQueuePages <= 5) {
-            visibleQueuePages = totalQueuePages;
-        } else {
-            visibleQueuePages = 5;
+            visibleactive_queuePages = 5;
         }
 
 
         if(numberOfRecordsToProcess > 0) {
-            apply_pagination(queuePaginationDiv, queueListDisplayArea, totalQueuePages, visibleQueuePages, queueRecords, queueDataDisplayRecords, 'queue', queueStartPage); // records in queue
+            apply_pagination(active_queuePaginationDiv, active_queueListDisplayArea, totalactive_queuePages, visibleactive_queuePages, active_queueRecords, active_queueDataDisplayRecords, 'active_queue', active_queueStartPage); // records in active_queue
         }
 
-        if (numberOfArchivesToProcess > 0) {
-            apply_pagination(archivePaginationDiv, archiveListDisplayArea, totalArchivePages, visibleArchivePages, archiveRecords, archiveDataDisplayRecords, 'archive', archiveStartPage); // archives
+
+        // apply pagination for completed referrals
+        var completed_queuePaginationDiv = jq('#completed_queuePagination');
+        var completed_queueListDisplayArea = jq('#completed_queue-list');
+
+        var numberOfCompletedRecordsToProcess = ${ completedReferralListSize };
+        var completed_queueRecords = ${ completedReferralList };
+        var completed_queueDataDisplayRecords = [];
+
+
+        var completed_queueStartPage = 1;
+        var totalcompleted_queuePages = Math.ceil(numberOfCompletedRecordsToProcess / recPerPage);
+
+        var visiblecompleted_queuePages = 1;
+
+
+
+        if (totalcompleted_queuePages <= 5) {
+            visiblecompleted_queuePages = totalcompleted_queuePages;
+        } else {
+            visiblecompleted_queuePages = 5;
         }
 
-        if (numberOfGeneralErrorRecords > 0) {
-            apply_pagination(generalErrorPaginationDiv, generalErrorListDisplayArea, totalGeneralErrorPages, visibleGeneralErrorPages, generalErrorRecords, generalErrorDataDisplayRecords, 'general-error', generalErrorStartPage); // general records in error
-        }
 
+        if(numberOfCompletedRecordsToProcess > 0) {
+            apply_completed_pagination(completed_queuePaginationDiv, completed_queueListDisplayArea, totalcompleted_queuePages, visiblecompleted_queuePages, completed_queueRecords, completed_queueDataDisplayRecords, 'completed_queue', completed_queueStartPage); // records in completed_queue
+        }
 
 
         function apply_pagination(paginationDiv, recordsDisplayArea, totalPages, visiblePages, allRecords, recordsToDisplay, tableId, page) {
@@ -551,324 +395,88 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             });
         }
 
-        function AsyncConfirmYesNo(title, msg, yesFn, noFn) {
-            jq("#staticConfirmLabel").html(title);
-            jq("#json-confirm-display").html(msg);
-            jq(".confirmYesButton").off('click').click(function () {
-                yesFn();
-                jq('#showConfirmationBox').modal("hide");
-            });
-            jq(".confirmNoButton").off('click').click(function () {
-                noFn();
-                jq('#showConfirmationBox').modal("hide");
-            });
-            jq('#showConfirmationBox').modal('show');
-        }
-
-        function AsyncShowInfo(title, msg, okFn) {
-            jq("#staticInfoLabel").html(title);
-            jq("#json-info-display").html(msg);
-            jq(".confirmOkButton").off('click').click(function () {
-                okFn();
-                jq('#showInfoBox').modal("hide");
-            });
-            jq('#showInfoBox').modal('show');
-        }
-
-        function reloadPage() {
-            document.location.reload();
-        }
-
-        jq(document).on('click','.mergeButton',function(){
-            ui.navigate('afyastat', 'mergePatients', { queueUuid: jq(this).val(),  returnUrl: location.href });
-        });
-
-        jq(document).on('click','.viewPayloadButton',function () {
-            var queueUuid = jq(this).val();
-            console.log("Checking for queue entry with uuid: " + queueUuid);
-
-            ui.getFragmentActionAsJson('afyastat', 'mergePatients', 'getMessagePayload', { queueUuid : queueUuid }, function (result) {
-                let payloadObject = [];
-                try {
-                    payloadObject = JSON.parse(result.payload);
-                } catch(ex) {
-                    payloadObject = JSON.parse("{}")
+        function apply_completed_pagination(paginationDiv, recordsDisplayArea, totalPages, visiblePages, allRecords, recordsToDisplay, tableId, page) {
+            paginationDiv.twbsPagination({
+                totalPages: totalPages,
+                visiblePages: visiblePages,
+                onPageClick: function (event, page) {
+                    displayRecordsIndex = Math.max(page - 1, 0) * recPerPage;
+                    endRec = (displayRecordsIndex) + recPerPage;
+                    //jq('#page-content').text('Page ' + page);
+                    recordsToDisplay = allRecords.slice(displayRecordsIndex, endRec);
+                    generate_completed_table(recordsToDisplay, recordsDisplayArea, tableId);
                 }
-                
-                jq('#json-view-display').empty();
-                jq('#json-view-display').jsonViewer(payloadObject,{
-                    withQuotes:true,
-                    rootCollapsable:true
-                });
             });
-
-            jq('#showViewPayloadDialog').modal('show');
-        });
-
-
-        // used to create new registration and bypass any patient matching on the provided patient demographics
-        jq(document).on('click','.createButton',function () {
-            var queueUuid = jq(this).val();
-            ui.getFragmentActionAsJson('afyastat', 'mergePatients', 'createNewRegistration', { queueUuid : queueUuid }, function (result) {
-                document.location.reload();
-            });
-        });
-
-        //Enable or Disable Requeue and Delete button on incoming queue depending on condition of queue item selection 
-        jq(".selectGeneralElement").change(function() {
-            let len = jq('.selectGeneralElement:checked').length;
-            if (len > 0) {
-                jq('#requeueGeneralErrors').attr('disabled', false);
-                jq('#deleteGeneralErrors').attr('disabled', false);
-            } else {
-                jq('#requeueGeneralErrors').attr('disabled', true);
-                jq('#deleteGeneralErrors').attr('disabled', true);
-            }
-        });
-
-        //Enable or Disable Requeue and Delete button on incoming queue depending on condition of queue item selection 
-        jq(".selectRegistrationElement").change(function() {
-            let len = jq('.selectRegistrationElement:checked').length;
-            if (len > 0) {
-                jq('#requeueRegistrationErrors').attr('disabled', false);
-                jq('#deleteRegistrationErrors').attr('disabled', false);
-            } else {
-                jq('#requeueRegistrationErrors').attr('disabled', true);
-                jq('#deleteRegistrationErrors').attr('disabled', true);
-            }
-        });
-
-        //Enable or Disable Requeue and Delete button on incoming queue depending on condition of queue item selection 
-        jq("#chk-general-select-all").change(function() {
-            let len = jq('.selectGeneralElement:checked').length;
-            if (len > 0) {
-                jq('#requeueGeneralErrors').attr('disabled', false);
-                jq('#deleteGeneralErrors').attr('disabled', false);
-            } else {
-                jq('#requeueGeneralErrors').attr('disabled', true);
-                jq('#deleteGeneralErrors').attr('disabled', true);
-            }
-        });
-
-        //Enable or Disable Requeue and Delete button on incoming queue depending on condition of queue item selection 
-        jq("#chk-registration-select-all").change(function() {
-            let len = jq('.selectRegistrationElement:checked').length;
-            if (len > 0) {
-                jq('#requeueRegistrationErrors').attr('disabled', false);
-                jq('#deleteRegistrationErrors').attr('disabled', false);
-            } else {
-                jq('#requeueRegistrationErrors').attr('disabled', true);
-                jq('#deleteRegistrationErrors').attr('disabled', true);
-            }
-        });
-
-        // population general error selection list
-        jq(document).on('click','.selectGeneralElement',function () {
-            var queueUuid = jq(this).val();
-            if (jq(this).is(":checked")) {
-                selectedGeneralErrors.push(queueUuid);
-            }
-            else {
-                 var elemIndex = selectedGeneralErrors.indexOf(queueUuid);
-                 if (elemIndex > -1) {
-                    selectedGeneralErrors.splice(elemIndex, 1);
-                 }
-                 jq('#chk-general-select-all').prop('checked', false);
-             }
-        });
-
-        // population registration error selection list
-        jq(document).on('click','.selectRegistrationElement',function () {
-            var queueUuid = jq(this).val();
-            if (jq(this).is(":checked")) {
-                selectedRegistrationErrors.push(queueUuid);
-            }
-            else {
-                 var elemIndex = selectedRegistrationErrors.indexOf(queueUuid);
-                 if (elemIndex > -1) {
-                    selectedRegistrationErrors.splice(elemIndex, 1);
-                 }
-                 jq('#chk-registration-select-all').prop('checked', false);
-             }
-        });
-
-        // handle general select all
-        jq(document).on('click','#chk-general-select-all',function () {
-            //clear selection list
-            selectedGeneralErrors = [];
-            if(jq(this).is(':checked')) {
-                jq('.selectGeneralElement').prop('checked', true);
-                // populate the list with all elements
-                for (var i = 0; i < generalErrorRecords.length; i++) {
-                    let uuid = generalErrorRecords[i].uuid;
-                    selectedGeneralErrors.push(uuid);
-                }
-            }
-            else {
-                jq('.selectGeneralElement').prop('checked', false);
-            }
-        });
-
-        // handle registration select all
-        jq(document).on('click','#chk-registration-select-all',function () {
-            //clear selection list
-            selectedRegistrationErrors = [];
-            if(jq(this).is(':checked')) {
-                jq('.selectRegistrationElement').prop('checked', true);
-                // populate the list with all elements
-                for (var i = 0; i < registrationErrorRecords.length; i++) {
-                    let uuid = registrationErrorRecords[i].uuid;
-                    selectedRegistrationErrors.push(uuid);
-                }
-            }
-            else {
-                jq('.selectRegistrationElement').prop('checked', false);
-            }
-        });
-
-        // handles button that re-queues general errors
-        jq(document).on('click','#requeueGeneralErrors',function () {
-            AsyncConfirmYesNo("Please Confirm", "Are you sure you want to requeue?", requeueGeneralErrors, () => {});        
-        });
-
-        // re-queues general errors once user confirms
-        function requeueGeneralErrors() {
-            if(selectedGeneralErrors.length > 0) {
-                jq('#showWaitBox').modal('show');
-                requeueAll(selectedGeneralErrors);         
-            }
-            jq('#chk-general-select-all').prop('checked', false);
-        }
-
-        // handles button than re-queues registration errors
-        jq(document).on('click','#requeueRegistrationErrors',function () {
-            AsyncConfirmYesNo("Please Confirm", "Are you sure you want to requeue?", requeueRegistrationErrors, () => {});
-        });
-
-        // re-queues registration errors once user confirms
-        function requeueRegistrationErrors() {
-            if(selectedRegistrationErrors.length > 0) {
-                jq('#showWaitBox').modal('show');
-                requeueAll(selectedRegistrationErrors);
-            }
-            jq('#chk-registration-select-all').prop('checked', false);
-        }
-
-        // handles button for deleting general errors
-        jq(document).on('click','#deleteGeneralErrors',function () {
-            AsyncConfirmYesNo("Please Confirm", "Are you sure you want to delete?", deleteGeneralErrors, () => {});
-        });
-
-        // deletes general errors once user confirms
-        function deleteGeneralErrors() {
-            if(selectedGeneralErrors.length > 0) {
-                jq('#showWaitBox').modal('show');
-                deleteAll(selectedGeneralErrors);
-            }
-            jq('#chk-general-select-all').prop('checked', false);
-        }
-
-        // handles button for deleting registration errors
-        jq(document).on('click','#deleteRegistrationErrors',function () {
-            AsyncConfirmYesNo("Please Confirm", "Are you sure you want to delete?", deleteRegistrationErrors, () => {});
-        });
-
-        // deletes registration errors once user confirms
-        function deleteRegistrationErrors() {
-            if(selectedRegistrationErrors.length > 0) {
-                jq('#showWaitBox').modal('show');
-                deleteAll(selectedRegistrationErrors);
-            }
-            jq('#chk-registration-select-all').prop('checked', false);
-        }
-
-        // deletes all the given error items
-        function deleteAll(selectedErrors) {
-            //Delete the selected errors, 10 at a time
-            let count = 10;
-            sendCount = 0;
-            let totalItems = selectedErrors.length;
-            let loopThrough = (totalItems > 0) ? totalItems : 1;
-            let pages = Math.ceil(loopThrough * 1.00 / count * 1.00);
-
-            for (var i = 0; i < pages; i++) {
-                let begin = i * count;
-                let end = begin + count;
-                let sliced = selectedErrors.slice(begin, end);
-                let listToSubmit = sliced.join();
-                // lets delete this page
-                ui.getFragmentActionAsJson('kenyaemrIL', 'interopManager', 'purgeErrors', { errorList : listToSubmit }, function (result) {
-                    sendCount++;
-                    console.log("Delete items: Finished sending page. Sendcount: " + sendCount);
-                    if(sendCount >= pages)
-                    {
-                        jq('#showWaitBox').modal('hide').promise().done( function () {
-                            AsyncShowInfo("Success", "Successfully Deleted", reloadPage); 
-                        } )
-                    }
-                });
-            }
-        }
-
-        // requeues all the given error items
-        function requeueAll(selectedErrors) {
-            //Requeue the selected errors, 10 at a time
-            let count = 10;
-            sendCount = 0;
-            let totalItems = selectedErrors.length;
-            let loopThrough = (totalItems > 0) ? totalItems : 1;
-            let pages = Math.ceil(loopThrough * 1.00 / count * 1.00);
-
-            for (var i = 0; i < pages; i++) {
-                let begin = i * count;
-                let end = begin + count;
-                let sliced = selectedErrors.slice(begin, end);
-                let listToSubmit = sliced.join();
-                // lets requeue this page
-                ui.getFragmentActionAsJson('kenyaemrIL', 'interopManager', 'requeueErrors', { errorList : listToSubmit }, function (result) {
-                    sendCount++;
-                    if(sendCount >= pages)
-                    {
-                        jq('#showWaitBox').modal('hide').promise().done( function () {
-                            AsyncShowInfo("Success", "Successfully Requeued", reloadPage); 
-                        } )
-                    }
-                });
-            }
         }
 
         // handle click event of the fetch community referrals
         jq("#pullCommunityReferrals").click( function() {
-            //Run the fetch task
+            //Run the fetch tasks
             jQuery("#pull-msgBox").hide();
             console.log('Starting the fetch task!');
             // show spinner
-          //  display_loading_validate_identifier(true);
+            display_loading_spinner(true);
             jQuery.getJSON('${ ui.actionLink("kenyaemrIL", "referralsDataExchange", "pullCommunityReferralsFromFhir")}')
                    .success(function (data) {
                     if(data.success === "true") {
                         // Hide spinner
-                       // display_loading_validate_identifier(false);
+                        display_loading_spinner(false);
+                        console.log("Data ==>"+data);
                         console.log("Successfully pulled referral records: ");
                         jQuery("#pull-msgBox").text("Successfully pulled referral records");
                         jQuery("#pull-msgBox").show();
                     }else{
-                      //  display_loading_validate_identifier(false);
+                        console.log("Data ==>"+data);
+                        display_loading_spinner(false);
                         jQuery("#pull-msgBox").text("Error pulling referral records: Check your network");
+                        jQuery("#pull-msgBox").show();
+                    }
+                   })
+                .fail(function (err) {
+                    // Hide spinner
+                    console.log("Error fetching referral records: " + JSON.stringify(err));
+                    // Hide spinner
+                    //   display_loading_validate_identifier(false);
+                    jQuery("#pull-msgBox").text("Could not pull referral records");
+                    jQuery("#pull-msgBox").show();
+
+                    }
+                )
+        });
+
+           jq(document).on('click','.updateButton',function(){
+            ui.navigate('kenyaemr', 'clinician/clinicianViewPatient', { patientId: jq(this).val(),  returnUrl: location.href });
+             // Update referral_status PA
+            jQuery.getJSON('${ ui.actionLink("kenyaemrIL", "referralsDataExchange", "completeClientReferral")}',
+                {
+                    'patientId': jq(this).val()
+                })
+                .success(function (data) {
+                    if(data.success === "true") {
+                        // Hide spinner
+                        display_loading_spinner(false);
+                        console.log("Successfully updated client referra: ");
+                        jQuery("#pull-msgBox").text("Successfully updated client referral");
+                        jQuery("#pull-msgBox").show();
+                    }else{
+                        console.log("Data ==>"+data);
+                        display_loading_spinner(false);
+                        jQuery("#pull-msgBox").text("Error updating client referral");
                         jQuery("#pull-msgBox").show();
                     }
                 })
                 .fail(function (err) {
                         // Hide spinner
-                        console.log("Error fetching referral records: " + JSON.stringify(err));
+                        console.log("Error updating client referral: " + JSON.stringify(err));
                         // Hide spinner
-                     //   display_loading_validate_identifier(false);
-                        jQuery("#pull-msgBox").text("Could not pull referral records");
+                        //   display_loading_validate_identifier(false);
+                        jQuery("#pull-msgBox").text("Could upated client referral");
                         jQuery("#pull-msgBox").show();
 
                     }
                 )
         });
+
 
     });
 
@@ -878,36 +486,56 @@ tr:nth-child(even) {background-color: #f2f2f2;}
         for (var i = 0; i < displayRecords.length; i++) {
 
             tr = jq('<tr/>');
-            tr.append("<td>" + displayRecords[i].cccNumber + "</td>");
+            tr.append("<td>" + displayRecords[i].givenName + "</td>");
 
-            tr.append("<td>" + displayRecords[i].patientName + "</td>");
-            tr.append("<td>" + displayRecords[i].messageType + "</td>");
-            tr.append("<td>" + displayRecords[i].discontinuationReason + "</td>");
-            tr.append("<td>" + displayRecords[i].transferOutDate + "</td>");
-            tr.append("<td>" + displayRecords[i].appointmentDate + "</td>");
-            tr.append("<td>" + displayRecords[i].toAcceptanceDate + "</td>");
+            tr.append("<td>" + displayRecords[i].middleName + "</td>");
+            tr.append("<td>" + displayRecords[i].familyName + "</td>");
+            tr.append("<td>" + displayRecords[i].gender +"</td>");
+            tr.append("<td>" + displayRecords[i].birthdate + "</td>");
+            tr.append("<td>" + displayRecords[i].status +"</td>");
+            var actionTd = jq('<td/>');
 
-            if (tableId === 'general-error') {
-                tr.append("<td>" + displayRecords[i].error + "</td>");
-            }
-            tr.append("<td>" + displayRecords[i].dateCreated + "</td>");
+            var btnView = jq('<button/>', {
+                text: 'Update client',
+                class: 'updateButton',
+                value: displayRecords[i].id
+            });
 
-            if (tableId === 'general-error') {
-                var selectTd = jq('<td/>');
-                var selectCheckbox = jq('<input/>', {
-                    type: 'checkbox',
-                    class: 'selectGeneralElement',
-                    value: displayRecords[i].uuid
-                });
+            actionTd.append(btnView);
 
-                selectTd.append(selectCheckbox);
-                tr.append(selectTd);
-            }
-
+            tr.append(actionTd);
             displayObject.append(tr);
         }
     }
-    function display_loading_validate_identifier(status) {
+
+    function generate_completed_table(displayRecords, displayObject, tableId) {
+        var tr;
+        displayObject.html('');
+        for (var i = 0; i < displayRecords.length; i++) {
+
+            tr = jq('<tr/>');
+            tr.append("<td>" + displayRecords[i].givenName + "</td>");
+
+            tr.append("<td>" + displayRecords[i].middleName + "</td>");
+            tr.append("<td>" + displayRecords[i].familyName + "</td>");
+            tr.append("<td>" + displayRecords[i].gender +"</td>");
+            tr.append("<td>" + displayRecords[i].birthdate + "</td>");
+            tr.append("<td>" + displayRecords[i].status +"</td>");
+            var actionTd = jq('<td/>');
+
+            var btnView = jq('<button/>', {
+                text: 'Update SHR',
+                class: 'updateSHRButton',
+                value: displayRecords[i].id
+            });
+
+            actionTd.append(btnView);
+
+            tr.append(actionTd);
+            displayObject.append(tr);
+        }
+    }
+    function display_loading_spinner(status) {
         if(status) {
             jq('.wait-loading').empty();
             jq('.wait-loading').append(showLoadingImage);

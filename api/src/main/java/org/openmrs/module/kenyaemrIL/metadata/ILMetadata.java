@@ -29,6 +29,7 @@ public class ILMetadata extends AbstractMetadataBundle {
 
 		public static final String IL_PATIENT_SOURCE= "ac9a19f2-88af-4f3b-b4c2-f6e57c0d89af";
 		public static final String REFERRAL_SOURCE= "c4281b3c-6c01-4213-bd3c-a52f8f6fe223";
+		public static final String REFERRAL_STATUS= "df7e9996-23b5-4f66-a799-97498d19850d";
 	}
 	/**
 	 * @see AbstractMetadataBundle#install()
@@ -39,5 +40,7 @@ public class ILMetadata extends AbstractMetadataBundle {
 				String.class, null, false, 5.0, _PersonAttributeType.IL_PATIENT_SOURCE));
 		install(personAttributeType("Referral Source", "Referral Source",
 				String.class, null, false, 5.1, _PersonAttributeType.REFERRAL_SOURCE));
+		install(personAttributeType("Referral status", "Referral status",
+				String.class, null, false, 5.1, _PersonAttributeType.REFERRAL_STATUS));
 	}
 }

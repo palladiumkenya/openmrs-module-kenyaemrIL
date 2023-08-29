@@ -26,6 +26,7 @@ import org.openmrs.util.PrivilegeConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Arrays;
 import java.util.List;
@@ -56,6 +57,7 @@ public class ReferralsDataExchangeFragmentController {
      * @return
      */
     public SimpleObject pullCommunityReferralsFromFhir() {
+        String res = "";
         System.out.println("Fhir :Start pullCommunityReferralsFromFhir ==>");
         Bundle serviceRequestResourceBundle;
         Bundle patientResourceBundle;
@@ -65,11 +67,10 @@ public class ReferralsDataExchangeFragmentController {
         org.hl7.fhir.r4.model.ServiceRequest fhirServiceRequest = null;
         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
         serviceRequestResourceBundle = fhirConfig.fetchReferrals();
-        //Logging the string value
         System.out.println(fhirConfig.getFhirContext().newJsonParser().encodeResourceToString(serviceRequestResourceBundle));
      if (!serviceRequestResourceBundle.getEntry().isEmpty()) {
          for (int i = 0; i < serviceRequestResourceBundle.getEntry().size(); i++) {
-             fhirServiceRequestResource = serviceRequestResourceBundle.getEntry().get(0).getResource();
+             fhirServiceRequestResource = serviceRequestResourceBundle.getEntry().get(i).getResource();
              System.out.println("Fhir : Checking Service request is null ==>");
              if (fhirServiceRequestResource != null) {
                  System.out.println("Fhir : Service request is not null ==>");
@@ -176,6 +177,15 @@ public class ReferralsDataExchangeFragmentController {
                         patient.addAttribute(referralSourceAttribute);
                         patientService.savePatient(patient);
                     }
+                    //Assign  active referral_status attribute
+                    PersonAttribute referralStatusAttribute = new PersonAttribute();
+                    PersonAttributeType referralStatusAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("df7e9996-23b5-4f66-a799-97498d19850d");
+                    if (referralStatusAttributeType != null) {
+                        referralStatusAttribute.setAttributeType(referralStatusAttributeType);
+                        referralStatusAttribute.setValue("Active");
+                        patient.addAttribute(referralStatusAttribute);
+                        patientService.savePatient(patient);
+                    }
                 }
             }else {
                 log.error("Cannot register: Patient with similar NUPI exists:");
@@ -189,6 +199,24 @@ public class ReferralsDataExchangeFragmentController {
          //TODO:Use FHIR 2 method to persist patient
         // MethodOutcome results = patientResourceProvider.createPatient(fhirPatient);
         System.out.println("Error occured ==>"+errorOccured);
+
+    }
+
+    public void completeClientReferral(@RequestParam("patientId") Integer patientId) {
+
+                    //Update  referral_status attribute to completed status
+        System.out.println("Patient ID ==>"+patientId);
+        System.out.println("Here ==>");
+        PatientService patientService = Context.getPatientService();
+        Patient patient = patientService.getPatient(patientId);
+        PersonAttribute referralStatusAttribute = new PersonAttribute();
+        PersonAttributeType referralStatusAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("df7e9996-23b5-4f66-a799-97498d19850d");
+        if (referralStatusAttributeType != null) {
+            referralStatusAttribute.setAttributeType(referralStatusAttributeType);
+            referralStatusAttribute.setValue("Completed");
+            patient.addAttribute(referralStatusAttribute);
+            patientService.savePatient(patient);
+        }
 
     }
 
