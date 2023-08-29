@@ -377,16 +377,13 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     }
 
     @Override
-    public ExpectedTransferInPatients getTransferInPatient(Patient patient) {
+    public List<ExpectedTransferInPatients> getTransferInPatient(Patient patient) {
         if (patient == null) return null;
         String stringQuery = "SELECT expectedTransferInPatient FROM ExpectedTransferInPatients AS expectedTransferInPatient WHERE patient = :patient AND retired = 0";
         Query query = this.sessionFactory.getCurrentSession().createQuery(
                 stringQuery);
         query.setParameter("patient", patient);
         List<ExpectedTransferInPatients> expectedTransferInPatients = query.list();
-        if (!expectedTransferInPatients.isEmpty()) {
-            return expectedTransferInPatients.get(0);
-        }
-        return null;
+        return expectedTransferInPatients;
     }
 }
