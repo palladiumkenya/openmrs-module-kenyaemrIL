@@ -61,7 +61,7 @@ public class ReferralsDataExchangeFragmentController {
      * Get community referrals for FHIR server       *
      * @return
      */
-    public SimpleObject pullCommunityReferralsFromFhir() {
+    public SimpleObject pullCommunityReferralsFromFhir() throws Exception {
         String res = "";
         System.out.println("Fhir :Start pullCommunityReferralsFromFhir ==>");
         Bundle serviceRequestResourceBundle;
@@ -112,6 +112,9 @@ public class ReferralsDataExchangeFragmentController {
                                 expectedTransferInPatients.setPatientSummary(fhirConfig.getFhirContext().newJsonParser().encodeResourceToString(fhirServiceRequest));
                                 expectedTransferInPatients.setServiceType("COMMUNITY");
                                 Context.getService(KenyaEMRILService.class).createPatient(expectedTransferInPatients);
+
+                                //updateShrReferral(savedPatient,fhirConfig);
+
                             }
                         }
 
@@ -132,16 +135,18 @@ public class ReferralsDataExchangeFragmentController {
 
     }
 
-    public void updateShrReferral(Patient patient) {
+    public void updateShrReferral(Patient patient, FhirConfig fhirConfig) throws Exception {
         List<ExpectedTransferInPatients> patientReferrals = Context.getService(KenyaEMRILService.class).getTransferInPatient(patient);
         List<ExpectedTransferInPatients> activeReferral = patientReferrals.stream().filter(p ->
                 p.getReferralStatus().equalsIgnoreCase("ACTIVE")).collect(Collectors.toList());
-        FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
         IParser parser=fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
 
         ServiceRequest serviceRequest;
         if (!activeReferral.isEmpty()) {
             serviceRequest = parser.parseResource(ServiceRequest.class, activeReferral.get(0).getPatientSummary());
+            System.out.println(serviceRequest.getStatus());
+            serviceRequest.setStatus(ServiceRequest.ServiceRequestStatus.COMPLETED);
+            fhirConfig.updateReferral(serviceRequest);
         }
     }
 
