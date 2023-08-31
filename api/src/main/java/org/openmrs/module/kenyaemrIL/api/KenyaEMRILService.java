@@ -238,4 +238,6 @@ public interface KenyaEMRILService extends OpenmrsService {
     List<ExpectedTransferInPatients> getTransferInPatient(Patient patient);
 
     List<ExpectedTransferInPatients> getCommunityReferrals(String serviceType,String referralStatus);
+
+    ExpectedTransferInPatients getCommunityReferralsById(Integer id);
 }

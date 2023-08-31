@@ -106,4 +106,6 @@ public interface KenyaEMRILDAO {
 
     List<ExpectedTransferInPatients> getCommunityReferrals(String serviceType, String referralStatus);
 
+    ExpectedTransferInPatients getCommunityReferralsById(Integer id);
+
 }
