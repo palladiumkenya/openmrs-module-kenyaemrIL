@@ -104,4 +104,6 @@ public interface KenyaEMRILDAO {
 
     List<ExpectedTransferInPatients> getTransferInPatient(Patient patient);
 
+    List<ExpectedTransferInPatients> getCommunityReferrals(String serviceType, String referralStatus);
+
 }

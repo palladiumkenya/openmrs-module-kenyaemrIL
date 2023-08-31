@@ -63,5 +63,23 @@
 
         <property name="serviceType" type="java.lang.String"
                   column="service_type" not-null="true" length="50"/>
+
+        <property name="clientFirstName" type="java.lang.String"
+                  column="first_name" not-null="true" length="255"/>
+
+        <property name="clientMiddleName" type="java.lang.String"
+                  column="middle_name" not-null="true" length="255"/>
+
+        <property name="clientLastName" type="java.lang.String"
+                  column="last_name" not-null="true" length="255"/>
+
+        <property name="clientGender" type="java.lang.String"
+                  column="sex" not-null="true" length="255"/>
+
+        <property name="clientBirthDate" type="java.util.Date"
+                  column="birth_date" not-null="true" length="19"/>
+
+        <property name="nupiNumber" type="java.lang.String"
+                  column="nupi" not-null="true" length="255"/>
     </class>
 </hibernate-mapping>

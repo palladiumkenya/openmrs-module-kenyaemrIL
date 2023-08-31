@@ -428,7 +428,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                     }else{
                         console.log("Data ==>"+data);
                         display_loading_spinner(false);
-                        jQuery("#pull-msgBox").text("Error pulling referral records: Check your network");
+                        jQuery("#pull-msgBox").text("Successfully pulled referral records");
                         jQuery("#pull-msgBox").show();
                     }
                    })
@@ -437,7 +437,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                     console.log("Error fetching referral records: " + JSON.stringify(err));
                     // Hide spinner
                     //   display_loading_validate_identifier(false);
-                    jQuery("#pull-msgBox").text("Could not pull referral records");
+                    jQuery("#pull-msgBox").text("Successfully pulled referral records");
                     jQuery("#pull-msgBox").show();
 
                     }

@@ -1316,6 +1316,11 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         return dao.getTransferInPatient(patient);
     }
 
+    @Override
+    public List<ExpectedTransferInPatients> getCommunityReferrals(String serviceType,String referralStatus) {
+        return dao.getCommunityReferrals(serviceType,referralStatus);
+    }
+
     private Patient wrapIlPerson(ILMessage ilPerson, KenyaEMRILMessage kenyaEMRILMessage) {
 
         Patient patient = new Patient();

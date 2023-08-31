@@ -18,6 +18,12 @@ public class ExpectedTransferInPatients extends BaseOpenmrsMetadata implements S
     private Date toAcceptanceDate;
     private String patientSummary;
     private String serviceType;
+    private String clientFirstName;
+    private String clientMiddleName;
+    private String clientLastName;
+    private String clientGender;
+    private Date clientBirthDate;
+    private String nupiNumber;
 
     public Integer getId() {
         return id;
@@ -99,5 +105,52 @@ public class ExpectedTransferInPatients extends BaseOpenmrsMetadata implements S
         this.serviceType = serviceType;
     }
 
+    public String getClientFirstName() {
+        return clientFirstName;
+    }
+
+    public void setClientFirstName(String clientFirstName) {
+        this.clientFirstName = clientFirstName;
+    }
+
+    public String getClientMiddleName() {
+        return clientMiddleName;
+    }
+
+    public void setClientMiddleName(String clientMiddleName) {
+        this.clientMiddleName = clientMiddleName;
+    }
+
+    public String getClientLastName() {
+        return clientLastName;
+    }
+
+    public void setClientLastName(String clientLastName) {
+        this.clientLastName = clientLastName;
+    }
+
+    public String getClientGender() {
+        return clientGender;
+    }
+
+    public void setClientGender(String clientGender) {
+        this.clientGender = clientGender;
+    }
+
+    public Date getClientBirthDate() {
+        return clientBirthDate;
+    }
+
+    public void setClientBirthDate(Date clientBirthDate) {
+        this.clientBirthDate = clientBirthDate;
+    }
+
+    public String getNupiNumber() {
+        return nupiNumber;
+    }
+
+    public void setNupiNumber(String nupiNumber) {
+        this.nupiNumber = nupiNumber;
+    }
 }
 
