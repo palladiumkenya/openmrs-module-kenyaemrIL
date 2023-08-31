@@ -271,9 +271,7 @@ public class ReferralsDataExchangeFragmentController {
     public SimpleObject addReferralCategoryAndReasons(@RequestParam("clientId") Integer clientId) throws Exception {
 
         //Update  referral category and reasons
-        System.out.println("Client ID ==>" + clientId);
-        System.out.println("Here ==>");
-        FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
+         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
 
         ExpectedTransferInPatients patientReferral = Context.getService(KenyaEMRILService.class).getCommunityReferralsById(clientId);
         IParser parser = fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
@@ -283,12 +281,6 @@ public class ReferralsDataExchangeFragmentController {
         if (patientReferral != null) {
 
             serviceRequest = parser.parseResource(ServiceRequest.class, patientReferral.getPatientSummary());
-            System.out.println(serviceRequest.getCategory());
-            System.out.println(serviceRequest.getCategory().get(0).getCoding().get(0).getDisplay());
-            System.out.println(serviceRequest.getReasonCode().get(0).getCoding().get(0).getDisplay());
-            System.out.println(serviceRequest.getReasonCode().get(0).getCoding().get(1).getDisplay());
-            System.out.println(serviceRequest.getReasonCode().get(0).getCoding().get(2).getDisplay());
-            System.out.println(serviceRequest.getReasonCode().get(0).getCoding().get(3).getDisplay());
 
             String category = "";
             if (!serviceRequest.getCategory().isEmpty()) {
