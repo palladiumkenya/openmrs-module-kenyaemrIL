@@ -20,7 +20,6 @@ import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
-import org.hl7.fhir.r4.model.codesystems.ServiceType;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
@@ -371,9 +370,10 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     @Override
     public List<ExpectedTransferInPatients> getAllTransferInsByServiceType(String serviceType) {
         Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(ExpectedTransferInPatients.class);
-        crit.add(Restrictions.eq("service_type", serviceType));
+        if(serviceType != null){
+            crit.add(Restrictions.eq("service_type", serviceType));
+          }
         return crit.list();
-
     }
 
     @Override
@@ -386,4 +386,17 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         List<ExpectedTransferInPatients> expectedTransferInPatients = query.list();
         return expectedTransferInPatients;
     }
+
+    @Override
+    public List<ExpectedTransferInPatients> getCommunityReferrals(String serviceType,String referralStatus) {
+        if (serviceType == null) return null;
+        String stringQuery = "SELECT expectedTransferInPatient FROM ExpectedTransferInPatients AS expectedTransferInPatient WHERE serviceType = :serviceType AND referralStatus = :referralStatus";
+        Query query = this.sessionFactory.getCurrentSession().createQuery(
+                stringQuery);
+        query.setParameter("serviceType", serviceType);
+        query.setParameter("referralStatus", referralStatus);
+        List<ExpectedTransferInPatients> getCommunityReferrals = query.list();
+        return getCommunityReferrals;
+    }
+
 }

@@ -133,7 +133,7 @@ public class ReferralsDataExchangeFragmentController {
         //Add name
         fillClientName(fhirPatient, expectedTransferInPatients);
         //Add birthdate
-        expectedTransferInPatients.setClientBirthDate(fhirPatient.getBirthDate().toString());
+        expectedTransferInPatients.setClientBirthDate(fhirPatient.getBirthDate());
         //Set Gender
         String gender = fhirPatient.getGender().getDisplay();
         System.out.println("Fhir client gender here ==>" + gender);

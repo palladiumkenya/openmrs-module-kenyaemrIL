@@ -22,7 +22,7 @@ public class ExpectedTransferInPatients extends BaseOpenmrsMetadata implements S
     private String clientMiddleName;
     private String clientLastName;
     private String clientGender;
-    private String clientBirthDate;
+    private Date clientBirthDate;
     private String nupiNumber;
 
     public Integer getId() {
@@ -137,11 +137,11 @@ public class ExpectedTransferInPatients extends BaseOpenmrsMetadata implements S
         this.clientGender = clientGender;
     }
 
-    public String getClientBirthDate() {
+    public Date getClientBirthDate() {
         return clientBirthDate;
     }
 
-    public void setClientBirthDate(String clientBirthDate) {
+    public void setClientBirthDate(Date clientBirthDate) {
         this.clientBirthDate = clientBirthDate;
     }
 
