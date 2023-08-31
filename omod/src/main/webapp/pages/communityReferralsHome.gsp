@@ -506,6 +506,37 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                 )
         });
 
+        jq(document).on('click','.updateSHRButton',function(){
+             // Update referral_status PA
+            jQuery.getJSON('${ ui.actionLink("kenyaemrIL", "referralsDataExchange", "updateShrReferral")}',
+                {
+                    'patientId': jq(this).val()
+                })
+                .success(function (data) {
+                    if(data.sucess === "true") {
+                        // Hide spinner
+                        display_loading_spinner(false);
+                        console.log("Successfully updated client referra: ");
+                        jQuery("#pull-msgBox").text("Successfully updated client referral");
+                        jQuery("#pull-msgBox").show();
+                    }else{
+                        console.log("Data ==>"+data);
+                        display_loading_spinner(false);
+                        jQuery("#pull-msgBox").text("Error updating client referral");
+                        jQuery("#pull-msgBox").show();
+                    }
+                })
+                .fail(function (err) {
+                        // Hide spinner
+                        console.log("Error updating client referral: " + JSON.stringify(err));
+                        // Hide spinner
+                        //   display_loading_validate_identifier(false);
+                        jQuery("#pull-msgBox").text("Could upated client referral");
+                        jQuery("#pull-msgBox").show();
+
+                    }
+                )
+        });
         jq(document).on('click','.viewButton',function(){
             //View referral category and reasons
             console.log("Am here ==>");
@@ -565,7 +596,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             var actionTd = jq('<td/>');
 
             var btnView = jq('<button/>', {
-                text: 'Update client',
+                text: 'Serve client',
                 class: 'updateButton',
                 value: displayRecords[i].id
             });

@@ -110,19 +110,27 @@ public class ReferralsDataExchangeFragmentController {
         return SimpleObject.create("success", "");
     }
 
-    public void updateShrReferral(Patient patient, FhirConfig fhirConfig) throws Exception {
-        List<ExpectedTransferInPatients> patientReferrals = Context.getService(KenyaEMRILService.class).getTransferInPatient(patient);
-        List<ExpectedTransferInPatients> activeReferral = patientReferrals.stream().filter(p -> p.getReferralStatus().equalsIgnoreCase("ACTIVE")).collect(Collectors.toList());
-        IParser parser = fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
+    public SimpleObject updateShrReferral(@RequestParam("patientId") Integer referral) throws Exception {
+        FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
 
-        ServiceRequest serviceRequest;
-        if (!activeReferral.isEmpty()) {
-            serviceRequest = parser.parseResource(ServiceRequest.class, activeReferral.get(0).getPatientSummary());
-            System.out.println(serviceRequest.getStatus());
-            System.out.println(serviceRequest.getCategory().get(0).getCoding().get(0).getDisplay());
-            serviceRequest.setStatus(ServiceRequest.ServiceRequestStatus.COMPLETED);
-            fhirConfig.updateReferral(serviceRequest);
+        KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
+        ExpectedTransferInPatients referred = service.getCommunityReferralsById(referral);
+        PersonAttribute referralStatusAttribute = new PersonAttribute();
+        PersonAttributeType referralStatusAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("df7e9996-23b5-4f66-a799-97498d19850d");
+        if (referralStatusAttributeType != null) {
+            referralStatusAttribute.setAttributeType(referralStatusAttributeType);
+            referralStatusAttribute.setValue("Completed");
+            referred.getPatient().addAttribute(referralStatusAttribute);
+            Context.getPatientService().savePatient(referred.getPatient());
         }
+
+        IParser parser = fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
+        ServiceRequest serviceRequest = parser.parseResource(ServiceRequest.class, referred.getPatientSummary());
+        System.out.println(serviceRequest.getStatus());
+        System.out.println(serviceRequest.getCategory().get(0).getCoding().get(0).getDisplay());
+        serviceRequest.setStatus(ServiceRequest.ServiceRequestStatus.COMPLETED);
+        fhirConfig.updateReferral(serviceRequest);
+        return SimpleObject.create("success", "true");
     }
 
     /**
