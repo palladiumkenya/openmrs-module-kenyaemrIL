@@ -474,19 +474,19 @@ tr:nth-child(even) {background-color: #f2f2f2;}
         });
 
            jq(document).on('click','.updateButton',function(){
-            ui.navigate('kenyaemr', 'clinician/clinicianViewPatient', { patientId: jq(this).val(),  returnUrl: location.href });
              // Update referral_status PA
             jQuery.getJSON('${ ui.actionLink("kenyaemrIL", "referralsDataExchange", "completeClientReferral")}',
                 {
                     'patientId': jq(this).val()
                 })
                 .success(function (data) {
-                    if(data.success === "true") {
+                    if(data.patientId !== " ") {
                         // Hide spinner
                         display_loading_spinner(false);
                         console.log("Successfully updated client referra: ");
                         jQuery("#pull-msgBox").text("Successfully updated client referral");
                         jQuery("#pull-msgBox").show();
+                        ui.navigate('kenyaemr', 'clinician/clinicianViewPatient', { patientId: data.patientId,  returnUrl: location.href });
                     }else{
                         console.log("Data ==>"+data);
                         display_loading_spinner(false);

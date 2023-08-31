@@ -12,8 +12,13 @@ import org.json.simple.parser.JSONParser;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Location;
 import org.openmrs.Patient;
+import org.openmrs.PatientIdentifier;
+import org.openmrs.PatientIdentifierType;
 import org.openmrs.PersonAttribute;
 import org.openmrs.PersonAttributeType;
+import org.openmrs.PersonName;
+import org.openmrs.module.metadatadeploy.MetadataUtils;
+import org.openmrs.module.idgen.service.IdentifierSourceService;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemr.nupi.UpiUtilsDataExchange;
@@ -42,6 +47,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -52,7 +58,10 @@ import java.util.stream.Collectors;
 public class ReferralsDataExchangeFragmentController {
     // Logger
     private static final Logger log = LoggerFactory.getLogger(ReferralsDataExchangeFragmentController.class);
-        @Qualifier("fhirR4")
+    public static final String OPENMRS_ID = "dfacd928-0370-4315-99d7-6ec1c9f7ae76";
+    public static final String NUPI = "f85081e2-b4be-4e48-b3a4-7994b69bb101";
+
+    @Qualifier("fhirR4")
     private FhirContext fhirContext;
 
     public FhirContext getFhirContext() {
@@ -181,7 +190,9 @@ public class ReferralsDataExchangeFragmentController {
         return null;
     }
 
-    // Create client referral data
+    /**
+     * Create client referral data from CR data
+     */
     public void persistReferralData(JSONObject crClient, FhirConfig fhirConfig, org.hl7.fhir.r4.model.ServiceRequest fhirServiceRequest) {
         ExpectedTransferInPatients expectedTransferInPatients = new ExpectedTransferInPatients();
         expectedTransferInPatients.setClientFirstName(String.valueOf(crClient.get("firstName")));
@@ -203,25 +214,19 @@ public class ReferralsDataExchangeFragmentController {
         System.out.println("Successfully persisted in expected referrals model ==>");
     }
 
-    public void completeClientReferral(@RequestParam("patientId") Integer patientId) throws Exception {
+    public SimpleObject completeClientReferral(@RequestParam("patientId") Integer referral) throws Exception {
+        KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
+        ExpectedTransferInPatients referred = service.getCommunityReferralsById(referral);
+        Patient patient = registerReferredPatient(referred);
+        if (patient != null) {
+            referred.setReferralStatus("COMPLETED");
+            referred.setPatient(patient);
+            service.createPatient(referred);
 
-        //Update  referral_status attribute to completed status
-        System.out.println("Patient ID ==>" + patientId);
-        System.out.println("Here ==>");
-        PatientService patientService = Context.getPatientService();
-        Patient patient = patientService.getPatient(patientId);
-        PersonAttribute referralStatusAttribute = new PersonAttribute();
-        PersonAttributeType referralStatusAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("df7e9996-23b5-4f66-a799-97498d19850d");
-        if (referralStatusAttributeType != null) {
-            referralStatusAttribute.setAttributeType(referralStatusAttributeType);
-            referralStatusAttribute.setValue("Completed");
-            patient.addAttribute(referralStatusAttribute);
-            patientService.savePatient(patient);
-            //Update fhir message status to complete
-            FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
-//            updateShrReferral(patient, fhirConfig);
+            return SimpleObject.create("patientId", patient.getPatientId());
         }
 
+        return SimpleObject.create("patientId", "");
     }
 
     public Location getDefaultLocation() {
@@ -238,40 +243,56 @@ public class ReferralsDataExchangeFragmentController {
 
     }
 
-    /** Todo Create patient from CR data */
-    private ExpectedTransferInPatients fillClientName(org.hl7.fhir.r4.model.Patient fhirPatient, ExpectedTransferInPatients expectedTransferInPatients) {
-        String familyName = "";
-        String givenName = "";
-        String middleName = "";
-        if (!fhirPatient.getName().get(0).isEmpty()) {
-            if (fhirPatient.getName().get(0).getFamily() != null) {
-                familyName = fhirPatient.getName().get(0).getFamily();
-                System.out.println("Fhir patient family name here ==>" + familyName);
+    /**
+     * Create referred patient
+     */
+    private Patient registerReferredPatient(ExpectedTransferInPatients referredPatient) {
+        List<Patient> results = Context.getPatientService().getPatients(referredPatient.getNupiNumber());
+        //Assign  active referral_status attribute
+        PersonAttribute referralStatusAttribute = new PersonAttribute();
+        PersonAttributeType referralStatusAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("df7e9996-23b5-4f66-a799-97498d19850d");
+
+        if (!results.isEmpty()) {
+            if (referralStatusAttributeType != null) {
+                referralStatusAttribute.setAttributeType(referralStatusAttributeType);
+                referralStatusAttribute.setValue("Active");
+                results.get(0).addAttribute(referralStatusAttribute);
             }
-            if (fhirPatient.getName().get(0).getGiven() != null) {
-                //  String fullGivenName = fhirPatient.getName().get(0).getGiven().toString().replaceAll("[^a-zA-Z0-9]", " ");
-                givenName = fhirPatient.getName().get(0).getGiven().get(0).toString();
-                middleName = fhirPatient.getName().get(0).getGiven().get(1).toString();
-                System.out.println("Fhir patient given name here ==>" + givenName);
-                System.out.println("Fhir patient middle name here ==>" + middleName);
+            return Context.getPatientService().savePatient(results.get(0));
+        } else {
+            Patient patient = new Patient();
+            PersonName pn = new PersonName();
+            pn.setGivenName(referredPatient.getClientFirstName());
+            pn.setMiddleName(referredPatient.getClientMiddleName());
+            pn.setFamilyName(referredPatient.getClientLastName());
+            patient.addName(pn);
+            patient.setBirthdate(new Date());
+            patient.setGender(referredPatient.getClientGender());
+            PatientIdentifierType nupiIdType = MetadataUtils.existing(PatientIdentifierType.class, NUPI);
+            PatientIdentifier fetchedNupi = new PatientIdentifier(referredPatient.getNupiNumber(), nupiIdType, getDefaultLocation());
+            patient.addIdentifier(fetchedNupi);
 
+            PatientIdentifierType openMrsIdType = MetadataUtils.existing(PatientIdentifierType.class, OPENMRS_ID);
+            String generated = Context.getService(IdentifierSourceService.class).generateIdentifier(openMrsIdType, "Registration");
+            PatientIdentifier openMrsId = new PatientIdentifier(generated, openMrsIdType, getDefaultLocation());
+            patient.addIdentifier(openMrsId);
+            if (!patient.getPatientIdentifier().isPreferred()) {
+                openMrsId.setPreferred(true);
             }
-            expectedTransferInPatients.setClientFirstName(familyName);
-            expectedTransferInPatients.setClientMiddleName(middleName);
-            expectedTransferInPatients.setClientLastName(givenName);
-            expectedTransferInPatients.setClientFirstName(familyName);
 
-            System.out.println("Fhir patient full name here ==>" + expectedTransferInPatients);
-
-            return expectedTransferInPatients;
+            if (referralStatusAttributeType != null) {
+                referralStatusAttribute.setAttributeType(referralStatusAttributeType);
+                referralStatusAttribute.setValue("Active");
+                patient.addAttribute(referralStatusAttribute);
+            }
+            return Context.getPatientService().savePatient(patient);
         }
-        return null;
     }
 
     public SimpleObject addReferralCategoryAndReasons(@RequestParam("clientId") Integer clientId) throws Exception {
 
         //Update  referral category and reasons
-         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
+        FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
 
         ExpectedTransferInPatients patientReferral = Context.getService(KenyaEMRILService.class).getCommunityReferralsById(clientId);
         IParser parser = fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
