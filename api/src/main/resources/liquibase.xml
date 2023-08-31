@@ -609,6 +609,67 @@
             </column>
         </addColumn>
     </changeSet>
+    <!-- Add service_type field to the expected_transfer_ins table -->
+    <changeSet author="pwangoo" id="${project.parent.artifactId}-20230831-0003">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="expected_transfer_ins"/>
+            <not>
+                <columnExists columnName="first_name" tableName="expected_transfer_ins"/>
+             </not>
+             <not>
+                <columnExists columnName="middle_name" tableName="expected_transfer_ins"/>
+             </not>
+            <not>
+                <columnExists columnName="last_name" tableName="expected_transfer_ins"/>
+            </not>
+            <not>
+                <columnExists columnName="sex" tableName="expected_transfer_ins"/>
+            </not>
+            <not>
+                <columnExists columnName="birth_date" tableName="expected_transfer_ins"/>
+            </not>
+            <not>
+                <columnExists columnName="nupi" tableName="expected_transfer_ins"/>
+            </not>
+        </preConditions>
+        <comment>Adding first_name,middle_name,last_name,sex,birth_date,nupi columns</comment>
+        <addColumn tableName="expected_transfer_ins" >
+            <column name="first_name"
+                    type="varchar(255)" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+        <addColumn tableName="expected_transfer_ins" >
+            <column name="middle_name"
+                    type="varchar(255)" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+        <addColumn tableName="expected_transfer_ins" >
+            <column name="last_name"
+                    type="varchar(255)" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+        <addColumn tableName="expected_transfer_ins" >
+            <column name="sex"
+                    type="varchar(10)" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+        <addColumn tableName="expected_transfer_ins" >
+            <column name="birth_date"
+                    type="datetime" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+        <addColumn tableName="expected_transfer_ins" >
+            <column name="nupi"
+                    type="varchar(100)" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+    </changeSet>
     <!--Adding scheduled task :Set program discontinuation task-->
     <changeSet id="${project.parent.artifactId}-202308080930" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
