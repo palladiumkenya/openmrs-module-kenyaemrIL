@@ -5,6 +5,8 @@ import ca.uhn.fhir.parser.IParser;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.ServiceRequest;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Location;
 import org.openmrs.Patient;
@@ -12,6 +14,7 @@ import org.openmrs.PersonAttribute;
 import org.openmrs.PersonAttributeType;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.kenyaemr.nupi.UpiUtilsDataExchange;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.shr.FhirConfig;
 import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
@@ -25,6 +28,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,9 +49,7 @@ import java.util.stream.Collectors;
 public class ReferralsDataExchangeFragmentController {
     // Logger
     private static final Logger log = LoggerFactory.getLogger(ReferralsDataExchangeFragmentController.class);
-    public static final String OPENMRS_ID = "dfacd928-0370-4315-99d7-6ec1c9f7ae76";
-    public static final String NUPI = "f85081e2-b4be-4e48-b3a4-7994b69bb101";
-    @Qualifier("fhirR4")
+        @Qualifier("fhirR4")
     private FhirContext fhirContext;
     public FhirContext getFhirContext() {
         return fhirContext;
@@ -54,66 +67,37 @@ public class ReferralsDataExchangeFragmentController {
      * @return
      */
     public SimpleObject pullCommunityReferralsFromFhir() throws Exception {
-        String res = "";
         System.out.println("Fhir :Start pullCommunityReferralsFromFhir ==>");
-        Bundle serviceRequestResourceBundle;
-        Bundle patientResourceBundle;
         org.hl7.fhir.r4.model.Resource fhirServiceRequestResource;
-        org.hl7.fhir.r4.model.Resource fhirResource;
-        org.hl7.fhir.r4.model.Patient fhirPatient = null;
         org.hl7.fhir.r4.model.ServiceRequest fhirServiceRequest = null;
         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
-        serviceRequestResourceBundle = fhirConfig.fetchReferrals();
+        Bundle serviceRequestResourceBundle = fhirConfig.fetchReferrals();
         System.out.println(fhirConfig.getFhirContext().newJsonParser().encodeResourceToString(serviceRequestResourceBundle));
-        if (!serviceRequestResourceBundle.getEntry().isEmpty()) {
+        if (serviceRequestResourceBundle != null && !serviceRequestResourceBundle.getEntry().isEmpty()) {
             for (int i = 0; i < serviceRequestResourceBundle.getEntry().size(); i++) {
                 fhirServiceRequestResource = serviceRequestResourceBundle.getEntry().get(i).getResource();
                 System.out.println("Fhir : Checking Service request is null ==>");
                 if (fhirServiceRequestResource != null) {
                     System.out.println("Fhir : Service request is not null ==>");
                     fhirServiceRequest = (org.hl7.fhir.r4.model.ServiceRequest) fhirServiceRequestResource;
-                    // Get UPI,
-                    // Persist service request
                     String nupiNumber = fhirServiceRequest.getSubject().getDisplay();
                     System.out.println("NUPI :  ==>" + nupiNumber);
-                    // Use UPI to get Patient, /**TODO - Change this to fetch from CR instead*/
-                    patientResourceBundle = fhirConfig.fetchPatientResource(nupiNumber);
-
-                    System.out.println(fhirConfig.getFhirContext().newJsonParser().encodeResourceToString(patientResourceBundle));
-                    if (patientResourceBundle != null && !patientResourceBundle.getEntry().isEmpty()) {
-                        fhirResource = patientResourceBundle.getEntry().get(0).getResource();
-                        if (fhirResource.getResourceType().toString().equals("Patient")) {
-                            fhirPatient = (org.hl7.fhir.r4.model.Patient) fhirResource;
-                        }
-                        // Persist the patient
-                        if (fhirPatient != null) {
-                            System.out.println("Fhir patient exists:  ==>");
-                            //Persist client in expected referrals model
-                            try{
-                                addReferredClientObjectToBundle(fhirPatient,fhirConfig, fhirServiceRequest);
-                            }catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        System.out.println("Fhir : Looping service request ==>");
-                        System.out.println("Fhir service request identifier ==>" + fhirServiceRequest.getSubject().getIdentifier().getValue());
+                    if (nupiNumber != null) {
+                        String serverUrl = "https://afyakenyaapi.health.go.ke/partners/registry/search/upi/" + nupiNumber;
+                        persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest);
                     }
                 } else {
                     System.out.println("Fhir : Service request is null ==>");
                 }
             }
         }
-
-        String success = "";
-        return SimpleObject.create("success", success);
-
+        return SimpleObject.create("success", "");
     }
 
     public void updateShrReferral(Patient patient, FhirConfig fhirConfig) throws Exception {
         List<ExpectedTransferInPatients> patientReferrals = Context.getService(KenyaEMRILService.class).getTransferInPatient(patient);
-        List<ExpectedTransferInPatients> activeReferral = patientReferrals.stream().filter(p ->
-                p.getReferralStatus().equalsIgnoreCase("ACTIVE")).collect(Collectors.toList());
-        IParser parser=fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
+        List<ExpectedTransferInPatients> activeReferral = patientReferrals.stream().filter(p -> p.getReferralStatus().equalsIgnoreCase("ACTIVE")).collect(Collectors.toList());
+        IParser parser = fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
 
         ServiceRequest serviceRequest;
         if (!activeReferral.isEmpty()) {
@@ -125,38 +109,92 @@ public class ReferralsDataExchangeFragmentController {
         }
     }
 
-    public void addReferredClientObjectToBundle(org.hl7.fhir.r4.model.Patient fhirPatient, FhirConfig fhirConfig, org.hl7.fhir.r4.model.ServiceRequest fhirServiceRequest) {
+    /**
+     * Fetch client from CR
+     */
+    private JSONObject getCRPatient(String serverUrl) throws IOException, NoSuchAlgorithmException, KeyManagementException {
+        String stringResponse = "";
+        TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
+            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                return null;
+            }
 
-           System.out.println("Saving fhir client in expected referrals model");
-        //Persist client in expected referrals model
+            public void checkClientTrusted(X509Certificate[] certs, String authType) {
+            }
+
+            public void checkServerTrusted(X509Certificate[] certs, String authType) {
+            }
+        }};
+
+        SSLContext sc = SSLContext.getInstance("SSL");
+        sc.init(null, trustAllCerts, new java.security.SecureRandom());
+        HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+
+        URL url = new URL(serverUrl);
+
+        HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
+        con.setRequestMethod("GET");
+
+        UpiUtilsDataExchange upiUtils = new UpiUtilsDataExchange();
+        String authToken = upiUtils.getToken();
+
+        System.out.println("TOKEN " + authToken);
+
+        con.setRequestProperty("Authorization", "Bearer " + authToken);
+        con.setRequestProperty("Accept", "application/json");
+        con.setConnectTimeout(10000); // set timeout to 10 seconds
+
+        con.setDoOutput(true);
+
+        if (con.getResponseCode() == HttpsURLConnection.HTTP_OK) { //success
+            BufferedReader in = null;
+            in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+            stringResponse = response.toString();
+
+            try {
+                JSONParser parser = new JSONParser();
+                JSONObject responseObj = (JSONObject) parser.parse(stringResponse);
+                JSONObject client = (JSONObject) responseObj.get("client");
+
+                if (client != null) {
+                    clientNumber = String.valueOf(client.get("clientNumber"));
+                    return client;
+                }
+            } catch (Exception var7) {
+                var7.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    // Create client referral data
+    public void persistReferralData(JSONObject crClient, FhirConfig fhirConfig, org.hl7.fhir.r4.model.ServiceRequest fhirServiceRequest) {
         ExpectedTransferInPatients expectedTransferInPatients = new ExpectedTransferInPatients();
-        //Add name
-        fillClientName(fhirPatient, expectedTransferInPatients);
-        //Add birthdate
-        expectedTransferInPatients.setClientBirthDate(fhirPatient.getBirthDate());
-        //Set Gender
-        String gender = fhirPatient.getGender().getDisplay();
-        System.out.println("Fhir client gender here ==>" + gender);
+        expectedTransferInPatients.setClientFirstName(String.valueOf(crClient.get("firstName")));
+        expectedTransferInPatients.setClientMiddleName(String.valueOf(crClient.get("middleName")));
+        expectedTransferInPatients.setClientLastName(String.valueOf(crClient.get("lastName")));
+        expectedTransferInPatients.setNupiNumber(String.valueOf(crClient.get("clientNumber")));
+        expectedTransferInPatients.setClientBirthDate(new Date());
+        String gender = String.valueOf(crClient.get("gender"));
         if (gender.equalsIgnoreCase("male")) {
             gender = "M";
         } else if (gender.equalsIgnoreCase("female")) {
             gender = "F";
         }
         expectedTransferInPatients.setClientGender(gender);
-        // Add the NUPI Number
-        String nupiNumber = fhirServiceRequest.getSubject().getDisplay();
-        expectedTransferInPatients.setNupiNumber(nupiNumber);
-
         expectedTransferInPatients.setReferralStatus("ACTIVE");
         expectedTransferInPatients.setPatientSummary(fhirConfig.getFhirContext().newJsonParser().encodeResourceToString(fhirServiceRequest));
         expectedTransferInPatients.setServiceType("COMMUNITY");
         Context.getService(KenyaEMRILService.class).createPatient(expectedTransferInPatients);
-
-        //TODO:Use FHIR 2 method to persist patient
-        // MethodOutcome results = patientResourceProvider.createPatient(fhirPatient);
         System.out.println("Successfully persisted in expected referrals model ==>");
-
-
     }
 
     public void completeClientReferral(@RequestParam("patientId") Integer patientId) throws Exception {
@@ -175,7 +213,7 @@ public class ReferralsDataExchangeFragmentController {
             patientService.savePatient(patient);
             //Update fhir message status to complete
             FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
-            updateShrReferral(patient,fhirConfig);
+//            updateShrReferral(patient, fhirConfig);
         }
 
     }
@@ -194,6 +232,7 @@ public class ReferralsDataExchangeFragmentController {
 
     }
 
+    /** Todo Create patient from CR data */
     private ExpectedTransferInPatients fillClientName(org.hl7.fhir.r4.model.Patient fhirPatient, ExpectedTransferInPatients expectedTransferInPatients) {
         String familyName = "";
         String givenName = "";
