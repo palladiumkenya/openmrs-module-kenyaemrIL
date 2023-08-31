@@ -399,4 +399,12 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         return getCommunityReferrals;
     }
 
+    @Override
+    public ExpectedTransferInPatients getCommunityReferralsById(Integer id) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(ExpectedTransferInPatients.class);
+        crit.add(Restrictions.eq("id", id));
+        ExpectedTransferInPatients expectedTransferInPatient = (ExpectedTransferInPatients) crit.uniqueResult();
+        return expectedTransferInPatient;
+    }
+
 }

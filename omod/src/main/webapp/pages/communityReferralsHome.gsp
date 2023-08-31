@@ -251,6 +251,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                             <th class="nupiColumn">NUPI</th>
                                             <th class="status">Status</th>
                                             <th class="action">Action</th>
+                                            <th class="action">Referral Summary</th>
                                         </tr>
                                         </thead>
                                         <tbody id="active_queue-list">
@@ -291,6 +292,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                             <th class="nupiColumn">NUPI</th>
                                             <th class="status">Status</th>
                                             <th class="action">Action</th>
+                                            <th class="action">Referral Summary</th>
                                         </tr>
                                         </thead>
                                         <tbody id="completed_queue-list">
@@ -312,6 +314,30 @@ tr:nth-child(even) {background-color: #f2f2f2;}
     </div>
 </div>
 
+<div id="shr-dialog" title="Client Referral Details" style="display: none; background-color: white; padding: 10px;">
+    <div id="shr-info">
+
+        <fieldset>
+            <legend>Referral Details</legend>
+            <table>
+                 <tr>
+                    <td>Category : </td>
+                    <td id="shr-category"></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>Referral reasons : </td>
+                    <td id="shr-referral-reasons"></td>
+                    <td></td>
+                </tr>
+            </table>
+        </fieldset>
+    </div>
+    <div align="center">
+        <button type="button" onclick="kenyaui.closeDialog();"><img src="${ ui.resourceLink("kenyaui", "images/glyphs/cancel.png") }" /> Close</button>
+    </div>
+</div>
+
 <script type="text/javascript">
     var loadingImageURL = ui.resourceLink("kenyaemr", "images/loading.gif");
     var showLoadingImage = '<span style="padding:2px; display:inline-block;"> <img src="' + loadingImageURL + '" /> </span>';
@@ -320,6 +346,9 @@ tr:nth-child(even) {background-color: #f2f2f2;}
     //On ready
     jq = jQuery;
     jq(function () {
+
+        //SHR:Referral reasons
+       // jQuery('#shr-category').text("Patient referred for medical consultation");
 
         // apply pagination for active referrals
         var active_queuePaginationDiv = jq('#active_queuePagination');
@@ -477,8 +506,47 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                 )
         });
 
+        jq(document).on('click','.viewButton',function(){
+            //View referral category and reasons
+            console.log("Am here ==>");
+            // Populate referral category and reasons
+            jQuery.getJSON('${ ui.actionLink("kenyaemrIL", "referralsDataExchange", "addReferralCategoryAndReasons")}',
+                {
+                    'clientId': jq(this).val()
+                })
+                .success(function (data) {
+                    if(data) {
 
-    });
+                        jQuery('#shr-category').text(data.category);
+                        jQuery('#shr-referral-reasons').text(data.reasonCode);
+
+                    }else{
+                        console.log("Data ==>"+data);
+                        display_loading_spinner(false);
+                        jQuery("#pull-msgBox").text("Error updating client referral");
+                        jQuery("#pull-msgBox").show();
+                    }
+                })
+                .fail(function (err) {
+                        // Hide spinner
+                        console.log("Error updating client referral: " + JSON.stringify(err));
+                        // Hide spinner
+                        //   display_loading_validate_identifier(false);
+                        jQuery("#pull-msgBox").text("Could upated client referral");
+                        jQuery("#pull-msgBox").show();
+
+                    }
+                )
+           showReasonsFromSHR();
+
+        });
+    });   //End On ready
+
+    function showReasonsFromSHR() {
+        kenyaui.openPanelDialog({ templateId: 'shr-dialog', width: 55, height: 80, scrolling: true });
+    }
+
+
 
     function generate_table(displayRecords, displayObject, tableId) {
         var tr;
@@ -499,6 +567,18 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             var btnView = jq('<button/>', {
                 text: 'Update client',
                 class: 'updateButton',
+                value: displayRecords[i].id
+            });
+
+            actionTd.append(btnView);
+
+            tr.append(actionTd);
+            var actionTd = jq('<td/>');
+
+            var btnView = jq('<button/>', {
+                text: 'View',
+                class: 'viewButton',
+                id: 'show-reasons-dialog',
                 value: displayRecords[i].id
             });
 
@@ -528,6 +608,16 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             var btnView = jq('<button/>', {
                 text: 'Update SHR',
                 class: 'updateSHRButton',
+                value: displayRecords[i].id
+            });
+
+            actionTd.append(btnView);
+            tr.append(actionTd);
+            var actionTd = jq('<td/>');
+
+            var btnView = jq('<button/>', {
+                text: 'View',
+                class: 'updateButton',
                 value: displayRecords[i].id
             });
 

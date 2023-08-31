@@ -4,6 +4,8 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.ServiceRequest;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -39,6 +41,7 @@ import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -51,9 +54,11 @@ public class ReferralsDataExchangeFragmentController {
     private static final Logger log = LoggerFactory.getLogger(ReferralsDataExchangeFragmentController.class);
         @Qualifier("fhirR4")
     private FhirContext fhirContext;
+
     public FhirContext getFhirContext() {
         return fhirContext;
     }
+
     public IGenericClient getFhirClient() throws Exception {
         IGenericClient fhirClient = fhirContext.newRestfulGenericClient(ILUtils.getShrServerUrl());
         return fhirClient;
@@ -62,8 +67,10 @@ public class ReferralsDataExchangeFragmentController {
     public void controller(FragmentModel model, @FragmentParam("patient") Patient patient) {
 
     }
+
     /**
      * Get community referrals for FHIR server       *
+     *
      * @return
      */
     public SimpleObject pullCommunityReferralsFromFhir() throws Exception {
@@ -165,7 +172,6 @@ public class ReferralsDataExchangeFragmentController {
                 JSONObject client = (JSONObject) responseObj.get("client");
 
                 if (client != null) {
-                    clientNumber = String.valueOf(client.get("clientNumber"));
                     return client;
                 }
             } catch (Exception var7) {
@@ -261,4 +267,42 @@ public class ReferralsDataExchangeFragmentController {
         }
         return null;
     }
+
+    public SimpleObject addReferralCategoryAndReasons(@RequestParam("clientId") Integer clientId) throws Exception {
+
+        //Update  referral category and reasons
+         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
+
+        ExpectedTransferInPatients patientReferral = Context.getService(KenyaEMRILService.class).getCommunityReferralsById(clientId);
+        IParser parser = fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
+
+        ServiceRequest serviceRequest;
+        SimpleObject referralsDetailsObject = null;
+        if (patientReferral != null) {
+
+            serviceRequest = parser.parseResource(ServiceRequest.class, patientReferral.getPatientSummary());
+
+            String category = "";
+            if (!serviceRequest.getCategory().isEmpty()) {
+                if (!serviceRequest.getCategory().get(0).getCoding().isEmpty()) {
+                    category = serviceRequest.getCategory().get(0).getCoding().get(0).getDisplay();
+                }
+            }
+
+        List<String> reasons = new ArrayList<>();
+
+        for (CodeableConcept codeableConcept : serviceRequest.getReasonCode()) {
+            if (!codeableConcept.getCoding().isEmpty()) {
+                for (Coding code : codeableConcept.getCoding()) {
+                    reasons.add(code.getDisplay());
+                }
+            }
+        }
+
+             referralsDetailsObject = SimpleObject.create("category", category,
+                "reasonCode", String.join(", ", reasons)
+        );
+    }
+        return referralsDetailsObject;
+  }
 }
