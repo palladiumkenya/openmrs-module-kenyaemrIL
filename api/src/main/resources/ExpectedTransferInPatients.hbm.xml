@@ -40,7 +40,7 @@
                   column="effective_discontinuation_date" length="19"/>
 
         <property name="referralStatus" type="java.lang.String" column="referral_status"
-                  length="100" insert="false" />
+                  length="100" />
 
         <property name="toAcceptanceDate" type="java.util.Date"
                   column="to_acceptance_date" length="19"/>
