@@ -22,6 +22,7 @@ import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ObjectNode;
 import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
 import org.openmrs.Form;
@@ -44,11 +45,18 @@ import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 
+import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.io.StringWriter;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -56,11 +64,14 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Miscellaneous utility methods
@@ -88,6 +99,13 @@ public class ILUtils {
 	public static final String GP_SHR_SERVER_URL = "kenyaemril.fhir.server.url";
 	public static final String GP_SHR_USER_NAME = "";
 	public static final String GP_SHR_PASSWORD = "";
+	public static final String GP_SHR_SERVER_TOKEN_URL = "kenyaemril.fhir.server.token.url";
+	public static final String GP_SHR_API_TOKEN = "kenyaemril.fhir.server.token";
+	public static final String GP_SHR_OAUTH2_SCOPE = "kenyaemril.fhir.server.oath2.scope";
+	public static final String GP_SHR_OAUTH2_CLIENT_SECRET = "kenyaemril.fhir.server.oath2.client.secret";
+	public static final String GP_SHR_OAUTH2_CLIENT_ID = "kenyaemril.fhir.server.oath2.client.id";
+	private static final Pattern pat = Pattern.compile(".*\"access_token\"\\s*:\\s*\"([^\"]+)\".*");
+
 
 	/**
 	 * Checks whether a date has any time value
@@ -477,4 +495,137 @@ public class ILUtils {
 	public static String getShrPassword() {
 		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_PASSWORD);
 	}
+
+	public static String getShrServerTokenUrl() {
+		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_SERVER_TOKEN_URL);
+	}
+
+	public static String getGpShrOauth2Scope() {
+		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_OAUTH2_SCOPE);
+	}
+
+	public static String getGpShrOauth2ClientSecret() {
+		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_OAUTH2_CLIENT_SECRET);
+	}
+
+	public static String getGpShrOauth2ClientId() {
+		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_OAUTH2_CLIENT_ID);
+	}
+	public boolean initAuthVars(String strTokenUrl,String strScope, String strClientSecret, String strClientId) {
+		if (strTokenUrl == null || strScope == null || strClientSecret == null || strClientId == null) {
+			System.err.println("Get oauth data: Please set OAuth2 credentials");
+			return (false);
+		}
+		return (true);
+	}
+	public String getShrToken() {
+		//check if current token is valid
+		if(isValidShrToken()) {
+			return(Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_API_TOKEN));
+		} else {
+			// Init the auth vars
+			boolean varsOk = initAuthVars(getShrServerTokenUrl(),getGpShrOauth2Scope(),getGpShrOauth2ClientSecret(),getGpShrOauth2ClientId());
+			if (varsOk) {
+				//Get the OAuth Token
+				String credentials = getClientCredentials(getShrServerTokenUrl(),getGpShrOauth2Scope(),getGpShrOauth2ClientSecret(),getGpShrOauth2ClientId());
+				//Save on global and return token
+				if (credentials != null) {
+					Context.getAdministrationService().setGlobalProperty(ILUtils.GP_SHR_API_TOKEN, credentials);
+					return(credentials);
+				}
+			}
+		}
+		return(null);
+	}
+
+	private String getClientCredentials(String strTokenUrl,String strScope, String strClientSecret, String strClientId) {
+
+		String auth = strClientId + ":" + strClientSecret;
+		String authentication = Base64.getEncoder().encodeToString(auth.getBytes());
+		BufferedReader reader = null;
+		HttpsURLConnection connection = null;
+		String returnValue = "";
+		try {
+			StringBuilder parameters = new StringBuilder();
+			parameters.append("grant_type=" + URLEncoder.encode("client_credentials", "UTF-8"));
+			parameters.append("&");
+			parameters.append("scope=" + URLEncoder.encode(strScope, "UTF-8"));
+			URL url = new URL(strTokenUrl);
+			connection = (HttpsURLConnection) url.openConnection();
+			connection.setRequestMethod("POST");
+			connection.setDoOutput(true);
+			connection.setRequestProperty("Authorization", "Basic " + authentication);
+			connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+			connection.setRequestProperty("Accept", "application/json");
+			connection.setConnectTimeout(10000); // set timeout to 10 seconds
+			PrintStream os = new PrintStream(connection.getOutputStream());
+			os.print(parameters);
+			os.close();
+			reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+			String line = null;
+			StringWriter out = new StringWriter(connection.getContentLength() > 0 ? connection.getContentLength() : 2048);
+			while ((line = reader.readLine()) != null) {
+				out.append(line);
+			}
+			String response = out.toString();
+			Matcher matcher = pat.matcher(response);
+			if (matcher.matches() && matcher.groupCount() > 0) {
+				returnValue = matcher.group(1);
+			} else {
+				System.err.println("OAUTH2 Error : Token pattern mismatch");
+			}
+
+		}
+		catch (Exception e) {
+			System.err.println("OAUTH2 - Error : " + e.getMessage());
+		}
+		finally {
+			if (reader != null) {
+				try {
+					reader.close();
+				}
+				catch (IOException e) {}
+			}
+			connection.disconnect();
+		}
+		return returnValue;
+	}
+	private boolean isValidShrToken() {
+		String currentToken = Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_API_TOKEN);
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			ObjectNode jsonNode = (ObjectNode) mapper.readTree(currentToken);
+			if (jsonNode != null) {
+				long expiresSeconds = jsonNode.get("expires_in").getLongValue();
+				String token = jsonNode.get("access_token").getTextValue();
+				if(token != null && token.length() > 0)
+				{
+					String[] chunks = token.split("\\.");
+					Base64.Decoder decoder = Base64.getUrlDecoder();
+
+					String header = new String(decoder.decode(chunks[0]));
+					String payload = new String(decoder.decode(chunks[1]));
+
+					ObjectNode payloadNode = (ObjectNode) mapper.readTree(payload);
+					long expiryTime = payloadNode.get("exp").getLongValue();
+
+					long currentTime = System.currentTimeMillis()/1000;
+
+					// check if expired
+					if (currentTime < expiryTime) {
+						return(true);
+					} else {
+						return(false);
+					}
+				}
+				return(false);
+			} else {
+				return(false);
+			}
+		} catch(Exception e) {
+			return(false);
+		}
+	}
+
+
 }
