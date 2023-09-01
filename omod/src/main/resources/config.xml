@@ -203,6 +203,31 @@
         <description>KenyaEMRIL Fhir Server Password</description>
         <defaultValue></defaultValue>
     </globalProperty>
+    <globalProperty>
+        <property>kenyaemril.fhir.server.token.url</property>
+        <description>KenyaEMRIL Fhir Server Token generation url</description>
+        <defaultValue></defaultValue>
+    </globalProperty>
+    <globalProperty>
+        <property>kenyaemril.fhir.server.token</property>
+        <description>KenyaEMRIL Token for connecting to the FHIR server</description>
+        <defaultValue></defaultValue>
+    </globalProperty>
+    <globalProperty>
+        <property>kenyaemril.fhir.server.oath2.scope</property>
+        <description>FHIR server oath2 authorization scope</description>
+        <defaultValue></defaultValue>
+    </globalProperty>
+    <globalProperty>
+        <property>kenyaemril.fhir.server.oath2.client.secret</property>
+        <description>FHIR server oath2 authorization client secret</description>
+        <defaultValue></defaultValue>
+    </globalProperty>
+    <globalProperty>
+        <property>kenyaemril.fhir.server.oath2.client.id</property>
+        <description>FHIR server oath2 authorization client ID</description>
+        <defaultValue></defaultValue>
+    </globalProperty>
     <!-- /Internationalization -->
 </module>
 
