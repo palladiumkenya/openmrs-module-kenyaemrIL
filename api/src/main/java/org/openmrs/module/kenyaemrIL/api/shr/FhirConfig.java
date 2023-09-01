@@ -2,6 +2,7 @@ package org.openmrs.module.kenyaemrIL.api.shr;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.rest.client.interceptor.BasicAuthInterceptor;
 import groovy.util.logging.Slf4j;
 import org.hl7.fhir.r4.model.Appointment;
 import org.hl7.fhir.r4.model.Bundle;
@@ -28,17 +29,16 @@ public class FhirConfig {
     @Qualifier("fhirR4")
     private FhirContext fhirContext;
 
-    public FhirContext getFhirContext() {
-        return fhirContext;
-    }
     public IGenericClient getFhirClient() throws Exception {
         IGenericClient fhirClient = fhirContext.newRestfulGenericClient(ILUtils.getShrServerUrl());
+        if (!ILUtils.getShrUserName().isEmpty()) {
+            BasicAuthInterceptor authInterceptor = new BasicAuthInterceptor(ILUtils.getShrUserName(),
+                    ILUtils.getShrPassword());
+            fhirClient.registerInterceptor(authInterceptor);
+        }
         return fhirClient;
     }
 
-
-
-    /**TODO - Change this to fetch from CR instead*/
     public Bundle fetchPatientResource(String identifier) {
         try {
             IGenericClient client = getFhirClient();
