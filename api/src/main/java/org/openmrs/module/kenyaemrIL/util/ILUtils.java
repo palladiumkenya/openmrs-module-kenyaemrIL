@@ -97,15 +97,14 @@ public class ILUtils {
 	public static final String CCC_NUMBER_ALREADY_EXISTS_IN_USHAURI = "The CCC number already exists."; // a substring in the error message
 
 	public static final String GP_SHR_SERVER_URL = "kenyaemril.fhir.server.url";
-	public static final String GP_SHR_USER_NAME = "";
-	public static final String GP_SHR_PASSWORD = "";
+	public static final String GP_SHR_USER_NAME = "kenyaemril.fhir.server.username";
+	public static final String GP_SHR_PASSWORD = "kenyaemril.fhir.server.password";
 	public static final String GP_SHR_SERVER_TOKEN_URL = "kenyaemril.fhir.server.token.url";
 	public static final String GP_SHR_API_TOKEN = "kenyaemril.fhir.server.token";
 	public static final String GP_SHR_OAUTH2_SCOPE = "kenyaemril.fhir.server.oath2.scope";
 	public static final String GP_SHR_OAUTH2_CLIENT_SECRET = "kenyaemril.fhir.server.oath2.client.secret";
 	public static final String GP_SHR_OAUTH2_CLIENT_ID = "kenyaemril.fhir.server.oath2.client.id";
 	private static final Pattern pat = Pattern.compile(".*\"access_token\"\\s*:\\s*\"([^\"]+)\".*");
-
 
 	/**
 	 * Checks whether a date has any time value

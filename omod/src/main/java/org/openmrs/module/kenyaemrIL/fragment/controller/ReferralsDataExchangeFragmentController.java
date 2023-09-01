@@ -100,6 +100,7 @@ public class ReferralsDataExchangeFragmentController {
                     System.out.println("NUPI :  ==>" + nupiNumber);
                     if (nupiNumber != null) {
                         String serverUrl = "https://afyakenyaapi.health.go.ke/partners/registry/search/upi/" + nupiNumber;
+
                         persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest);
                     }
                 } else {
@@ -202,6 +203,9 @@ public class ReferralsDataExchangeFragmentController {
      * Create client referral data from CR data
      */
     public void persistReferralData(JSONObject crClient, FhirConfig fhirConfig, org.hl7.fhir.r4.model.ServiceRequest fhirServiceRequest) {
+        if(crClient == null){
+            return;
+        }
         ExpectedTransferInPatients expectedTransferInPatients = new ExpectedTransferInPatients();
         expectedTransferInPatients.setClientFirstName(String.valueOf(crClient.get("firstName")));
         expectedTransferInPatients.setClientMiddleName(String.valueOf(crClient.get("middleName")));
