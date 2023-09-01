@@ -510,14 +510,14 @@ public class ILUtils {
 	public static String getGpShrOauth2ClientId() {
 		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_OAUTH2_CLIENT_ID);
 	}
-	public boolean initAuthVars(String strTokenUrl,String strScope, String strClientSecret, String strClientId) {
+	public static boolean initAuthVars(String strTokenUrl,String strScope, String strClientSecret, String strClientId) {
 		if (strTokenUrl == null || strScope == null || strClientSecret == null || strClientId == null) {
 			System.err.println("Get oauth data: Please set OAuth2 credentials");
 			return (false);
 		}
 		return (true);
 	}
-	public String getShrToken() {
+	public static String getShrToken() {
 		//check if current token is valid
 		if(isValidShrToken()) {
 			return(Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_API_TOKEN));
@@ -537,7 +537,7 @@ public class ILUtils {
 		return(null);
 	}
 
-	private String getClientCredentials(String strTokenUrl,String strScope, String strClientSecret, String strClientId) {
+	private static String getClientCredentials(String strTokenUrl,String strScope, String strClientSecret, String strClientId) {
 
 		String auth = strClientId + ":" + strClientSecret;
 		String authentication = Base64.getEncoder().encodeToString(auth.getBytes());
@@ -589,7 +589,7 @@ public class ILUtils {
 		}
 		return returnValue;
 	}
-	private boolean isValidShrToken() {
+	private static boolean isValidShrToken() {
 		String currentToken = Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_API_TOKEN);
 		ObjectMapper mapper = new ObjectMapper();
 		try {
