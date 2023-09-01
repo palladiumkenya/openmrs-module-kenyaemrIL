@@ -23,6 +23,12 @@ import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
+import org.hl7.fhir.r4.model.BooleanType;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.IntegerType;
+import org.hl7.fhir.r4.model.Quantity;
+import org.hl7.fhir.r4.model.StringType;
 import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
 import org.openmrs.Form;
@@ -62,6 +68,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -105,7 +112,6 @@ public class ILUtils {
 	public static final String GP_SHR_OAUTH2_CLIENT_SECRET = "kenyaemril.fhir.server.oath2.client.secret";
 	public static final String GP_SHR_OAUTH2_CLIENT_ID = "kenyaemril.fhir.server.oath2.client.id";
 	private static final Pattern pat = Pattern.compile(".*\"access_token\"\\s*:\\s*\"([^\"]+)\".*");
-
 
 	/**
 	 * Checks whether a date has any time value
@@ -494,6 +500,30 @@ public class ILUtils {
 
 	public static String getShrPassword() {
 		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_PASSWORD);
+	}
+
+	/**
+	 * Returns the value of SHR FHIR observation as string
+	 * @param fhirObservation
+	 * @return
+	 */
+	public static String getObservationValue(org.hl7.fhir.r4.model.Observation fhirObservation) {
+		if (fhirObservation != null) {
+			if (fhirObservation.getValue() instanceof Quantity) {
+				return fhirObservation.getValueQuantity().getValue().toString();
+			} else if (fhirObservation.getValue() instanceof CodeableConcept) {
+				return fhirObservation.getValueCodeableConcept().getCodingFirstRep().getDisplay();
+			} else if (fhirObservation.getValue() instanceof DateTimeType) {
+				return new SimpleDateFormat("yyyy-MM-dd").format(fhirObservation.getValueDateTimeType().getValue().toString());
+			} else if (fhirObservation.getValue() instanceof IntegerType) {
+				return fhirObservation.getValueIntegerType().getValue().toString();
+			} else if (fhirObservation.getValue() instanceof BooleanType) {
+				return fhirObservation.getValueBooleanType().getValue().toString();
+			} else if (fhirObservation.getValue() instanceof StringType) {
+				return fhirObservation.getValueStringType().getValue();
+			}
+		}
+		return "";
 	}
 
 	public static String getShrServerTokenUrl() {

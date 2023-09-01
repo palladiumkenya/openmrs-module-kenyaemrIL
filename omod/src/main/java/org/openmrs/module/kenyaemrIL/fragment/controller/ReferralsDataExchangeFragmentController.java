@@ -17,15 +17,14 @@ import org.openmrs.PatientIdentifierType;
 import org.openmrs.PersonAttribute;
 import org.openmrs.PersonAttributeType;
 import org.openmrs.PersonName;
-import org.openmrs.module.metadatadeploy.MetadataUtils;
-import org.openmrs.module.idgen.service.IdentifierSourceService;
-import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.idgen.service.IdentifierSourceService;
 import org.openmrs.module.kenyaemr.nupi.UpiUtilsDataExchange;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.shr.FhirConfig;
 import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
+import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.ui.framework.annotation.FragmentParam;
 import org.openmrs.ui.framework.fragment.FragmentModel;
@@ -47,10 +46,8 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * controller for pivotTableCharts fragment
@@ -76,10 +73,8 @@ public class ReferralsDataExchangeFragmentController {
     public void controller(FragmentModel model, @FragmentParam("patient") Patient patient) {
 
     }
-
     /**
      * Get community referrals for FHIR server       *
-     *
      * @return
      */
     public SimpleObject pullCommunityReferralsFromFhir() throws Exception {
@@ -88,7 +83,7 @@ public class ReferralsDataExchangeFragmentController {
         org.hl7.fhir.r4.model.ServiceRequest fhirServiceRequest = null;
         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
         Bundle serviceRequestResourceBundle = fhirConfig.fetchReferrals();
-        System.out.println(fhirConfig.getFhirContext().newJsonParser().encodeResourceToString(serviceRequestResourceBundle));
+        System.out.println(fhirContext.newJsonParser().encodeResourceToString(serviceRequestResourceBundle));
         if (serviceRequestResourceBundle != null && !serviceRequestResourceBundle.getEntry().isEmpty()) {
             for (int i = 0; i < serviceRequestResourceBundle.getEntry().size(); i++) {
                 fhirServiceRequestResource = serviceRequestResourceBundle.getEntry().get(i).getResource();
@@ -96,6 +91,8 @@ public class ReferralsDataExchangeFragmentController {
                 if (fhirServiceRequestResource != null) {
                     System.out.println("Fhir : Service request is not null ==>");
                     fhirServiceRequest = (org.hl7.fhir.r4.model.ServiceRequest) fhirServiceRequestResource;
+                    // Get UPI,
+                    // Persist service request
                     String nupiNumber = fhirServiceRequest.getSubject().getDisplay();
                     System.out.println("NUPI :  ==>" + nupiNumber);
                     if (nupiNumber != null) {
@@ -124,7 +121,7 @@ public class ReferralsDataExchangeFragmentController {
             Context.getPatientService().savePatient(referred.getPatient());
         }
 
-        IParser parser = fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
+        IParser parser = fhirContext.newJsonParser().setPrettyPrint(true);
         ServiceRequest serviceRequest = parser.parseResource(ServiceRequest.class, referred.getPatientSummary());
         System.out.println(serviceRequest.getStatus());
         System.out.println(serviceRequest.getCategory().get(0).getCoding().get(0).getDisplay());
@@ -216,7 +213,7 @@ public class ReferralsDataExchangeFragmentController {
         }
         expectedTransferInPatients.setClientGender(gender);
         expectedTransferInPatients.setReferralStatus("ACTIVE");
-        expectedTransferInPatients.setPatientSummary(fhirConfig.getFhirContext().newJsonParser().encodeResourceToString(fhirServiceRequest));
+        expectedTransferInPatients.setPatientSummary(fhirContext.newJsonParser().encodeResourceToString(fhirServiceRequest));
         expectedTransferInPatients.setServiceType("COMMUNITY");
         Context.getService(KenyaEMRILService.class).createPatient(expectedTransferInPatients);
         System.out.println("Successfully persisted in expected referrals model ==>");
@@ -303,7 +300,7 @@ public class ReferralsDataExchangeFragmentController {
         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
 
         ExpectedTransferInPatients patientReferral = Context.getService(KenyaEMRILService.class).getCommunityReferralsById(clientId);
-        IParser parser = fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
+        IParser parser = fhirContext.newJsonParser().setPrettyPrint(true);
 
         ServiceRequest serviceRequest;
         SimpleObject referralsDetailsObject = null;

@@ -84,6 +84,14 @@
 			<artifactId>uiframework-api</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>fhir2-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>fhir2-omod</artifactId>
+		</dependency>
 		<!-- https://mvnrepository.com/artifact/io.swagger/swagger-models -->
 		<dependency>
 			<groupId>io.swagger</groupId>
