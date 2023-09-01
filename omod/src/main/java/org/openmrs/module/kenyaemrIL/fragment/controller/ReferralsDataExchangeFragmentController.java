@@ -3,6 +3,7 @@ package org.openmrs.module.kenyaemrIL.fragment.controller;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
+import com.google.common.base.Strings;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
@@ -17,15 +18,14 @@ import org.openmrs.PatientIdentifierType;
 import org.openmrs.PersonAttribute;
 import org.openmrs.PersonAttributeType;
 import org.openmrs.PersonName;
-import org.openmrs.module.metadatadeploy.MetadataUtils;
-import org.openmrs.module.idgen.service.IdentifierSourceService;
-import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.idgen.service.IdentifierSourceService;
 import org.openmrs.module.kenyaemr.nupi.UpiUtilsDataExchange;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.shr.FhirConfig;
 import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
+import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.ui.framework.annotation.FragmentParam;
 import org.openmrs.ui.framework.fragment.FragmentModel;
@@ -47,10 +47,8 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * controller for pivotTableCharts fragment
@@ -96,10 +94,14 @@ public class ReferralsDataExchangeFragmentController {
                 if (fhirServiceRequestResource != null) {
                     System.out.println("Fhir : Service request is not null ==>");
                     fhirServiceRequest = (org.hl7.fhir.r4.model.ServiceRequest) fhirServiceRequestResource;
-                    String nupiNumber = fhirServiceRequest.getSubject().getDisplay();
+                    String nupiNumber = fhirServiceRequest.getSubject().getIdentifier().getValue();
+                    if (Strings.isNullOrEmpty(nupiNumber)) {
+                        continue;
+                    }
                     System.out.println("NUPI :  ==>" + nupiNumber);
                     if (nupiNumber != null) {
                         String serverUrl = "https://afyakenyaapi.health.go.ke/partners/registry/search/upi/" + nupiNumber;
+
                         persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest);
                     }
                 } else {
@@ -202,6 +204,9 @@ public class ReferralsDataExchangeFragmentController {
      * Create client referral data from CR data
      */
     public void persistReferralData(JSONObject crClient, FhirConfig fhirConfig, org.hl7.fhir.r4.model.ServiceRequest fhirServiceRequest) {
+        if(crClient == null){
+            return;
+        }
         ExpectedTransferInPatients expectedTransferInPatients = new ExpectedTransferInPatients();
         expectedTransferInPatients.setClientFirstName(String.valueOf(crClient.get("firstName")));
         expectedTransferInPatients.setClientMiddleName(String.valueOf(crClient.get("middleName")));

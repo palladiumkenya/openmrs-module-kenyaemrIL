@@ -2,6 +2,7 @@ package org.openmrs.module.kenyaemrIL.api.shr;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.rest.client.interceptor.BearerTokenAuthInterceptor;
 import groovy.util.logging.Slf4j;
 import org.hl7.fhir.r4.model.Appointment;
 import org.hl7.fhir.r4.model.Bundle;
@@ -31,9 +32,14 @@ public class FhirConfig {
     public FhirContext getFhirContext() {
         return fhirContext;
     }
+
     public IGenericClient getFhirClient() throws Exception {
-        IGenericClient fhirClient = fhirContext.newRestfulGenericClient(ILUtils.getShrServerUrl());
-        return fhirClient;
+        FhirContext fhirContextNew = FhirContext.forR4();
+        fhirContextNew.getRestfulClientFactory().setSocketTimeout(200 * 1000);
+        BearerTokenAuthInterceptor authInterceptor = new BearerTokenAuthInterceptor(ILUtils.getShrToken());
+        IGenericClient client = fhirContextNew.getRestfulClientFactory().newGenericClient(ILUtils.getShrServerUrl());
+        client.registerInterceptor(authInterceptor);
+        return client;
     }
 
 
