@@ -7,11 +7,14 @@ import com.google.common.base.Strings;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.ServiceRequest;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Location;
+import org.openmrs.LocationAttribute;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PatientIdentifierType;
@@ -22,6 +25,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.idgen.service.IdentifierSourceService;
 import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemr.nupi.UpiUtilsDataExchange;
+import org.openmrs.module.kenyaemr.wrapper.Facility;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.shr.FhirConfig;
 import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
@@ -50,7 +54,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * controller for pivotTableCharts fragment
@@ -87,12 +93,23 @@ public class ReferralsDataExchangeFragmentController {
         org.hl7.fhir.r4.model.Resource fhirServiceRequestResource;
         org.hl7.fhir.r4.model.ServiceRequest fhirServiceRequest = null;
         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
+        if (Strings.isNullOrEmpty(getDefaultLocationMflCode()))
+            return SimpleObject.create("Fail", "Facility mfl cannot be empty");
         Bundle serviceRequestResourceBundle = fhirConfig.fetchReferrals();
-        System.out.println(fhirConfig.getFhirContext().newJsonParser().encodeResourceToString(serviceRequestResourceBundle));
+        System.out.println("Pulled Referrals  ==>" + serviceRequestResourceBundle.getEntry().size());
         if (serviceRequestResourceBundle != null && !serviceRequestResourceBundle.getEntry().isEmpty()) {
-            System.out.println("Pulled Referrals  ==>" + serviceRequestResourceBundle.getEntry().size());
-            for (int i = 0; i < serviceRequestResourceBundle.getEntry().size(); i++) {
-                fhirServiceRequestResource = serviceRequestResourceBundle.getEntry().get(i).getResource();
+            List<Bundle.BundleEntryComponent> resources = serviceRequestResourceBundle.getEntry().stream().filter(entry -> {
+                        ServiceRequest r = (ServiceRequest) entry.getResource();
+                        if (r.getStatus().equals(ServiceRequest.ServiceRequestStatus.ACTIVE) && r.getPerformerFirstRep() != null
+                                && r.getPerformerFirstRep().getIdentifier() != null && !Strings.isNullOrEmpty(r.getPerformerFirstRep().getIdentifier().getValue())
+                                && r.getPerformerFirstRep().getIdentifier().getValue().equals(getDefaultLocationMflCode()))
+                            return true;
+                        return false;
+                    }
+            ).collect(Collectors.toList());
+
+            for (int i = 0; i < resources.size(); i++) {
+                fhirServiceRequestResource = resources.get(i).getResource();
                 System.out.println("Fhir : Checking Service request is null ==>");
                 if (fhirServiceRequestResource != null) {
                     fhirServiceRequest = (org.hl7.fhir.r4.model.ServiceRequest) fhirServiceRequestResource;
@@ -243,6 +260,25 @@ public class ReferralsDataExchangeFragmentController {
         }
 
         return SimpleObject.create("patientId", "");
+    }
+
+    public String getDefaultLocationMflCode() {
+        String mflCodeAttribute = "8a845a89-6aa5-4111-81d3-0af31c45c002";
+        try {
+            Context.addProxyPrivilege(PrivilegeConstants.GET_LOCATION_ATTRIBUTE_TYPES);
+            Location location = getDefaultLocation();
+            Iterator var2 = location.getAttributes().iterator();
+
+            while (var2.hasNext()) {
+                LocationAttribute attr = (LocationAttribute) var2.next();
+                if (attr.getAttributeType().getUuid().equals(mflCodeAttribute) && !attr.isVoided()) {
+                    return (String) attr.getValue();
+                }
+            }
+        } finally {
+            Context.removeProxyPrivilege(PrivilegeConstants.GET_LOCATION_ATTRIBUTE_TYPES);
+        }
+        return "";
     }
 
     public Location getDefaultLocation() {
