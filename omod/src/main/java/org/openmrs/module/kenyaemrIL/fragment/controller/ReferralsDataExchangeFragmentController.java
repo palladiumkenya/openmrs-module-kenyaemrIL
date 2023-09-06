@@ -20,12 +20,14 @@ import org.openmrs.PersonAttributeType;
 import org.openmrs.PersonName;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.idgen.service.IdentifierSourceService;
+import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemr.nupi.UpiUtilsDataExchange;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.shr.FhirConfig;
 import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
+import org.openmrs.module.metadatadeploy.bundle.AbstractMetadataBundle;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.ui.framework.annotation.FragmentParam;
 import org.openmrs.ui.framework.fragment.FragmentModel;
@@ -88,11 +90,11 @@ public class ReferralsDataExchangeFragmentController {
         Bundle serviceRequestResourceBundle = fhirConfig.fetchReferrals();
         System.out.println(fhirConfig.getFhirContext().newJsonParser().encodeResourceToString(serviceRequestResourceBundle));
         if (serviceRequestResourceBundle != null && !serviceRequestResourceBundle.getEntry().isEmpty()) {
+            System.out.println("Pulled Referrals  ==>" + serviceRequestResourceBundle.getEntry().size());
             for (int i = 0; i < serviceRequestResourceBundle.getEntry().size(); i++) {
                 fhirServiceRequestResource = serviceRequestResourceBundle.getEntry().get(i).getResource();
                 System.out.println("Fhir : Checking Service request is null ==>");
                 if (fhirServiceRequestResource != null) {
-                    System.out.println("Fhir : Service request is not null ==>");
                     fhirServiceRequest = (org.hl7.fhir.r4.model.ServiceRequest) fhirServiceRequestResource;
                     String nupiNumber = fhirServiceRequest.getSubject().getIdentifier().getValue();
                     if (Strings.isNullOrEmpty(nupiNumber)) {
@@ -100,12 +102,12 @@ public class ReferralsDataExchangeFragmentController {
                     }
                     System.out.println("NUPI :  ==>" + nupiNumber);
                     if (nupiNumber != null) {
-                        String serverUrl = "https://afyakenyaapi.health.go.ke/partners/registry/search/upi/" + nupiNumber;
-
-                        persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest);
+                        GlobalProperty globalTokenUrl = Context.getAdministrationService().getGlobalPropertyObject(CommonMetadata.GP_CLIENT_VERIFICATION_QUERY_UPI_END_POINT);
+                        if (globalTokenUrl != null && !Strings.isNullOrEmpty(globalTokenUrl.getPropertyValue())) {
+                            String serverUrl = globalTokenUrl.getPropertyValue() + "/" + nupiNumber;
+                            persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest);
+                        }
                     }
-                } else {
-                    System.out.println("Fhir : Service request is null ==>");
                 }
             }
         }
@@ -204,7 +206,8 @@ public class ReferralsDataExchangeFragmentController {
      * Create client referral data from CR data
      */
     public void persistReferralData(JSONObject crClient, FhirConfig fhirConfig, org.hl7.fhir.r4.model.ServiceRequest fhirServiceRequest) {
-        if(crClient == null){
+        if (crClient == null) {
+            System.out.println("Patient not found in CR");
             return;
         }
         ExpectedTransferInPatients expectedTransferInPatients = new ExpectedTransferInPatients();
@@ -323,20 +326,20 @@ public class ReferralsDataExchangeFragmentController {
                 }
             }
 
-        List<String> reasons = new ArrayList<>();
+            List<String> reasons = new ArrayList<>();
 
-        for (CodeableConcept codeableConcept : serviceRequest.getReasonCode()) {
-            if (!codeableConcept.getCoding().isEmpty()) {
-                for (Coding code : codeableConcept.getCoding()) {
-                    reasons.add(code.getDisplay());
+            for (CodeableConcept codeableConcept : serviceRequest.getReasonCode()) {
+                if (!codeableConcept.getCoding().isEmpty()) {
+                    for (Coding code : codeableConcept.getCoding()) {
+                        reasons.add(code.getDisplay());
+                    }
                 }
             }
-        }
 
-             referralsDetailsObject = SimpleObject.create("category", category,
-                "reasonCode", String.join(", ", reasons)
-        );
-    }
+            referralsDetailsObject = SimpleObject.create("category", category,
+                    "reasonCode", String.join(", ", reasons)
+            );
+        }
         return referralsDetailsObject;
-  }
+    }
 }
