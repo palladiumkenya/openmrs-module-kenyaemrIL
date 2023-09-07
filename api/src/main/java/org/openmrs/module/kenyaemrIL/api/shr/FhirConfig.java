@@ -149,14 +149,12 @@ public class FhirConfig {
         System.out.println("Fhir: fetchReferrals ==>");
         try {
             IGenericClient client = getFhirClient();
-            if(client != null) {
+            if (client != null) {
                 System.out.println("Fhir: client is not null ==>");
-                Bundle serviceRequestResource = client.search().forResource(ServiceRequest.class).returnBundle(Bundle.class).execute();
+                Bundle serviceRequestResource = client.search().forResource(ServiceRequest.class).returnBundle(Bundle.class).count(10000).execute();
                 return serviceRequestResource;
             }
-            System.out.println("Fhir: client is  null ==>");
-
-        }catch (Exception e) {
+        } catch (Exception e) {
             log.error(String.format("Failed fetching FHIR patient resource %s", e));
         }
         return null;

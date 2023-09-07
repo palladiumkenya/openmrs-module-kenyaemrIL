@@ -595,7 +595,6 @@ public class ILUtils {
 		try {
 			ObjectNode jsonNode = (ObjectNode) mapper.readTree(currentToken);
 			if (jsonNode != null) {
-				long expiresSeconds = jsonNode.get("expires_in").getLongValue();
 				String token = jsonNode.get("access_token").getTextValue();
 				if(token != null && token.length() > 0)
 				{
@@ -607,24 +606,23 @@ public class ILUtils {
 
 					ObjectNode payloadNode = (ObjectNode) mapper.readTree(payload);
 					long expiryTime = payloadNode.get("exp").getLongValue();
+					// reduce expiry by 4 hours
+					long updatedExpiryTime = expiryTime - (60*60*4);
 
 					long currentTime = System.currentTimeMillis()/1000;
 
 					// check if expired
-					if (currentTime < expiryTime) {
+					if (currentTime < updatedExpiryTime) {
 						return(true);
 					} else {
 						return(false);
 					}
 				}
-				return(false);
-			} else {
-				return(false);
-			}
-		} catch(Exception e) {
+            }
+            return(false);
+        } catch(Exception e) {
 			return(false);
 		}
 	}
-
 
 }
