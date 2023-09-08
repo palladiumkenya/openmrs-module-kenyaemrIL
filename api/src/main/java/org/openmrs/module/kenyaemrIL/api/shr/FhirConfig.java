@@ -131,14 +131,12 @@ public class FhirConfig {
                 + encodedParam1 + "&category="+encodedParam2;
         URL localUrl = new URL(url);
 
-        System.out.println("CONDITIONS URL "+localUrl.toString());
         try {
             IGenericClient client = getFhirClient();
             Bundle conditionsBundle = client.search()
                     .byUrl(localUrl.toString())
                     .count(1000)
                     .returnBundle(Bundle.class).execute();
-            System.out.println("PRINTING RESULT "+client.getFhirContext().newJsonParser().encodeResourceToString(conditionsBundle));
             return conditionsBundle;
 
         }catch (Exception e) {
