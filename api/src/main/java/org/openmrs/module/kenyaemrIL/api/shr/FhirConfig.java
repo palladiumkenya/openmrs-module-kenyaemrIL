@@ -145,13 +145,17 @@ public class FhirConfig {
         }
     }
 
-    public Bundle fetchReferrals() {
+    public Bundle fetchReferrals(String performer) {
+        String url = ILUtils.getShrServerUrl() + "ServiceRequest?performer=Organization/"
+                + performer + "&status=active";
         System.out.println("Fhir: fetchReferrals ==>");
         try {
             IGenericClient client = getFhirClient();
             if (client != null) {
                 System.out.println("Fhir: client is not null ==>");
-                Bundle serviceRequestResource = client.search().forResource(ServiceRequest.class).returnBundle(Bundle.class).count(10000).execute();
+                Bundle serviceRequestResource = client.search()
+                        .byUrl(url)
+                        .returnBundle(Bundle.class).count(10000).execute();
                 return serviceRequestResource;
             }
         } catch (Exception e) {
