@@ -56,7 +56,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * controller for pivotTableCharts fragment
@@ -95,21 +94,11 @@ public class ReferralsDataExchangeFragmentController {
         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
         if (Strings.isNullOrEmpty(getDefaultLocationMflCode()))
             return SimpleObject.create("Fail", "Facility mfl cannot be empty");
-        Bundle serviceRequestResourceBundle = fhirConfig.fetchReferrals();
+        Bundle serviceRequestResourceBundle = fhirConfig.fetchReferrals(getDefaultLocationMflCode());
         System.out.println("Pulled Referrals  ==>" + serviceRequestResourceBundle.getEntry().size());
         if (serviceRequestResourceBundle != null && !serviceRequestResourceBundle.getEntry().isEmpty()) {
-            List<Bundle.BundleEntryComponent> resources = serviceRequestResourceBundle.getEntry().stream().filter(entry -> {
-                        ServiceRequest r = (ServiceRequest) entry.getResource();
-                        if (r.getStatus().equals(ServiceRequest.ServiceRequestStatus.ACTIVE) && r.getPerformerFirstRep() != null
-                                && r.getPerformerFirstRep().getIdentifier() != null && !Strings.isNullOrEmpty(r.getPerformerFirstRep().getIdentifier().getValue())
-                                && r.getPerformerFirstRep().getIdentifier().getValue().equals(getDefaultLocationMflCode()))
-                            return true;
-                        return false;
-                    }
-            ).collect(Collectors.toList());
-
-            for (int i = 0; i < resources.size(); i++) {
-                fhirServiceRequestResource = resources.get(i).getResource();
+            for (int i = 0; i < serviceRequestResourceBundle.getEntry().size(); i++) {
+                fhirServiceRequestResource = serviceRequestResourceBundle.getEntry().get(i).getResource();
                 System.out.println("Fhir : Checking Service request is null ==>");
                 if (fhirServiceRequestResource != null) {
                     fhirServiceRequest = (org.hl7.fhir.r4.model.ServiceRequest) fhirServiceRequestResource;

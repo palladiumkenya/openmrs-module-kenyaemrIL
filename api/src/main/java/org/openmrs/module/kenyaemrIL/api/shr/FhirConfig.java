@@ -16,6 +16,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -45,19 +49,24 @@ public class FhirConfig {
 
 
     /**TODO - Change this to fetch from CR instead*/
-    public Bundle fetchPatientResource(String identifier) {
+    public Bundle fetchPatientAllergies(String identifier) {
+        String url = ILUtils.getShrServerUrl() + "AllergyIntolerance?patient=Patient/"
+                + identifier;
+        System.out.println("Fhir: fetchAllergies ==>");
         try {
             IGenericClient client = getFhirClient();
-            Bundle patientResource = client.search().forResource("Patient").where(Patient.IDENTIFIER.exactly().code(identifier))
-                    .returnBundle(Bundle.class).execute();
-            return patientResource;
-        }
-        catch (Exception e) {
+            if (client != null) {
+                System.out.println("Fhir: client is not null ==>");
+                Bundle allergies = client.search()
+                        .byUrl(url)
+                        .returnBundle(Bundle.class).count(10000).execute();
+                return allergies;
+            }
+        } catch (Exception e) {
             log.error(String.format("Failed fetching FHIR patient resource %s", e));
-            return null;
         }
+        return null;
     }
-
     public Bundle fetchEncounterResource(Patient patient) {
         try {
             IGenericClient client = getFhirClient();
@@ -114,14 +123,22 @@ public class FhirConfig {
         }
     }
 
-    public Bundle fetchConditions(Patient patient) {
+    public Bundle fetchConditions(String patientIdentifier, String categoryString) throws UnsupportedEncodingException, MalformedURLException {
+        String encodedParam1 = URLEncoder.encode(patientIdentifier, "UTF-8");
+        String encodedParam2 = URLEncoder.encode(categoryString, "UTF-8");
+
+        String url = ILUtils.getShrServerUrl() + "Condition?subject=Patient/"
+                + encodedParam1 + "&category="+encodedParam2;
+        URL localUrl = new URL(url);
+
+        System.out.println("CONDITIONS URL "+localUrl.toString());
         try {
             IGenericClient client = getFhirClient();
             Bundle conditionsBundle = client.search()
-                    .forResource(Condition.class)
-                    .where(Condition.PATIENT.hasId(patient.getIdElement().getIdPart()))
-                    .count(100)
+                    .byUrl(localUrl.toString())
+                    .count(1000)
                     .returnBundle(Bundle.class).execute();
+            System.out.println("PRINTING RESULT "+client.getFhirContext().newJsonParser().encodeResourceToString(conditionsBundle));
             return conditionsBundle;
 
         }catch (Exception e) {
@@ -145,13 +162,17 @@ public class FhirConfig {
         }
     }
 
-    public Bundle fetchReferrals() {
+    public Bundle fetchReferrals(String performer) {
+        String url = ILUtils.getShrServerUrl() + "ServiceRequest?performer=Organization/"
+                + performer + "&status=active";
         System.out.println("Fhir: fetchReferrals ==>");
         try {
             IGenericClient client = getFhirClient();
             if (client != null) {
                 System.out.println("Fhir: client is not null ==>");
-                Bundle serviceRequestResource = client.search().forResource(ServiceRequest.class).returnBundle(Bundle.class).count(10000).execute();
+                Bundle serviceRequestResource = client.search()
+                        .byUrl(url)
+                        .returnBundle(Bundle.class).count(10000).execute();
                 return serviceRequestResource;
             }
         } catch (Exception e) {
