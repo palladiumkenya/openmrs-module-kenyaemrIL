@@ -47,10 +47,10 @@ public class KenyaEMRILResourceController extends MainResourceController {
 
     @RequestMapping(method = RequestMethod.GET, value = "/shrPatientSummary")
     @ResponseBody
-    public SimpleObject shrSummary(@RequestParam("patientUniqueNumber") String patientUniqueNumber) {
+    public SimpleObject shrSummary(@RequestParam("patientUuid") String patientUuid) {
         SimpleObject result = null;
         try {
-            result = ShrSummariesFragmentController.constructSHrSummary(patientUniqueNumber);
+            result = ShrSummariesFragmentController.constructSHrSummary(patientUuid);
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         } catch (UnsupportedEncodingException e) {

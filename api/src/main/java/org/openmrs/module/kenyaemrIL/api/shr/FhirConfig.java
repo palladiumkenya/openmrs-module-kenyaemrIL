@@ -83,18 +83,22 @@ public class FhirConfig {
         }
     }
 
-    public Bundle fetchObservationResource(Patient patient) {
+    public Bundle fetchObservationResource(String patientId) {
         try {
-            IGenericClient client = getFhirClient();
-            Bundle observationResource = client.search()
-                    .forResource(Observation.class)
-                    .where(Observation.PATIENT.hasId(patient.getIdElement().getIdPart()))
-                    .returnBundle(Bundle.class).execute();
+            String encodedParam2 = URLEncoder.encode(patientId, "UTF-8");
 
-            //System.out.println("Observation bundle: " + fhirContext.newJsonParser().setPrettyPrint(true).encodeResourceToString(observationResource));
-            return observationResource;
-        }
-        catch (Exception e) {
+            String url = ILUtils.getShrServerUrl() + "Observation?subject:Patient=Patient/"
+                    + patientId;
+            URL localUrl = new URL(url);
+
+            IGenericClient client = getFhirClient();
+            Bundle obsBundle = client.search()
+                    .byUrl(localUrl.toString())
+                    .count(1000)
+                    .returnBundle(Bundle.class).execute();
+            return obsBundle;
+
+        } catch (Exception e) {
             log.error(String.format("Failed fetching FHIR encounter resource %s", e));
             return null;
         }
@@ -127,7 +131,7 @@ public class FhirConfig {
         String encodedParam1 = URLEncoder.encode(patientIdentifier, "UTF-8");
         String encodedParam2 = URLEncoder.encode(categoryString, "UTF-8");
 
-        String url = ILUtils.getShrServerUrl() + "Condition?subject=Patient/"
+        String url = ILUtils.getShrServerUrl() + "Condition?subject:Patient=Patient/"
                 + encodedParam1 + "&category="+encodedParam2;
         URL localUrl = new URL(url);
 
