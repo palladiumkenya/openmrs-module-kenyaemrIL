@@ -45,7 +45,7 @@ public class KenyaEMRILResourceController extends MainResourceController {
         return RestConstants.VERSION_1 + KenyaEMRILResourceController.KENYAEMR_IL__NAMESPACE;
     }
 
-    @RequestMapping(method = RequestMethod.GET, value = "/expected-ti-patient")
+    @RequestMapping(method = RequestMethod.GET, value = "/shrPatientSummary")
     @ResponseBody
     public SimpleObject shrSummary(@RequestParam("patientUuid") String patientUuid) {
         SimpleObject result = null;
