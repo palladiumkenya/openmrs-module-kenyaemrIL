@@ -64,7 +64,7 @@ public class ShrSummariesFragmentController {
                         observation.getCategoryFirstRep().hasCoding() &&
                         observation.getCategoryFirstRep().getCodingFirstRep().getCode().equals("vital-signs")) {
                     SimpleObject local = new SimpleObject();
-                    local.put("uuid", observation.getId());
+                    local.put("uuid", observation.getId().split("/")[4]);
                     local.put("name", observation.getCode().getCodingFirstRep().getDisplay());
                     local.put("date_recorded", observation.getIssued() != null ?
                             new SimpleDateFormat("yyyy-MM-dd").format(observation.getIssued()) : "");
@@ -76,7 +76,7 @@ public class ShrSummariesFragmentController {
                         && observation.getCategoryFirstRep().hasCoding() &&
                         observation.getCategoryFirstRep().getCodingFirstRep().getCode().equals("laboratory")) {
                     SimpleObject local = new SimpleObject();
-                    local.put("uuid", observation.getId());
+                    local.put("uuid", observation.getId().split("/")[4]);
                     local.put("name", observation.getCode().getCodingFirstRep().getDisplay());
                     local.put("date_recorded", observation.getIssued() != null ?
                             new SimpleDateFormat("yyyy-MM-dd").format(observation.getIssued()) : "");
@@ -88,7 +88,7 @@ public class ShrSummariesFragmentController {
                         observation.getCategoryFirstRep().hasCoding() &&
                         observation.getCategoryFirstRep().getCodingFirstRep().getCode().equals("exam")) {
                     SimpleObject local = new SimpleObject();
-                    local.put("uuid", observation.getId());
+                    local.put("uuid", observation.getId().split("/")[4]);
                     local.put("name", observation.getCode().getCodingFirstRep().getDisplay());
                     local.put("date_recorded", observation.getIssued() != null ?
                             new SimpleDateFormat("yyyy-MM-dd").format(observation.getIssued()) : "");
@@ -105,7 +105,7 @@ public class ShrSummariesFragmentController {
                 Condition condition = (Condition) resource.getResource();
                 if (condition.hasCode() && condition.getCode().hasCoding()) {
                     SimpleObject local = new SimpleObject();
-                    local.put("uuid", condition.getId());
+                    local.put("uuid", condition.getId().split("/")[4]);
                     local.put("name", condition.getCode().getCodingFirstRep().getDisplay());
                     //add onset date of the condition
                     local.put("onset_date", condition.getOnsetDateTimeType().isEmpty() ? "" :
@@ -124,7 +124,7 @@ public class ShrSummariesFragmentController {
                 Condition condition = (Condition) resource.getResource();
                 if (condition.hasCode() && condition.getCode().hasCoding()) {
                     SimpleObject local = new SimpleObject();
-                    local.put("uuid", condition.getId());
+                    local.put("uuid", condition.getId().split("/")[4]);
                     local.put("name", condition.getCode().getCodingFirstRep().getDisplay());
                     //add date the diagnosis was made
                     local.put("date_recorded", condition.getRecordedDate() != null ? new SimpleDateFormat("yyyy-MM-dd").format(condition.getRecordedDate()) : "");
@@ -140,7 +140,7 @@ public class ShrSummariesFragmentController {
                 if (allergyIntolerance.hasCode() && allergyIntolerance.getCode().hasCoding() && allergyIntolerance.hasReaction()
                         && allergyIntolerance.getReactionFirstRep().hasSubstance() && allergyIntolerance.getReactionFirstRep().hasManifestation()) {
                     SimpleObject local = new SimpleObject();
-                    local.put("uuid", allergyIntolerance.getId());
+                    local.put("uuid", allergyIntolerance.getId().split("/")[4]);
                     local.put("allergen", allergyIntolerance.getReactionFirstRep().getSubstance().getCodingFirstRep().getDisplay());
                     local.put("reaction", allergyIntolerance.getReactionFirstRep().getManifestationFirstRep().getCodingFirstRep().getDisplay());
                     local.put("severity", allergyIntolerance.getReactionFirstRep().getSeverity().toString());
