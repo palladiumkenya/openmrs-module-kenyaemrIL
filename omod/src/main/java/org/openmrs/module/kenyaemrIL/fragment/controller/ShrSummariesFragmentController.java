@@ -66,7 +66,7 @@ public class ShrSummariesFragmentController {
                     SimpleObject local = new SimpleObject();
                     local.put("uuid", observation.getId().split("/")[4]);
                     local.put("name", observation.getCode().getCodingFirstRep().getDisplay());
-                    local.put("date_recorded", observation.getIssued() != null ?
+                    local.put("dateRecorded", observation.getIssued() != null ?
                             new SimpleDateFormat("yyyy-MM-dd").format(observation.getIssued()) : "");
                     local.put("value", fhirValueProcessor(observation.getValue()));
                     vitals.add(local);
@@ -78,7 +78,7 @@ public class ShrSummariesFragmentController {
                     SimpleObject local = new SimpleObject();
                     local.put("uuid", observation.getId().split("/")[4]);
                     local.put("name", observation.getCode().getCodingFirstRep().getDisplay());
-                    local.put("date_recorded", observation.getIssued() != null ?
+                    local.put("dateRecorded", observation.getIssued() != null ?
                             new SimpleDateFormat("yyyy-MM-dd").format(observation.getIssued()) : "");
                     local.put("value", fhirValueProcessor(observation.getValue()));
                     labResults.add(local);
@@ -90,9 +90,9 @@ public class ShrSummariesFragmentController {
                     SimpleObject local = new SimpleObject();
                     local.put("uuid", observation.getId().split("/")[4]);
                     local.put("name", observation.getCode().getCodingFirstRep().getDisplay());
-                    local.put("date_recorded", observation.getIssued() != null ?
+                    local.put("dateRecorded", observation.getIssued() != null ?
                             new SimpleDateFormat("yyyy-MM-dd").format(observation.getIssued()) : "");
-                    local.put("onset_date", "");
+                    local.put("onsetDate", "");
                     local.put("value", fhirValueProcessor(observation.getValue()));
                     complaints.add(local);
                 }
@@ -108,9 +108,9 @@ public class ShrSummariesFragmentController {
                     local.put("uuid", condition.getId().split("/")[4]);
                     local.put("name", condition.getCode().getCodingFirstRep().getDisplay());
                     //add onset date of the condition
-                    local.put("onset_date", condition.getOnsetDateTimeType().isEmpty() ? "" :
+                    local.put("onsetDate", condition.getOnsetDateTimeType().isEmpty() ? "" :
                             fhirValueProcessor(condition.getOnsetDateTimeType()));
-                    local.put("date_recorded", condition.getRecordedDate() != null ?
+                    local.put("dateRecorded", condition.getRecordedDate() != null ?
                             new SimpleDateFormat("yyyy-MM-dd").format(condition.getRecordedDate()) : "");
                     local.put("status", condition.getClinicalStatus().isEmpty() ? "" : condition.getClinicalStatus().getCodingFirstRep().getDisplay());
                     local.put("value", condition.getCode().getCodingFirstRep().getDisplay());
@@ -127,7 +127,7 @@ public class ShrSummariesFragmentController {
                     local.put("uuid", condition.getId().split("/")[4]);
                     local.put("name", condition.getCode().getCodingFirstRep().getDisplay());
                     //add date the diagnosis was made
-                    local.put("date_recorded", condition.getRecordedDate() != null ? new SimpleDateFormat("yyyy-MM-dd").format(condition.getRecordedDate()) : "");
+                    local.put("dateRecorded", condition.getRecordedDate() != null ? new SimpleDateFormat("yyyy-MM-dd").format(condition.getRecordedDate()) : "");
                     local.put("value", condition.getCode().getCodingFirstRep().getDisplay());
                     diagnosis.add(local);
                 }
@@ -144,9 +144,9 @@ public class ShrSummariesFragmentController {
                     local.put("allergen", allergyIntolerance.getReactionFirstRep().getSubstance().getCodingFirstRep().getDisplay());
                     local.put("reaction", allergyIntolerance.getReactionFirstRep().getManifestationFirstRep().getCodingFirstRep().getDisplay());
                     local.put("severity", allergyIntolerance.getReactionFirstRep().getSeverity().toString());
-                    local.put("onset_date", allergyIntolerance.getOnsetDateTimeType().isEmpty() ? "" :
+                    local.put("onsetDate", allergyIntolerance.getOnsetDateTimeType().isEmpty() ? "" :
                             fhirValueProcessor(allergyIntolerance.getOnsetDateTimeType()));
-                    local.put("date_recorded", allergyIntolerance.getRecordedDate() != null ?
+                    local.put("dateRecorded", allergyIntolerance.getRecordedDate() != null ?
                             new SimpleDateFormat("yyyy-MM-dd").format(allergyIntolerance.getRecordedDate()) : "");
                     allergies.add(local);
                 }
