@@ -6,6 +6,7 @@
 
     def messageCategories = [
         [label: "Facility Referral", iconProvider: "kenyaui", icon: "", label: "Facility Referral", href: ui.pageLink("kenyaemrIL", "referralsHome")],
+        [label: "Internal Referral", iconProvider: "kenyaui", icon: "", label: "Internal Referral", href: ui.pageLink("kenyaemrIL", "internalReferralsHome")],
         [label: "Community Referral", iconProvider: "kenyaui", icon: "", label: "Community Referral", href: ui.pageLink("kenyaemrIL", "communityReferralsHome")]
     ]
 
@@ -191,7 +192,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
     <div>
         <fieldset>
-            <legend>Referrals summary</legend>
+            <legend>Facility Referrals summary</legend>
             <div>
                 <table class="simple-table" width="100%">
                     <thead>

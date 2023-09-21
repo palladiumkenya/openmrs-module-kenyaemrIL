@@ -192,7 +192,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
     <div>
         <fieldset>
-            <legend>Community Referrals summary</legend>
+            <legend>Internal Referrals summary</legend>
             <div>
                 <table class="simple-table" width="100%">
                     <thead>
@@ -207,7 +207,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                         <td>${completedReferralListSize}</td>
                     </tr>
                     <tr>
-                        <td width="15%"> <button id="pullCommunityReferrals">Pull Community Referrals</button></td>
+                        <td width="15%"> <button id="pullCommunityReferrals">Pull Internal Referrals</button></td>
                         <td> <div class="wait-loading"></div> <div class="text-wrap" align="center" id="pull-msgBox"></div></td>
 
                        <td></td>
@@ -508,6 +508,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
         });
 
         jq(document).on('click','.updateSHRButton',function(){
+            console.log("IDDDDDDDDDDDD "+jq(this).val());
              // Update referral_status PA
             jQuery.getJSON('${ ui.actionLink("kenyaemrIL", "referralsDataExchange", "updateShrReferral")}',
                 {
