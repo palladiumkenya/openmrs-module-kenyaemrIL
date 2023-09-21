@@ -111,7 +111,14 @@ public class ReferralsDataExchangeFragmentController {
                         GlobalProperty globalTokenUrl = Context.getAdministrationService().getGlobalPropertyObject(CommonMetadata.GP_CLIENT_VERIFICATION_QUERY_UPI_END_POINT);
                         if (globalTokenUrl != null && !Strings.isNullOrEmpty(globalTokenUrl.getPropertyValue())) {
                             String serverUrl = globalTokenUrl.getPropertyValue() + "/" + nupiNumber;
-                            persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest);
+                            if (fhirServiceRequest.hasPerformer()) {
+                                System.out.println("fhirServiceRequest.getPerformerFirstRep().getReference()"+fhirServiceRequest.getPerformerFirstRep().getReference());
+                                if (fhirServiceRequest.getPerformerFirstRep().getReference().equals("Organization/"+getDefaultLocationMflCode())) {
+                                    persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest, "INTERNAL");
+                                } else {
+                                    persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest, "COMMUNITY");
+                                }
+                            }
                         }
                     }
                 }
@@ -211,7 +218,7 @@ public class ReferralsDataExchangeFragmentController {
     /**
      * Create client referral data from CR data
      */
-    public void persistReferralData(JSONObject crClient, FhirConfig fhirConfig, org.hl7.fhir.r4.model.ServiceRequest fhirServiceRequest) {
+    public void persistReferralData(JSONObject crClient, FhirConfig fhirConfig, org.hl7.fhir.r4.model.ServiceRequest fhirServiceRequest, String serviceType) {
         if (crClient == null) {
             System.out.println("Patient not found in CR");
             return;
@@ -231,7 +238,7 @@ public class ReferralsDataExchangeFragmentController {
         expectedTransferInPatients.setClientGender(gender);
         expectedTransferInPatients.setReferralStatus("ACTIVE");
         expectedTransferInPatients.setPatientSummary(fhirConfig.getFhirContext().newJsonParser().encodeResourceToString(fhirServiceRequest));
-        expectedTransferInPatients.setServiceType("COMMUNITY");
+        expectedTransferInPatients.setServiceType(serviceType);
         Context.getService(KenyaEMRILService.class).createPatient(expectedTransferInPatients);
         System.out.println("Successfully persisted in expected referrals model ==>");
     }
