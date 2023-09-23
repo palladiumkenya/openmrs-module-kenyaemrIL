@@ -52,6 +52,7 @@ import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -95,27 +96,45 @@ public class ReferralsDataExchangeFragmentController {
         if (Strings.isNullOrEmpty(getDefaultLocationMflCode()))
             return SimpleObject.create("Fail", "Facility mfl cannot be empty");
         Bundle serviceRequestResourceBundle = fhirConfig.fetchReferrals(getDefaultLocationMflCode());
-        System.out.println("Pulled Referrals  ==>" + serviceRequestResourceBundle.getEntry().size());
-        if (serviceRequestResourceBundle != null && !serviceRequestResourceBundle.getEntry().isEmpty()) {
-            for (int i = 0; i < serviceRequestResourceBundle.getEntry().size(); i++) {
-                fhirServiceRequestResource = serviceRequestResourceBundle.getEntry().get(i).getResource();
-                System.out.println("Fhir : Checking Service request is null ==>");
-                if (fhirServiceRequestResource != null) {
-                    fhirServiceRequest = (org.hl7.fhir.r4.model.ServiceRequest) fhirServiceRequestResource;
-                    String nupiNumber = fhirServiceRequest.getSubject().getIdentifier().getValue();
-                    if (Strings.isNullOrEmpty(nupiNumber)) {
-                        continue;
-                    }
-                    System.out.println("NUPI :  ==>" + nupiNumber);
-                    if (nupiNumber != null) {
-                        GlobalProperty globalTokenUrl = Context.getAdministrationService().getGlobalPropertyObject(CommonMetadata.GP_CLIENT_VERIFICATION_QUERY_UPI_END_POINT);
-                        if (globalTokenUrl != null && !Strings.isNullOrEmpty(globalTokenUrl.getPropertyValue())) {
-                            String serverUrl = globalTokenUrl.getPropertyValue() + "/" + nupiNumber;
-                            persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest);
+//        Bundle serviceRequestResourceBundle = fhirConfig.fetchAllReferrals();
+        System.out.println("getDefaultLocationMflCode() "+getDefaultLocationMflCode());
+//        System.out.println("Pulled Referrals  ==>" + serviceRequestResourceBundle.getEntry().size());
+        if (serviceRequestResourceBundle != null) {
+            if (serviceRequestResourceBundle != null && !serviceRequestResourceBundle.getEntry().isEmpty()) {
+                for (int i = 0; i < serviceRequestResourceBundle.getEntry().size(); i++) {
+                    fhirServiceRequestResource = serviceRequestResourceBundle.getEntry().get(i).getResource();
+                    System.out.println("Fhir : Checking Service request is null ==>");
+                    if (fhirServiceRequestResource != null) {
+                        fhirServiceRequest = (org.hl7.fhir.r4.model.ServiceRequest) fhirServiceRequestResource;
+
+                        if (fhirServiceRequest.hasPerformer()) {
+                            if (fhirServiceRequest.getPerformerFirstRep().getDisplay().equals(getDefaultLocationMflCode())) {
+                                String nupiNumber = fhirServiceRequest.getSubject().getIdentifier().getValue();
+                                if (Strings.isNullOrEmpty(nupiNumber)) {
+                                    continue;
+                                }
+                                System.out.println("NUPI :  ==>" + nupiNumber);
+                                if (nupiNumber != null) {
+                                    GlobalProperty globalTokenUrl = Context.getAdministrationService().getGlobalPropertyObject(CommonMetadata.GP_CLIENT_VERIFICATION_QUERY_UPI_END_POINT);
+                                    if (globalTokenUrl != null && !Strings.isNullOrEmpty(globalTokenUrl.getPropertyValue())) {
+                                        String serverUrl = globalTokenUrl.getPropertyValue() + "/" + nupiNumber;
+                                        if (fhirServiceRequest.hasPerformer()) {
+                                            System.out.println("fhirServiceRequest.getPerformerFirstRep().getReference()"+fhirServiceRequest.getPerformerFirstRep().getReference());
+                                            if (fhirServiceRequest.getPerformerFirstRep().getReference().equals("Organization/"+getDefaultLocationMflCode())) {
+                                                persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest, "INTERNAL");
+                                            } else {
+                                                persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest, "COMMUNITY");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
+        } else {
+            System.out.printf("BUNDLE IS NULL");
         }
         return SimpleObject.create("success", "");
     }
@@ -211,7 +230,7 @@ public class ReferralsDataExchangeFragmentController {
     /**
      * Create client referral data from CR data
      */
-    public void persistReferralData(JSONObject crClient, FhirConfig fhirConfig, org.hl7.fhir.r4.model.ServiceRequest fhirServiceRequest) {
+    public void persistReferralData(JSONObject crClient, FhirConfig fhirConfig, org.hl7.fhir.r4.model.ServiceRequest fhirServiceRequest, String serviceType) {
         if (crClient == null) {
             System.out.println("Patient not found in CR");
             return;
@@ -231,7 +250,7 @@ public class ReferralsDataExchangeFragmentController {
         expectedTransferInPatients.setClientGender(gender);
         expectedTransferInPatients.setReferralStatus("ACTIVE");
         expectedTransferInPatients.setPatientSummary(fhirConfig.getFhirContext().newJsonParser().encodeResourceToString(fhirServiceRequest));
-        expectedTransferInPatients.setServiceType("COMMUNITY");
+        expectedTransferInPatients.setServiceType(serviceType);
         Context.getService(KenyaEMRILService.class).createPatient(expectedTransferInPatients);
         System.out.println("Successfully persisted in expected referrals model ==>");
     }
@@ -345,6 +364,7 @@ public class ReferralsDataExchangeFragmentController {
             serviceRequest = parser.parseResource(ServiceRequest.class, patientReferral.getPatientSummary());
 
             String category = "";
+            String referralDate = "";
             if (!serviceRequest.getCategory().isEmpty()) {
                 if (!serviceRequest.getCategory().get(0).getCoding().isEmpty()) {
                     category = serviceRequest.getCategory().get(0).getCoding().get(0).getDisplay();
@@ -360,9 +380,13 @@ public class ReferralsDataExchangeFragmentController {
                     }
                 }
             }
+            if (serviceRequest.getAuthoredOn() != null) {
+                referralDate = new SimpleDateFormat("yyyy-MM-dd").format(serviceRequest.getAuthoredOn());
+            }
 
             referralsDetailsObject = SimpleObject.create("category", category,
-                    "reasonCode", String.join(", ", reasons)
+                    "reasonCode", String.join(", ", reasons),
+                    "referralDate", referralDate
             );
         }
         return referralsDetailsObject;
