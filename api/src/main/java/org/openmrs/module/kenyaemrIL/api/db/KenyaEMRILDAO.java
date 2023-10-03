@@ -99,7 +99,13 @@ public interface KenyaEMRILDAO {
     ExpectedTransferInPatients createPatient(ExpectedTransferInPatients patient);
 
     List<ExpectedTransferInPatients> getAllTransferIns();
-    
-    ExpectedTransferInPatients getTransferInPatient(Patient patient);
+
+    List<ExpectedTransferInPatients> getAllTransferInsByServiceType(String serviceType);
+
+    List<ExpectedTransferInPatients> getTransferInPatient(Patient patient);
+
+    List<ExpectedTransferInPatients> getCommunityReferrals(String serviceType, String referralStatus);
+
+    ExpectedTransferInPatients getCommunityReferralsById(Integer id);
 
 }

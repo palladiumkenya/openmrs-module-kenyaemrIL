@@ -5,8 +5,9 @@
     ]
 
     def messageCategories = [
-        [label: "Il Messages", iconProvider: "kenyaui", icon: "", label: "Il Messages", href: ui.pageLink("kenyaemrIL", "interopManagerHome")],
-        [label: "Art Referral Messages", iconProvider: "kenyaui", icon: "", label: "Art Referral Messages", href: ui.pageLink("kenyaemrIL", "referralsHome")]
+        [label: "Facility Referral", iconProvider: "kenyaui", icon: "", label: "Facility Referral", href: ui.pageLink("kenyaemrIL", "referralsHome")],
+        [label: "Internal Referral", iconProvider: "kenyaui", icon: "", label: "Internal Referral", href: ui.pageLink("kenyaemrIL", "internalReferralsHome")],
+        [label: "Community Referral", iconProvider: "kenyaui", icon: "", label: "Community Referral", href: ui.pageLink("kenyaemrIL", "communityReferralsHome")]
     ]
 
     ui.includeJavascript("kenyaemrorderentry", "jquery.twbsPagination.min.js")
@@ -183,7 +184,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 <div class="ke-page-sidebar">
     <div class="ke-panel-frame">
         ${ ui.includeFragment("kenyaui", "widget/panelMenu", [ heading: "Navigation", items: menuItems ]) }
-        ${ ui.includeFragment("kenyaui", "widget/panelMenu", [ heading: "Il Admin", items: messageCategories ]) }
+        ${ ui.includeFragment("kenyaui", "widget/panelMenu", [ heading: "Referrals", items: messageCategories ]) }
     </div>
 </div>
 
@@ -191,7 +192,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
     <div>
         <fieldset>
-            <legend>Referrals summary</legend>
+            <legend>Facility Referrals summary</legend>
             <div>
                 <table class="simple-table" width="100%">
                     <thead>
