@@ -196,6 +196,7 @@
             Configures how KenyaEMR sends messages to Mhealth servers. Valid options are IL or Direct
         </description>
     </globalProperty>
+
     <globalProperty>
         <property>kemr.mhealth.middlware</property>
         <defaultValue>IL</defaultValue>
@@ -203,11 +204,13 @@
             Configures how KenyaEMR sends messages to Mhealth servers. Valid options are IL or Direct
         </description>
     </globalProperty>
+
     <globalProperty>
         <property>kenyaemril.fhir.server.url</property>
         <description>KenyaEMRIL Fhir Server URL</description>
         <defaultValue>http://localhost:8098/fhir/</defaultValue>
     </globalProperty>
+
     <globalProperty>
         <property>kenyaemril.fhir.server.username</property>
         <description>KenyaEMRIL Fhir Server Username</description>
@@ -242,6 +245,13 @@
         <property>kenyaemril.fhir.server.oath2.client.id</property>
         <description>FHIR server oath2 authorization client ID</description>
         <defaultValue></defaultValue>
+    </globalProperty>
+    <globalProperty>
+        <property>dmiTask.lastFetchDateAndTime</property>
+        <defaultValue>20230126120000</defaultValue>
+        <description>
+            The last date and time that the last fetch was done for dmi push task
+        </description>
     </globalProperty>
     <!-- /Internationalization -->
 </module>
