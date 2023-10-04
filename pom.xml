@@ -45,6 +45,7 @@
         <kenyaemrVersion>18.6.2</kenyaemrVersion>
         <kenyacoreVersion>3.0.0</kenyacoreVersion>
         <kenyauiVersion>3.0.0</kenyauiVersion>
+        <idgenVersion>4.5.0</idgenVersion>
         <metadatadeployVersion>1.11.0</metadatadeployVersion>
         <metadatasharingVersion>1.5.0</metadatasharingVersion>
         <reportingVersion>1.18.0</reportingVersion>
@@ -55,6 +56,7 @@
         <jacksonVersion>2.10.1</jacksonVersion>
         <apacheHttpClientVersion>4.5.10</apacheHttpClientVersion>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <fhir-core.version>5.4.0</fhir-core.version>
     </properties>
 
     <dependencyManagement>
@@ -333,38 +335,16 @@
                 </exclusions>
             </dependency>
 
+            <dependency>
+                <groupId>org.openmrs.module</groupId>
+                <artifactId>idgen-api</artifactId>
+                <version>${idgenVersion}</version>
+                <scope>provided</scope>
+            </dependency>
+
+
         </dependencies>
     </dependencyManagement>
-
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <configuration>
-                        <target>1.6</target>
-                        <source>1.6</source>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.openmrs.maven.plugins</groupId>
-                    <artifactId>maven-openmrs-plugin</artifactId>
-                    <version>1.0.1</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <version>2.4</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>2.9.1</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
 
     <repositories>
         <repository>

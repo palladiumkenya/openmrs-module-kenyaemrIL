@@ -14,11 +14,13 @@ public class ILAdminSecurityMetadata extends AbstractMetadataBundle{
     public static class _Privilege {
         public static final String APP_IL_ADMIN = "App: kenyaemrilladmin.home";
         public static final String APP_USHAURI_ADMIN = "App: kenyaemr.ushauri.home";
+        public static final String APP_REFERRAL_ADMIN = "App: kenyaemr.referral.home";
     }
 
     public static final class _Role {
         public static final String APPLICATION_IL_ADMIN = "IL Administration";
         public static final String APPLICATION_USHAURI_ADMIN = "Ushauri Administration";
+        public static final String APPLICATION_REFERRAL_ADMIN = "Referral Administration";
         public static final String API_PRIVILEGES_VIEW_AND_EDIT = "API Privileges (View and Edit)";
     }
 
@@ -30,6 +32,7 @@ public class ILAdminSecurityMetadata extends AbstractMetadataBundle{
 
         install(privilege(_Privilege.APP_IL_ADMIN, "Able to refresh IL Messages"));
         install(privilege(_Privilege.APP_USHAURI_ADMIN, "Able to manage data exchange with Ushauri server"));
+        install(privilege(_Privilege.APP_REFERRAL_ADMIN, "Able to manage referrals data"));
         install(role(_Role.APPLICATION_IL_ADMIN, "Can access IL Admin app", idSet(
                 _Role.API_PRIVILEGES_VIEW_AND_EDIT
         ), idSet(
@@ -40,6 +43,11 @@ public class ILAdminSecurityMetadata extends AbstractMetadataBundle{
                 _Role.API_PRIVILEGES_VIEW_AND_EDIT
         ), idSet(
                 _Privilege.APP_USHAURI_ADMIN
+        )));
+        install(role(_Role.APPLICATION_REFERRAL_ADMIN, "Can access Referral Admin app", idSet(
+                _Role.API_PRIVILEGES_VIEW_AND_EDIT
+        ), idSet(
+                _Privilege.APP_REFERRAL_ADMIN
         )));
     }
 }

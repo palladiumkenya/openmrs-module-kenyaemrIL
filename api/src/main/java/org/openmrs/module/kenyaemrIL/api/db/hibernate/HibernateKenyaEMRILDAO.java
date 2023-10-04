@@ -368,16 +368,43 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     }
 
     @Override
-    public ExpectedTransferInPatients getTransferInPatient(Patient patient) {
+    public List<ExpectedTransferInPatients> getAllTransferInsByServiceType(String serviceType) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(ExpectedTransferInPatients.class);
+        if(serviceType != null){
+            crit.add(Restrictions.eq("service_type", serviceType));
+          }
+        return crit.list();
+    }
+
+    @Override
+    public List<ExpectedTransferInPatients> getTransferInPatient(Patient patient) {
         if (patient == null) return null;
         String stringQuery = "SELECT expectedTransferInPatient FROM ExpectedTransferInPatients AS expectedTransferInPatient WHERE patient = :patient AND retired = 0";
         Query query = this.sessionFactory.getCurrentSession().createQuery(
                 stringQuery);
         query.setParameter("patient", patient);
         List<ExpectedTransferInPatients> expectedTransferInPatients = query.list();
-        if (!expectedTransferInPatients.isEmpty()) {
-            return expectedTransferInPatients.get(0);
-        }
-        return null;
+        return expectedTransferInPatients;
     }
+
+    @Override
+    public List<ExpectedTransferInPatients> getCommunityReferrals(String serviceType,String referralStatus) {
+        if (serviceType == null) return null;
+        String stringQuery = "SELECT expectedTransferInPatient FROM ExpectedTransferInPatients AS expectedTransferInPatient WHERE serviceType = :serviceType AND referralStatus = :referralStatus";
+        Query query = this.sessionFactory.getCurrentSession().createQuery(
+                stringQuery);
+        query.setParameter("serviceType", serviceType);
+        query.setParameter("referralStatus", referralStatus);
+        List<ExpectedTransferInPatients> getCommunityReferrals = query.list();
+        return getCommunityReferrals;
+    }
+
+    @Override
+    public ExpectedTransferInPatients getCommunityReferralsById(Integer id) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(ExpectedTransferInPatients.class);
+        crit.add(Restrictions.eq("id", id));
+        ExpectedTransferInPatients expectedTransferInPatient = (ExpectedTransferInPatients) crit.uniqueResult();
+        return expectedTransferInPatient;
+    }
+
 }

@@ -26,11 +26,11 @@ import org.openmrs.module.kenyaemrIL.hivDicontinuation.Program_Discontinuation_M
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral.SERVICE_REQUEST_SUPPORTING_INFO;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
+import org.openmrs.module.kenyaemrIL.fragment.controller.ShrSummariesFragmentController;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.MainResourceController;
 import org.springframework.stereotype.Controller;
-
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -42,6 +42,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 
 
 /**
@@ -52,6 +54,7 @@ import java.util.stream.Collectors;
 public class KenyaEMRILResourceController extends MainResourceController {
 
     public static final String KENYAEMR_IL__NAMESPACE = "/kenyaemril";
+
     /**
      * @see org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController#getNamespace()
      */
@@ -118,5 +121,19 @@ public class KenyaEMRILResourceController extends MainResourceController {
         }
 
         return object;
+    }
+  
+    @RequestMapping(method = RequestMethod.GET, value = "/shrPatientSummary")
+    @ResponseBody
+    public SimpleObject shrSummary(@RequestParam("patientUuid") String patientUuid) {
+        SimpleObject result = null;
+        try {
+            result = ShrSummariesFragmentController.constructSHrSummary(patientUuid);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
     }
 }

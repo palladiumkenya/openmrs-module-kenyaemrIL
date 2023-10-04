@@ -5,8 +5,7 @@
     ]
 
     def messageCategories = [
-        [label: "Il Messages", iconProvider: "kenyaui", icon: "", label: "Il Messages", href: ui.pageLink("kenyaemrIL", "interopManagerHome")],
-        [label: "Art Referral Messages", iconProvider: "kenyaui", icon: "", label: "Art Referral Messages", href: ui.pageLink("kenyaemrIL", "referralsHome")]
+        [label: "Il Messages", iconProvider: "kenyaui", icon: "", label: "Il Messages", href: ui.pageLink("kenyaemrIL", "interopManagerHome")]
     ]
 %>
 
