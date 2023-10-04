@@ -14,9 +14,11 @@
 
 package org.openmrs.module.kenyaemrIL.metadata;
 
+import org.openmrs.api.context.Context;
 import org.openmrs.module.metadatadeploy.bundle.AbstractMetadataBundle;
 import org.springframework.stereotype.Component;
 
+import static org.openmrs.module.metadatadeploy.bundle.CoreConstructors.globalProperty;
 import static org.openmrs.module.metadatadeploy.bundle.CoreConstructors.personAttributeType;
 
 /**
@@ -24,6 +26,12 @@ import static org.openmrs.module.metadatadeploy.bundle.CoreConstructors.personAt
  */
 @Component
 public class ILMetadata extends AbstractMetadataBundle {
+
+	public static final String GP_DMI_SERVER_POST_END_POINT = "dmi.surveillance.post.api";
+	public static final String GP_DMI_SERVER_TOKEN_URL = "dmi.surveillance.token.url";
+	public static final String GP_DMI_SERVER_TOKEN = "dmi.surveillance.token";
+	public static final String GP_DMI_SERVER_CLIENT_ID = "dmi.surveillance.client.id";
+	public static final String GP_DMI_SERVER_CLIENT_SECRET = "dmi.surveillance.client.secret";
 
 	public static final class _PersonAttributeType {
 
@@ -42,5 +50,21 @@ public class ILMetadata extends AbstractMetadataBundle {
 				String.class, null, false, 5.1, _PersonAttributeType.REFERRAL_SOURCE));
 		install(personAttributeType("Referral status", "Referral status",
 				String.class, null, false, 5.1, _PersonAttributeType.REFERRAL_STATUS));
+
+		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_POST_END_POINT) == null) {
+			install(globalProperty(GP_DMI_SERVER_POST_END_POINT, "A GET API for posting dmi surveillance data", "https://dmistaging.kenyahmis.org/api/case/batch"));
+		}
+		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_TOKEN_URL) == null) {
+			install(globalProperty(GP_DMI_SERVER_TOKEN_URL, "Authorization token URL", "https://keycloak.kenyahmis.org/realms/dmi/protocol/openid-connect/token"));
+		}
+		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_TOKEN) == null) {
+			install(globalProperty(GP_DMI_SERVER_TOKEN, "Authorization token", ""));
+		}
+		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_CLIENT_ID) == null) {
+			install(globalProperty(GP_DMI_SERVER_CLIENT_ID, "Dmi server client id", "test-emr"));
+		}
+		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_CLIENT_SECRET) == null) {
+			install(globalProperty(GP_DMI_SERVER_CLIENT_SECRET, "Dmi server client secret", "vCPf2QNkg8ehSoIXBelAVY6GvWdgg3E5"));
+		}
 	}
 }
