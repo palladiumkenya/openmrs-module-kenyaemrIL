@@ -71,8 +71,8 @@ public class ValidateTransferOutsTasks extends AbstractTask {
             return;
         }
         //String serverUrl =   gpMiddlewareServerUrl.getPropertyValue() + "referral-status/"; // SERVER URL
-//        String serverUrl =   "https://prod.kenyahmis.org:8002/api/patients/referral-status/"; // LOCAL URL
-        String serverUrl = "http://192.168.1.44:8002/api/patients/referral-status/";
+        String serverUrl =   "http://prod.kenyahmis.org:8002/api/patients/referral-status/"; // LOCAL URL
+//        String serverUrl = "http://192.168.1.44:8002/api/patients/referral-status/";
         String cccParam = String.join(", ", trfCccNumbers);
         String mflParam = MessageHeaderSingleton.getDefaultLocationMflCode(MessageHeaderSingleton.getDefaultLocation());
 
