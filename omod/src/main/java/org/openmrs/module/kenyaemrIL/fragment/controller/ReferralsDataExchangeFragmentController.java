@@ -3,35 +3,40 @@ package org.openmrs.module.kenyaemrIL.fragment.controller;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
-import org.hl7.fhir.r4.model.Identifier;
-import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.ServiceRequest;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Location;
 import org.openmrs.LocationAttribute;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PatientIdentifierType;
+import org.openmrs.Person;
+import org.openmrs.PersonAddress;
 import org.openmrs.PersonAttribute;
 import org.openmrs.PersonAttributeType;
 import org.openmrs.PersonName;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.idgen.service.IdentifierSourceService;
 import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
+import org.openmrs.module.kenyaemr.metadata.HivMetadata;
 import org.openmrs.module.kenyaemr.nupi.UpiUtilsDataExchange;
-import org.openmrs.module.kenyaemr.wrapper.Facility;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.shr.FhirConfig;
+import org.openmrs.module.kenyaemrIL.il.ILMessage;
+import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
+import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
-import org.openmrs.module.metadatadeploy.bundle.AbstractMetadataBundle;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.ui.framework.annotation.FragmentParam;
 import org.openmrs.ui.framework.fragment.FragmentModel;
@@ -52,6 +57,7 @@ import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -258,6 +264,23 @@ public class ReferralsDataExchangeFragmentController {
         return SimpleObject.create("patientId", "");
     }
 
+    public SimpleObject artReferralsHandler(@RequestParam("patientId") Integer referral) throws Exception {
+        KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
+        ExpectedTransferInPatients referred = service.getCommunityReferralsById(referral);
+        ObjectMapper objectMapper = new ObjectMapper();
+        ILMessage ilMessage = objectMapper.readValue(referred.getPatientSummary().toLowerCase(), ILMessage.class);
+        Patient patient = registerArtReferralPatient(ilMessage.getPatient_identification());
+        if (patient != null) {
+            referred.setReferralStatus("COMPLETED");
+            referred.setPatient(patient);
+            service.createPatient(referred);
+
+            return SimpleObject.create("patientId", patient.getPatientId());
+        }
+
+        return SimpleObject.create("patientId", "");
+    }
+
     public String getDefaultLocationMflCode() {
         String mflCodeAttribute = "8a845a89-6aa5-4111-81d3-0af31c45c002";
         try {
@@ -336,6 +359,61 @@ public class ReferralsDataExchangeFragmentController {
             return Context.getPatientService().savePatient(patient);
         }
     }
+
+    private Patient registerArtReferralPatient(PATIENT_IDENTIFICATION patient_identification) throws ParseException, java.text.ParseException {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+        Person person = new Person();
+        PersonName personName = new PersonName(patient_identification.getPatient_name().getLast_name(),
+                patient_identification.getPatient_name().getMiddle_name(), patient_identification.getPatient_name().getFirst_name());
+        person.addName(personName);
+        PatientIdentifierType cccIdType = MetadataUtils.existing(PatientIdentifierType.class, HivMetadata._PatientIdentifierType.UNIQUE_PATIENT_NUMBER);
+        PatientIdentifierType upiIdType = Context.getPatientService().getPatientIdentifierTypeByUuid("f85081e2-b4be-4e48-b3a4-7994b69bb101");
+        if (patient_identification.getDate_of_birth().equals("")) {
+            return null;
+        }
+        person.setBirthdate(formatter.parse("20230815"));
+        person.setBirthdateEstimated(Boolean.getBoolean(patient_identification.getDate_of_birth_precision()));
+        person.setGender("F");
+        PersonAttribute phoneNumber = new PersonAttribute(Context.getPersonService().getPersonAttributeTypeByName("Telephone contact"), patient_identification.getPhone_number());
+        PersonAttribute maritalStatus = new PersonAttribute(Context.getPersonService().getPersonAttributeTypeByName("Civil Status"), patient_identification.getMarital_status());
+        person.addAttribute(phoneNumber);
+        person.addAttribute(maritalStatus);
+
+        PersonAddress personAddress = getPersonAddress(patient_identification);
+        person.addAddress(personAddress);
+        Context.getPersonService().savePerson(person);
+        Patient patient = new Patient(person);
+        for (INTERNAL_PATIENT_ID internalPatientId : patient_identification.getInternal_patient_id()) {
+            if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
+                PatientIdentifier ccc = new PatientIdentifier(internalPatientId.getId(), cccIdType, MessageHeaderSingleton.getDefaultLocation());
+                ccc.setPreferred(true);
+                patient.addIdentifier(ccc);
+            } else if (internalPatientId.getIdentifier_type().equalsIgnoreCase("NUPI")) {
+                patient.addIdentifier(new PatientIdentifier(internalPatientId.getId(), upiIdType, MessageHeaderSingleton.getDefaultLocation()));
+            }
+        }
+        // Assign a patient an OpenMRS ID
+        String OPENMRS_ID = "dfacd928-0370-4315-99d7-6ec1c9f7ae76";
+        PatientIdentifierType openmrsIdType = MetadataUtils.existing(PatientIdentifierType.class, OPENMRS_ID);
+
+        String generated = Context.getService(IdentifierSourceService.class).generateIdentifier(openmrsIdType, "Registration");
+        PatientIdentifier omrsId = new PatientIdentifier(generated, openmrsIdType, MessageHeaderSingleton.getDefaultLocation());
+        omrsId.setPreferred(true);
+        patient.addIdentifier(omrsId);
+
+        return Context.getPatientService().savePatient(patient);
+    }
+
+    private static PersonAddress getPersonAddress(PATIENT_IDENTIFICATION patient_identification) {
+        PersonAddress personAddress = new PersonAddress();
+        personAddress.setAddress6(patient_identification.getPatient_address().getPhysical_address().getWard());
+        personAddress.setCountyDistrict(patient_identification.getPatient_address().getPhysical_address().getCounty());
+        personAddress.setAddress2(patient_identification.getPatient_address().getPhysical_address().getNearest_landmark());
+        personAddress.setAddress4(patient_identification.getPatient_address().getPhysical_address().getSub_county());
+        personAddress.setCityVillage(patient_identification.getPatient_address().getPhysical_address().getVillage());
+        return personAddress;
+    }
+
 
     public SimpleObject addReferralCategoryAndReasons(@RequestParam("clientId") Integer clientId) throws Exception {
 

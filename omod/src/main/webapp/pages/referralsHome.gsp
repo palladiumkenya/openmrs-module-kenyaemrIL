@@ -204,7 +204,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                     </tr>
                     <tr>
                         <td width="15%">Total errors</td>
-                        <td>${generalErrorListSize}</td>
+                        <td>0</td>
                     </tr>
                     </tbody>
                 </table>
@@ -216,9 +216,9 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
         <div class="ke-tabmenu">
 
-            <div class="ke-tabmenu-item" data-tabid="queue_data">Outgoing queue</div>
+            <div class="ke-tabmenu-item" data-tabid="queue_data">Pending Referrals</div>
 
-            <div class="ke-tabmenu-item" data-tabid="archive_data">Sent Messages</div>
+            <div class="ke-tabmenu-item" data-tabid="archive_data">Completed Referrals</div>
 
             <div class="ke-tabmenu-item" data-tabid="general_error_queue">Error queue</div>
 
@@ -238,13 +238,12 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                         <thead>
                                         <tr>
                                             <th class="clientNameColumn">Patient Identifier</th>
+                                            <th class="sampleTypeColumn">UPI</th>
                                             <th class="cccNumberColumn">Patient Name</th>
-                                            <th class="sampleTypeColumn">Message Type</th>
-                                            <th class="sampleTypeColumn">Discontinuation Reason</th>
-                                            <th class="sampleTypeColumn">TransferOut Date</th>
+                                            <th class="dateRequestColumn">TransferOut Date</th>
                                             <th class="dateRequestColumn">Appointment Date</th>
                                             <th class="dateRequestColumn">TO Acceptance Date</th>
-                                            <th class="dateRequestColumn">Date created</th>
+                                            <th class="action">Action</th>
                                         </tr>
                                         </thead>
                                         <tbody id="queue-list">
@@ -278,13 +277,11 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                         <thead>
                                         <tr>
                                             <th class="clientNameColumn">Patient Identifier</th>
+                                            <th class="sampleTypeColumn">UPI</th>
                                             <th class="cccNumberColumn">Patient Name</th>
-                                            <th class="sampleTypeColumn">Message Type</th>
-                                            <th class="sampleTypeColumn">Discontinuation Reason</th>
-                                            <th class="sampleTypeColumn">TransferOut Date</th>
+                                            <th class="dateRequestColumn">TransferOut Date</th>
                                             <th class="dateRequestColumn">Appointment Date</th>
                                             <th class="dateRequestColumn">TO Acceptance Date</th>
-                                            <th class="dateRequestColumn">Date created</th>
                                         </tr>
                                         </thead>
                                         <tbody id="archive-list">
@@ -297,54 +294,6 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                         <ul id="archivePagination" class="pagination-sm"></ul>
                                     </div>
                                 </fieldset>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        
-        <div class="ke-tab" data-tabid="general_error_queue">
-            <table id="general-error" cellspacing="0" cellpadding="0" width="100%">
-                <tr>
-                    <td style="width: 99%; vertical-align: top">
-                        <div class="ke-panel-frame">
-                            <div class="ke-panel-heading"></div>
-
-                            <div class="ke-panel-content">
-                                    <fieldset>
-                                        <legend></legend>
-                                        <table class="simple-table" width="100%">
-                                            <thead>
-                                            <tr>
-                                                <div style="float: right; padding-right: 60px; padding-bottom: 10px;">
-                                                    <input type="button" id="requeueGeneralErrors" value="Re-queue" disabled/>
-                                                    <input type="button" id="deleteGeneralErrors" value="Delete" disabled/>
-                                                </div>
-                                            </tr>
-                                            <tr>
-                                                <th class="clientNameColumn">Patient Identifier</th>
-                                                <th class="cccNumberColumn">Patient Name</th>
-                                                <th class="sampleTypeColumn">Message Type</th>
-                                                <th class="sampleTypeColumn">Discontinuation Reason</th>
-                                                <th class="sampleTypeColumn">TransferOut Date</th>
-                                                <th class="dateRequestColumn">Appointment Date</th>
-                                                <th class="dateRequestColumn">TO Acceptance Date</th>
-                                                <th class="errorColumn">Error</th>
-                                                <th class="selectColumn"><input type="checkbox" id="chk-general-select-all"/></th>
-                                            </tr>
-
-                                            </thead>
-                                            <tbody id="general-error-list">
-
-                                            </tbody>
-
-                                        </table>
-
-                                        <div id="pager">
-                                            <ul id="generalErrorPagination" class="pagination-sm"></ul>
-                                        </div>
-                                    </fieldset>
                             </div>
                         </div>
                     </td>
@@ -460,15 +409,12 @@ tr:nth-child(even) {background-color: #f2f2f2;}
         var queuePaginationDiv = jq('#queuePagination');
         var archivePaginationDiv = jq('#archivePagination');
 
-        var generalErrorListDisplayArea = jq('#general-error-list');
         var queueListDisplayArea = jq('#queue-list');
         var archiveListDisplayArea = jq('#archive-list');
 
-        var numberOfGeneralErrorRecords = ${ generalErrorListSize };
         var numberOfRecordsToProcess = ${ queueListSize };
         var numberOfArchivesToProcess = ${ archiveListSize };
 
-        var generalErrorRecords = ${ generalErrorList };
         var queueRecords = ${ queueList };
         var archiveRecords = ${ archiveList };
 
@@ -482,7 +428,6 @@ tr:nth-child(even) {background-color: #f2f2f2;}
         var queueStartPage = 1;
         var archiveStartPage = 1;
 
-        var totalGeneralErrorPages = Math.ceil(numberOfGeneralErrorRecords / recPerPage);
         var totalQueuePages = Math.ceil(numberOfRecordsToProcess / recPerPage);
         var totalArchivePages = Math.ceil(numberOfArchivesToProcess / recPerPage);
 
@@ -493,12 +438,6 @@ tr:nth-child(even) {background-color: #f2f2f2;}
         var payloadEditor = {};
 
         var sendCount = 0;
-
-        if (totalGeneralErrorPages <= 5) {
-            visibleGeneralErrorPages = totalGeneralErrorPages;
-        } else {
-            visibleGeneralErrorPages = 5;
-        }
 
         if (totalArchivePages <= 5) {
             visibleArchivePages = totalArchivePages;
@@ -520,12 +459,6 @@ tr:nth-child(even) {background-color: #f2f2f2;}
         if (numberOfArchivesToProcess > 0) {
             apply_pagination(archivePaginationDiv, archiveListDisplayArea, totalArchivePages, visibleArchivePages, archiveRecords, archiveDataDisplayRecords, 'archive', archiveStartPage); // archives
         }
-
-        if (numberOfGeneralErrorRecords > 0) {
-            apply_pagination(generalErrorPaginationDiv, generalErrorListDisplayArea, totalGeneralErrorPages, visibleGeneralErrorPages, generalErrorRecords, generalErrorDataDisplayRecords, 'general-error', generalErrorStartPage); // general records in error
-        }
-
-
 
         function apply_pagination(paginationDiv, recordsDisplayArea, totalPages, visiblePages, allRecords, recordsToDisplay, tableId, page) {
             paginationDiv.twbsPagination({
@@ -569,6 +502,41 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             document.location.reload();
         }
 
+       jq(document).on('click','.openPatient',function(){
+         //Register and open patient
+            jQuery.getJSON('${ ui.actionLink("kenyaemrIL", "referralsDataExchange", "artReferralsHandler")}',
+                {
+                    'patientId': jq(this).val()
+                })
+                .success(function (data) {
+                console.log("DATA", data)
+                    if(data.patientId !== " ") {
+                        // Hide spinner
+
+                        display_loading_spinner(false);
+                        console.log("Successfully updated client referral: ");
+                        jQuery("#pull-msgBox").text("Successfully registered patient");
+                        jQuery("#pull-msgBox").show();
+                        ui.navigate('kenyaemr', 'clinician/clinicianViewPatient', { patientId: data.patientId,  returnUrl: location.href });
+                    }else{
+                        console.log("Data ==>"+data);
+                        display_loading_spinner(false);
+                        jQuery("#pull-msgBox").text("Error registering client");
+                        jQuery("#pull-msgBox").show();
+                    }
+                })
+                .fail(function (err) {
+                        // Hide spinner
+                        console.log("Error registering client: " + JSON.stringify(err));
+                        // Hide spinner
+                        //   display_loading_validate_identifier(false);
+                        jQuery("#pull-msgBox").text("Could upated client referral");
+                        jQuery("#pull-msgBox").show();
+
+                    }
+                )
+       });
+
         jq(document).on('click','.mergeButton',function(){
             ui.navigate('afyastat', 'mergePatients', { queueUuid: jq(this).val(),  returnUrl: location.href });
         });
@@ -603,230 +571,6 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                 document.location.reload();
             });
         });
-
-        //Enable or Disable Requeue and Delete button on incoming queue depending on condition of queue item selection 
-        jq(".selectGeneralElement").change(function() {
-            let len = jq('.selectGeneralElement:checked').length;
-            if (len > 0) {
-                jq('#requeueGeneralErrors').attr('disabled', false);
-                jq('#deleteGeneralErrors').attr('disabled', false);
-            } else {
-                jq('#requeueGeneralErrors').attr('disabled', true);
-                jq('#deleteGeneralErrors').attr('disabled', true);
-            }
-        });
-
-        //Enable or Disable Requeue and Delete button on incoming queue depending on condition of queue item selection 
-        jq(".selectRegistrationElement").change(function() {
-            let len = jq('.selectRegistrationElement:checked').length;
-            if (len > 0) {
-                jq('#requeueRegistrationErrors').attr('disabled', false);
-                jq('#deleteRegistrationErrors').attr('disabled', false);
-            } else {
-                jq('#requeueRegistrationErrors').attr('disabled', true);
-                jq('#deleteRegistrationErrors').attr('disabled', true);
-            }
-        });
-
-        //Enable or Disable Requeue and Delete button on incoming queue depending on condition of queue item selection 
-        jq("#chk-general-select-all").change(function() {
-            let len = jq('.selectGeneralElement:checked').length;
-            if (len > 0) {
-                jq('#requeueGeneralErrors').attr('disabled', false);
-                jq('#deleteGeneralErrors').attr('disabled', false);
-            } else {
-                jq('#requeueGeneralErrors').attr('disabled', true);
-                jq('#deleteGeneralErrors').attr('disabled', true);
-            }
-        });
-
-        //Enable or Disable Requeue and Delete button on incoming queue depending on condition of queue item selection 
-        jq("#chk-registration-select-all").change(function() {
-            let len = jq('.selectRegistrationElement:checked').length;
-            if (len > 0) {
-                jq('#requeueRegistrationErrors').attr('disabled', false);
-                jq('#deleteRegistrationErrors').attr('disabled', false);
-            } else {
-                jq('#requeueRegistrationErrors').attr('disabled', true);
-                jq('#deleteRegistrationErrors').attr('disabled', true);
-            }
-        });
-
-        // population general error selection list
-        jq(document).on('click','.selectGeneralElement',function () {
-            var queueUuid = jq(this).val();
-            if (jq(this).is(":checked")) {
-                selectedGeneralErrors.push(queueUuid);
-            }
-            else {
-                 var elemIndex = selectedGeneralErrors.indexOf(queueUuid);
-                 if (elemIndex > -1) {
-                    selectedGeneralErrors.splice(elemIndex, 1);
-                 }
-                 jq('#chk-general-select-all').prop('checked', false);
-             }
-        });
-
-        // population registration error selection list
-        jq(document).on('click','.selectRegistrationElement',function () {
-            var queueUuid = jq(this).val();
-            if (jq(this).is(":checked")) {
-                selectedRegistrationErrors.push(queueUuid);
-            }
-            else {
-                 var elemIndex = selectedRegistrationErrors.indexOf(queueUuid);
-                 if (elemIndex > -1) {
-                    selectedRegistrationErrors.splice(elemIndex, 1);
-                 }
-                 jq('#chk-registration-select-all').prop('checked', false);
-             }
-        });
-
-        // handle general select all
-        jq(document).on('click','#chk-general-select-all',function () {
-            //clear selection list
-            selectedGeneralErrors = [];
-            if(jq(this).is(':checked')) {
-                jq('.selectGeneralElement').prop('checked', true);
-                // populate the list with all elements
-                for (var i = 0; i < generalErrorRecords.length; i++) {
-                    let uuid = generalErrorRecords[i].uuid;
-                    selectedGeneralErrors.push(uuid);
-                }
-            }
-            else {
-                jq('.selectGeneralElement').prop('checked', false);
-            }
-        });
-
-        // handle registration select all
-        jq(document).on('click','#chk-registration-select-all',function () {
-            //clear selection list
-            selectedRegistrationErrors = [];
-            if(jq(this).is(':checked')) {
-                jq('.selectRegistrationElement').prop('checked', true);
-                // populate the list with all elements
-                for (var i = 0; i < registrationErrorRecords.length; i++) {
-                    let uuid = registrationErrorRecords[i].uuid;
-                    selectedRegistrationErrors.push(uuid);
-                }
-            }
-            else {
-                jq('.selectRegistrationElement').prop('checked', false);
-            }
-        });
-
-        // handles button that re-queues general errors
-        jq(document).on('click','#requeueGeneralErrors',function () {
-            AsyncConfirmYesNo("Please Confirm", "Are you sure you want to requeue?", requeueGeneralErrors, () => {});        
-        });
-
-        // re-queues general errors once user confirms
-        function requeueGeneralErrors() {
-            if(selectedGeneralErrors.length > 0) {
-                jq('#showWaitBox').modal('show');
-                requeueAll(selectedGeneralErrors);         
-            }
-            jq('#chk-general-select-all').prop('checked', false);
-        }
-
-        // handles button than re-queues registration errors
-        jq(document).on('click','#requeueRegistrationErrors',function () {
-            AsyncConfirmYesNo("Please Confirm", "Are you sure you want to requeue?", requeueRegistrationErrors, () => {});
-        });
-
-        // re-queues registration errors once user confirms
-        function requeueRegistrationErrors() {
-            if(selectedRegistrationErrors.length > 0) {
-                jq('#showWaitBox').modal('show');
-                requeueAll(selectedRegistrationErrors);
-            }
-            jq('#chk-registration-select-all').prop('checked', false);
-        }
-
-        // handles button for deleting general errors
-        jq(document).on('click','#deleteGeneralErrors',function () {
-            AsyncConfirmYesNo("Please Confirm", "Are you sure you want to delete?", deleteGeneralErrors, () => {});
-        });
-
-        // deletes general errors once user confirms
-        function deleteGeneralErrors() {
-            if(selectedGeneralErrors.length > 0) {
-                jq('#showWaitBox').modal('show');
-                deleteAll(selectedGeneralErrors);
-            }
-            jq('#chk-general-select-all').prop('checked', false);
-        }
-
-        // handles button for deleting registration errors
-        jq(document).on('click','#deleteRegistrationErrors',function () {
-            AsyncConfirmYesNo("Please Confirm", "Are you sure you want to delete?", deleteRegistrationErrors, () => {});
-        });
-
-        // deletes registration errors once user confirms
-        function deleteRegistrationErrors() {
-            if(selectedRegistrationErrors.length > 0) {
-                jq('#showWaitBox').modal('show');
-                deleteAll(selectedRegistrationErrors);
-            }
-            jq('#chk-registration-select-all').prop('checked', false);
-        }
-
-        // deletes all the given error items
-        function deleteAll(selectedErrors) {
-            //Delete the selected errors, 10 at a time
-            let count = 10;
-            sendCount = 0;
-            let totalItems = selectedErrors.length;
-            let loopThrough = (totalItems > 0) ? totalItems : 1;
-            let pages = Math.ceil(loopThrough * 1.00 / count * 1.00);
-
-            for (var i = 0; i < pages; i++) {
-                let begin = i * count;
-                let end = begin + count;
-                let sliced = selectedErrors.slice(begin, end);
-                let listToSubmit = sliced.join();
-                // lets delete this page
-                ui.getFragmentActionAsJson('kenyaemrIL', 'interopManager', 'purgeErrors', { errorList : listToSubmit }, function (result) {
-                    sendCount++;
-                    console.log("Delete items: Finished sending page. Sendcount: " + sendCount);
-                    if(sendCount >= pages)
-                    {
-                        jq('#showWaitBox').modal('hide').promise().done( function () {
-                            AsyncShowInfo("Success", "Successfully Deleted", reloadPage); 
-                        } )
-                    }
-                });
-            }
-        }
-
-        // requeues all the given error items
-        function requeueAll(selectedErrors) {
-            //Requeue the selected errors, 10 at a time
-            let count = 10;
-            sendCount = 0;
-            let totalItems = selectedErrors.length;
-            let loopThrough = (totalItems > 0) ? totalItems : 1;
-            let pages = Math.ceil(loopThrough * 1.00 / count * 1.00);
-
-            for (var i = 0; i < pages; i++) {
-                let begin = i * count;
-                let end = begin + count;
-                let sliced = selectedErrors.slice(begin, end);
-                let listToSubmit = sliced.join();
-                // lets requeue this page
-                ui.getFragmentActionAsJson('kenyaemrIL', 'interopManager', 'requeueErrors', { errorList : listToSubmit }, function (result) {
-                    sendCount++;
-                    if(sendCount >= pages)
-                    {
-                        jq('#showWaitBox').modal('hide').promise().done( function () {
-                            AsyncShowInfo("Success", "Successfully Requeued", reloadPage); 
-                        } )
-                    }
-                });
-            }
-        }
-
     });
 
     function generate_table(displayRecords, displayObject, tableId) {
@@ -836,32 +580,27 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
             tr = jq('<tr/>');
             tr.append("<td>" + displayRecords[i].cccNumber + "</td>");
-
             tr.append("<td>" + displayRecords[i].patientName + "</td>");
-            tr.append("<td>" + displayRecords[i].messageType + "</td>");
-            tr.append("<td>" + displayRecords[i].discontinuationReason + "</td>");
+            tr.append("<td>" + displayRecords[i].patientName + "</td>");
             tr.append("<td>" + displayRecords[i].transferOutDate + "</td>");
             tr.append("<td>" + displayRecords[i].appointmentDate + "</td>");
             tr.append("<td>" + displayRecords[i].toAcceptanceDate + "</td>");
 
-            if (tableId === 'general-error') {
-                tr.append("<td>" + displayRecords[i].error + "</td>");
-            }
-            tr.append("<td>" + displayRecords[i].dateCreated + "</td>");
+            //if (tableId === 'queue_data') {
+                var actionTd = jq('<td/>');
 
-            if (tableId === 'general-error') {
-                var selectTd = jq('<td/>');
-                var selectCheckbox = jq('<input/>', {
-                    type: 'checkbox',
-                    class: 'selectGeneralElement',
-                    value: displayRecords[i].uuid
+                var btnView = jq('<button/>', {
+                    text: 'Serve Client',
+                    class: 'openPatient',
+                    value: displayRecords[i].id
                 });
 
-                selectTd.append(selectCheckbox);
-                tr.append(selectTd);
-            }
+                actionTd.append(btnView);
 
-            displayObject.append(tr);
+                tr.append(actionTd);
+                displayObject.append(tr);
+            //}
+
         }
     }
 

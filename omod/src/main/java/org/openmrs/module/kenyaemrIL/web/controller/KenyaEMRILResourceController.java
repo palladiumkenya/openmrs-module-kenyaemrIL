@@ -69,23 +69,25 @@ public class KenyaEMRILResourceController extends MainResourceController {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         SimpleObject object = new SimpleObject();
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
-        ExpectedTransferInPatients transferInPatient = service.getTransferInPatient(Context.getPatientService().getPatient(patientId));
+        List<ExpectedTransferInPatients> transferInPatient = service.getTransferInPatient(Context.getPatientService().getPatient(patientId));
         ObjectMapper mapper = new ObjectMapper();
-        if (transferInPatient != null) {
-            Location locationByMflCode = Context.getService(KenyaEmrService.class).getLocationByMflCode(transferInPatient.getTransferOutFacility());
-            object.put("transfer_out_facility", transferInPatient.getTransferOutFacility() + "-" + locationByMflCode.getName());
+        if (!transferInPatient.isEmpty()) {
+            Location locationByMflCode = Context.getService(KenyaEmrService.class).getLocationByMflCode(transferInPatient.get(0).getTransferOutFacility());
+            object.put("transfer_out_facility", transferInPatient.get(0).getTransferOutFacility() + "-" + locationByMflCode.getName());
             List<PatientIdentifier> patientIdentifier = Context.getPatientService().getPatient(patientId).getActiveIdentifiers().stream()
                     .filter(pid -> pid.getIdentifierType().getName().equalsIgnoreCase("Unique Patient Number")).collect(Collectors.toList());
             object.put("upi_number", !patientIdentifier.isEmpty() ? patientIdentifier.get(0).getIdentifier() : "");
             try {
-                Program_Discontinuation_Message discontinuation_message = mapper.readValue(transferInPatient.getPatientSummary().toLowerCase(), Program_Discontinuation_Message.class);
+                ILMessage ilMessage = mapper.readValue(transferInPatient.get(0).getPatientSummary().toLowerCase(), ILMessage.class);
+
+                Program_Discontinuation_Message discontinuation_message = ilMessage.getDiscontinuation_message();
                 SERVICE_REQUEST_SUPPORTING_INFO supporting_info = discontinuation_message.getService_request().getSupporting_info();
                 object.put("transfer_out_date", discontinuation_message.getService_request().getTransfer_out_date());
                 object.put("appointment_date", !Strings.isNullOrEmpty(supporting_info.getAppointment_date()) ? DateFormatUtils.format(formatter.parse(supporting_info.getAppointment_date()) , "yyyy-MM-dd"): "");
                 object.put("hiv_enrollment_date", !Strings.isNullOrEmpty(supporting_info.getDate_first_enrolled()) ? DateFormatUtils.format(formatter.parse(supporting_info.getDate_first_enrolled()),"yyyy-MM-dd") : "");
                 object.put("art_start_date", !Strings.isNullOrEmpty(supporting_info.getDate_started_art_at_transferring_facility()) ? DateFormatUtils.format(formatter.parse(supporting_info.getDate_started_art_at_transferring_facility()),"yyyy-MM-dd") : "");
                 object.put("date_confirmed_positive", !Strings.isNullOrEmpty(supporting_info.getDate_confirmed_positive()) ? DateFormatUtils.format(formatter.parse(supporting_info.getDate_confirmed_positive()),"yyyy-MM-dd") : "");
-                object.put("hiv_confirmation_facility", transferInPatient.getTransferOutFacility());
+                object.put("hiv_confirmation_facility", transferInPatient.get(0).getTransferOutFacility());
                 object.put("who_stage", supporting_info.getWho_stage());
                 object.put("current_regimen", "");
                 object.put("on_art", "");
