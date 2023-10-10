@@ -714,4 +714,28 @@
             ALTER TABLE expected_transfer_ins RENAME COLUMN retired TO voided;
         </sql>
     </changeSet>
+    <!--Adding scheduled task :Set program discontinuation task-->
+    <changeSet id="${project.parent.artifactId}-20231011011630" author="jecihjoy">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.SyncShrServedPatientsTask'
+                And name = 'SHR Sync Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Inserting SHR Sync Task to 'schedule_task_config' table</comment>
+        <insert tableName="scheduler_task_config">
+            <column name="name" value="SHR Sync Task" />
+            <column name="description" value="Periodically sync referral clients with shr" />
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.SyncShrServedPatientsTask" />
+            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
+            <column name="start_time" valueDate="2023-01-01T23:59:59" />
+            <column name="repeat_interval" value="3" />
+            <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="1" />
+            <column name="started" value="1" />
+            <column name="uuid" value="36bb93cc-67bf-11ee-8c99-0242ac120002" />
+        </insert>
+    </changeSet>
 </databaseChangeLog>
