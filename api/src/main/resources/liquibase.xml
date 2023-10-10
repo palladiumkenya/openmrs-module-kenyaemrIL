@@ -694,4 +694,24 @@
             <column name="uuid" value="9143b4e6-16c5-11ee-be56-0342ac120002" />
         </insert>
     </changeSet>
+    <!-- Add service_type field to the expected_transfer_ins table -->
+    <changeSet author="jecihjoy" id="${project.parent.artifactId}-20231010-3453">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="expected_transfer_ins"/>
+            <not>
+                <columnExists columnName="date_changed" tableName="expected_transfer_ins"/>
+            </not>
+            <columnExists columnName="retired" tableName="expected_transfer_ins"/>
+        </preConditions>
+        <comment>Adding date_changed column, renaming retired to voided</comment>
+        <addColumn tableName="expected_transfer_ins" >
+            <column name="date_changed"
+                    type="datetime" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+        <sql>
+            ALTER TABLE expected_transfer_ins RENAME COLUMN retired TO voided;
+        </sql>
+    </changeSet>
 </databaseChangeLog>

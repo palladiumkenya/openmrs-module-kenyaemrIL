@@ -1,12 +1,11 @@
 package org.openmrs.module.kenyaemrIL.programEnrollment;
 
-import org.openmrs.BaseOpenmrsMetadata;
+import org.openmrs.BaseOpenmrsData;
 import org.openmrs.Patient;
 
-import java.io.Serializable;
 import java.util.Date;
 
-public class ExpectedTransferInPatients extends BaseOpenmrsMetadata implements Serializable {
+public class ExpectedTransferInPatients extends BaseOpenmrsData {
     private static final long serialVersionUID = 3062136588828193225L;
     private Integer id;
     private Patient patient;

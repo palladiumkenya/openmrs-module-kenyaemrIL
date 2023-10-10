@@ -58,7 +58,7 @@
         <property name="uuid" type="java.lang.String"
                   column="uuid" length="38" unique="true"/>
 
-        <property name="retired" type="boolean" column="retired"
+        <property name="voided" type="boolean" column="voided"
                   length="1" not-null="true"/>
 
         <property name="serviceType" type="java.lang.String"
@@ -81,5 +81,8 @@
 
         <property name="nupiNumber" type="java.lang.String"
                   column="nupi" length="255"/>
+
+        <property name="dateChanged" type="java.util.Date"
+                  column="date_changed" not-null="true" length="19"/>
     </class>
 </hibernate-mapping>
