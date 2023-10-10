@@ -5,9 +5,8 @@
     ]
 
     def messageCategories = [
-        [label: "Facility Referral", iconProvider: "kenyaui", icon: "", label: "Facility Referral", href: ui.pageLink("kenyaemrIL", "referralsHome")],
-        [label: "Internal Referral", iconProvider: "kenyaui", icon: "", label: "Internal Referral", href: ui.pageLink("kenyaemrIL", "internalReferralsHome")],
-        [label: "Community Referral", iconProvider: "kenyaui", icon: "", label: "Community Referral", href: ui.pageLink("kenyaemrIL", "communityReferralsHome")]
+        [label: "Facility Referral", iconProvider: "kenyaui", icon: "", label: "ART Facility Referrals", href: ui.pageLink("kenyaemrIL", "referralsHome")],
+        [label: "Community Referral", iconProvider: "kenyaui", icon: "", label: "SHR Referrals", href: ui.pageLink("kenyaemrIL", "communityReferralsHome")]
     ]
 
     ui.includeJavascript("kenyaemrorderentry", "jquery.twbsPagination.min.js")
@@ -331,6 +330,18 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                     <td id="shr-referral-reasons"></td>
                     <td></td>
                 </tr>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <td>Screening Done</td>
+                            <td>Findings</td>
+                            <td>Treatment plan</td>
+                        </tr>
+                    </thead>
+                    <tbody id="cancer_referral_data">
+                    </tbody>
+                </table>
             </table>
         </fieldset>
     </div>
@@ -551,6 +562,20 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
                         jQuery('#shr-category').text(data.category);
                         jQuery('#shr-referral-reasons').text(data.reasonCode);
+
+                        if(data.cancerReferral.length > 0) {
+                            var referral_data_display_area = jq('#cancer_referral_data');
+                            var tr;
+                            referral_data_display_area.html('');
+                            for (var i = 0; i < data.cancerReferral.length; i++) {
+
+                                tr = jq('<tr/>');
+                                tr.append("<td>" + data.cancerReferral[i].theTests + "</td>");
+                                tr.append("<td>" + data.cancerReferral[i].theFindings + "</td>");
+                                tr.append("<td>" + data.cancerReferral[i].theTxPlan + "</td>");
+                                referral_data_display_area.append(tr);
+                            }
+                        }
 
                     }else{
                         console.log("Data ==>"+data);
