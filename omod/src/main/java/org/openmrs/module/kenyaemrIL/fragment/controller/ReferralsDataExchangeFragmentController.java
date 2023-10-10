@@ -31,6 +31,7 @@ import org.openmrs.module.idgen.service.IdentifierSourceService;
 import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemr.metadata.HivMetadata;
 import org.openmrs.module.kenyaemr.nupi.UpiUtilsDataExchange;
+import org.openmrs.module.kenyaemr.util.EmrUtils;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.shr.FhirConfig;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
@@ -288,11 +289,22 @@ public class ReferralsDataExchangeFragmentController {
         return SimpleObject.create("patientId", "");
     }
 
+    public Location loggedInUserFacility() {
+        List<Location> facility = ILUtils.getFacilityByLoggedInUser();
+        Location defaultFacility = null;
+        if (!facility.isEmpty()) {
+            defaultFacility = facility.get(0);
+        } else {
+            defaultFacility = getDefaultLocation();
+        }
+        return defaultFacility;
+    }
+
     public String getDefaultLocationMflCode() {
         String mflCodeAttribute = "8a845a89-6aa5-4111-81d3-0af31c45c002";
         try {
             Context.addProxyPrivilege(PrivilegeConstants.GET_LOCATION_ATTRIBUTE_TYPES);
-            Location location = getDefaultLocation();
+            Location location = loggedInUserFacility();
             Iterator var2 = location.getAttributes().iterator();
 
             while (var2.hasNext()) {
@@ -498,10 +510,6 @@ public class ReferralsDataExchangeFragmentController {
                         System.out.println("OBS NOTE" + observation.getCode().getCodingFirstRep().getCode());
                         theTxPlan = observation.getNoteFirstRep().getText();
                     }
-
-                    System.out.println("String.join(\" ,\", theTest) "+ String.join(" ,", theTest));
-                    System.out.println("String.join(\" ,\", theFindings) "+String.join(" ,", theFindings));
-                    System.out.println("theTxPlan "+ theTxPlan);
 
                     object.put("theTests", String.join(" ,", theTest));
                     object.put("theFindings", String.join(" ,", theFindings));

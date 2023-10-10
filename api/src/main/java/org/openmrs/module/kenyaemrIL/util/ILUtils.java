@@ -27,13 +27,16 @@ import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
 import org.openmrs.Form;
 import org.openmrs.GlobalProperty;
+import org.openmrs.Location;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifierType;
 import org.openmrs.Person;
 import org.openmrs.Provider;
+import org.openmrs.ProviderAttribute;
 import org.openmrs.User;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemr.metadata.HivMetadata;
 import org.openmrs.module.kenyaemrIL.api.ILPatientRegistration;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
@@ -623,6 +626,25 @@ public class ILUtils {
         } catch(Exception e) {
 			return(false);
 		}
+	}
+
+	public static List<Location> getFacilityByLoggedInUser() {
+		if (Context.getAuthenticatedUser() != null) {
+			Person user = Context.getAuthenticatedUser().getPerson();
+
+			Collection<Provider> provider = Context.getProviderService().getProvidersByPerson(user);
+			for (Provider p : provider) {
+				Collection<ProviderAttribute> attribute = p.getActiveAttributes();
+				for (ProviderAttribute at : attribute) {
+					if (at.getAttributeType().getUuid().equals(CommonMetadata._ProviderAttributeType.PRIMARY_FACILITY)) {
+
+						Location primaryFacility = (Location) at.getValue();
+						return Arrays.asList(primaryFacility);
+					}
+				}
+			}
+		}
+		return new ArrayList<>();
 	}
 
 }
