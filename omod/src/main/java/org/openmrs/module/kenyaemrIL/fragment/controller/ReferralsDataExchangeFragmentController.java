@@ -8,6 +8,9 @@ import com.google.common.base.Strings;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.ServiceRequest;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -60,8 +63,10 @@ import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * controller for pivotTableCharts fragment
@@ -100,7 +105,9 @@ public class ReferralsDataExchangeFragmentController {
         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
         if (Strings.isNullOrEmpty(getDefaultLocationMflCode()))
             return SimpleObject.create("Fail", "Facility mfl cannot be empty");
-        Bundle serviceRequestResourceBundle = fhirConfig.fetchReferrals(getDefaultLocationMflCode());
+        Bundle serviceRequestResourceBundle = fhirConfig.fetchAllReferralsByFacility(getDefaultLocationMflCode());
+        // System.out.println("SHR DATA");
+        // System.out.println("getDefaultLocationMflCode() " + getDefaultLocationMflCode());
         System.out.println("Pulled Referrals  ==>" + serviceRequestResourceBundle.getEntry().size());
         if (serviceRequestResourceBundle != null && !serviceRequestResourceBundle.getEntry().isEmpty()) {
             for (int i = 0; i < serviceRequestResourceBundle.getEntry().size(); i++) {
@@ -108,20 +115,18 @@ public class ReferralsDataExchangeFragmentController {
                 System.out.println("Fhir : Checking Service request is null ==>");
                 if (fhirServiceRequestResource != null) {
                     fhirServiceRequest = (org.hl7.fhir.r4.model.ServiceRequest) fhirServiceRequestResource;
-                    String nupiNumber = fhirServiceRequest.getSubject().getIdentifier().getValue();
-                    if (Strings.isNullOrEmpty(nupiNumber)) {
-                        continue;
-                    }
-                    System.out.println("NUPI :  ==>" + nupiNumber);
-                    if (nupiNumber != null) {
-                        GlobalProperty globalTokenUrl = Context.getAdministrationService().getGlobalPropertyObject(CommonMetadata.GP_CLIENT_VERIFICATION_QUERY_UPI_END_POINT);
-                        if (globalTokenUrl != null && !Strings.isNullOrEmpty(globalTokenUrl.getPropertyValue())) {
-                            String serverUrl = globalTokenUrl.getPropertyValue() + "/" + nupiNumber;
-                            if (fhirServiceRequest.hasPerformer()) {
-                                System.out.println("fhirServiceRequest.getPerformerFirstRep().getReference()"+fhirServiceRequest.getPerformerFirstRep().getReference());
-                                if (fhirServiceRequest.getPerformerFirstRep().getReference().equals("Organization/"+getDefaultLocationMflCode())) {
-                                    persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest, "INTERNAL");
-                                } else {
+
+                    if (fhirServiceRequest.hasPerformer()) {
+                        if (fhirServiceRequest.getPerformerFirstRep().getDisplay().equals(getDefaultLocationMflCode())) {
+                            String nupiNumber = fhirServiceRequest.getSubject() != null && fhirServiceRequest.getSubject().getIdentifier() != null ? fhirServiceRequest.getSubject().getIdentifier().getValue() : "";
+                            if (Strings.isNullOrEmpty(nupiNumber)) {
+                                continue;
+                            }
+                            System.out.println("NUPI :  ==>" + nupiNumber);
+                            if (nupiNumber != null) {
+                                GlobalProperty globalTokenUrl = Context.getAdministrationService().getGlobalPropertyObject(CommonMetadata.GP_CLIENT_VERIFICATION_QUERY_UPI_END_POINT);
+                                if (globalTokenUrl != null && !Strings.isNullOrEmpty(globalTokenUrl.getPropertyValue())) {
+                                    String serverUrl = globalTokenUrl.getPropertyValue() + "/" + nupiNumber;
                                     persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest, "COMMUNITY");
                                 }
                             }
@@ -129,6 +134,8 @@ public class ReferralsDataExchangeFragmentController {
                     }
                 }
             }
+        } else {
+            System.out.printf("BUNDLE IS NULL OR EMPTY");
         }
         return SimpleObject.create("success", "");
     }
@@ -425,14 +432,18 @@ public class ReferralsDataExchangeFragmentController {
 
         ServiceRequest serviceRequest;
         SimpleObject referralsDetailsObject = null;
+        List<SimpleObject> list = new ArrayList<>();
         if (patientReferral != null) {
 
             serviceRequest = parser.parseResource(ServiceRequest.class, patientReferral.getPatientSummary());
 
-            String category = "";
+            Set<String> category = new HashSet<>();
+            String referralDate = "";
             if (!serviceRequest.getCategory().isEmpty()) {
-                if (!serviceRequest.getCategory().get(0).getCoding().isEmpty()) {
-                    category = serviceRequest.getCategory().get(0).getCoding().get(0).getDisplay();
+                for (CodeableConcept c : serviceRequest.getCategory()) {
+                    for (Coding code : c.getCoding()) {
+                        category.add(code.getDisplay());
+                    }
                 }
             }
 
@@ -445,10 +456,66 @@ public class ReferralsDataExchangeFragmentController {
                     }
                 }
             }
+            if (serviceRequest.getAuthoredOn() != null) {
+                referralDate = new SimpleDateFormat("yyyy-MM-dd").format(serviceRequest.getAuthoredOn());
+            }
 
-            referralsDetailsObject = SimpleObject.create("category", category,
-                    "reasonCode", String.join(", ", reasons)
+            if (!serviceRequest.getSupportingInfo().isEmpty()) {
+                for (Reference r : serviceRequest.getSupportingInfo()) {
+                    SimpleObject object = new SimpleObject();
+                    String obsId = r.getReference();
+                    System.out.println("OBS ID " + obsId);
+
+                     Resource resource =  fhirConfig.fetchFhirResource("Observation", obsId);
+                     if (resource == null) {
+                         break;
+                     }
+                    Observation observation = (Observation) resource;
+
+                    List<String> theTest = new ArrayList<>();
+                    List<String> theFindings = new ArrayList<>();
+                    String theTxPlan = "";
+
+                    if (observation.getCode() != null && !observation.getCode().getCoding().isEmpty()) {
+                        for (Coding c : observation.getCode().getCoding()) {
+                            String display =  !Strings.isNullOrEmpty(c.getDisplay()) ? c.getDisplay() : c.getCode();
+                            theTest.add(display);
+                        }
+                    }
+
+                    if (observation.getValue() != null) {
+                        CodeableConcept codeableConcept = (CodeableConcept) observation.getValue();
+                        if (!codeableConcept.getCoding().isEmpty()) {
+                            for (Coding c : codeableConcept.getCoding()) {
+                                String display =  !Strings.isNullOrEmpty(c.getDisplay()) ? c.getDisplay() : c.getCode();
+                                theFindings.add(display);
+                            }
+                        }
+                    }
+
+
+                    if (!observation.getNote().isEmpty() && !Strings.isNullOrEmpty(observation.getNoteFirstRep().getText())) {
+                        System.out.println("OBS NOTE" + observation.getCode().getCodingFirstRep().getCode());
+                        theTxPlan = observation.getNoteFirstRep().getText();
+                    }
+
+                    System.out.println("String.join(\" ,\", theTest) "+ String.join(" ,", theTest));
+                    System.out.println("String.join(\" ,\", theFindings) "+String.join(" ,", theFindings));
+                    System.out.println("theTxPlan "+ theTxPlan);
+
+                    object.put("theTests", String.join(" ,", theTest));
+                    object.put("theFindings", String.join(" ,", theFindings));
+                    object.put("theTxPlan", theTxPlan);
+                    list.add(object);
+                }
+            }
+
+            referralsDetailsObject = SimpleObject.create("category", String.join(",  ", category),
+                    "reasonCode", String.join(", ", reasons),
+                    "referralDate", referralDate,
+                    "cancerReferral", list
             );
+
         }
         return referralsDetailsObject;
     }

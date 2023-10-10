@@ -1,8 +1,11 @@
 package org.openmrs.module.kenyaemrIL.page.controller;
 
+import ca.uhn.fhir.parser.IParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.hl7.fhir.r4.model.ServiceRequest;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
+import org.openmrs.module.kenyaemrIL.api.shr.FhirConfig;
 import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
 import org.openmrs.module.kenyaui.KenyaUiUtils;
 import org.openmrs.module.kenyaui.annotation.AppPage;
@@ -12,6 +15,7 @@ import org.openmrs.ui.framework.annotation.SpringBean;
 import org.openmrs.ui.framework.page.PageModel;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +26,8 @@ public class CommunityReferralsHomePageController {
     public void get(@SpringBean KenyaUiUtils kenyaUi, UiUtils ui, PageModel model) throws JsonProcessingException, ParseException {
 
         KenyaEMRILService ilService = Context.getService(KenyaEMRILService.class);
+        FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
+
 // Filter all community referrals with active referral status
         List<ExpectedTransferInPatients> activeCommunityReferralsList = ilService.getCommunityReferrals("COMMUNITY","ACTIVE");
 
@@ -32,10 +38,20 @@ public class CommunityReferralsHomePageController {
         List<SimpleObject> completedReferrals = new ArrayList<SimpleObject>();
 
         for (ExpectedTransferInPatients expectedTransferInPatients : activeCommunityReferralsList) {
+            IParser parser = fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
+            ServiceRequest serviceRequest = parser.parseResource(ServiceRequest.class, expectedTransferInPatients.getPatientSummary());
+            String requester = "";
+            if (serviceRequest.hasRequester()) {
+                if (serviceRequest.getRequester().getDisplay() != null) {
+                    requester = serviceRequest.getRequester().getDisplay();
+                }
+            }
 
               SimpleObject activeReferralsObject = SimpleObject.create("id", expectedTransferInPatients.getId(),
                                                                         "uuid", expectedTransferInPatients.getUuid(),
                                                                         "nupi", expectedTransferInPatients.getNupiNumber(),
+                                                                        "dateReferred", serviceRequest.getAuthoredOn() != null? new SimpleDateFormat("yyyy-MM-dd").format(serviceRequest.getAuthoredOn()):"",
+                                                                        "referredFrom", requester,
                                                                         "givenName", expectedTransferInPatients.getClientFirstName() != null ? expectedTransferInPatients.getClientFirstName() : "",
                                                                         "middleName", expectedTransferInPatients.getClientMiddleName() != null ? expectedTransferInPatients.getClientMiddleName() : "",
                                                                         "familyName", expectedTransferInPatients.getClientLastName() != null ? expectedTransferInPatients.getClientLastName() : "",
@@ -45,10 +61,21 @@ public class CommunityReferralsHomePageController {
                         activeReferrals.add(activeReferralsObject);
                     }
         for (ExpectedTransferInPatients expectedTransferInPatients : completedCommunityReferralsList) {
+            IParser parser = fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
+            ServiceRequest serviceRequest = parser.parseResource(ServiceRequest.class, expectedTransferInPatients.getPatientSummary());
+            String requester = "";
+            if (serviceRequest.hasRequester()) {
+                if (serviceRequest.getRequester().getDisplay() != null) {
+                    requester = serviceRequest.getRequester().getDisplay();
+                }
+            }
+
 
             SimpleObject completedReferralsObject = SimpleObject.create("id", expectedTransferInPatients.getId(),
                     "uuid", expectedTransferInPatients.getUuid(),
                     "nupi", expectedTransferInPatients.getNupiNumber(),
+                    "dateReferred", serviceRequest.getAuthoredOn() != null? new SimpleDateFormat("yyyy-MM-dd").format(serviceRequest.getAuthoredOn()):"",
+                    "referredFrom", requester,
                     "givenName", expectedTransferInPatients.getClientFirstName() != null ? expectedTransferInPatients.getClientFirstName() : "",
                     "middleName", expectedTransferInPatients.getClientMiddleName() != null ? expectedTransferInPatients.getClientMiddleName() : "",
                     "familyName", expectedTransferInPatients.getClientLastName() != null ? expectedTransferInPatients.getClientLastName() : "",

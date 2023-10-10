@@ -9,6 +9,7 @@ import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.IntegerType;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Quantity;
+import org.hl7.fhir.r4.model.ServiceRequest;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.Type;
 import org.openmrs.PatientIdentifier;
@@ -36,6 +37,7 @@ public class ShrSummariesFragmentController {
         List<SimpleObject> vitals = new ArrayList<>();
         List<SimpleObject> labResults = new ArrayList<>();
         List<SimpleObject> complaints = new ArrayList<>();
+        List<SimpleObject> referrals = new ArrayList<>();
 
         List<PatientIdentifier> identifiers = Context.getPatientService().getPatientByUuid(patientUuid).getActiveIdentifiers();
         List<PatientIdentifier> upi = identifiers.stream().filter(i -> i.getIdentifierType().getUuid().equals("f85081e2-b4be-4e48-b3a4-7994b69bb101")).collect(Collectors.toList());
@@ -53,6 +55,8 @@ public class ShrSummariesFragmentController {
 
 
         Bundle allergyBundle = fhirConfig.fetchPatientAllergies(patientUniqueNumber);
+
+        Bundle referralsBundle = fhirConfig.fetchPatientReferrals(patientUniqueNumber);
 
         Bundle allObs = fhirConfig.fetchObservationResource(patientUniqueNumber);
 
@@ -153,12 +157,44 @@ public class ShrSummariesFragmentController {
             }
         }
 
+        if (!referralsBundle.getEntry().isEmpty()) {
+            for (Bundle.BundleEntryComponent resource : referralsBundle.getEntry()) {
+                ServiceRequest serviceRequest = (ServiceRequest) resource.getResource();
+                String category = "";
+                List<String> reasons = new ArrayList<>();
+                if (serviceRequest.hasCategory() && serviceRequest.getCategoryFirstRep().hasCoding()) {
+                    category = serviceRequest.getCategoryFirstRep().getText() + ":" + serviceRequest.getCategoryFirstRep().getCodingFirstRep().getDisplay();
+                }
+                if (serviceRequest.hasReasonCode() && serviceRequest.getReasonCodeFirstRep().hasCoding()) {
+                    serviceRequest.getReasonCode().forEach(e -> {
+                        reasons.add(e.getText());
+                    });
+                    String requester = "";
+                    if (serviceRequest.hasRequester()) {
+                        if (serviceRequest.getRequester().getDisplay() != null) {
+                            requester = serviceRequest.getRequester().getDisplay();
+                        }
+                    }
+
+                    SimpleObject local = new SimpleObject();
+                    local.put("uuid", serviceRequest.getId().split("/")[4]);
+                    local.put("Category", category);
+                    local.put("reasons", String.join(", ", reasons));
+                    local.put("priority", serviceRequest.getPriority());
+                    local.put("dateRequested", serviceRequest.getAuthoredOn() != null ? new SimpleDateFormat("yyyy-MM-dd").format(serviceRequest.getAuthoredOn()) : "");
+                    local.put("requesterCode", requester);
+                    referrals.add(local);
+                }
+            }
+        }
+
         finalResult.put("conditions", conditions);
         finalResult.put("diagnosis", diagnosis);
         finalResult.put("allergies", allergies);
         finalResult.put("vitals", vitals);
         finalResult.put("labResults", labResults);
         finalResult.put("complaints", complaints);
+        finalResult.put("referrals", referrals);
         return finalResult;
     }
 
