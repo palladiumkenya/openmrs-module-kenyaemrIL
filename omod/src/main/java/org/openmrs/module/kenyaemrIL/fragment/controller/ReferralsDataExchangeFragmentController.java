@@ -118,6 +118,7 @@ public class ReferralsDataExchangeFragmentController {
                     "message", "Got no referrals to pull");
         } else if (!serviceRequestResourceBundle.getEntry().isEmpty()) {
 
+            int validMessages = 0;
             for (int i = 0; i < serviceRequestResourceBundle.getEntry().size(); i++) {
                 fhirServiceRequestResource = serviceRequestResourceBundle.getEntry().get(i).getResource();
 
@@ -135,6 +136,7 @@ public class ReferralsDataExchangeFragmentController {
                                 if (globalTokenUrl != null && !Strings.isNullOrEmpty(globalTokenUrl.getPropertyValue())) {
                                     String serverUrl = globalTokenUrl.getPropertyValue() + "/" + nupiNumber;
                                     persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest, "COMMUNITY");
+                                    validMessages++;
                                 }
                             }
                         }
@@ -150,6 +152,7 @@ public class ReferralsDataExchangeFragmentController {
                                 if (globalTokenUrl != null && !Strings.isNullOrEmpty(globalTokenUrl.getPropertyValue())) {
                                     String serverUrl = globalTokenUrl.getPropertyValue() + "/" + nupiNumber;
                                     persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest, "COMMUNITY");
+                                    validMessages++;
                                 }
                             }
                         }
@@ -158,7 +161,7 @@ public class ReferralsDataExchangeFragmentController {
             }
 
             return SimpleObject.create("status", "Success",
-                    "message", "Successfully pulled " + serviceRequestResourceBundle.getEntry().size() + " referrals");
+                    "message", "Successfully pulled " + validMessages + " referral(s)");
 
         } else {
             return SimpleObject.create("status", "Success",

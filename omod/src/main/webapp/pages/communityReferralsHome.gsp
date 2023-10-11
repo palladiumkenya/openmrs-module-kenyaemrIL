@@ -327,8 +327,8 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
 <div id="shr-dialog" title="Client Referral Details" style="display: none; background-color: white; padding: 10px;">
     <div id="shr-info">
-
-        <fieldset>
+        <div align="center" class="load-shr"></div>
+        <fieldset id="show-shr-info">
             <legend>Referral Details</legend>
             <table>
                  <tr>
@@ -467,22 +467,29 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             jQuery("#pull-msgBox").hide();
             console.log('Starting the fetch task!');
             // show spinner
-            display_loading_spinner(true);
+            display_loading_spinner(true, 'wait-loading');
             jQuery.getJSON('${ ui.actionLink("kenyaemrIL", "referralsDataExchange", "pullCommunityReferralsFromFhir")}')
                    .success(function (data) {
                     if(data.status === "Success") {
                         // Hide spinner
-                        display_loading_spinner(false);
+                        display_loading_spinner(false, 'wait-loading');
                         console.log("Data ==>"+data);
                         console.log(data.message);
-                        jQuery("#pull-msgBox").text(data.message);
+                        jQuery("#pull-msgBox").text(data.message + 'The page will refresh shortly');
                         jQuery("#pull-msgBox").show();
                         jQuery("#pull-msgBox").toggleClass("success-message-text", true);
                         jQuery("#pull-msgBox").toggleClass("error-message-text", false);
 
+                        setTimeout(function (){
+                            location.reload();
+                        }, 2000);
+
+
+
+
                     }else{
                         console.log("Data ==>"+data);
-                        display_loading_spinner(false);
+                        display_loading_spinner(false, 'wait-loading');
                         jQuery("#pull-msgBox").text(data.message);
                         jQuery("#pull-msgBox").show();
                         jQuery("#pull-msgBox").toggleClass("error-message-text", true);
@@ -493,7 +500,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                    })
                 .fail(function (err) {
                     // Hide spinner
-                    display_loading_spinner(false);
+                    display_loading_spinner(false, 'wait-loading');
                     console.log("Error fetching referral records: " + JSON.stringify(err));
                     // Hide spinner
                     //   display_loading_validate_identifier(false);
@@ -506,7 +513,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                 )
         });
 
-           jq(document).on('click','.updateButton',function(){display_loading_spinner(false);
+           jq(document).on('click','.updateButton',function(){display_loading_spinner(false, 'wait-loading');
              // Update referral_status PA
             jQuery.getJSON('${ ui.actionLink("kenyaemrIL", "referralsDataExchange", "completeClientReferral")}',
                 {
@@ -515,7 +522,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                 .success(function (data) {
                     if(data.patientId !== " ") {
                         // Hide spinner
-                        display_loading_spinner(false);
+                        display_loading_spinner(false, 'wait-loading');
                         console.log("Successfully updated client referral: ");
                         jQuery("#pull-msgBox").text("Successfully updated client referral");
                         jQuery("#pull-msgBox").show();
@@ -525,7 +532,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                         ui.navigate('kenyaemr', 'clinician/clinicianViewPatient', { patientId: data.patientId,  returnUrl: location.href });
                     }else{
                         console.log("Data ==>"+data);
-                        display_loading_spinner(false);
+                        display_loading_spinner(false, 'wait-loading');
                         jQuery("#pull-msgBox").text("Error updating client referral");
                         jQuery("#pull-msgBox").show();
                         jQuery("#pull-msgBox").toggleClass("error-message-text", true);
@@ -555,7 +562,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                 .success(function (data) {
                     if(data.sucess === "true") {
                         // Hide spinner
-                        display_loading_spinner(false);
+                        display_loading_spinner(false, 'wait-loading');
                         console.log("Successfully updated client referra: ");
                         jQuery("#pull-msgBox").text("Successfully updated client referral");
                         jQuery("#pull-msgBox").show();
@@ -563,7 +570,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                         jQuery("#pull-msgBox").toggleClass("error-message-text", false);
                     }else{
                         console.log("Data ==>"+data);
-                        display_loading_spinner(false);
+                        display_loading_spinner(false, 'wait-loading');
                         jQuery("#pull-msgBox").text("Error updating client referral");
                         jQuery("#pull-msgBox").show();
                         jQuery("#pull-msgBox").toggleClass("error-message-text", true);
@@ -584,6 +591,8 @@ tr:nth-child(even) {background-color: #f2f2f2;}
         });
         jq(document).on('click','.viewButton',function(){
             //View referral category and reasons
+            display_loading_spinner(true, 'load-shr');
+            jQuery("#show-shr-info").hide();
             console.log("Am here ==>");
             // Populate referral category and reasons
             jQuery.getJSON('${ ui.actionLink("kenyaemrIL", "referralsDataExchange", "addReferralCategoryAndReasons")}',
@@ -592,7 +601,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                 })
                 .success(function (data) {
                     if(data) {
-
+                        display_loading_spinner(false, 'load-shr');
                         jQuery('#shr-category').text(data.category);
                         jQuery('#shr-referral-reasons').text(data.reasonCode);
 
@@ -609,10 +618,12 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                 referral_data_display_area.append(tr);
                             }
                         }
+                        jQuery("#show-shr-info").show();
 
                     }else{
                         console.log("Data ==>"+data);
-                        display_loading_spinner(false);
+                        display_loading_spinner(false, 'wait-loading');
+                        display_loading_spinner(false, 'load-shr');
                         jQuery("#pull-msgBox").text("Error updating client referral");
                         jQuery("#pull-msgBox").show();
                         jQuery("#pull-msgBox").toggleClass("error-message-text", true);
@@ -621,10 +632,12 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                 })
                 .fail(function (err) {
                         // Hide spinner
-                        console.log("Error updating client referral: " + JSON.stringify(err));
+                    display_loading_spinner(false, 'load-shr');
+
+                    console.log("Error updating client referral: " + JSON.stringify(err));
                         // Hide spinner
                         //   display_loading_validate_identifier(false);
-                        jQuery("#pull-msgBox").text("Could upated client referral");
+                        jQuery("#pull-msgBox").text("Could not update client referral");
                         jQuery("#pull-msgBox").show();
                     jQuery("#pull-msgBox").toggleClass("error-message-text", true);
                     jQuery("#pull-msgBox").toggleClass("success-message-text", false);
@@ -725,12 +738,12 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             displayObject.append(tr);
         }
     }
-    function display_loading_spinner(status) {
+    function display_loading_spinner(status, targetElementClass) {
         if(status) {
-            jq('.wait-loading').empty();
-            jq('.wait-loading').append(showLoadingImage);
+            jq("." + targetElementClass).empty();
+            jq("." + targetElementClass).append(showLoadingImage);
         } else {
-            jq('.wait-loading').empty();
+            jq("." + targetElementClass).empty();
         }
     }
 
