@@ -173,6 +173,13 @@ tr:nth-child(even) {background-color: #f2f2f2;}
     max-width: 660px;
     font-weight: bold;
 }
+.success-message-text {
+    color: green;
+}
+
+.error-message-text {
+    color: red;
+}
 @media screen and (min-width: 676px) {
     .modal-dialog {
         max-width: 600px; /* New width for default modal */
@@ -470,11 +477,18 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                         console.log(data.message);
                         jQuery("#pull-msgBox").text(data.message);
                         jQuery("#pull-msgBox").show();
+                        jQuery("#pull-msgBox").toggleClass("success-message-text", true);
+                        jQuery("#pull-msgBox").toggleClass("error-message-text", false);
+
                     }else{
                         console.log("Data ==>"+data);
                         display_loading_spinner(false);
                         jQuery("#pull-msgBox").text(data.message);
                         jQuery("#pull-msgBox").show();
+                        jQuery("#pull-msgBox").toggleClass("error-message-text", true);
+                        jQuery("#pull-msgBox").toggleClass("success-message-text", false);
+
+
                     }
                    })
                 .fail(function (err) {
@@ -485,6 +499,8 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                     //   display_loading_validate_identifier(false);
                     jQuery("#pull-msgBox").text("There was an error pulling referrals. Error: " + JSON.stringify(err));
                     jQuery("#pull-msgBox").show();
+                    jQuery("#pull-msgBox").addClass("error-message-text", true);
+                    jQuery("#pull-msgBox").toggleClass("success-message-text", false);
 
                     }
                 )
@@ -503,12 +519,17 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                         console.log("Successfully updated client referral: ");
                         jQuery("#pull-msgBox").text("Successfully updated client referral");
                         jQuery("#pull-msgBox").show();
+                        jQuery("#pull-msgBox").toggleClass("success-message-text", true);
+                        jQuery("#pull-msgBox").toggleClass("error-message-text", false);
+
                         ui.navigate('kenyaemr', 'clinician/clinicianViewPatient', { patientId: data.patientId,  returnUrl: location.href });
                     }else{
                         console.log("Data ==>"+data);
                         display_loading_spinner(false);
                         jQuery("#pull-msgBox").text("Error updating client referral");
                         jQuery("#pull-msgBox").show();
+                        jQuery("#pull-msgBox").toggleClass("error-message-text", true);
+                        jQuery("#pull-msgBox").toggleClass("success-message-text", false);
                     }
                 })
                 .fail(function (err) {
@@ -518,6 +539,8 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                         //   display_loading_validate_identifier(false);
                         jQuery("#pull-msgBox").text("Could not update client referral");
                         jQuery("#pull-msgBox").show();
+                    jQuery("#pull-msgBox").toggleClass("error-message-text", true);
+                    jQuery("#pull-msgBox").toggleClass("success-message-text", false);
 
                     }
                 )
@@ -536,11 +559,15 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                         console.log("Successfully updated client referra: ");
                         jQuery("#pull-msgBox").text("Successfully updated client referral");
                         jQuery("#pull-msgBox").show();
+                        jQuery("#pull-msgBox").toggleClass("success-message-text", true);
+                        jQuery("#pull-msgBox").toggleClass("error-message-text", false);
                     }else{
                         console.log("Data ==>"+data);
                         display_loading_spinner(false);
                         jQuery("#pull-msgBox").text("Error updating client referral");
                         jQuery("#pull-msgBox").show();
+                        jQuery("#pull-msgBox").toggleClass("error-message-text", true);
+                        jQuery("#pull-msgBox").toggleClass("success-message-text", false);
                     }
                 })
                 .fail(function (err) {
@@ -550,7 +577,8 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                         //   display_loading_validate_identifier(false);
                         jQuery("#pull-msgBox").text("Could upated client referral");
                         jQuery("#pull-msgBox").show();
-
+                    jQuery("#pull-msgBox").toggleClass("error-message-text", true);
+                    jQuery("#pull-msgBox").toggleClass("success-message-text", false);
                     }
                 )
         });
@@ -587,6 +615,8 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                         display_loading_spinner(false);
                         jQuery("#pull-msgBox").text("Error updating client referral");
                         jQuery("#pull-msgBox").show();
+                        jQuery("#pull-msgBox").toggleClass("error-message-text", true);
+                        jQuery("#pull-msgBox").toggleClass("success-message-text", false);
                     }
                 })
                 .fail(function (err) {
@@ -596,6 +626,8 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                         //   display_loading_validate_identifier(false);
                         jQuery("#pull-msgBox").text("Could upated client referral");
                         jQuery("#pull-msgBox").show();
+                    jQuery("#pull-msgBox").toggleClass("error-message-text", true);
+                    jQuery("#pull-msgBox").toggleClass("success-message-text", false);
 
                     }
                 )
