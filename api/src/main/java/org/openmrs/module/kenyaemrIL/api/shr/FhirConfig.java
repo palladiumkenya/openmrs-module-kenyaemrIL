@@ -1,9 +1,15 @@
 package org.openmrs.module.kenyaemrIL.api.shr;
 
 import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.client.interceptor.BearerTokenAuthInterceptor;
 import groovy.util.logging.Slf4j;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClients;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Appointment;
 import org.hl7.fhir.r4.model.Bundle;
@@ -13,6 +19,7 @@ import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.ServiceRequest;
+import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -264,7 +271,7 @@ public class FhirConfig {
     }
 
     public Bundle fetchReferrals(String performer) {
-        String url = ILUtils.getShrServerUrl() + "ServiceRequest?performer=" + performer + "&status=active";
+        String url = ILUtils.getShrServerUrl() + "ServiceRequest?performer:identifier=" + performer + "&status=active";
         System.out.println("Fhir: fetchReferrals ==>");
         try {
             IGenericClient client = getFhirClient();
@@ -315,8 +322,68 @@ public class FhirConfig {
         IGenericClient client = getFhirClient();
         if (client != null) {
             System.out.println("Fhir: client is not null ==>");
-            client.update().resource(request).execute();
+            MethodOutcome outcome = client.update().resource(request).execute();
         }
+    }
+
+    private Bundle.BundleEntryComponent createServiceRequestBundleComponent(ServiceRequest serviceRequest) {
+        Bundle.BundleEntryRequestComponent bundleEntryRequestComponent = new Bundle.BundleEntryRequestComponent();
+        bundleEntryRequestComponent.setMethod(Bundle.HTTPVerb.PUT);
+        bundleEntryRequestComponent.setUrl("ServiceRequest/" + getResourceUuid(serviceRequest.getId()));
+        Bundle.BundleEntryComponent bundleEntryComponent = new Bundle.BundleEntryComponent();
+        bundleEntryComponent.setRequest(bundleEntryRequestComponent);
+        bundleEntryComponent.setResource(serviceRequest);
+        return bundleEntryComponent;
+    }
+
+    private static String getResourceUuid(String resourceUrl) {
+        String[] sepUrl = resourceUrl.split("/");
+        return sepUrl[sepUrl.length - 3];
+    }
+
+    public void postReferralResourceToOpenHim(ServiceRequest fhirResource) throws Exception {
+        Bundle preparedBundle = new Bundle();
+        preparedBundle.setType(Bundle.BundleType.TRANSACTION);
+        preparedBundle.addEntry(createServiceRequestBundleComponent(fhirResource));
+
+        HttpClient httpClient = HttpClients.createDefault();
+        HttpPost httpPost = new HttpPost(getOpenhimServerUrl());
+        String oauthToken = ILUtils.getShrToken();
+        oauthToken = "Bearer " + oauthToken;
+
+        /* Todo: Add Oauth2 logic and append to request headers */
+        String message = fhirContext.newJsonParser().setPrettyPrint(true).encodeResourceToString(preparedBundle);
+        StringEntity fhirResourceEntity = new StringEntity(message);
+        httpPost.setEntity(fhirResourceEntity);
+        httpPost.setHeader("Content-type", "application/json");
+        httpPost.setHeader("Authorization", oauthToken);
+
+        HttpResponse response = httpClient.execute(httpPost);
+        int statusCode = response.getStatusLine().getStatusCode();
+        if (statusCode >= 200 && statusCode < 300) {
+            System.out.println("FHIR resource was successfully posted to the OpenHIM channel");
+        } else {
+            String responseBody = response.getEntity().toString();
+            System.out.println("An error occurred while posting the FHIR resource to the OpenHIM channel. Status code: "
+                    + statusCode + " Response body: " + responseBody);
+        }
+    }
+
+    public String getOpenhimServerUrl() {
+        String baseUrl = getOpenhimBaseUrl();
+        String suffixUrl = getOpenhimSuffixUrl();
+        if (baseUrl == null || suffixUrl == null) {
+            throw new IllegalArgumentException("OpenHIM URL is invalid: baseUrl or suffixUrl is null");
+        }
+        return baseUrl + suffixUrl + "/bundle";
+    }
+
+    private String getOpenhimBaseUrl() {
+        return Context.getAdministrationService().getGlobalProperty("interop.openhimBaseURL");
+    }
+
+    private String getOpenhimSuffixUrl() {
+        return Context.getAdministrationService().getGlobalProperty("interop.openhimBaseURLSuffix");
     }
 
     public List<String> vitalConcepts() {

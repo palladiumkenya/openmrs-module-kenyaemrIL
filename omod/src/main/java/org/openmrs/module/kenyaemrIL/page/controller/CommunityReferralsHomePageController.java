@@ -3,12 +3,16 @@ package org.openmrs.module.kenyaemrIL.page.controller;
 import ca.uhn.fhir.parser.IParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.hl7.fhir.r4.model.ServiceRequest;
+import org.openmrs.Location;
+import org.openmrs.LocationAttributeType;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.kenyaemr.metadata.FacilityMetadata;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.shr.FhirConfig;
 import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
 import org.openmrs.module.kenyaui.KenyaUiUtils;
 import org.openmrs.module.kenyaui.annotation.AppPage;
+import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.ui.framework.UiUtils;
 import org.openmrs.ui.framework.annotation.SpringBean;
@@ -17,7 +21,9 @@ import org.openmrs.ui.framework.page.PageModel;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @AppPage("kenyaemr.referral.home")
 public class CommunityReferralsHomePageController {
@@ -43,7 +49,20 @@ public class CommunityReferralsHomePageController {
             String requester = "";
             if (serviceRequest.hasRequester()) {
                 if (serviceRequest.getRequester().getDisplay() != null) {
-                    requester = serviceRequest.getRequester().getDisplay();
+                    Location location = getLocationByMflCode(serviceRequest.getRequester().getDisplay());
+                    if (location != null) {
+                        requester = location.getName();
+                    } else {
+                        requester = "Community";
+                    }
+
+                } else if (serviceRequest.getRequester().getIdentifier() != null && serviceRequest.getRequester().getIdentifier().getValue() != null) {
+                    Location location = getLocationByMflCode(serviceRequest.getRequester().getIdentifier().getValue());
+                    if (location != null) {
+                        requester = location.getName();
+                    } else {
+                        requester = "Community";
+                    }
                 }
             }
 
@@ -89,5 +108,15 @@ public class CommunityReferralsHomePageController {
         model.put("activeReferralListSize", activeReferrals.size());
         model.put("completedReferralList", ui.toJson(completedReferrals));
         model.put("completedReferralListSize", completedReferrals.size());
+    }
+
+    public Location getLocationByMflCode(String mflCode) {
+        LocationAttributeType mflCodeAttrType = MetadataUtils.existing(LocationAttributeType.class, FacilityMetadata._LocationAttributeType.MASTER_FACILITY_CODE);
+        Map<LocationAttributeType, Object> attrVals = new HashMap<>();
+        attrVals.put(mflCodeAttrType, mflCode);
+
+        List<Location> locations = Context.getLocationService().getLocations(null, null, attrVals, false, null, null);
+
+        return locations.size() > 0 ? locations.get(0) : null;
     }
 }
