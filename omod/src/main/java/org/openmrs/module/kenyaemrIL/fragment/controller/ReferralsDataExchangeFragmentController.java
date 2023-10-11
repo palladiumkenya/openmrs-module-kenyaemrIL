@@ -117,8 +117,23 @@ public class ReferralsDataExchangeFragmentController {
                 if (fhirServiceRequestResource != null) {
                     fhirServiceRequest = (org.hl7.fhir.r4.model.ServiceRequest) fhirServiceRequestResource;
 
-                    if (fhirServiceRequest.hasPerformer()) {
+                    if (fhirServiceRequest.hasPerformer() && fhirServiceRequest.getPerformerFirstRep().getDisplay() != null) {
                         if (fhirServiceRequest.getPerformerFirstRep().getDisplay().equals(getDefaultLocationMflCode())) {
+                            String nupiNumber = fhirServiceRequest.getSubject() != null && fhirServiceRequest.getSubject().getIdentifier() != null ? fhirServiceRequest.getSubject().getIdentifier().getValue() : "";
+                            if (Strings.isNullOrEmpty(nupiNumber)) {
+                                continue;
+                            }
+                            System.out.println("NUPI :  ==>" + nupiNumber);
+                            if (nupiNumber != null) {
+                                GlobalProperty globalTokenUrl = Context.getAdministrationService().getGlobalPropertyObject(CommonMetadata.GP_CLIENT_VERIFICATION_QUERY_UPI_END_POINT);
+                                if (globalTokenUrl != null && !Strings.isNullOrEmpty(globalTokenUrl.getPropertyValue())) {
+                                    String serverUrl = globalTokenUrl.getPropertyValue() + "/" + nupiNumber;
+                                    persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest, "COMMUNITY");
+                                }
+                            }
+                        }
+                    } else if (fhirServiceRequest.hasPerformer() && fhirServiceRequest.getPerformerFirstRep().getIdentifier() != null && fhirServiceRequest.getPerformerFirstRep().getIdentifier().getValue() != null) {
+                        if (fhirServiceRequest.getPerformerFirstRep().getIdentifier().getValue().equals(getDefaultLocationMflCode())) {
                             String nupiNumber = fhirServiceRequest.getSubject() != null && fhirServiceRequest.getSubject().getIdentifier() != null ? fhirServiceRequest.getSubject().getIdentifier().getValue() : "";
                             if (Strings.isNullOrEmpty(nupiNumber)) {
                                 continue;
@@ -478,10 +493,10 @@ public class ReferralsDataExchangeFragmentController {
                     String obsId = r.getReference();
                     System.out.println("OBS ID " + obsId);
 
-                     Resource resource =  fhirConfig.fetchFhirResource("Observation", obsId);
-                     if (resource == null) {
-                         break;
-                     }
+                    Resource resource =  fhirConfig.fetchFhirResource("Observation", obsId);
+                    if (resource == null) {
+                        break;
+                    }
                     Observation observation = (Observation) resource;
 
                     List<String> theTest = new ArrayList<>();

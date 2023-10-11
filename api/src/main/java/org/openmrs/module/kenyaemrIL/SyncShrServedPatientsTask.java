@@ -54,8 +54,12 @@ public class SyncShrServedPatientsTask extends AbstractTask {
             ServiceRequest serviceRequest = parser.parseResource(ServiceRequest.class, patient.getPatientSummary());
             serviceRequest.setStatus(ServiceRequest.ServiceRequestStatus.COMPLETED);
             try {
-                fhirConfig.updateReferral(serviceRequest); // submit directly to shr
-//                fhirConfig.postReferralResourceToOpenHim(serviceRequest); // submit via openHim to shr
+                /**
+                 * fhirConfig.updateReferral(serviceRequest); // submit directly to shr
+                 */
+
+                /**update through openhim*/
+                fhirConfig.postReferralResourceToOpenHim(serviceRequest);
                 patient.setReferralStatus("FINAL");
                 Context.getService(KenyaEMRILService.class).createPatient(patient);
             } catch (Exception e) {

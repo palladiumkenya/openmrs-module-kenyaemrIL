@@ -249,6 +249,8 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                             <th class="genderColumn">Sex</th>
                                             <th class="dateOfBirthColumn">DOB</th>
                                             <th class="nupiColumn">NUPI</th>
+                                            <th class="dateOfBirthColumn">Referral Date</th>
+                                            <th class="nupiColumn">Referred From</th>
                                             <th class="status">Status</th>
                                             <th class="action">Action</th>
                                             <th class="action">Referral Summary</th>
@@ -290,6 +292,8 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                             <th class="genderColumn">Sex</th>
                                             <th class="dateOfBirthColumn">DOB</th>
                                             <th class="nupiColumn">NUPI</th>
+                                            <th class="dateOfBirthColumn">Referral Date</th>
+                                            <th class="nupiColumn">Referred From</th>
                                             <th class="status">Status</th>
                                             <th class="action">Action</th>
                                             <th class="action">Referral Summary</th>
@@ -618,6 +622,8 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             tr.append("<td>" + displayRecords[i].gender +"</td>");
             tr.append("<td>" + displayRecords[i].birthdate + "</td>");
             tr.append("<td>" + displayRecords[i].nupi + "</td>");
+            tr.append("<td>" + displayRecords[i].dateReferred + "</td>");
+            tr.append("<td>" + displayRecords[i].referredFrom + "</td>");
             tr.append("<td>" + displayRecords[i].status +"</td>");
             var actionTd = jq('<td/>');
 
@@ -659,6 +665,8 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             tr.append("<td>" + displayRecords[i].gender +"</td>");
             tr.append("<td>" + displayRecords[i].birthdate + "</td>");
             tr.append("<td>" + displayRecords[i].nupi + "</td>");
+            tr.append("<td>" + displayRecords[i].dateReferred + "</td>");
+            tr.append("<td>" + displayRecords[i].referredFrom + "</td>");
             tr.append("<td>" + displayRecords[i].status +"</td>");
             var actionTd = jq('<td/>');
 

@@ -323,18 +323,36 @@ public class FhirConfig {
         if (client != null) {
             System.out.println("Fhir: client is not null ==>");
             MethodOutcome outcome = client.update().resource(request).execute();
-            System.out.printf("after UPDATE ========================" +outcome.getOperationOutcome());
         }
     }
 
+    private Bundle.BundleEntryComponent createServiceRequestBundleComponent(ServiceRequest serviceRequest) {
+        Bundle.BundleEntryRequestComponent bundleEntryRequestComponent = new Bundle.BundleEntryRequestComponent();
+        bundleEntryRequestComponent.setMethod(Bundle.HTTPVerb.PUT);
+        bundleEntryRequestComponent.setUrl("ServiceRequest/" + getResourceUuid(serviceRequest.getId()));
+        Bundle.BundleEntryComponent bundleEntryComponent = new Bundle.BundleEntryComponent();
+        bundleEntryComponent.setRequest(bundleEntryRequestComponent);
+        bundleEntryComponent.setResource(serviceRequest);
+        return bundleEntryComponent;
+    }
+
+    private static String getResourceUuid(String resourceUrl) {
+        String[] sepUrl = resourceUrl.split("/");
+        return sepUrl[sepUrl.length - 3];
+    }
+
     public void postReferralResourceToOpenHim(ServiceRequest fhirResource) throws Exception {
+        Bundle preparedBundle = new Bundle();
+        preparedBundle.setType(Bundle.BundleType.TRANSACTION);
+        preparedBundle.addEntry(createServiceRequestBundleComponent(fhirResource));
+
         HttpClient httpClient = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost(getOpenhimServerUrl());
         String oauthToken = ILUtils.getShrToken();
         oauthToken = "Bearer " + oauthToken;
 
         /* Todo: Add Oauth2 logic and append to request headers */
-        String message = fhirContext.newJsonParser().setPrettyPrint(true).encodeResourceToString(fhirResource);
+        String message = fhirContext.newJsonParser().setPrettyPrint(true).encodeResourceToString(preparedBundle);
         StringEntity fhirResourceEntity = new StringEntity(message);
         httpPost.setEntity(fhirResourceEntity);
         httpPost.setHeader("Content-type", "application/json");
@@ -357,7 +375,7 @@ public class FhirConfig {
         if (baseUrl == null || suffixUrl == null) {
             throw new IllegalArgumentException("OpenHIM URL is invalid: baseUrl or suffixUrl is null");
         }
-        return baseUrl + suffixUrl + "/service-request";
+        return baseUrl + suffixUrl + "/bundle";
     }
 
     private String getOpenhimBaseUrl() {
