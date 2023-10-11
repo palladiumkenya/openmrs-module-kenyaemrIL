@@ -489,7 +489,7 @@
     </changeSet>
 
     <!--Adding scheduled task :Set program discontinuation task-->
-    <changeSet id="${project.parent.artifactId}-202306271030" author="jecihjoy">
+    <changeSet id="${project.parent.artifactId}-2023010101030" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
                 SELECT COUNT(*) FROM scheduler_task_config
@@ -504,7 +504,7 @@
             <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.ProgramDiscontinuationTask" />
             <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
             <column name="start_time" valueDate="2023-01-01T23:59:59" />
-            <column name="repeat_interval" value="7200" />
+            <column name="repeat_interval" value="21600" />
             <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
             <column name="created_by" value="1" />
             <column name="start_on_startup" value="0" />
@@ -541,7 +541,7 @@
     </changeSet>
 
     <!-- Adding scheduled task : Validate transfer out patients -->
-    <changeSet id="${project.parent.artifactId}-202308020430" author="jecihjoy">
+    <changeSet id="${project.parent.artifactId}-202310100430" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
                 SELECT COUNT(*) FROM scheduler_task_config
@@ -556,10 +556,10 @@
             <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.ValidateTransferOutsTasks"/>
             <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss"/>
             <column name="start_time" valueDate="2023-07-04T23:59:59"/>
-            <column name="repeat_interval" value="5"/>
+            <column name="repeat_interval" value="43200"/>
             <column name="date_created" valueDate="CURRENT_TIMESTAMP"/>
             <column name="created_by" value="1"/>
-            <column name="start_on_startup" value="1"/>
+            <column name="start_on_startup" value="0"/>
             <column name="started" value="0"/>
             <column name="uuid" value="5fdedec8-1b32-11ee-be56-0242ac120002"/>
         </insert>
@@ -671,7 +671,7 @@
         </addColumn>
     </changeSet>
     <!--Adding scheduled task :Set program discontinuation task-->
-    <changeSet id="${project.parent.artifactId}-202308080930" author="jecihjoy">
+    <changeSet id="${project.parent.artifactId}-202310100930" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
                 SELECT COUNT(*) FROM scheduler_task_config
@@ -686,10 +686,10 @@
             <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.PullExpectedTransferInsTask" />
             <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
             <column name="start_time" valueDate="2023-01-01T23:59:59" />
-            <column name="repeat_interval" value="3" />
+            <column name="repeat_interval" value="43200" />
             <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
             <column name="created_by" value="1" />
-            <column name="start_on_startup" value="1" />
+            <column name="start_on_startup" value="0" />
             <column name="started" value="1" />
             <column name="uuid" value="9143b4e6-16c5-11ee-be56-0342ac120002" />
         </insert>
@@ -715,7 +715,7 @@
         </sql>
     </changeSet>
     <!--Adding scheduled task :Set program discontinuation task-->
-    <changeSet id="${project.parent.artifactId}-20231011011630" author="jecihjoy">
+    <changeSet id="${project.parent.artifactId}-20231000011630" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
                 SELECT COUNT(*) FROM scheduler_task_config
@@ -730,10 +730,10 @@
             <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.SyncShrServedPatientsTask" />
             <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
             <column name="start_time" valueDate="2023-01-01T23:59:59" />
-            <column name="repeat_interval" value="3" />
+            <column name="repeat_interval" value="21600" />
             <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
             <column name="created_by" value="1" />
-            <column name="start_on_startup" value="1" />
+            <column name="start_on_startup" value="0" />
             <column name="started" value="1" />
             <column name="uuid" value="36bb93cc-67bf-11ee-8c99-0242ac120002" />
         </insert>
