@@ -31,7 +31,6 @@ import org.openmrs.module.idgen.service.IdentifierSourceService;
 import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemr.metadata.HivMetadata;
 import org.openmrs.module.kenyaemr.nupi.UpiUtilsDataExchange;
-import org.openmrs.module.kenyaemr.util.EmrUtils;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.shr.FhirConfig;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
@@ -100,20 +99,29 @@ public class ReferralsDataExchangeFragmentController {
      * @return
      */
     public SimpleObject pullCommunityReferralsFromFhir() throws Exception {
-        System.out.println("Fhir :Start pullCommunityReferralsFromFhir ==>");
+
+        if (Strings.isNullOrEmpty(getDefaultLocationMflCode())) { // let us know early if this is not configured
+            return SimpleObject.create("status", "Fail",
+                    "message", "Facility mfl cannot be empty");
+        }
         org.hl7.fhir.r4.model.Resource fhirServiceRequestResource;
         org.hl7.fhir.r4.model.ServiceRequest fhirServiceRequest = null;
         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
-        if (Strings.isNullOrEmpty(getDefaultLocationMflCode()))
-            return SimpleObject.create("Fail", "Facility mfl cannot be empty");
+
         Bundle serviceRequestResourceBundle = fhirConfig.fetchAllReferralsByFacility(getDefaultLocationMflCode());
-        // System.out.println("SHR DATA");
-        // System.out.println("getDefaultLocationMflCode() " + getDefaultLocationMflCode());
-        System.out.println("Pulled Referrals  ==>" + serviceRequestResourceBundle.getEntry().size());
-        if (serviceRequestResourceBundle != null && !serviceRequestResourceBundle.getEntry().isEmpty()) {
+
+        if (serviceRequestResourceBundle == null) {
+            return SimpleObject.create("status", "Fail",
+                    "message", "There was an error pulling referrals. Please verify all configurations");
+        } else if (serviceRequestResourceBundle.getEntry().isEmpty()){ // entry is empty if the bundle has no data
+            return SimpleObject.create("status", "Success",
+                    "message", "Got no referrals to pull");
+        } else if (!serviceRequestResourceBundle.getEntry().isEmpty()) {
+
+            int validMessages = 0;
             for (int i = 0; i < serviceRequestResourceBundle.getEntry().size(); i++) {
                 fhirServiceRequestResource = serviceRequestResourceBundle.getEntry().get(i).getResource();
-                System.out.println("Fhir : Checking Service request is null ==>");
+
                 if (fhirServiceRequestResource != null) {
                     fhirServiceRequest = (org.hl7.fhir.r4.model.ServiceRequest) fhirServiceRequestResource;
 
@@ -123,12 +131,12 @@ public class ReferralsDataExchangeFragmentController {
                             if (Strings.isNullOrEmpty(nupiNumber)) {
                                 continue;
                             }
-                            System.out.println("NUPI :  ==>" + nupiNumber);
                             if (nupiNumber != null) {
                                 GlobalProperty globalTokenUrl = Context.getAdministrationService().getGlobalPropertyObject(CommonMetadata.GP_CLIENT_VERIFICATION_QUERY_UPI_END_POINT);
                                 if (globalTokenUrl != null && !Strings.isNullOrEmpty(globalTokenUrl.getPropertyValue())) {
                                     String serverUrl = globalTokenUrl.getPropertyValue() + "/" + nupiNumber;
                                     persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest, "COMMUNITY");
+                                    validMessages++;
                                 }
                             }
                         }
@@ -144,18 +152,29 @@ public class ReferralsDataExchangeFragmentController {
                                 if (globalTokenUrl != null && !Strings.isNullOrEmpty(globalTokenUrl.getPropertyValue())) {
                                     String serverUrl = globalTokenUrl.getPropertyValue() + "/" + nupiNumber;
                                     persistReferralData(getCRPatient(serverUrl), fhirConfig, fhirServiceRequest, "COMMUNITY");
+                                    validMessages++;
                                 }
                             }
                         }
                     }
                 }
             }
+
+            return SimpleObject.create("status", "Success",
+                    "message", "Successfully pulled " + validMessages + " referral(s)");
+
         } else {
-            System.out.printf("BUNDLE IS NULL OR EMPTY");
+            return SimpleObject.create("status", "Success",
+                    "message", "Could not understand response from the server!");
         }
-        return SimpleObject.create("success", "");
     }
 
+    /**
+     * Updates a referral message once a patient is served by a provider
+     * @param referral
+     * @return
+     * @throws Exception
+     */
     public SimpleObject updateShrReferral(@RequestParam("patientId") Integer referral) throws Exception {
         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
 
