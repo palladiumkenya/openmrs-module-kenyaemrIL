@@ -68,11 +68,9 @@ public class FhirConfig {
     public Bundle fetchPatientAllergies(String identifier) {
         String url = ILUtils.getShrServerUrl() + "AllergyIntolerance?patient=Patient/"
                 + identifier;
-        System.out.println("Fhir: fetchAllergies ==>");
         try {
             IGenericClient client = getFhirClient();
             if (client != null) {
-                System.out.println("Fhir: client is not null ==>");
                 Bundle allergies = client.search()
                         .byUrl(url)
                         .returnBundle(Bundle.class).count(10000).execute();

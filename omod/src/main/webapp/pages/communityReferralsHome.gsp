@@ -207,7 +207,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                     </tr>
                     <tr>
                         <td width="15%"> <button id="pullCommunityReferrals">Pull Community Referrals</button></td>
-                        <td> <div class="wait-loading"></div> <div class="text-wrap" align="center" id="pull-msgBox"></div></td>
+                        <td> <div class="wait-loading"></div> <div class="text-wrap" align="left" id="pull-msgBox"></div></td>
 
                        <td></td>
 
@@ -224,7 +224,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
             <div class="ke-tabmenu-item" data-tabid="active_queue_data">Active referrals</div>
 
-            <div class="ke-tabmenu-item" data-tabid="completed_queue_data">Completed referrals</div>
+            <div class="ke-tabmenu-item" data-tabid="completed_queue_data">Serviced referrals</div>
 
             <div class="ke-tabmenu-item" data-tabid="general_error_active_queue">Error queue</div>
 
@@ -463,33 +463,34 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             display_loading_spinner(true);
             jQuery.getJSON('${ ui.actionLink("kenyaemrIL", "referralsDataExchange", "pullCommunityReferralsFromFhir")}')
                    .success(function (data) {
-                    if(data.success === "true") {
+                    if(data.status === "Success") {
                         // Hide spinner
                         display_loading_spinner(false);
                         console.log("Data ==>"+data);
-                        console.log("Successfully pulled referral records: ");
-                        jQuery("#pull-msgBox").text("Successfully pulled referral records");
+                        console.log(data.message);
+                        jQuery("#pull-msgBox").text(data.message);
                         jQuery("#pull-msgBox").show();
                     }else{
                         console.log("Data ==>"+data);
                         display_loading_spinner(false);
-                        jQuery("#pull-msgBox").text("Successfully pulled referral records");
+                        jQuery("#pull-msgBox").text(data.message);
                         jQuery("#pull-msgBox").show();
                     }
                    })
                 .fail(function (err) {
                     // Hide spinner
+                    display_loading_spinner(false);
                     console.log("Error fetching referral records: " + JSON.stringify(err));
                     // Hide spinner
                     //   display_loading_validate_identifier(false);
-                    jQuery("#pull-msgBox").text("Successfully pulled referral records");
+                    jQuery("#pull-msgBox").text("There was an error pulling referrals. Error: " + JSON.stringify(err));
                     jQuery("#pull-msgBox").show();
 
                     }
                 )
         });
 
-           jq(document).on('click','.updateButton',function(){
+           jq(document).on('click','.updateButton',function(){display_loading_spinner(false);
              // Update referral_status PA
             jQuery.getJSON('${ ui.actionLink("kenyaemrIL", "referralsDataExchange", "completeClientReferral")}',
                 {
@@ -499,7 +500,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                     if(data.patientId !== " ") {
                         // Hide spinner
                         display_loading_spinner(false);
-                        console.log("Successfully updated client referra: ");
+                        console.log("Successfully updated client referral: ");
                         jQuery("#pull-msgBox").text("Successfully updated client referral");
                         jQuery("#pull-msgBox").show();
                         ui.navigate('kenyaemr', 'clinician/clinicianViewPatient', { patientId: data.patientId,  returnUrl: location.href });
@@ -515,7 +516,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                         console.log("Error updating client referral: " + JSON.stringify(err));
                         // Hide spinner
                         //   display_loading_validate_identifier(false);
-                        jQuery("#pull-msgBox").text("Could upated client referral");
+                        jQuery("#pull-msgBox").text("Could not update client referral");
                         jQuery("#pull-msgBox").show();
 
                     }
