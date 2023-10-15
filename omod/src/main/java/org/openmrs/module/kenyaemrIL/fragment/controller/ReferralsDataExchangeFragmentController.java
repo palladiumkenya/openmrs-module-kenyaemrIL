@@ -113,7 +113,7 @@ public class ReferralsDataExchangeFragmentController {
         if (serviceRequestResourceBundle == null) {
             return SimpleObject.create("status", "Fail",
                     "message", "There was an error pulling referrals. Please verify all configurations");
-        } else if (serviceRequestResourceBundle.getEntry().isEmpty()){ // entry is empty if the bundle has no data
+        } else if (serviceRequestResourceBundle.getEntry().isEmpty()) { // entry is empty if the bundle has no data
             return SimpleObject.create("status", "Success",
                     "message", "Got no referrals to pull");
         } else if (!serviceRequestResourceBundle.getEntry().isEmpty()) {
@@ -125,12 +125,13 @@ public class ReferralsDataExchangeFragmentController {
                 if (fhirServiceRequestResource != null) {
                     fhirServiceRequest = (org.hl7.fhir.r4.model.ServiceRequest) fhirServiceRequestResource;
 
-                    if (fhirServiceRequest.hasPerformer() && fhirServiceRequest.getPerformerFirstRep().getDisplay() != null) {
-                        if (fhirServiceRequest.getPerformerFirstRep().getDisplay().equals(getDefaultLocationMflCode())) {
+                    if (fhirServiceRequest.hasPerformer() && fhirServiceRequest.getPerformerFirstRep().getIdentifier() != null && fhirServiceRequest.getPerformerFirstRep().getIdentifier().getValue() != null) {
+                        if (fhirServiceRequest.getPerformerFirstRep().getIdentifier().getValue().equals(getDefaultLocationMflCode())) {
                             String nupiNumber = fhirServiceRequest.getSubject() != null && fhirServiceRequest.getSubject().getIdentifier() != null ? fhirServiceRequest.getSubject().getIdentifier().getValue() : "";
                             if (Strings.isNullOrEmpty(nupiNumber)) {
                                 continue;
                             }
+                            System.out.println("NUPI :  ==>" + nupiNumber);
                             if (nupiNumber != null) {
                                 GlobalProperty globalTokenUrl = Context.getAdministrationService().getGlobalPropertyObject(CommonMetadata.GP_CLIENT_VERIFICATION_QUERY_UPI_END_POINT);
                                 if (globalTokenUrl != null && !Strings.isNullOrEmpty(globalTokenUrl.getPropertyValue())) {
@@ -140,13 +141,12 @@ public class ReferralsDataExchangeFragmentController {
                                 }
                             }
                         }
-                    } else if (fhirServiceRequest.hasPerformer() && fhirServiceRequest.getPerformerFirstRep().getIdentifier() != null && fhirServiceRequest.getPerformerFirstRep().getIdentifier().getValue() != null) {
-                        if (fhirServiceRequest.getPerformerFirstRep().getIdentifier().getValue().equals(getDefaultLocationMflCode())) {
+                    } else if (fhirServiceRequest.hasPerformer() && fhirServiceRequest.getPerformerFirstRep().getDisplay() != null) {
+                        if (fhirServiceRequest.getPerformerFirstRep().getDisplay().equals(getDefaultLocationMflCode())) {
                             String nupiNumber = fhirServiceRequest.getSubject() != null && fhirServiceRequest.getSubject().getIdentifier() != null ? fhirServiceRequest.getSubject().getIdentifier().getValue() : "";
                             if (Strings.isNullOrEmpty(nupiNumber)) {
                                 continue;
                             }
-                            System.out.println("NUPI :  ==>" + nupiNumber);
                             if (nupiNumber != null) {
                                 GlobalProperty globalTokenUrl = Context.getAdministrationService().getGlobalPropertyObject(CommonMetadata.GP_CLIENT_VERIFICATION_QUERY_UPI_END_POINT);
                                 if (globalTokenUrl != null && !Strings.isNullOrEmpty(globalTokenUrl.getPropertyValue())) {
@@ -171,11 +171,12 @@ public class ReferralsDataExchangeFragmentController {
 
     /**
      * Updates a referral message once a patient is served by a provider
+     *
      * @param referral
      * @return
      * @throws Exception
      */
-    public SimpleObject updateShrReferral(@RequestParam("patientId") Integer referral) throws Exception {
+    public SimpleObject updateShrReferral(@RequestParam("patientId") Integer referral) {
         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
 
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
@@ -194,8 +195,12 @@ public class ReferralsDataExchangeFragmentController {
         System.out.println(serviceRequest.getStatus());
         System.out.println(serviceRequest.getCategory().get(0).getCoding().get(0).getDisplay());
         serviceRequest.setStatus(ServiceRequest.ServiceRequestStatus.COMPLETED);
-        fhirConfig.updateReferral(serviceRequest);
-        return SimpleObject.create("success", "true");
+        try {
+            fhirConfig.postReferralResourceToOpenHim(serviceRequest);
+            return SimpleObject.create("Success");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -512,7 +517,7 @@ public class ReferralsDataExchangeFragmentController {
                     String obsId = r.getReference();
                     System.out.println("OBS ID " + obsId);
 
-                    Resource resource =  fhirConfig.fetchFhirResource("Observation", obsId);
+                    Resource resource = fhirConfig.fetchFhirResource("Observation", obsId);
                     if (resource == null) {
                         break;
                     }
@@ -524,7 +529,7 @@ public class ReferralsDataExchangeFragmentController {
 
                     if (observation.getCode() != null && !observation.getCode().getCoding().isEmpty()) {
                         for (Coding c : observation.getCode().getCoding()) {
-                            String display =  !Strings.isNullOrEmpty(c.getDisplay()) ? c.getDisplay() : c.getCode();
+                            String display = !Strings.isNullOrEmpty(c.getDisplay()) ? c.getDisplay() : c.getCode();
                             theTest.add(display);
                         }
                     }
@@ -533,7 +538,7 @@ public class ReferralsDataExchangeFragmentController {
                         CodeableConcept codeableConcept = (CodeableConcept) observation.getValue();
                         if (!codeableConcept.getCoding().isEmpty()) {
                             for (Coding c : codeableConcept.getCoding()) {
-                                String display =  !Strings.isNullOrEmpty(c.getDisplay()) ? c.getDisplay() : c.getCode();
+                                String display = !Strings.isNullOrEmpty(c.getDisplay()) ? c.getDisplay() : c.getCode();
                                 theFindings.add(display);
                             }
                         }
@@ -552,9 +557,15 @@ public class ReferralsDataExchangeFragmentController {
                 }
             }
 
+            String note = "";
+            if (!serviceRequest.getNote().isEmpty()) {
+               note = serviceRequest.getNoteFirstRep().getText();
+            }
+
             referralsDetailsObject = SimpleObject.create("category", String.join(",  ", category),
                     "reasonCode", String.join(", ", reasons),
                     "referralDate", referralDate,
+                    "clinicalNote", note,
                     "cancerReferral", list
             );
 

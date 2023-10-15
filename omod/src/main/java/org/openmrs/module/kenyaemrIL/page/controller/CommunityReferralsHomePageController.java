@@ -112,7 +112,7 @@ public class CommunityReferralsHomePageController {
 
     public Location getLocationByMflCode(String mflCode) {
         LocationAttributeType mflCodeAttrType = MetadataUtils.existing(LocationAttributeType.class, FacilityMetadata._LocationAttributeType.MASTER_FACILITY_CODE);
-        Map<LocationAttributeType, Object> attrVals = new HashMap<>();
+        Map<LocationAttributeType, Object> attrVals = new HashMap<LocationAttributeType, Object>();
         attrVals.put(mflCodeAttrType, mflCode);
 
         List<Location> locations = Context.getLocationService().getLocations(null, null, attrVals, false, null, null);
