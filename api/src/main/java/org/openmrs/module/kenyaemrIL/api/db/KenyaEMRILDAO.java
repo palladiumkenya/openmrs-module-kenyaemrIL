@@ -14,6 +14,7 @@
 package org.openmrs.module.kenyaemrIL.api.db;
 
 import org.openmrs.Patient;
+import org.openmrs.api.db.DAOException;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
@@ -107,5 +108,6 @@ public interface KenyaEMRILDAO {
     List<ExpectedTransferInPatients> getCommunityReferrals(String serviceType, String referralStatus);
 
     ExpectedTransferInPatients getCommunityReferralsById(Integer id);
+    ExpectedTransferInPatients getCommunityReferralByNupi(String nupi) throws DAOException;
 
 }

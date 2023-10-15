@@ -99,7 +99,7 @@ public class ReferralsDataExchangeFragmentController {
      * @return
      */
     public SimpleObject pullCommunityReferralsFromFhir() throws Exception {
-
+        KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
         if (Strings.isNullOrEmpty(getDefaultLocationMflCode())) { // let us know early if this is not configured
             return SimpleObject.create("status", "Fail",
                     "message", "Facility mfl cannot be empty");
@@ -132,7 +132,7 @@ public class ReferralsDataExchangeFragmentController {
                                 continue;
                             }
                             System.out.println("NUPI :  ==>" + nupiNumber);
-                            if (nupiNumber != null) {
+                            if (nupiNumber != null && service.getCommunityReferralByNupi(nupiNumber) == null) {
                                 GlobalProperty globalTokenUrl = Context.getAdministrationService().getGlobalPropertyObject(CommonMetadata.GP_CLIENT_VERIFICATION_QUERY_UPI_END_POINT);
                                 if (globalTokenUrl != null && !Strings.isNullOrEmpty(globalTokenUrl.getPropertyValue())) {
                                     String serverUrl = globalTokenUrl.getPropertyValue() + "/" + nupiNumber;
@@ -147,7 +147,7 @@ public class ReferralsDataExchangeFragmentController {
                             if (Strings.isNullOrEmpty(nupiNumber)) {
                                 continue;
                             }
-                            if (nupiNumber != null) {
+                            if (nupiNumber != null && service.getCommunityReferralByNupi(nupiNumber) == null) {
                                 GlobalProperty globalTokenUrl = Context.getAdministrationService().getGlobalPropertyObject(CommonMetadata.GP_CLIENT_VERIFICATION_QUERY_UPI_END_POINT);
                                 if (globalTokenUrl != null && !Strings.isNullOrEmpty(globalTokenUrl.getPropertyValue())) {
                                     String serverUrl = globalTokenUrl.getPropertyValue() + "/" + nupiNumber;
