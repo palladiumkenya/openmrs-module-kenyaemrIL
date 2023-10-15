@@ -36,6 +36,7 @@ import org.openmrs.PersonAttribute;
 import org.openmrs.PersonAttributeType;
 import org.openmrs.PersonName;
 import org.openmrs.Provider;
+import org.openmrs.api.APIException;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.OrderService;
 import org.openmrs.api.PatientService;
@@ -1665,5 +1666,9 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             i += 1;
         }
         return i;
+    }
+
+    public ExpectedTransferInPatients getCommunityReferralByNupi(String nupi) throws APIException {
+        return dao.getCommunityReferralByNupi(nupi);
     }
 }

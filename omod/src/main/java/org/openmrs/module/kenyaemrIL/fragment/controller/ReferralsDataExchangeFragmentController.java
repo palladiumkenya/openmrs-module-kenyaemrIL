@@ -99,7 +99,7 @@ public class ReferralsDataExchangeFragmentController {
      * @return
      */
     public SimpleObject pullCommunityReferralsFromFhir() throws Exception {
-
+        KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
         if (Strings.isNullOrEmpty(getDefaultLocationMflCode())) { // let us know early if this is not configured
             return SimpleObject.create("status", "Fail",
                     "message", "Facility mfl cannot be empty");
@@ -132,7 +132,7 @@ public class ReferralsDataExchangeFragmentController {
                                 continue;
                             }
                             System.out.println("NUPI :  ==>" + nupiNumber);
-                            if (nupiNumber != null) {
+                            if (nupiNumber != null && service.getCommunityReferralByNupi(nupiNumber) == null) {
                                 GlobalProperty globalTokenUrl = Context.getAdministrationService().getGlobalPropertyObject(CommonMetadata.GP_CLIENT_VERIFICATION_QUERY_UPI_END_POINT);
                                 if (globalTokenUrl != null && !Strings.isNullOrEmpty(globalTokenUrl.getPropertyValue())) {
                                     String serverUrl = globalTokenUrl.getPropertyValue() + "/" + nupiNumber;
@@ -147,7 +147,7 @@ public class ReferralsDataExchangeFragmentController {
                             if (Strings.isNullOrEmpty(nupiNumber)) {
                                 continue;
                             }
-                            if (nupiNumber != null) {
+                            if (nupiNumber != null && service.getCommunityReferralByNupi(nupiNumber) == null) {
                                 GlobalProperty globalTokenUrl = Context.getAdministrationService().getGlobalPropertyObject(CommonMetadata.GP_CLIENT_VERIFICATION_QUERY_UPI_END_POINT);
                                 if (globalTokenUrl != null && !Strings.isNullOrEmpty(globalTokenUrl.getPropertyValue())) {
                                     String serverUrl = globalTokenUrl.getPropertyValue() + "/" + nupiNumber;
@@ -281,7 +281,7 @@ public class ReferralsDataExchangeFragmentController {
         expectedTransferInPatients.setClientMiddleName(String.valueOf(crClient.get("middleName")));
         expectedTransferInPatients.setClientLastName(String.valueOf(crClient.get("lastName")));
         expectedTransferInPatients.setNupiNumber(String.valueOf(crClient.get("clientNumber")));
-        expectedTransferInPatients.setClientBirthDate(new Date());
+        expectedTransferInPatients.setClientBirthDate(getDateFromString((String) crClient.get("dateOfBirth"), "yyyy-mm-dd"));
         String gender = String.valueOf(crClient.get("gender"));
         if (gender.equalsIgnoreCase("male")) {
             gender = "M";
@@ -571,5 +571,19 @@ public class ReferralsDataExchangeFragmentController {
 
         }
         return referralsDetailsObject;
+    }
+
+    public Date getDateFromString(String date, String pattern) {
+        Date result = null;
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat(pattern);
+            sdf.setLenient(false);
+            result =  sdf.parse(date);
+        }
+        catch (Exception e) {
+            System.out.println("Error: "+e.toString());
+        }
+
+        return result;
     }
 }

@@ -23,6 +23,7 @@ import org.hibernate.criterion.Restrictions;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
+import org.openmrs.api.db.DAOException;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
@@ -405,6 +406,12 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         crit.add(Restrictions.eq("id", id));
         ExpectedTransferInPatients expectedTransferInPatient = (ExpectedTransferInPatients) crit.uniqueResult();
         return expectedTransferInPatient;
+    }
+
+    public ExpectedTransferInPatients getCommunityReferralByNupi(String nupi) throws DAOException {
+        Criteria criteria = sessionFactory.getCurrentSession().createCriteria(ExpectedTransferInPatients.class);
+        criteria.add(Restrictions.eq("nupiNumber", nupi));
+        return (ExpectedTransferInPatients) criteria.uniqueResult();
     }
 
 }
