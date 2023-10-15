@@ -281,7 +281,7 @@ public class ReferralsDataExchangeFragmentController {
         expectedTransferInPatients.setClientMiddleName(String.valueOf(crClient.get("middleName")));
         expectedTransferInPatients.setClientLastName(String.valueOf(crClient.get("lastName")));
         expectedTransferInPatients.setNupiNumber(String.valueOf(crClient.get("clientNumber")));
-        expectedTransferInPatients.setClientBirthDate(new Date());
+        expectedTransferInPatients.setClientBirthDate(getDateFromString((String) crClient.get("dateOfBirth"), "yyyy-mm-dd"));
         String gender = String.valueOf(crClient.get("gender"));
         if (gender.equalsIgnoreCase("male")) {
             gender = "M";
@@ -571,5 +571,19 @@ public class ReferralsDataExchangeFragmentController {
 
         }
         return referralsDetailsObject;
+    }
+
+    public Date getDateFromString(String date, String pattern) {
+        Date result = null;
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat(pattern);
+            sdf.setLenient(false);
+            result =  sdf.parse(date);
+        }
+        catch (Exception e) {
+            System.out.println("Error: "+e.toString());
+        }
+
+        return result;
     }
 }
