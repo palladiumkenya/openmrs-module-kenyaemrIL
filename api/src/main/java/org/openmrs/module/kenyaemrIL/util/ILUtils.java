@@ -644,7 +644,7 @@ public class ILUtils {
 				}
 			}
 		}
-		return new ArrayList<>();
+		return new ArrayList<Location>();
 	}
 
 }

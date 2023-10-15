@@ -341,13 +341,17 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                     <td id="shr-referral-reasons"></td>
                     <td></td>
                 </tr>
+                <tr>
+                    <td>Clinical note : </td>
+                    <td id="shr-referral-clinical-notes"></td>
+                    <td></td>
+                </tr>
 
                 <table>
                     <thead>
                         <tr>
                             <td>Screening Done</td>
                             <td>Findings</td>
-                            <td>Treatment plan</td>
                         </tr>
                     </thead>
                     <tbody id="cancer_referral_data">
@@ -560,7 +564,8 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                     'patientId': jq(this).val()
                 })
                 .success(function (data) {
-                    if(data.sucess === "true") {
+                    console.log("TEST++++ ",data)
+                    if(data === "Success") {
                         // Hide spinner
                         display_loading_spinner(false, 'wait-loading');
                         console.log("Successfully updated client referra: ");
@@ -604,6 +609,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                         display_loading_spinner(false, 'load-shr');
                         jQuery('#shr-category').text(data.category);
                         jQuery('#shr-referral-reasons').text(data.reasonCode);
+                        jQuery('#shr-referral-clinical-notes').text(data.clinicalNote);
 
                         if(data.cancerReferral.length > 0) {
                             var referral_data_display_area = jq('#cancer_referral_data');
@@ -614,7 +620,6 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                 tr = jq('<tr/>');
                                 tr.append("<td>" + data.cancerReferral[i].theTests + "</td>");
                                 tr.append("<td>" + data.cancerReferral[i].theFindings + "</td>");
-                                tr.append("<td>" + data.cancerReferral[i].theTxPlan + "</td>");
                                 referral_data_display_area.append(tr);
                             }
                         }
