@@ -10,7 +10,7 @@ import org.openmrs.Obs;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PatientIdentifierType;
-import org.openmrs.PersonAddress;
+import org.openmrs.Person;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemr.metadata.HivMetadata;
@@ -52,8 +52,6 @@ public class DmiDataExchange {
         List<SimpleObject> diagnosis = new ArrayList<SimpleObject>();
         //Considering triage and greencard forms
         Patient patient = encounter.getPatient();
-        System.out.println("Processing Patient   ==> " + patient.getPatientId());
-        System.out.println("Processing fetch date  ==> " + fetchDate);
 
         Form hivGreencardForm = MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD);
         Form traigeForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.TRIAGE);
@@ -64,11 +62,21 @@ public class DmiDataExchange {
         //Unique id
         PatientIdentifierType openmrsIdType = MetadataUtils.existing(PatientIdentifierType.class, OPENMRS_ID);
         PatientIdentifier openmrsId = patient.getPatientIdentifier(openmrsIdType);
+        //CaseUniqueId : Use visit ID to link complaints and diagnosis in DMI server, labs do not have visit id
+        Integer caseUniqueId = encounter.getVisit() != null ? encounter.getVisit().getId() : encounter.getEncounterId();
+
         //Nupi id
         PatientIdentifierType nupiIdType = MetadataUtils.existing(PatientIdentifierType.class, NATIONAL_UNIQUE_PATIENT_IDENTIFIER);
         PatientIdentifier nupiId = patient.getPatientIdentifier(nupiIdType);
         //Patient address
-        PersonAddress personAddress = patient.getPersonAddress();
+        String county = "";
+        String subcounty = "";
+        Person person = Context.getPersonService().getPerson(patient.getPatientId());
+        if(person.getPersonAddress() != null){
+            county = person.getPersonAddress().getCountyDistrict();
+            subcounty = person.getPersonAddress().getStateProvince();
+        }
+
         String facilityMfl = MessageHeaderSingleton.getDefaultLocationMflCode(MessageHeaderSingleton.getDefaultLocation());
         String dob = patient.getBirthdate() != null ? dmiUtils.getSimpleDateFormat("yyyy-MM-dd").format(patient.getBirthdate()) : "";
         Age age = new Age(patient.getBirthdate());
@@ -82,6 +90,9 @@ public class DmiDataExchange {
         Double duration = null;
         String diagnosisName = "";
         Integer diagnosisId = null;
+        Integer orderId = null;
+        String testName = "";
+        String testResult = "";
         String temperature = "";
         for (Obs obs : encounter.getObs()) {
 
@@ -105,14 +116,26 @@ public class DmiDataExchange {
             if (obs.getConcept().getConceptId().equals(6042)) {
                 diagnosisName = obs.getValueCoded().getName().getName();
                 diagnosisId = obs.getValueCoded().getConceptId();
-                System.out.println("Diagnosis name ==>"+diagnosisName);
-                System.out.println("Diagnosis ID ==>"+diagnosisId);
+            }
+            //labs
+            if(obs.getOrder() != null) {
+                if (obs.getOrder().getOrderId() != null) {
+                    orderId = obs.getOrder().getOrderId();
+                    testName = obs.getConcept().getName().getName();
+                    if (obs.getValueCoded() != null) {
+                        testResult = obs.getValueCoded().getName().getName();
+                    } else if (obs.getValueNumeric() != null) {
+                        testResult = obs.getValueNumeric().toString();
+                    } else if (obs.getValueText() != null) {
+                        testResult = obs.getValueText();
+                    }
+                }
             }
         }
         //add to list
         payloadObj.put("patientUniqueId", openmrsId != null ? openmrsId.getIdentifier() : "");
         payloadObj.put("nupi", nupiId != null ? nupiId.getIdentifier() : "");
-        payloadObj.put("caseUniqueId", complaintId);
+        payloadObj.put("caseUniqueId",caseUniqueId );
         payloadObj.put("hospitalIdNumber", facilityMfl);
         payloadObj.put("interviewDate", encounterDate);
         payloadObj.put("verbalConsentDone", true);
@@ -120,23 +143,37 @@ public class DmiDataExchange {
         payloadObj.put("age", ageInYears);
         payloadObj.put("sex", gender != null ? dmiUtils.formatGender(gender) : "");
         payloadObj.put("address", "");
-        payloadObj.put("county", personAddress.getCountyDistrict());
-        payloadObj.put("subCounty", personAddress.getStateProvince());
+        payloadObj.put("county", county);
+        payloadObj.put("subCounty", subcounty);
         payloadObj.put("admissionDate", null);
         payloadObj.put("outpatientDate", outPatientDate);
         payloadObj.put("temperature", temperature);
         payloadObj.put("voided", false);
         payloadObj.put("createdAt", encounterDate);
         payloadObj.put("updatedAt", null);
-        payloadObj.put("labDtoList", labs);
-        SimpleObject complaintObject = new SimpleObject();
-        complaintObject.put("complaintId", complaintId);
-        complaintObject.put("complaint", complaint);
-        complaintObject.put("onsetDate", onsetDate);
-        complaintObject.put("duration", duration);
-        complaintObject.put("voided", false);
-        complaints.add(complaintObject);
-        payloadObj.put("complaintDtoList", complaints);
+        if (orderId != null && testName != "") {
+            SimpleObject labsObject = new SimpleObject();
+            labsObject.put("orderId", orderId);
+            labsObject.put("testName", testName);
+            labsObject.put("testResult", testResult);
+            labsObject.put("labDate", encounterDate);
+            labs.add(labsObject);
+            payloadObj.put("labDtoList", labs);
+        }else{
+            payloadObj.put("labDtoList", labs);
+        }
+        if (complaintId != null && complaint != "") {
+            SimpleObject complaintObject = new SimpleObject();
+            complaintObject.put("complaintId", complaintId);
+            complaintObject.put("complaint", complaint);
+            complaintObject.put("onsetDate", onsetDate);
+            complaintObject.put("duration", duration);
+            complaintObject.put("voided", false);
+            complaints.add(complaintObject);
+            payloadObj.put("complaintDtoList", complaints);
+        }else {
+            payloadObj.put("complaintDtoList", complaints);
+        }
         if (diagnosisId != null && diagnosisName != "") {
             SimpleObject diagnosisObject = new SimpleObject();
             diagnosisObject.put("diagnosisId", diagnosisId);
