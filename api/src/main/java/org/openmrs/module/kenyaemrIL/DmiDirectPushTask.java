@@ -41,7 +41,6 @@ public class DmiDirectPushTask extends AbstractTask {
         try {
             String ts = globalPropertyObject.getValue().toString();
             fetchDate = formatter.parse(ts);
-            System.out.println("Printing fetchDate ==> "+fetchDate);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -58,7 +57,7 @@ public class DmiDirectPushTask extends AbstractTask {
                 if (encounter != null) {
                     DmiDataExchange dmiDataExchange = new DmiDataExchange();
                     JSONArray params = dmiDataExchange.generateDMIpostPayload(encounter,fetchDate);
-                    System.out.println("Printing payload ==> "+params);
+                    System.out.println("Payload to DMI server ==> "+params);
 
                     try {
                         SimpleObject results = dmiUtils.sendPOST(params.toJSONString());
@@ -88,23 +87,21 @@ public class DmiDirectPushTask extends AbstractTask {
     }
 
     /**
-     * Gets a list of patients who have had complaints or diagnosis recorded in triage or greencard forms since the last timestamp
+     * Gets a list of patients who have had complaints or diagnosis or labs recorded in triage or greencard forms since the last timestamp
      * @param date last timestamp
-     * @return a list of patients who have had complaints or diagnosis recorded as at the provided timestamp
+     * @return a list of patients who have had complaints or diagnosis or labs recorded as at the provided timestamp
      */
     private List<Encounter> getComplaintsAndDiagnosis (Date date) {
         SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
         String effectiveDate = sd.format(date);
         StringBuilder q = new StringBuilder();
         q.append("select e.encounter_id ");
-        q.append("from encounter e inner join " +
-                "( " +
-                " select encounter_type_id, uuid, name from encounter_type where uuid in ('d1059fb9-a079-4feb-a749-eedd709ae542','a0034eee-1940-4e35-847f-97537a35d05e')" +
-                " ) et on et.encounter_type_id=e.encounter_type " +
-                " inner join obs o on o.encounter_id=e.encounter_id and o.voided=0 " +
-                " and o.concept_id in (5219,6042)");
+        q.append("from encounter e\n" +
+                "  inner join  obs ob on ob.encounter_id = e.encounter_id\n" +
+                "  inner join  encounter_type et on et.encounter_type_id = e.encounter_type and et.uuid in ('d1059fb9-a079-4feb-a749-eedd709ae542','a0034eee-1940-4e35-847f-97537a35d05e','e1406e88-e9a9-11e8-9f32-f2801f1b9fd1')\n" +
+                "  left join orders od on  od.previous_order_id = ob.order_id and od.order_type_id = 3 and od.order_action='DISCONTINUE'");
         q.append("where e.date_created >= '" + effectiveDate + "' or e.date_changed >= '" + effectiveDate + "'");
-        q.append(" and e.voided = 0  ");
+        q.append(" and ((ob.encounter_id is not null and ob.concept_id in (5219,6042) and ob.voided=0)  or od.encounter_id is not null)");
 
         List<Encounter> encounters = new ArrayList<>();
         EncounterService encounterService = Context.getEncounterService();
