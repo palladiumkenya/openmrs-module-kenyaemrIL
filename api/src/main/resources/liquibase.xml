@@ -768,4 +768,27 @@
             <column name="uuid" value="36bb93cc-67bf-11ee-8c99-0242ac120002" />
         </insert>
     </changeSet> -->
+    <changeSet id="${project.parent.artifactId}-20231004-1453" author="pwangoo">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.DmiDirectPushTask'
+                And name = 'Push messages to DMI server'
+            </sqlCheck>
+        </preConditions>
+        <comment>Add task for pushing messages to DMI receiver</comment>
+        <insert tableName="scheduler_task_config">
+            <column name="name" value="Push messages to DMI server" />
+            <column name="description" value="Periodically pushes messages to DMI" />
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.DmiDirectPushTask" />
+            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
+            <column name="start_time" valueDate="2023-10-01T23:59:59" />
+            <column name="repeat_interval" value="60" />
+            <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="0" />
+            <column name="started" value="0" />
+            <column name="uuid" value="a63b35e1-9b4d-4cb9-8a26-4fbf33b353e5" />
+        </insert>
+    </changeSet>
 </databaseChangeLog>

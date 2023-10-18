@@ -1,21 +1,9 @@
 package org.openmrs.module.kenyaemrIL.dmi;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.codehaus.jackson.JsonNode;
-import org.openmrs.Encounter;
-import org.openmrs.EncounterType;
 import org.openmrs.GlobalProperty;
-import org.openmrs.Patient;
-import org.openmrs.PatientIdentifierType;
-import org.openmrs.PersonAddress;
-import org.openmrs.PersonAttributeType;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemrIL.metadata.ILMetadata;
 import org.openmrs.ui.framework.SimpleObject;
 
@@ -38,16 +26,8 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -221,12 +201,12 @@ public class dmiUtils {
 
 		GlobalProperty globalClientSecret = Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_CLIENT_SECRET);
 		strClientSecret = globalClientSecret.getPropertyValue();
-
+		System.out.println("strClientSecret==>"+strClientSecret);
 		GlobalProperty globalClientId = Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_CLIENT_ID);
 		strClientId = globalClientId.getPropertyValue();
-
+		System.out.println("strClientId==>"+strClientId);
 		String auth = strClientId + ":" + strClientSecret;
-		System.out.println("String auth request parameters==>"+auth);
+		System.out.println("Auth==>"+auth);
 		BufferedReader reader = null;
 		HttpsURLConnection connection = null;
 		String returnValue = "";
@@ -282,7 +262,6 @@ public class dmiUtils {
 			}
 			connection.disconnect();
 		}
-		System.out.println("Return generated token ==>"+returnValue);
 		return returnValue;
 	}
 
@@ -335,21 +314,21 @@ public class dmiUtils {
 	 */
 	public String getToken() throws IOException, NoSuchAlgorithmException, KeyManagementException {
 		//check if current token is valid
+		System.out.println("Generating token ==>");
 		if(isValidToken()) {
-			System.out.println("Getting saved token ==>");
 			return(Context.getAdministrationService().getGlobalProperty(ILMetadata.GP_DMI_SERVER_TOKEN));
 
 		} else {
-			System.out.println("Generating token ==>");
 			// Init the auth vars
 			boolean varsOk = initAuthVars();
+			System.out.println("If vars are okay ==>"+varsOk);
 			if (varsOk) {
 				//Get the OAuth Token
 				String credentials = getClientCredentials();
+				System.out.println("Credentials ==>"+credentials);
 				//Save on global and return token
 				if (credentials != null) {
 					Context.getAdministrationService().setGlobalProperty(ILMetadata.GP_DMI_SERVER_TOKEN, credentials);
-					System.out.println("Credentials token ==>"+credentials);
 					return(credentials);
 				}
 			}
@@ -465,7 +444,6 @@ public class dmiUtils {
 			jsonNode = mapper.readTree(stringResponse);
 			if (jsonNode != null) {
 				message = jsonNode.get("message").getTextValue();
-				System.out.println("Response message ==>"+message);
 				responseObj.put("clientNumber", message);
 			}
 		}
