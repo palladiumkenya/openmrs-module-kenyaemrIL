@@ -576,6 +576,12 @@
                 <constraints nullable="false" primaryKey="true" />
             </column>
             <column name="patient_id" type="int"/>
+            <column name="first_name" type="varchar(255)" />
+            <column name="middle_name" type="varchar(255)" />
+            <column name="last_name" type="varchar(255)" />
+            <column name="sex" type="varchar(10)" />
+            <column name="birth_date" type="datetime" />
+            <column name="nupi" type="varchar(100)" />
             <column name="transfer_out_date" type="datetime"/>
             <column name="transfer_out_facility" type="text"/>
             <column name="appointment_date" type="datetime"/>
@@ -583,17 +589,19 @@
             <column name="to_acceptance_date" type="datetime"/>
             <column name="referral_status" type="varchar(255)"/>
             <column name="patient_summary" type="text"/>
+            <column name="service_type" type="varchar(50)" />
             <column name="creator" type="int"/>
-            <column name="date_created" type="datetime"></column>
-            <column name="uuid" type="varchar(38)"></column>
-            <column name="retired" type="int"></column>
+            <column name="date_created" type="datetime"/>
+            <column name="date_changed" type="datetime" />
+            <column name="uuid" type="varchar(38)"/>
+            <column name="voided" type="int"/>
         </createTable>
         <modifySql dbms="mysql">
             <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_unicode_ci"/>
         </modifySql>
     </changeSet>
 
-    <!-- Add service_type field to the expected_transfer_ins table -->
+    <!--&lt;!&ndash; Add service_type field to the expected_transfer_ins table &ndash;&gt;
     <changeSet author="pwangoo" id="${project.parent.artifactId}-20230823-0002">
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="expected_transfer_ins"/>
@@ -609,7 +617,7 @@
             </column>
         </addColumn>
     </changeSet>
-    <!-- Add service_type field to the expected_transfer_ins table -->
+    &lt;!&ndash; Add service_type field to the expected_transfer_ins table &ndash;&gt;
     <changeSet author="pwangoo" id="${project.parent.artifactId}-20230831-0003">
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="expected_transfer_ins"/>
@@ -669,7 +677,7 @@
                 <constraints nullable="true" />
             </column>
         </addColumn>
-    </changeSet>
+    </changeSet>-->
     <!--Adding scheduled task :Set program discontinuation task-->
     <changeSet id="${project.parent.artifactId}-202310100930" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
@@ -695,7 +703,7 @@
         </insert>
     </changeSet>
     <!-- Add service_type field to the expected_transfer_ins table -->
-    <changeSet author="jecihjoy" id="${project.parent.artifactId}-20231010-3453">
+   <!-- <changeSet author="jecihjoy" id="${project.parent.artifactId}-20231010-3453">
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="expected_transfer_ins"/>
             <not>
@@ -713,7 +721,7 @@
         <sql>
             ALTER TABLE expected_transfer_ins RENAME COLUMN retired TO voided;
         </sql>
-    </changeSet>
+    </changeSet>-->
     <!--Adding scheduled task :Set program discontinuation task-->
     <changeSet id="${project.parent.artifactId}-20231000011630" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
