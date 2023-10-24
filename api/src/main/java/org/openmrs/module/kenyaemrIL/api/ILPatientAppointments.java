@@ -32,6 +32,7 @@ import org.openmrs.ui.framework.SimpleObject;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,7 @@ public class ILPatientAppointments {
 
 
     public static ILMessage iLPatientWrapper(Patient patient, Encounter lastFollowUpEncounter, Integer appointmentType) {
+        List<String> prepEncounterTypes = Arrays.asList("c4a2be28-6673-4c36-b886-ea89b0a42116", "706a8b12-c4ce-40e4-aec3-258b989bf6d3");
         ILMessage ilMessage = new ILMessage();
         PATIENT_IDENTIFICATION patientIdentification = new PATIENT_IDENTIFICATION();
         List<INTERNAL_PATIENT_ID> internalPatientIds = new ArrayList<INTERNAL_PATIENT_ID>();
@@ -76,6 +78,12 @@ public class ILPatientAppointments {
                 ipd.setAssigning_authority("MOH");
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("NUPI");
+                internalPatientIds.add(ipd);
+            } else if (patientIdentifier.getIdentifierType().getUuid().equals("ac64e5cb-e3e2-4efa-9060-0dd715a843a1") &&
+                    prepEncounterTypes.contains(lastFollowUpEncounter.getEncounterType().getUuid())) {
+                ipd.setAssigning_authority("PREP");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("PREP Unique Number");
                 internalPatientIds.add(ipd);
             }
         }
@@ -146,9 +154,9 @@ public class ILPatientAppointments {
         if (lastFollowUpEncounter != null) {
             for (Obs obs : lastFollowUpEncounter.getObs()) {
                 //TODO: We need a way to get obs for the concept ids of interest
-                if (obs.getConcept().getConceptId().equals(patientTCAConcept) && appointmentType.equals(patientTCAConcept)) {
+                if (lastFollowUpEncounter.getEncounterType().getUuid().equals("a0034eee-1940-4e35-847f-97537a35d05e")
+                        && obs.getConcept().getConceptId().equals(patientTCAConcept) && appointmentType.equals(patientTCAConcept)) {
                     setCommonAppointmentVariables(appointmentInformation, lastFollowUpEncounter);
-                    appointmentInformation.setAppointment_type("FOLLOWUP");
                     appointmentInformation.setAppointment_date(formatter.format((obs.getValueDate())));
                     appointments[0] = appointmentInformation;
                     ilMessage.setAppointment_information(appointments);
@@ -156,6 +164,13 @@ public class ILPatientAppointments {
                 } else if (obs.getConcept().getConceptId().equals(patientRefillConcept) && appointmentType.equals(patientRefillConcept)) {
                     setCommonAppointmentVariables(appointmentInformation, lastFollowUpEncounter);
                     appointmentInformation.setAppointment_type("PHARMACY_REFILL");
+                    appointmentInformation.setAppointment_date(formatter.format((obs.getValueDate())));
+                    appointments[0] = appointmentInformation;
+                    ilMessage.setAppointment_information(appointments);
+                    break;
+                } else if (prepEncounterTypes.contains(lastFollowUpEncounter.getEncounterType().getUuid())
+                        && obs.getConcept().getConceptId().equals(patientTCAConcept) && appointmentType.equals(patientTCAConcept)) {
+                    setCommonAppointmentVariables(appointmentInformation, lastFollowUpEncounter);
                     appointmentInformation.setAppointment_date(formatter.format((obs.getValueDate())));
                     appointments[0] = appointmentInformation;
                     ilMessage.setAppointment_information(appointments);
@@ -310,6 +325,7 @@ public class ILPatientAppointments {
         appointmentInformation.setAppointment_note("N/A");
         appointmentInformation.setAppointment_status("PENDING");
         appointmentInformation.setAppointment_placing_entity("KENYAEMR");
+        appointmentInformation.setAppointment_type("FOLLOWUP");
 
         // the current appointment generated from the emr is the clinical. we'll populate the defaults
         appointmentInformation.setAppointment_reason("CLINICAL");
