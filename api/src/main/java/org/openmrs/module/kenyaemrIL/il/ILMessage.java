@@ -140,6 +140,7 @@ public class ILMessage {
         appointmentMessage.setMessage_header(this.getMessage_header());
         appointmentMessage.setPatient_identification(this.getPatient_identification());
         appointmentMessage.setAppointment_information(this.getAppointment_information());
+        appointmentMessage.setObservation_result(this.getObservation_result());
         return appointmentMessage;
     }
 
