@@ -419,6 +419,16 @@ public class ReferralsDataExchangeFragmentController {
     }
 
     private Patient registerArtReferralPatient(PATIENT_IDENTIFICATION patient_identification) throws ParseException, java.text.ParseException {
+        for (INTERNAL_PATIENT_ID internalPatientId : patient_identification.getInternal_patient_id()) {
+            if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
+                List<Patient> results = Context.getPatientService().getPatients(internalPatientId.getId());
+                if (!results.isEmpty()) return results.get(0);
+            } else if (internalPatientId.getIdentifier_type().equalsIgnoreCase("NUPI")) {
+                List<Patient> results = Context.getPatientService().getPatients(internalPatientId.getId());
+                if (!results.isEmpty()) return results.get(0);
+            }
+        }
+
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         Person person = new Person();
         PersonName personName = new PersonName(patient_identification.getPatient_name().getLast_name(),
@@ -427,11 +437,17 @@ public class ReferralsDataExchangeFragmentController {
         PatientIdentifierType cccIdType = MetadataUtils.existing(PatientIdentifierType.class, HivMetadata._PatientIdentifierType.UNIQUE_PATIENT_NUMBER);
         PatientIdentifierType upiIdType = Context.getPatientService().getPatientIdentifierTypeByUuid("f85081e2-b4be-4e48-b3a4-7994b69bb101");
         if (patient_identification.getDate_of_birth().equals("")) {
+            System.out.println("NullPointerException ================> Age cannot be null");
             return null;
         }
-        person.setBirthdate(formatter.parse("20230815"));
+        person.setBirthdate(getDateFromString(patient_identification.getDate_of_birth(),"yyyy-mm-dd" ));
         person.setBirthdateEstimated(Boolean.getBoolean(patient_identification.getDate_of_birth_precision()));
-        person.setGender("F");
+        if (patient_identification.getSex() == null) {
+            System.out.println("NullPointerException ================> Gender cannot be null");
+            person.setGender("F");
+        } else {
+            person.setGender(patient_identification.getSex());
+        }
         PersonAttribute phoneNumber = new PersonAttribute(Context.getPersonService().getPersonAttributeTypeByName("Telephone contact"), patient_identification.getPhone_number());
         PersonAttribute maritalStatus = new PersonAttribute(Context.getPersonService().getPersonAttributeTypeByName("Civil Status"), patient_identification.getMarital_status());
         person.addAttribute(phoneNumber);

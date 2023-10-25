@@ -63,7 +63,7 @@ public class ProcessAppointmentsTask extends AbstractTask {
 
     private List<Encounter> fetchPendingAppointments(List<EncounterType> encounterTypes, Date date) {
 
-        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String effectiveDate = sd.format(date);
         StringBuilder q = new StringBuilder(); //TODO: We should add extra filter on form since the encounter type uuid used is shared by a number of forms
         q.append("select e.encounter_id ");

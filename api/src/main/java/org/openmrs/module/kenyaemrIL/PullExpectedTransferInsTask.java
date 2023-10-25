@@ -1,5 +1,6 @@
 package org.openmrs.module.kenyaemrIL;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -42,6 +43,17 @@ public class PullExpectedTransferInsTask extends AbstractTask {
     public void execute() {
         System.out.println("Executing  PullExpectedTransferInsTask .................");
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        /*Art Directory url*/
+        GlobalProperty artDirectoryServerUrl = Context.getAdministrationService().getGlobalPropertyObject(ILUtils.GP_ART_DIRECTORY_SERVER_URL);
+        if (artDirectoryServerUrl == null) {
+            System.out.println("There is no global property for art directory server URL!");
+            return;
+        }
+
+        if (StringUtils.isBlank(artDirectoryServerUrl.getPropertyValue())) {
+            System.out.println("ART Directory server URL has not been set!");
+            return;
+        }
         /**Fetch the last date of sync*/
         String fetchDate = null;
         GlobalProperty globalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("transferInsFetchTask.lastFetchDateAndTime");
@@ -51,14 +63,13 @@ public class PullExpectedTransferInsTask extends AbstractTask {
         } catch (Exception e) {
             e.printStackTrace();
         }
-//        String serverUrl = "http://192.168.1.44:8002/api/patients/transfer-in/";
-        String serverUrl = "http://prod.kenyahmis.org:8002/api/patients/transfer-in/";
+        String serverUrl =   artDirectoryServerUrl.getPropertyValue() + "/patients/transfer-in/";
         String mflParam = MessageHeaderSingleton.getDefaultLocationMflCode(MessageHeaderSingleton.getDefaultLocation());
 
         CloseableHttpClient httpClient = HttpClients.custom().setSSLSocketFactory(ILUtils.sslConnectionSocketFactoryWithDisabledSSLVerification()).build();
 
         HttpGet httpGet = new HttpGet(serverUrl + mflParam + "/" + fetchDate);
-        System.out.println("LAST FETCH DATE "+serverUrl + mflParam + "/" + fetchDate);
+        System.out.println("PULL EXPECTED TIs URL "+serverUrl + mflParam + "/" + fetchDate);
 
         httpGet.addHeader("content-type", "application/json");
         try {
@@ -79,8 +90,8 @@ public class PullExpectedTransferInsTask extends AbstractTask {
                 }
             }
             Date nextProcessingDate = new Date();
-//            globalPropertyObject.setPropertyValue(formatter.format(nextProcessingDate));
-//            Context.getAdministrationService().saveGlobalProperty(globalPropertyObject);
+            globalPropertyObject.setPropertyValue(formatter.format(nextProcessingDate));
+            Context.getAdministrationService().saveGlobalProperty(globalPropertyObject);
         } catch (IOException | ParseException | java.text.ParseException e) {
             System.out.println(e.getMessage());
             throw new RuntimeException(e);

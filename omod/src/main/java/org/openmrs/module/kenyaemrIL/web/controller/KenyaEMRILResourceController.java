@@ -27,6 +27,7 @@ import org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral.SERVICE_REQUE
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
 import org.openmrs.module.kenyaemrIL.fragment.controller.ShrSummariesFragmentController;
+import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.MainResourceController;
@@ -87,15 +88,15 @@ public class KenyaEMRILResourceController extends MainResourceController {
                 object.put("hiv_enrollment_date", !Strings.isNullOrEmpty(supporting_info.getDate_first_enrolled()) ? DateFormatUtils.format(formatter.parse(supporting_info.getDate_first_enrolled()),"yyyy-MM-dd") : "");
                 object.put("art_start_date", !Strings.isNullOrEmpty(supporting_info.getDate_started_art_at_transferring_facility()) ? DateFormatUtils.format(formatter.parse(supporting_info.getDate_started_art_at_transferring_facility()),"yyyy-MM-dd") : "");
                 object.put("date_confirmed_positive", !Strings.isNullOrEmpty(supporting_info.getDate_confirmed_positive()) ? DateFormatUtils.format(formatter.parse(supporting_info.getDate_confirmed_positive()),"yyyy-MM-dd") : "");
-                object.put("hiv_confirmation_facility", transferInPatient.get(0).getTransferOutFacility());
-                object.put("who_stage", supporting_info.getWho_stage());
-                object.put("current_regimen", "");
+                object.put("hiv_confirmation_facility", transferInPatient.get(0).getTransferOutFacility() + " - " + ILUtils.getLocationByMflCode(transferInPatient.get(0).getTransferOutFacility()));
+                object.put("who_stage", !Strings.isNullOrEmpty(supporting_info.getWho_stage()) ? supporting_info.getWho_stage() : "");
+                object.put("current_regimen", supporting_info.getCurrent_regimen());
                 object.put("on_art", "");
                 List<org.openmrs.ui.framework.SimpleObject> currentRegimen = supporting_info.getRegimen_change_history().stream()
-                        .filter(simpleObject -> simpleObject.get("current").equals("true")).collect(Collectors.toList());
+                        .filter(simpleObject -> simpleObject.get("current").equals(true)).collect(Collectors.toList());
                 if (!currentRegimen.isEmpty()) {
                     object.put("on_art", "yes");
-                    object.put("current_regimen", currentRegimen.get(0).get("regimen_short_display"));
+                    // object.put("current_regimen", currentRegimen.get(0).get("regimenShortDisplay"));
                 }
 
                 object.put("cd4_count", supporting_info.getCd4_value());
@@ -104,9 +105,21 @@ public class KenyaEMRILResourceController extends MainResourceController {
                 object.put("last_vl_date", !Strings.isNullOrEmpty(supporting_info.getLast_vl_date()) ? DateFormatUtils.format(formatter.parse(supporting_info.getLast_vl_date()),"yyyy-MM-dd") : "");
                 object.put("hbv_infected", "");
                 object.put("tb_infected", "");
+                object.put("arv_adherence_outcome", !Strings.isNullOrEmpty(supporting_info.getArv_adherence_outcome()) ? supporting_info.getArv_adherence_outcome() : "");
+                object.put("drug_allergies", !Strings.isNullOrEmpty(supporting_info.getDrug_allergies()) ? supporting_info.getDrug_allergies() : "");
                 if (!Strings.isNullOrEmpty(supporting_info.getTb_start_date()) && Strings.isNullOrEmpty(supporting_info.getTb_start_date())) {
+                    object.put("tb_start_date", supporting_info.getTb_start_date());
                     object.put("tb_infected", "Yes");
+                } else {
+                    object.put("tb_infected", "No");
                 }
+                if (!Strings.isNullOrEmpty(supporting_info.getTpt_start_date()) && Strings.isNullOrEmpty(supporting_info.getTpt_end_date())) {
+                    object.put("tpt_start_date", supporting_info.getTpt_start_date());
+                    object.put("on_tpt", "Yes");
+                } else {
+                    object.put("on_tpt", "No");
+                }
+
                 object.put("is_pregnant", "");
                 object.put("is_breastfeeding", "");
                 object.put("weight", supporting_info.getWeight());
@@ -116,6 +129,11 @@ public class KenyaEMRILResourceController extends MainResourceController {
                     object.put("regimen_change", supporting_info.getRegimen_change_history());
                 } else {
                     object.put("regimen_change", new ArrayList<SimpleObject>());
+                }
+                if (!supporting_info.getPatient_ncds().isEmpty()) {
+                    object.put("patient_ncds", supporting_info.getPatient_ncds());
+                } else {
+                    object.put("patient_ncds", new ArrayList<SimpleObject>());
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -131,9 +149,7 @@ public class KenyaEMRILResourceController extends MainResourceController {
         SimpleObject result = null;
         try {
             result = ShrSummariesFragmentController.constructSHrSummary(patientUuid);
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        } catch (UnsupportedEncodingException e) {
+        } catch (MalformedURLException | UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
         return result;

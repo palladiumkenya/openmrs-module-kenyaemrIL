@@ -31,22 +31,9 @@ import java.util.List;
 
 public class ValidateTransferOutsTasks extends AbstractTask {
 
-    private String url = "http://www.google.com:80/index.html";
-
     @Override
     public void execute() {
         System.out.println("Executing ValidateTransferOutPatients Task .................");
-
-        GlobalProperty gpMiddlewareServerUrl = Context.getAdministrationService().getGlobalPropertyObject(ILUtils.GP_USHAURI_PUSH_SERVER_URL);
-        if (gpMiddlewareServerUrl == null) {
-            System.out.println("EmrInterop DIRECT PUSH: There is no global property for interop server URL!");
-            return;
-        }
-
-        if (StringUtils.isBlank(gpMiddlewareServerUrl.getPropertyValue())) {
-            System.out.println("EmrInterop DIRECT PUSH: The server URL has not been set!");
-            return;
-        }
 
         /*Collect CCC numbers for transfer out patients*/
         List<String> trfCccNumbers = new ArrayList<>();
@@ -60,7 +47,7 @@ public class ValidateTransferOutsTasks extends AbstractTask {
         }
 
         /*Fetch transfer statuses from Art Directory*/
-        GlobalProperty artDirectoryServerUrl = Context.getAdministrationService().getGlobalPropertyObject(ILUtils.GP_USHAURI_PUSH_SERVER_URL);
+        GlobalProperty artDirectoryServerUrl = Context.getAdministrationService().getGlobalPropertyObject(ILUtils.GP_ART_DIRECTORY_SERVER_URL);
         if (artDirectoryServerUrl == null) {
             System.out.println("There is no global property for art directory server URL!");
             return;
@@ -70,15 +57,13 @@ public class ValidateTransferOutsTasks extends AbstractTask {
             System.out.println("ART Directory server URL has not been set!");
             return;
         }
-        //String serverUrl =   gpMiddlewareServerUrl.getPropertyValue() + "referral-status/"; // SERVER URL
-        String serverUrl =   "http://prod.kenyahmis.org:8002/api/patients/referral-status/"; // LOCAL URL
-//        String serverUrl = "http://192.168.1.44:8002/api/patients/referral-status/";
+        String serverUrl =   artDirectoryServerUrl.getPropertyValue() + "/patients/referral-status/";
         String cccParam = String.join(", ", trfCccNumbers);
         String mflParam = MessageHeaderSingleton.getDefaultLocationMflCode(MessageHeaderSingleton.getDefaultLocation());
 
-
         CloseableHttpClient httpClient = HttpClients.custom().setSSLSocketFactory(ILUtils.sslConnectionSocketFactoryWithDisabledSSLVerification()).build();
 
+        System.out.println("Validate TOs URL "+serverUrl + mflParam + "/" + new String(Base64.encodeBase64(cccParam.getBytes())));
         HttpGet httpGet = new HttpGet(serverUrl + mflParam + "/" + new String(Base64.encodeBase64(cccParam.getBytes())));
         httpGet.addHeader("content-type", "application/json");
         try {

@@ -232,6 +232,7 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         crit.add(Restrictions.eq("message_type", 2));
         crit.add(Restrictions.eq("retired", false));
         crit.setMaxResults(Integer.parseInt(batchSize.getValue().toString()));
+        crit.addOrder(Order.asc("message_id"));
         return crit.list();
     }
 
@@ -380,7 +381,7 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     @Override
     public List<ExpectedTransferInPatients> getTransferInPatient(Patient patient) {
         if (patient == null) return null;
-        String stringQuery = "SELECT expectedTransferInPatient FROM ExpectedTransferInPatients AS expectedTransferInPatient WHERE patient = :patient AND retired = 0";
+        String stringQuery = "SELECT expectedTransferInPatient FROM ExpectedTransferInPatients AS expectedTransferInPatient WHERE patient = :patient AND voided = 0";
         Query query = this.sessionFactory.getCurrentSession().createQuery(
                 stringQuery);
         query.setParameter("patient", patient);

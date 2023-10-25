@@ -360,7 +360,7 @@
             <column name="created_by" value="1" />
             <column name="start_on_startup" value="0" />
             <column name="started" value="0" />
-                <column name="uuid" value="7351bb07-97a2-47a6-804b-c9c018c36609" />
+            <column name="uuid" value="7351bb07-97b2-47b6-804b-c9c018c36609" />
         </insert>
     </changeSet>
 
@@ -507,7 +507,7 @@
             <column name="repeat_interval" value="21600" />
             <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
             <column name="created_by" value="1" />
-            <column name="start_on_startup" value="0" />
+            <column name="start_on_startup" value="1" />
             <column name="started" value="0" />
             <column name="uuid" value="9143b4e6-16c5-11ee-be56-0242ac120002" />
         </insert>
@@ -536,7 +536,7 @@
         <comment>Rename UshauriDirectPushTask scheduler to KenyaEmrInteropDirectPushTask</comment>
         <sql>
             UPDATE openmrs.scheduler_task_config SET schedulable_class = 'org.openmrs.module.kenyaemrIL.KenyaEmrInteropDirectPushTask',
-            name = 'OpenHIM Message Publisher' where uuid = '7351bb07-97a2-47a6-804b-c9c018c36609'
+            name = 'OpenHIM Message Publisher' where uuid = '7351bb07-97b2-47b6-804b-c9c018c36609'
         </sql>
     </changeSet>
 
@@ -559,7 +559,7 @@
             <column name="repeat_interval" value="43200"/>
             <column name="date_created" valueDate="CURRENT_TIMESTAMP"/>
             <column name="created_by" value="1"/>
-            <column name="start_on_startup" value="0"/>
+            <column name="start_on_startup" value="1"/>
             <column name="started" value="0"/>
             <column name="uuid" value="5fdedec8-1b32-11ee-be56-0242ac120002"/>
         </insert>
@@ -576,6 +576,12 @@
                 <constraints nullable="false" primaryKey="true" />
             </column>
             <column name="patient_id" type="int"/>
+            <column name="first_name" type="varchar(255)" />
+            <column name="middle_name" type="varchar(255)" />
+            <column name="last_name" type="varchar(255)" />
+            <column name="sex" type="varchar(10)" />
+            <column name="birth_date" type="datetime" />
+            <column name="nupi" type="varchar(100)" />
             <column name="transfer_out_date" type="datetime"/>
             <column name="transfer_out_facility" type="text"/>
             <column name="appointment_date" type="datetime"/>
@@ -583,10 +589,12 @@
             <column name="to_acceptance_date" type="datetime"/>
             <column name="referral_status" type="varchar(255)"/>
             <column name="patient_summary" type="text"/>
+            <column name="service_type" type="varchar(50)" />
             <column name="creator" type="int"/>
-            <column name="date_created" type="datetime"></column>
-            <column name="uuid" type="varchar(38)"></column>
-            <column name="retired" type="int"></column>
+            <column name="date_created" type="datetime"/>
+            <column name="date_changed" type="datetime" />
+            <column name="uuid" type="varchar(38)"/>
+            <column name="voided" type="int"/>
         </createTable>
         <modifySql dbms="mysql">
             <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_unicode_ci"/>
@@ -670,7 +678,7 @@
             </column>
         </addColumn>
     </changeSet>
-    <!--Adding scheduled task :Set program discontinuation task-->
+    <!--Adding scheduled task :Set PullExpectedTransferInsTask-->
     <changeSet id="${project.parent.artifactId}-202310100930" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
@@ -689,7 +697,7 @@
             <column name="repeat_interval" value="43200" />
             <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
             <column name="created_by" value="1" />
-            <column name="start_on_startup" value="0" />
+            <column name="start_on_startup" value="1" />
             <column name="started" value="1" />
             <column name="uuid" value="9143b4e6-16c5-11ee-be56-0342ac120002" />
         </insert>
@@ -714,7 +722,7 @@
             ALTER TABLE expected_transfer_ins RENAME COLUMN retired TO voided;
         </sql>
     </changeSet>
-    <!--Adding scheduled task :Set program discontinuation task-->
+    <!--Adding scheduled task :Set SyncShrServedPatientsTask task-->
     <changeSet id="${project.parent.artifactId}-20231000011630" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
@@ -733,7 +741,7 @@
             <column name="repeat_interval" value="21600" />
             <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
             <column name="created_by" value="1" />
-            <column name="start_on_startup" value="0" />
+            <column name="start_on_startup" value="1" />
             <column name="started" value="1" />
             <column name="uuid" value="36bb93cc-67bf-11ee-8c99-0242ac120002" />
         </insert>

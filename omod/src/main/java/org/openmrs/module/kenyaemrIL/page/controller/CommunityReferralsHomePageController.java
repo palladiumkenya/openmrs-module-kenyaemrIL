@@ -10,6 +10,7 @@ import org.openmrs.module.kenyaemr.metadata.FacilityMetadata;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.shr.FhirConfig;
 import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
+import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.module.kenyaui.KenyaUiUtils;
 import org.openmrs.module.kenyaui.annotation.AppPage;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
@@ -49,7 +50,7 @@ public class CommunityReferralsHomePageController {
             String requester = "";
             if (serviceRequest.hasRequester()) {
                 if (serviceRequest.getRequester().getDisplay() != null) {
-                    Location location = getLocationByMflCode(serviceRequest.getRequester().getDisplay());
+                    Location location = ILUtils.getLocationByMflCode(serviceRequest.getRequester().getDisplay());
                     if (location != null) {
                         requester = location.getName();
                     } else {
@@ -57,7 +58,7 @@ public class CommunityReferralsHomePageController {
                     }
 
                 } else if (serviceRequest.getRequester().getIdentifier() != null && serviceRequest.getRequester().getIdentifier().getValue() != null) {
-                    Location location = getLocationByMflCode(serviceRequest.getRequester().getIdentifier().getValue());
+                    Location location = ILUtils.getLocationByMflCode(serviceRequest.getRequester().getIdentifier().getValue());
                     if (location != null) {
                         requester = location.getName();
                     } else {
@@ -108,15 +109,5 @@ public class CommunityReferralsHomePageController {
         model.put("activeReferralListSize", activeReferrals.size());
         model.put("completedReferralList", ui.toJson(completedReferrals));
         model.put("completedReferralListSize", completedReferrals.size());
-    }
-
-    public Location getLocationByMflCode(String mflCode) {
-        LocationAttributeType mflCodeAttrType = MetadataUtils.existing(LocationAttributeType.class, FacilityMetadata._LocationAttributeType.MASTER_FACILITY_CODE);
-        Map<LocationAttributeType, Object> attrVals = new HashMap<LocationAttributeType, Object>();
-        attrVals.put(mflCodeAttrType, mflCode);
-
-        List<Location> locations = Context.getLocationService().getLocations(null, null, attrVals, false, null, null);
-
-        return locations.size() > 0 ? locations.get(0) : null;
     }
 }

@@ -39,6 +39,7 @@ public class ProcessEnrollmentTask extends AbstractTask {
      */
     @Override
     public void execute() {
+        System.out.println("Executing ProcessEnrollment TASK .................");
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
 //        Fetch enrollment encounter
 //        Fetch the last date of fetch
