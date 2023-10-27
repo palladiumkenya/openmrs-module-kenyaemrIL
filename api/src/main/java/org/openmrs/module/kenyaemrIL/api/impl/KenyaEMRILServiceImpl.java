@@ -36,6 +36,7 @@ import org.openmrs.PersonAttribute;
 import org.openmrs.PersonAttributeType;
 import org.openmrs.PersonName;
 import org.openmrs.Provider;
+import org.openmrs.api.APIException;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.OrderService;
 import org.openmrs.api.PatientService;
@@ -47,6 +48,7 @@ import org.openmrs.module.kenyaemr.api.KenyaEmrService;
 import org.openmrs.module.kenyaemrIL.api.ILMessageType;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
+import org.openmrs.module.kenyaemrIL.hivDicontinuation.Patient_Program_Discontinuation_Message;
 import org.openmrs.module.kenyaemrIL.il.EXTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.ILPerson;
@@ -76,7 +78,9 @@ import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.module.kenyaemrIL.il.utils.ViralLoadProcessorUtil;
 import org.openmrs.module.kenyaemrIL.il.viralload.ViralLoadMessage;
 import org.openmrs.module.kenyaemrIL.kenyaemrUtils.Utils;
-import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
+import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
+import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
+import org.openmrs.module.kenyaemrIL.programEnrollment.Patient_Program_Enrollment_Message;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -186,7 +190,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
             if (configuredMiddleware != null) {
                 if (configuredMiddleware.equalsIgnoreCase("Direct") || configuredMiddleware.equalsIgnoreCase("Hybrid")) {
-                    KenyaemrMhealthOutboxMessage directQueueMessage = ILUtils.createMhealthOutboxFromILMessage(kenyaEMRILMessage);
+                    KenyaEMRInteropMessage directQueueMessage = ILUtils.createMhealthOutboxFromILMessage(kenyaEMRILMessage);
                     saveMhealthOutboxMessage(directQueueMessage);
                 }
             }
@@ -199,6 +203,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
     /**
      * Passes and additional patient param
+     *
      * @param ilMessage
      * @param patient
      * @return
@@ -234,7 +239,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
             if (configuredMiddleware != null) {
                 if (configuredMiddleware.equalsIgnoreCase("Direct") || configuredMiddleware.equalsIgnoreCase("Hybrid")) {
-                    KenyaemrMhealthOutboxMessage directQueueMessage = ILUtils.createMhealthOutboxFromILMessage(kenyaEMRILMessage);
+                    KenyaEMRInteropMessage directQueueMessage = ILUtils.createMhealthOutboxFromILMessage(kenyaEMRILMessage);
                     saveMhealthOutboxMessage(directQueueMessage);
                 }
             }
@@ -275,7 +280,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
             if (configuredMiddleware != null) {
                 if (configuredMiddleware.equalsIgnoreCase("Direct") || configuredMiddleware.equalsIgnoreCase("Hybrid")) {
-                    KenyaemrMhealthOutboxMessage directQueueMessage = ILUtils.createMhealthOutboxFromILMessage(kenyaEMRILMessage);
+                    KenyaEMRInteropMessage directQueueMessage = ILUtils.createMhealthOutboxFromILMessage(kenyaEMRILMessage);
                     saveMhealthOutboxMessage(directQueueMessage);
                 }
             }
@@ -289,6 +294,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     /**
      * TODO: remove the duplicate code
      * Adds an additional patient param
+     *
      * @param ilMessage
      * @param patient
      * @return
@@ -323,7 +329,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
             if (configuredMiddleware != null) {
                 if (configuredMiddleware.equalsIgnoreCase("Direct") || configuredMiddleware.equalsIgnoreCase("Hybrid")) {
-                    KenyaemrMhealthOutboxMessage directQueueMessage = ILUtils.createMhealthOutboxFromILMessage(kenyaEMRILMessage);
+                    KenyaEMRInteropMessage directQueueMessage = ILUtils.createMhealthOutboxFromILMessage(kenyaEMRILMessage);
                     saveMhealthOutboxMessage(directQueueMessage);
                 }
             }
@@ -1062,7 +1068,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
             if (configuredMiddleware != null) {
                 if (configuredMiddleware.equalsIgnoreCase("Direct") || configuredMiddleware.equalsIgnoreCase("Hybrid")) {
-                    KenyaemrMhealthOutboxMessage directQueueMessage = ILUtils.createMhealthOutboxFromILMessage(kenyaEMRILMessage);
+                    KenyaEMRInteropMessage directQueueMessage = ILUtils.createMhealthOutboxFromILMessage(kenyaEMRILMessage);
                     saveMhealthOutboxMessage(directQueueMessage);
                 }
             }
@@ -1166,33 +1172,112 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public KenyaemrMhealthOutboxMessage getMhealthOutboxMessageByUuid(String uuid) {
+    public KenyaEMRInteropMessage getMhealthOutboxMessageByUuid(String uuid) {
         return dao.getMhealthOutboxMessageByUuid(uuid);
     }
 
     @Override
-    public KenyaemrMhealthOutboxMessage saveMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthMessageOutbox) {
+    public KenyaEMRInteropMessage saveMhealthOutboxMessage(KenyaEMRInteropMessage KenyaemrMhealthMessageOutbox) {
         return dao.saveMhealthOutboxMessage(KenyaemrMhealthMessageOutbox);
     }
 
     @Override
-    public void deleteMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthOutboxMessage) {
-        dao.deleteMhealthOutboxMessage(KenyaemrMhealthOutboxMessage);
+    public void deleteMhealthOutboxMessage(KenyaEMRInteropMessage KenyaEMRInteropMessage) {
+        dao.deleteMhealthOutboxMessage(KenyaEMRInteropMessage);
     }
 
     @Override
-    public List<KenyaemrMhealthOutboxMessage> getAllMhealthOutboxMessages(Boolean includeAll) {
+    public List<KenyaEMRInteropMessage> getAllMhealthOutboxMessages(Boolean includeAll) {
         return dao.getAllMhealthOutboxMessages(false);
     }
 
     @Override
-    public List<KenyaemrMhealthOutboxMessage> getKenyaEMROutboxMessagesToSend(Boolean includeRetired) {
+    public List<KenyaEMRInteropMessage> getAllMhealthOutboxMessagesByHl7Type(List<String> hl7Types, Boolean includeAll) {
+        return dao.getAllMhealthOutboxMessagesByHl7Type(hl7Types, includeAll);
+    }
+
+    @Override
+    public List<KenyaEMRInteropMessage> getKenyaEMROutboxMessagesToSend(Boolean includeRetired) {
         return dao.getKenyaEMROutboxMessagesToSend(false);
     }
 
     @Override
-    public List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors() {
-        return dao.fetchAllMhealthErrors();
+    public boolean logPatientReferrals(ILMessage ilMessage, Patient patient) {
+        boolean isSuccessful;
+        //Message Header
+        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("SIU^S20");
+        ilMessage.setMessage_header(messageHeader);
+        KenyaEMRInteropMessage kenyaEMRInteropMessage = new KenyaEMRInteropMessage();
+        //check referral facility
+        if (ilMessage.getDiscontinuation_message() != null && ilMessage.getDiscontinuation_message().getService_request() != null && ilMessage.getDiscontinuation_message().getService_request().getReceiving_facility_mflcode() != null) {
+            Location location = ILUtils.getLocationByMflCode(ilMessage.getDiscontinuation_message().getService_request().getReceiving_facility_mflcode());
+            if (location != null) {
+                try {
+                    Patient_Program_Discontinuation_Message patientProgramDiscontinuationMessage = ilMessage.extractHivDiscontinuationMessage();
+                    String messageString = mapper.writeValueAsString(patientProgramDiscontinuationMessage);
+
+                    kenyaEMRInteropMessage.setHl7_type("SIU^S20");
+                    kenyaEMRInteropMessage.setSource("KENYAEMR");
+                    kenyaEMRInteropMessage.setMessage(messageString);
+                    kenyaEMRInteropMessage.setDescription("");
+                    kenyaEMRInteropMessage.setName("");
+                    kenyaEMRInteropMessage.setPatient(patient);
+                    kenyaEMRInteropMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
+                    KenyaEMRInteropMessage savedInstance = saveMhealthOutboxMessage(kenyaEMRInteropMessage);
+
+                    if (savedInstance != null) {
+                        isSuccessful = true;
+                    } else {
+                        isSuccessful = false;
+                    }
+
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                    isSuccessful = false;
+                }
+                return isSuccessful;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean logCompletedPatientReferrals(ILMessage ilMessage, Patient patient) {
+        boolean isSuccessful;
+        //Message Header
+        MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("SIU^S21");
+        ilMessage.setMessage_header(messageHeader);
+        KenyaEMRInteropMessage kenyaEMRInteropMessage = new KenyaEMRInteropMessage();
+
+        try {
+            Patient_Program_Enrollment_Message patientProgramEnrollmentMessage = ilMessage.extractProgramEnrollmentMessage();
+            String messageString = mapper.writeValueAsString(patientProgramEnrollmentMessage);
+
+            kenyaEMRInteropMessage.setHl7_type("SIU^S21");
+            kenyaEMRInteropMessage.setSource("KENYAEMR");
+            kenyaEMRInteropMessage.setMessage(messageString);
+            kenyaEMRInteropMessage.setDescription("");
+            kenyaEMRInteropMessage.setName("");
+            kenyaEMRInteropMessage.setPatient(patient);
+            kenyaEMRInteropMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
+            KenyaEMRInteropMessage savedInstance = saveMhealthOutboxMessage(kenyaEMRInteropMessage);
+
+            if (savedInstance != null) {
+                isSuccessful = true;
+            } else {
+                isSuccessful = false;
+            }
+
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            isSuccessful = false;
+        }
+        return isSuccessful;
+    }
+
+    @Override
+    public List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors(List<String> hl7MessageTypes) {
+        return dao.fetchAllMhealthErrors(hl7MessageTypes);
     }
 
     @Override
@@ -1216,10 +1301,40 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public List<KenyaEMRILMessageArchive> fetchRecentArchives() {
-        return dao.fetchRecentArchives();
+    public List<KenyaEMRILMessageArchive> fetchRecentArchives(List<String> hl7MessageTypes) {
+        return dao.fetchRecentArchives(hl7MessageTypes);
     }
 
+    @Override
+    public ExpectedTransferInPatients createPatient(ExpectedTransferInPatients patient) {
+        return dao.createPatient(patient);
+    }
+
+    @Override
+    public List<ExpectedTransferInPatients> getAllTransferIns() {
+        return dao.getAllTransferIns();
+    }
+
+    @Override
+    public List<ExpectedTransferInPatients> getAllTransferInsByServiceType(String serviceType) {
+        return dao.getAllTransferInsByServiceType(serviceType);
+    }
+
+    @Override
+    public List<ExpectedTransferInPatients> getTransferInPatient(String upn) {
+        return dao.getTransferInPatient(upn);
+    }
+
+    @Override
+    public List<ExpectedTransferInPatients> getCommunityReferrals(String serviceType, String referralStatus) {
+        return dao.getCommunityReferrals(serviceType, referralStatus);
+    }
+
+
+    @Override
+    public ExpectedTransferInPatients getCommunityReferralsById(Integer id) {
+        return dao.getCommunityReferralsById(id);
+    }
 
     private Patient wrapIlPerson(ILMessage ilPerson, KenyaEMRILMessage kenyaEMRILMessage) {
 
@@ -1559,5 +1674,9 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
             i += 1;
         }
         return i;
+    }
+
+    public ExpectedTransferInPatients getCommunityReferralByNupi(String nupi) throws APIException {
+        return dao.getCommunityReferralByNupi(nupi);
     }
 }

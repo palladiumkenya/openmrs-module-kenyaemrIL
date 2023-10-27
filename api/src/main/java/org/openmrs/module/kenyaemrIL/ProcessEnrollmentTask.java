@@ -5,11 +5,13 @@ import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
 import org.openmrs.Form;
 import org.openmrs.GlobalProperty;
+import org.openmrs.Obs;
 import org.openmrs.Patient;
 import org.openmrs.PersonAttribute;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.kenyaemrIL.api.ILPatientEnrollment;
 import org.openmrs.module.kenyaemrIL.api.ILPatientRegistration;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
@@ -21,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of a task that processes enrollments tasks and marks them for sending to IL.
@@ -36,6 +39,7 @@ public class ProcessEnrollmentTask extends AbstractTask {
      */
     @Override
     public void execute() {
+        System.out.println("Executing ProcessEnrollment TASK .................");
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
 //        Fetch enrollment encounter
 //        Fetch the last date of fetch
@@ -57,6 +61,11 @@ public class ProcessEnrollmentTask extends AbstractTask {
         List<Patient> patientsStartedOnArt = getArtInitiations(fetchDate);
         for (Encounter e : pendingEnrollments) {
             Patient p = e.getPatient();
+            List<Obs> tiPatientType = e.getObs().stream().filter(obs -> obs.getConcept().getConceptId().equals(164932) &&
+                    obs.getValueCoded().getConceptId().equals(160563)).collect(Collectors.toList());
+            if (!tiPatientType.isEmpty()) {
+                programEnrollmentEvent(e.getPatient(), e);
+            }
             // check if the patient is also in the list for updates.
             if (patientsStartedOnArt != null && patientsStartedOnArt.size() > 0) {
                 if (patientsStartedOnArt.contains(p)) {
@@ -64,6 +73,7 @@ public class ProcessEnrollmentTask extends AbstractTask {
                 }
             }
             boolean b = registrationEvent(p);
+            //process transfer in patients
         }
 
         if (patientsStartedOnArt != null && patientsStartedOnArt.size() > 0) {
@@ -86,7 +96,7 @@ public class ProcessEnrollmentTask extends AbstractTask {
     private List<Encounter> fetchPendingEnrollments(List<EncounterType> encounterTypes, Date date) {
         // return Context.getEncounterService().getEncounters(null, null, date, null, null, encounterTypes, null, null, null, false);
 
-        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String effectiveDate = sd.format(date);
         StringBuilder q = new StringBuilder();
         q.append("select e.encounter_id ");
@@ -94,8 +104,8 @@ public class ProcessEnrollmentTask extends AbstractTask {
                 "( " +
                 " select encounter_type_id, uuid, name from encounter_type where uuid ='de78a6be-bfc5-4634-adc3-5f1a280455cc' " +
                 " ) et on et.encounter_type_id = e.encounter_type and e.voided = 0 ");
+        q.append("where e.date_created >= '"+effectiveDate+"' or e.date_changed >= '"+effectiveDate+"' ");
         q.append(" group by e.patient_id ");
-        q.append("having min(e.date_created) >= '" + effectiveDate + "' or min(e.date_changed) >= '" + effectiveDate + "'");
 
         List<Encounter> encounters = new ArrayList<>();
         EncounterService encounterService = Context.getEncounterService();
@@ -114,8 +124,8 @@ public class ProcessEnrollmentTask extends AbstractTask {
      * @param date last timestamp
      * @return a list of patients whose initial art initiations are as at the provided timestamp
      */
-    private List<Patient> getArtInitiations (Date date) {
-        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    private List<Patient> getArtInitiations(Date date) {
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String effectiveDate = sd.format(date);
         StringBuilder q = new StringBuilder();
         q.append("select e.patient_id ");
@@ -125,7 +135,6 @@ public class ProcessEnrollmentTask extends AbstractTask {
                 " ) et on et.encounter_type_id=e.encounter_type and e.voided = 0 ");
         q.append(" group by e.patient_id ");
         q.append("having min(e.date_created) >= '" + effectiveDate + "'");
-
 
         List<Patient> patients = new ArrayList<>();
         PatientService patientService = Context.getPatientService();
@@ -170,6 +179,12 @@ public class ProcessEnrollmentTask extends AbstractTask {
             notDuplicate = true;
         }
         return notDuplicate;
+    }
+
+    private boolean programEnrollmentEvent(Patient patient, Encounter e) {
+        ILMessage ilMessage = ILPatientEnrollment.iLPatientWrapper(patient, e);
+        KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
+        return service.logCompletedPatientReferrals(ilMessage, e.getPatient());
     }
 
 

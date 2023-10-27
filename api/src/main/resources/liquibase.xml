@@ -360,7 +360,7 @@
             <column name="created_by" value="1" />
             <column name="start_on_startup" value="0" />
             <column name="started" value="0" />
-            <column name="uuid" value="7351bb07-97a2-47a6-804b-c9c018c36609" />
+            <column name="uuid" value="7351bb07-97b2-47b6-804b-c9c018c36609" />
         </insert>
     </changeSet>
 
@@ -487,4 +487,263 @@
             <column name="patient_id" type="int"> <constraints nullable="true"/> </column>
         </addColumn>
     </changeSet>
+
+    <!--Adding scheduled task :Set program discontinuation task-->
+    <changeSet id="${project.parent.artifactId}-2023010101030" author="jecihjoy">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.ProgramDiscontinuationTask'
+                And name = 'Program Discontinuation Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Inserting program discontinuation 'schedule_task_config' table</comment>
+        <insert tableName="scheduler_task_config">
+            <column name="name" value="Program Discontinuation Task" />
+            <column name="description" value="Periodically Process Program Discontinuations" />
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.ProgramDiscontinuationTask" />
+            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
+            <column name="start_time" valueDate="2023-01-01T23:59:59" />
+            <column name="repeat_interval" value="21600" />
+            <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="1" />
+            <column name="started" value="0" />
+            <column name="uuid" value="9143b4e6-16c5-11ee-be56-0242ac120002" />
+        </insert>
+    </changeSet>
+
+    <!--Reuse existing structure to support additional message types: Rename mhealth_message_outbox to emr_interop_message-->
+    <changeSet id="${project.parent.artifactId}-202307031030" author="jecihjoy">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="mhealth_message_outbox"/>
+        </preConditions>
+        <comment>
+            Reuse existing structure to support additional message types: Rename mhealth_message_outbox to emr_interop_message
+        </comment>
+        <renameTable oldTableName="mhealth_message_outbox" newTableName="emr_interop_message"/>
+    </changeSet>
+
+    <!--Reuse existing structure to support additional message types: Rename UshauriDirectPushTask to KenyaEmrInteropDirectPushTask-->
+    <changeSet id="${project.parent.artifactId}-202307030440" author="jecihjoy">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.UshauriDirectPushTask'
+                And name = 'Push messages to Ushauri server'
+            </sqlCheck>
+        </preConditions>
+        <comment>Rename UshauriDirectPushTask scheduler to KenyaEmrInteropDirectPushTask</comment>
+        <sql>
+            UPDATE openmrs.scheduler_task_config SET schedulable_class = 'org.openmrs.module.kenyaemrIL.KenyaEmrInteropDirectPushTask',
+            name = 'OpenHIM Message Publisher' where uuid = '7351bb07-97b2-47b6-804b-c9c018c36609'
+        </sql>
+    </changeSet>
+
+    <!-- Adding scheduled task : Validate transfer out patients -->
+    <changeSet id="${project.parent.artifactId}-202310100430" author="jecihjoy">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.ValidateTransferOutsTasks'
+                And name = 'Validate TransferOut Patients'
+            </sqlCheck>
+        </preConditions>
+        <comment>Creating transfer outs validator task</comment>
+        <insert tableName="scheduler_task_config">
+            <column name="name" value="Validate TransferOut Patients"/>
+            <column name="description" value="Periodically Validates TransferOut Patients"/>
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.ValidateTransferOutsTasks"/>
+            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss"/>
+            <column name="start_time" valueDate="2023-07-04T23:59:59"/>
+            <column name="repeat_interval" value="43200"/>
+            <column name="date_created" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="created_by" value="1"/>
+            <column name="start_on_startup" value="1"/>
+            <column name="started" value="0"/>
+            <column name="uuid" value="5fdedec8-1b32-11ee-be56-0242ac120002"/>
+        </insert>
+    </changeSet>
+    <changeSet id="${project.parent.artifactId}-20230829-0001" author="jecihjoy">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="expected_transfer_ins" /></not>
+        </preConditions>
+        <comment>
+            Create table for expected TI patients
+        </comment>
+        <createTable tableName="expected_transfer_ins">
+            <column name="id" autoIncrement="true" type="int">
+                <constraints nullable="false" primaryKey="true" />
+            </column>
+            <column name="patient_id" type="int"/>
+            <column name="first_name" type="varchar(255)" />
+            <column name="middle_name" type="varchar(255)" />
+            <column name="last_name" type="varchar(255)" />
+            <column name="sex" type="varchar(10)" />
+            <column name="birth_date" type="datetime" />
+            <column name="nupi" type="varchar(100)" />
+            <column name="transfer_out_date" type="datetime"/>
+            <column name="transfer_out_facility" type="text"/>
+            <column name="appointment_date" type="datetime"/>
+            <column name="effective_discontinuation_date" type="datetime"/>
+            <column name="to_acceptance_date" type="datetime"/>
+            <column name="referral_status" type="varchar(255)"/>
+            <column name="patient_summary" type="text"/>
+            <column name="service_type" type="varchar(50)" />
+            <column name="creator" type="int"/>
+            <column name="date_created" type="datetime"/>
+            <column name="date_changed" type="datetime" />
+            <column name="uuid" type="varchar(38)"/>
+            <column name="voided" type="int"/>
+        </createTable>
+        <modifySql dbms="mysql">
+            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_unicode_ci"/>
+        </modifySql>
+    </changeSet>
+
+    <!-- Add service_type field to the expected_transfer_ins table -->
+    <changeSet author="pwangoo" id="${project.parent.artifactId}-20230823-0002">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="expected_transfer_ins"/>
+            <not>
+                <columnExists columnName="service_type" tableName="expected_transfer_ins"/>
+            </not>
+        </preConditions>
+        <comment>Adding service_type column</comment>
+        <addColumn tableName="expected_transfer_ins" >
+            <column name="service_type"
+                    type="varchar(50)" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+    </changeSet>
+    <!-- Add service_type field to the expected_transfer_ins table -->
+    <changeSet author="pwangoo" id="${project.parent.artifactId}-20230831-0003">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="expected_transfer_ins"/>
+            <not>
+                <columnExists columnName="first_name" tableName="expected_transfer_ins"/>
+             </not>
+             <not>
+                <columnExists columnName="middle_name" tableName="expected_transfer_ins"/>
+             </not>
+            <not>
+                <columnExists columnName="last_name" tableName="expected_transfer_ins"/>
+            </not>
+            <not>
+                <columnExists columnName="sex" tableName="expected_transfer_ins"/>
+            </not>
+            <not>
+                <columnExists columnName="birth_date" tableName="expected_transfer_ins"/>
+            </not>
+            <not>
+                <columnExists columnName="nupi" tableName="expected_transfer_ins"/>
+            </not>
+        </preConditions>
+        <comment>Adding first_name,middle_name,last_name,sex,birth_date,nupi columns</comment>
+        <addColumn tableName="expected_transfer_ins" >
+            <column name="first_name"
+                    type="varchar(255)" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+        <addColumn tableName="expected_transfer_ins" >
+            <column name="middle_name"
+                    type="varchar(255)" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+        <addColumn tableName="expected_transfer_ins" >
+            <column name="last_name"
+                    type="varchar(255)" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+        <addColumn tableName="expected_transfer_ins" >
+            <column name="sex"
+                    type="varchar(10)" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+        <addColumn tableName="expected_transfer_ins" >
+            <column name="birth_date"
+                    type="datetime" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+        <addColumn tableName="expected_transfer_ins" >
+            <column name="nupi"
+                    type="varchar(100)" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+    </changeSet>
+    <!--Adding scheduled task :Set PullExpectedTransferInsTask-->
+    <changeSet id="${project.parent.artifactId}-202310100930" author="jecihjoy">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.PullExpectedTransferInsTask'
+                And name = 'Expected Transfer Ins Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Inserting Transfer Ins Task to 'schedule_task_config' table</comment>
+        <insert tableName="scheduler_task_config">
+            <column name="name" value="Expected Transfer Ins Task" />
+            <column name="description" value="Periodically Fetch expected transfer ins" />
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.PullExpectedTransferInsTask" />
+            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
+            <column name="start_time" valueDate="2023-01-01T23:59:59" />
+            <column name="repeat_interval" value="43200" />
+            <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="1" />
+            <column name="started" value="1" />
+            <column name="uuid" value="9143b4e6-16c5-11ee-be56-0342ac120002" />
+        </insert>
+    </changeSet>
+    <!-- Add service_type field to the expected_transfer_ins table -->
+    <changeSet author="jecihjoy" id="${project.parent.artifactId}-20231010-3453">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="expected_transfer_ins"/>
+            <not>
+                <columnExists columnName="date_changed" tableName="expected_transfer_ins"/>
+            </not>
+            <columnExists columnName="retired" tableName="expected_transfer_ins"/>
+        </preConditions>
+        <comment>Adding date_changed column, renaming retired to voided</comment>
+        <addColumn tableName="expected_transfer_ins" >
+            <column name="date_changed"
+                    type="datetime" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+        <sql>
+            ALTER TABLE expected_transfer_ins RENAME COLUMN retired TO voided;
+        </sql>
+    </changeSet>
+    <!--Adding scheduled task :Set SyncShrServedPatientsTask task-->
+    <!-- <changeSet id="${project.parent.artifactId}-20231000011630" author="jecihjoy">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.SyncShrServedPatientsTask'
+                And name = 'SHR Sync Task'
+            </sqlCheck>
+        </preConditions>
+        <comment>Inserting SHR Sync Task to 'schedule_task_config' table</comment>
+        <insert tableName="scheduler_task_config">
+            <column name="name" value="SHR Sync Task" />
+            <column name="description" value="Periodically sync referral clients with shr" />
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.SyncShrServedPatientsTask" />
+            <column name="start_time_pattern" value="MM/dd/yyyy HH:mm:ss" />
+            <column name="start_time" valueDate="2023-01-01T23:59:59" />
+            <column name="repeat_interval" value="21600" />
+            <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
+            <column name="created_by" value="1" />
+            <column name="start_on_startup" value="1" />
+            <column name="started" value="1" />
+            <column name="uuid" value="36bb93cc-67bf-11ee-8c99-0242ac120002" />
+        </insert>
+    </changeSet> -->
 </databaseChangeLog>

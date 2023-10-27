@@ -22,17 +22,23 @@ import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ObjectNode;
 import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
 import org.openmrs.Form;
 import org.openmrs.GlobalProperty;
+import org.openmrs.Location;
+import org.openmrs.LocationAttributeType;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifierType;
 import org.openmrs.Person;
 import org.openmrs.Provider;
+import org.openmrs.ProviderAttribute;
 import org.openmrs.User;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
+import org.openmrs.module.kenyaemr.metadata.FacilityMetadata;
 import org.openmrs.module.kenyaemr.metadata.HivMetadata;
 import org.openmrs.module.kenyaemrIL.api.ILPatientRegistration;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
@@ -41,14 +47,21 @@ import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
-import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
+import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 
+import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.io.StringWriter;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -56,11 +69,16 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Miscellaneous utility methods
@@ -74,16 +92,26 @@ public class ILUtils {
 	public static final String GP_SSL_VERIFICATION_ENABLED = "kemrorder.ssl_verification_enabled";
     public static final String GP_USHAURI_SSL_VERIFICATION_ENABLED = "kemr.ushauri.ssl_verification_enabled";
     public static final String GP_USHAURI_PUSH_SERVER_URL = "kenyaemrIL.endpoint.ushauri.push";
+	public static final String GP_ART_DIRECTORY_SERVER_URL = "kenyaemrIL.endpoint.artdirectory";
 	public static final String CCC_NUMBER_IDENTIFIER_TYPE = "CCC_NUMBER";
 	public static String GP_MHEALTH_MIDDLEWARE_TO_USE = "kemr.mhealth.middlware";
     public static String HL7_REGISTRATION_MESSAGE = "ADT^A04";
     public static String HL7_REGISTRATION_UPDATE_MESSAGE = "ADT^A08";
     public static String HL7_APPOINTMENT_MESSAGE = "SIU^S12";
+    public static String HL7_ACTIVE_REFERRAL_MESSAGE = "SIU^S20";
+    public static String HL7_COMPLETE_REFERRAL_MESSAGE = "SIU^S21";
 	public static final String REGISTRATION_DOES_NOT_EXIST_IN_THE_USHAURI_SYSTEM = "does not exists in the Ushauri system";
 	public static final String INVALID_CCC_NUMBER_IN_USHAURI = "The CCC must be 10 digits"; // a substring in the error message
 	public static final String CCC_NUMBER_ALREADY_EXISTS_IN_USHAURI = "The CCC number already exists."; // a substring in the error message
-
-
+	public static final String GP_SHR_SERVER_URL = "kenyaemril.fhir.server.url";
+	public static final String GP_SHR_USER_NAME = "kenyaemril.fhir.server.username";
+	public static final String GP_SHR_PASSWORD = "kenyaemril.fhir.server.password";
+	public static final String GP_SHR_SERVER_TOKEN_URL = "kenyaemril.fhir.server.token.url";
+	public static final String GP_SHR_API_TOKEN = "kenyaemril.fhir.server.token";
+	public static final String GP_SHR_OAUTH2_SCOPE = "kenyaemril.fhir.server.oath2.scope";
+	public static final String GP_SHR_OAUTH2_CLIENT_SECRET = "kenyaemril.fhir.server.oath2.client.secret";
+	public static final String GP_SHR_OAUTH2_CLIENT_ID = "kenyaemril.fhir.server.oath2.client.id";
+	private static final Pattern pat = Pattern.compile(".*\"access_token\"\\s*:\\s*\"([^\"]+)\".*");
 
 	/**
 	 * Checks whether a date has any time value
@@ -336,9 +364,9 @@ public class ILUtils {
 	 * @param kenyaEMRILMessage
 	 * @return
 	 */
-	public static KenyaemrMhealthOutboxMessage createMhealthOutboxFromILMessage(KenyaEMRILMessage kenyaEMRILMessage) {
+	public static KenyaEMRInteropMessage createMhealthOutboxFromILMessage(KenyaEMRILMessage kenyaEMRILMessage) {
 
-		KenyaemrMhealthOutboxMessage outboxMessage = new KenyaemrMhealthOutboxMessage();
+		KenyaEMRInteropMessage outboxMessage = new KenyaEMRInteropMessage();
 		outboxMessage.setHl7_type(kenyaEMRILMessage.getHl7_type());
 		outboxMessage.setSource(kenyaEMRILMessage.getSource());
 		outboxMessage.setMessage(kenyaEMRILMessage.getMessage());
@@ -357,9 +385,9 @@ public class ILUtils {
 	 * @param errorMessage
 	 * @return
 	 */
-	public static KenyaemrMhealthOutboxMessage createMhealthOutboxMessageFromErrorMessage(KenyaEMRILMessageErrorQueue errorMessage) {
+	public static KenyaEMRInteropMessage createMhealthOutboxMessageFromErrorMessage(KenyaEMRILMessageErrorQueue errorMessage) {
 
-		KenyaemrMhealthOutboxMessage outboxMessage = new KenyaemrMhealthOutboxMessage();
+		KenyaEMRInteropMessage outboxMessage = new KenyaEMRInteropMessage();
 		outboxMessage.setHl7_type(errorMessage.getHl7_type());
 		outboxMessage.setSource(errorMessage.getSource());
 		outboxMessage.setMessage(errorMessage.getMessage());
@@ -377,7 +405,7 @@ public class ILUtils {
 	 * @param message
 	 * @return
 	 */
-	public static KenyaEMRILMessageArchive createArchiveForMhealthOutbox(KenyaemrMhealthOutboxMessage message) {
+	public static KenyaEMRILMessageArchive createArchiveForMhealthOutbox(KenyaEMRInteropMessage message) {
 
 		KenyaEMRILMessageArchive archiveMessage = new KenyaEMRILMessageArchive();
 		archiveMessage.setHl7_type(message.getHl7_type());
@@ -460,5 +488,176 @@ public class ILUtils {
 				service.sendAddPersonRequest(ilMessage);
 			}
 		}
+	}
+
+	public static String getShrServerUrl() {
+		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_SERVER_URL);
+	}
+
+	public static String getShrUserName() {
+		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_USER_NAME);
+	}
+
+	public static String getShrPassword() {
+		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_PASSWORD);
+	}
+
+	public static String getShrServerTokenUrl() {
+		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_SERVER_TOKEN_URL);
+	}
+
+	public static String getGpShrOauth2Scope() {
+		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_OAUTH2_SCOPE);
+	}
+
+	public static String getGpShrOauth2ClientSecret() {
+		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_OAUTH2_CLIENT_SECRET);
+	}
+
+	public static String getGpShrOauth2ClientId() {
+		return Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_OAUTH2_CLIENT_ID);
+	}
+	public static boolean initAuthVars(String strTokenUrl,String strScope, String strClientSecret, String strClientId) {
+		if (strTokenUrl == null || strScope == null || strClientSecret == null || strClientId == null) {
+			System.err.println("Get oauth data: Please set OAuth2 credentials");
+			return (false);
+		}
+		return (true);
+	}
+	public static String getShrToken() {
+		//check if current token is valid
+		if(isValidShrToken()) {
+			return(Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_API_TOKEN));
+		} else {
+			// Init the auth vars
+			boolean varsOk = initAuthVars(getShrServerTokenUrl(),getGpShrOauth2Scope(),getGpShrOauth2ClientSecret(),getGpShrOauth2ClientId());
+			if (varsOk) {
+				//Get the OAuth Token
+				String credentials = getClientCredentials(getShrServerTokenUrl(),getGpShrOauth2Scope(),getGpShrOauth2ClientSecret(),getGpShrOauth2ClientId());
+				//Save on global and return token
+				if (credentials != null) {
+					Context.getAdministrationService().setGlobalProperty(ILUtils.GP_SHR_API_TOKEN, credentials);
+					return(credentials);
+				}
+			}
+		}
+		return(null);
+	}
+
+	private static String getClientCredentials(String strTokenUrl,String strScope, String strClientSecret, String strClientId) {
+
+		String auth = strClientId + ":" + strClientSecret;
+		String authentication = Base64.getEncoder().encodeToString(auth.getBytes());
+		BufferedReader reader = null;
+		HttpsURLConnection connection = null;
+		String returnValue = "";
+		try {
+			StringBuilder parameters = new StringBuilder();
+			parameters.append("grant_type=" + URLEncoder.encode("client_credentials", "UTF-8"));
+			parameters.append("&");
+			parameters.append("scope=" + URLEncoder.encode(strScope, "UTF-8"));
+			URL url = new URL(strTokenUrl);
+			connection = (HttpsURLConnection) url.openConnection();
+			connection.setRequestMethod("POST");
+			connection.setDoOutput(true);
+			connection.setRequestProperty("Authorization", "Basic " + authentication);
+			connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+			connection.setRequestProperty("Accept", "application/json");
+			connection.setConnectTimeout(10000); // set timeout to 10 seconds
+			PrintStream os = new PrintStream(connection.getOutputStream());
+			os.print(parameters);
+			os.close();
+			reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+			String line = null;
+			StringWriter out = new StringWriter(connection.getContentLength() > 0 ? connection.getContentLength() : 2048);
+			while ((line = reader.readLine()) != null) {
+				out.append(line);
+			}
+			String response = out.toString();
+			Matcher matcher = pat.matcher(response);
+			if (matcher.matches() && matcher.groupCount() > 0) {
+				returnValue = matcher.group(1);
+			} else {
+				System.err.println("OAUTH2 Error : Token pattern mismatch");
+			}
+
+		}
+		catch (Exception e) {
+			System.err.println("OAUTH2 - Error : " + e.getMessage());
+		}
+		finally {
+			if (reader != null) {
+				try {
+					reader.close();
+				}
+				catch (IOException e) {}
+			}
+			connection.disconnect();
+		}
+		return returnValue;
+	}
+	private static boolean isValidShrToken() {
+		String currentToken = Context.getAdministrationService().getGlobalProperty(ILUtils.GP_SHR_API_TOKEN);
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			ObjectNode jsonNode = (ObjectNode) mapper.readTree(currentToken);
+			if (jsonNode != null) {
+				String token = jsonNode.get("access_token").getTextValue();
+				if(token != null && token.length() > 0)
+				{
+					String[] chunks = token.split("\\.");
+					Base64.Decoder decoder = Base64.getUrlDecoder();
+
+					String header = new String(decoder.decode(chunks[0]));
+					String payload = new String(decoder.decode(chunks[1]));
+
+					ObjectNode payloadNode = (ObjectNode) mapper.readTree(payload);
+					long expiryTime = payloadNode.get("exp").getLongValue();
+					// reduce expiry by 4 hours
+					long updatedExpiryTime = expiryTime - (60*60*4);
+
+					long currentTime = System.currentTimeMillis()/1000;
+
+					// check if expired
+					if (currentTime < updatedExpiryTime) {
+						return(true);
+					} else {
+						return(false);
+					}
+				}
+            }
+            return(false);
+        } catch(Exception e) {
+			return(false);
+		}
+	}
+
+	public static List<Location> getFacilityByLoggedInUser() {
+		if (Context.getAuthenticatedUser() != null) {
+			Person user = Context.getAuthenticatedUser().getPerson();
+
+			Collection<Provider> provider = Context.getProviderService().getProvidersByPerson(user);
+			for (Provider p : provider) {
+				Collection<ProviderAttribute> attribute = p.getActiveAttributes();
+				for (ProviderAttribute at : attribute) {
+					if (at.getAttributeType().getUuid().equals(CommonMetadata._ProviderAttributeType.PRIMARY_FACILITY)) {
+
+						Location primaryFacility = (Location) at.getValue();
+						return Arrays.asList(primaryFacility);
+					}
+				}
+			}
+		}
+		return new ArrayList<Location>();
+	}
+
+	public static Location getLocationByMflCode(String mflCode) {
+		LocationAttributeType mflCodeAttrType = MetadataUtils.existing(LocationAttributeType.class, FacilityMetadata._LocationAttributeType.MASTER_FACILITY_CODE);
+		Map<LocationAttributeType, Object> attrVals = new HashMap<LocationAttributeType, Object>();
+		attrVals.put(mflCodeAttrType, mflCode);
+
+		List<Location> locations = Context.getLocationService().getLocations(null, null, attrVals, false, null, null);
+
+		return locations.size() > 0 ? locations.get(0) : null;
 	}
 }

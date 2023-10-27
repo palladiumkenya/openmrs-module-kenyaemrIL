@@ -13,7 +13,7 @@ import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_NAME;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_VISIT;
 import org.openmrs.module.kenyaemrIL.il.appointment.APPOINTMENT_INFORMATION;
-import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
+import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.module.kenyaui.KenyaUiUtils;
 import org.openmrs.module.kenyaui.annotation.AppPage;
@@ -25,8 +25,7 @@ import org.openmrs.ui.framework.page.PageModel;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -36,9 +35,9 @@ public class UshauriHomePageController {
 	public void get(@SpringBean KenyaUiUtils kenyaUi, UiUtils ui, PageModel model) throws JsonProcessingException {
 		
 		KenyaEMRILService ilService = Context.getService(KenyaEMRILService.class);
-		List<KenyaemrMhealthOutboxMessage> queueDataList = ilService.getAllMhealthOutboxMessages(false); // fetch for direct route
-		List<KenyaEMRILMessageErrorQueue> errorQueueList = ilService.fetchAllMhealthErrors();
-		List<KenyaEMRILMessageArchive> archiveRecordList = ilService.fetchRecentArchives();
+		List<KenyaEMRInteropMessage> queueDataList = ilService.getAllMhealthOutboxMessagesByHl7Type(Arrays.asList(ILUtils.HL7_APPOINTMENT_MESSAGE, ILUtils.HL7_REGISTRATION_MESSAGE, ILUtils.HL7_REGISTRATION_UPDATE_MESSAGE), false); // fetch for direct route
+		List<KenyaEMRILMessageErrorQueue> errorQueueList = ilService.fetchAllMhealthErrors(Arrays.asList(ILUtils.HL7_APPOINTMENT_MESSAGE, ILUtils.HL7_REGISTRATION_MESSAGE, ILUtils.HL7_REGISTRATION_UPDATE_MESSAGE));
+		List<KenyaEMRILMessageArchive> archiveRecordList = ilService.fetchRecentArchives(Arrays.asList(ILUtils.HL7_APPOINTMENT_MESSAGE, ILUtils.HL7_REGISTRATION_MESSAGE, ILUtils.HL7_REGISTRATION_UPDATE_MESSAGE));
 
 		List<SimpleObject> queueList = new ArrayList<SimpleObject>();
 		List<SimpleObject> archiveList = new ArrayList<SimpleObject>();
@@ -48,7 +47,7 @@ public class UshauriHomePageController {
 		SimpleDateFormat yyyyMMddWithoutHiphen = new SimpleDateFormat("yyyyMMdd");
 
 		ObjectMapper objectMapper = new ObjectMapper();
-		for (KenyaemrMhealthOutboxMessage kenyaEMRILMessage : queueDataList) { // get records in queue
+		for (KenyaEMRInteropMessage kenyaEMRILMessage : queueDataList) { // get records in queue
 
 			String cccNumber = "";
 			String messageType = "";

@@ -15,7 +15,7 @@
         "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
 <hibernate-mapping package="org.openmrs.module.kenyaemrIL.mhealth">
 
-    <class name="KenyaemrMhealthOutboxMessage" table="mhealth_message_outbox">
+    <class name="KenyaEMRInteropMessage" table="emr_interop_message">
 
         <id name="message_id" type="int" column="message_id" unsaved-value="0">
             <generator class="native">

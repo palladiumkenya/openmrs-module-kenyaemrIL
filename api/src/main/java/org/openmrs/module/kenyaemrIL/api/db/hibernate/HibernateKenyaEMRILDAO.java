@@ -13,32 +13,28 @@
  */
 package org.openmrs.module.kenyaemrIL.api.db.hibernate;
 
+import com.google.common.base.Strings;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.hibernate.Criteria;
+import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
-import org.openmrs.PatientIdentifierType;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
-import org.openmrs.module.kenyaemr.metadata.HivMetadata;
-import org.openmrs.module.kenyaemrIL.api.ILPatientRegistration;
-import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
+import org.openmrs.api.db.DAOException;
 import org.openmrs.module.kenyaemrIL.api.db.KenyaEMRILDAO;
-import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
-import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
+import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
+import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
-import org.openmrs.module.metadatadeploy.MetadataUtils;
 
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -183,39 +179,61 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     }
 
     @Override
-    public KenyaemrMhealthOutboxMessage getMhealthOutboxMessageByUuid(String uuid) {
-        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaemrMhealthOutboxMessage.class);
+    public KenyaEMRInteropMessage getMhealthOutboxMessageByUuid(String uuid) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRInteropMessage.class);
         crit.add(Restrictions.eq("uuid", uuid));
-        KenyaemrMhealthOutboxMessage mhealthOutboxMessage = (KenyaemrMhealthOutboxMessage) crit.uniqueResult();
+        KenyaEMRInteropMessage mhealthOutboxMessage = (KenyaEMRInteropMessage) crit.uniqueResult();
         return mhealthOutboxMessage;
     }
 
     @Override
-    public KenyaemrMhealthOutboxMessage saveMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthMessageOutbox) {
+    public KenyaEMRInteropMessage saveMhealthOutboxMessage(KenyaEMRInteropMessage KenyaemrMhealthMessageOutbox) {
         this.sessionFactory.getCurrentSession().saveOrUpdate(KenyaemrMhealthMessageOutbox);
         return KenyaemrMhealthMessageOutbox;
     }
 
     @Override
-    public void deleteMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthOutboxMessage) {
-        this.sessionFactory.getCurrentSession().delete(KenyaemrMhealthOutboxMessage);
+    public void deleteMhealthOutboxMessage(KenyaEMRInteropMessage KenyaEMRInteropMessage) {
+        this.sessionFactory.getCurrentSession().delete(KenyaEMRInteropMessage);
     }
 
     @Override
-    public List<KenyaemrMhealthOutboxMessage> getAllMhealthOutboxMessages(Boolean includeAll) {
-        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaemrMhealthOutboxMessage.class);
+    public List<KenyaEMRInteropMessage> getAllMhealthOutboxMessages(Boolean includeAll) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRInteropMessage.class);
         crit.add(Restrictions.eq("retired", false));
         return crit.list();
     }
 
     @Override
-    public List<KenyaemrMhealthOutboxMessage> getKenyaEMROutboxMessagesToSend(boolean b) {
+    public List<KenyaEMRInteropMessage> getAllMhealthOutboxMessagesByHl7Type(List<String> hl7MessageTypes, Boolean includeAll) {
+        String stringQuery = "SELECT kenyaEMRInteropMessage FROM KenyaEMRInteropMessage AS kenyaEMRInteropMessage WHERE ";
+        if (includeAll) {
+            stringQuery += " retired = 1";
+        } else {
+            stringQuery += " retired = 0";
+        }
+
+        if (!hl7MessageTypes.isEmpty()) {
+            stringQuery += " AND kenyaEMRInteropMessage.hl7_type IN (:hl7MessageTypes)";
+        }
+
+        Query query = this.sessionFactory.getCurrentSession().createQuery(
+                stringQuery);
+        if (!hl7MessageTypes.isEmpty()) {
+            query.setParameterList("hl7MessageTypes", hl7MessageTypes);
+        }
+        return query.list();
+    }
+
+    @Override
+    public List<KenyaEMRInteropMessage> getKenyaEMROutboxMessagesToSend(boolean b) {
         String IL_MESSAGES_MAX_BATCH_FETCH_SIZE = "kenyaemrIL.ilMessagesMaxBatchFetch";
         GlobalProperty batchSize = Context.getAdministrationService().getGlobalPropertyObject(IL_MESSAGES_MAX_BATCH_FETCH_SIZE);
-        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaemrMhealthOutboxMessage.class);
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRInteropMessage.class);
         crit.add(Restrictions.eq("message_type", 2));
         crit.add(Restrictions.eq("retired", false));
         crit.setMaxResults(Integer.parseInt(batchSize.getValue().toString()));
+        crit.addOrder(Order.asc("message_id"));
         return crit.list();
     }
 
@@ -237,10 +255,19 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     }
 
     @Override
-    public List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors() {
-        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessageErrorQueue.class);
-        crit.add(Restrictions.eq("middleware", "Direct"));
-        return crit.list();
+    public List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors(List<String> hl7MessageTypes) {
+        String stringQuery = "SELECT kenyaEMRILMessageErrorQueue FROM KenyaEMRILMessageErrorQueue AS kenyaEMRILMessageErrorQueue WHERE retired = 0 and middleware = 'Direct' ";
+
+        if (!hl7MessageTypes.isEmpty()) {
+            stringQuery += " AND kenyaEMRILMessageErrorQueue.hl7_type IN (:hl7MessageTypes)";
+        }
+
+        Query query = this.sessionFactory.getCurrentSession().createQuery(
+                stringQuery);
+        if (!hl7MessageTypes.isEmpty()) {
+            query.setParameterList("hl7MessageTypes", hl7MessageTypes);
+        }
+        return query.list();
     }
 
     @Override
@@ -248,11 +275,11 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         if (Context.isAuthenticated()) {
 
             if (errorList.equals("all")) {
-                List<KenyaEMRILMessageErrorQueue> errors = fetchAllMhealthErrors();
+                List<KenyaEMRILMessageErrorQueue> errors = fetchAllMhealthErrors(Arrays.asList(ILUtils.HL7_APPOINTMENT_MESSAGE));
 
                 for (KenyaEMRILMessageErrorQueue errorData : errors) {
                     //TODO: fire this for the different message types
-                    KenyaemrMhealthOutboxMessage queueData = ILUtils.createMhealthOutboxMessageFromErrorMessage(errorData);
+                    KenyaEMRInteropMessage queueData = ILUtils.createMhealthOutboxMessageFromErrorMessage(errorData);
 
                     ILUtils.createRegistrationILMessage(errorData);
                     // we dont want to queue because a new message is generated. Assuming the CCC number has been updated to the required format
@@ -266,7 +293,7 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
                 String[] uuidList = errorList.split(",");
                 for (String uuid : uuidList) {
                     KenyaEMRILMessageErrorQueue errorData = getKenyaEMRILErrorMessageByUuid(uuid);
-                    KenyaemrMhealthOutboxMessage queueData = ILUtils.createMhealthOutboxMessageFromErrorMessage(errorData);
+                    KenyaEMRInteropMessage queueData = ILUtils.createMhealthOutboxMessageFromErrorMessage(errorData);
 
                     ILUtils.createRegistrationILMessage(errorData);
 
@@ -299,7 +326,7 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         if (Context.isAuthenticated()) {
 
             if (errorList.equals("all")) {
-                List<KenyaEMRILMessageErrorQueue> errors = fetchAllMhealthErrors();
+                List<KenyaEMRILMessageErrorQueue> errors = fetchAllMhealthErrors(Arrays.asList(ILUtils.HL7_APPOINTMENT_MESSAGE));
 
                 for (KenyaEMRILMessageErrorQueue errorData : errors) {
                     purgeILErrorQueueMessage(errorData);
@@ -315,12 +342,77 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     }
 
     @Override
-    public List<KenyaEMRILMessageArchive> fetchRecentArchives() {
-        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(KenyaEMRILMessageArchive.class);
-        crit.add(Restrictions.eq("middleware", "Direct"));
-        crit.addOrder(Order.desc("message_id"));
-        crit.setMaxResults(500);
+    public List<KenyaEMRILMessageArchive> fetchRecentArchives(List<String> hl7MessageTypes) {
+        String stringQuery = "SELECT kenyaEMRILMessageArchive FROM KenyaEMRILMessageArchive AS kenyaEMRILMessageArchive WHERE retired = 0 and middleware = 'Direct' ";
+
+        if (!hl7MessageTypes.isEmpty()) {
+            stringQuery += " AND kenyaEMRILMessageArchive.hl7_type IN (:hl7MessageTypes) order by kenyaEMRILMessageArchive.message_id desc ";
+        }
+
+        Query query = this.sessionFactory.getCurrentSession().createQuery(
+                stringQuery).setMaxResults(500);
+        if (!hl7MessageTypes.isEmpty()) {
+            query.setParameterList("hl7MessageTypes", hl7MessageTypes);
+        }
+        return query.list();
+
+    }
+
+    @Override
+    public ExpectedTransferInPatients createPatient(ExpectedTransferInPatients expectedTransferInPatient) {
+        this.sessionFactory.getCurrentSession().saveOrUpdate(expectedTransferInPatient);
+        return expectedTransferInPatient;
+    }
+
+    @Override
+    public List<ExpectedTransferInPatients> getAllTransferIns() {
+        Criteria criteria = this.sessionFactory.getCurrentSession().createCriteria(ExpectedTransferInPatients.class);
+        return criteria.list();
+    }
+
+    @Override
+    public List<ExpectedTransferInPatients> getAllTransferInsByServiceType(String serviceType) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(ExpectedTransferInPatients.class);
+        if(serviceType != null){
+            crit.add(Restrictions.eq("service_type", serviceType));
+          }
         return crit.list();
+    }
+
+    @Override
+    public List<ExpectedTransferInPatients> getTransferInPatient(String upn) {
+        if(Strings.isNullOrEmpty(upn)) return null;
+        String stringQuery = "SELECT expectedTransferInPatient FROM ExpectedTransferInPatients AS expectedTransferInPatient WHERE nupiNumber = '"+upn+"' AND voided = 0";
+        Query query = this.sessionFactory.getCurrentSession().createQuery(
+                stringQuery);
+        List<ExpectedTransferInPatients> expectedTransferInPatients = query.list();
+        return expectedTransferInPatients;
+    }
+
+    @Override
+    public List<ExpectedTransferInPatients> getCommunityReferrals(String serviceType,String referralStatus) {
+        if (serviceType == null) return null;
+        String stringQuery = "SELECT expectedTransferInPatient FROM ExpectedTransferInPatients AS expectedTransferInPatient WHERE serviceType = :serviceType AND referralStatus = :referralStatus";
+        Query query = this.sessionFactory.getCurrentSession().createQuery(
+                stringQuery);
+        query.setParameter("serviceType", serviceType);
+        query.setParameter("referralStatus", referralStatus);
+        List<ExpectedTransferInPatients> getCommunityReferrals = query.list();
+        return getCommunityReferrals;
+    }
+
+    @Override
+    public ExpectedTransferInPatients getCommunityReferralsById(Integer id) {
+        Criteria crit = this.sessionFactory.getCurrentSession().createCriteria(ExpectedTransferInPatients.class);
+        crit.add(Restrictions.eq("id", id));
+        ExpectedTransferInPatients expectedTransferInPatient = (ExpectedTransferInPatients) crit.uniqueResult();
+        return expectedTransferInPatient;
+    }
+
+    public ExpectedTransferInPatients getCommunityReferralByNupi(String nupi) throws DAOException {
+        Criteria criteria = sessionFactory.getCurrentSession().createCriteria(ExpectedTransferInPatients.class);
+        criteria.add(Restrictions.eq("nupiNumber", nupi));
+        return (ExpectedTransferInPatients) criteria.uniqueResult();
     }
 
 }

@@ -14,13 +14,14 @@
 package org.openmrs.module.kenyaemrIL.api.db;
 
 import org.openmrs.Patient;
+import org.openmrs.api.db.DAOException;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
-import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessage;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageErrorQueue;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILRegistration;
-import org.openmrs.module.kenyaemrIL.mhealth.KenyaemrMhealthOutboxMessage;
+import org.openmrs.module.kenyaemrIL.mhealth.KenyaEMRInteropMessage;
+import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
 
 import java.util.List;
 
@@ -68,21 +69,23 @@ public interface KenyaEMRILDAO {
 
     // additions to support for data exchange with mhealth apps
 
-    KenyaemrMhealthOutboxMessage getMhealthOutboxMessageByUuid(String uuid);
+    KenyaEMRInteropMessage getMhealthOutboxMessageByUuid(String uuid);
 
-    KenyaemrMhealthOutboxMessage saveMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthMessageOutbox);
+    KenyaEMRInteropMessage saveMhealthOutboxMessage(KenyaEMRInteropMessage KenyaemrMhealthMessageOutbox);
 
-    void deleteMhealthOutboxMessage(KenyaemrMhealthOutboxMessage KenyaemrMhealthOutboxMessage);
+    void deleteMhealthOutboxMessage(KenyaEMRInteropMessage KenyaEMRInteropMessage);
 
-    List<KenyaemrMhealthOutboxMessage> getAllMhealthOutboxMessages(Boolean includeAll);
+    List<KenyaEMRInteropMessage> getAllMhealthOutboxMessages(Boolean includeAll);
 
-    List<KenyaemrMhealthOutboxMessage> getKenyaEMROutboxMessagesToSend(boolean b);
+    public List<KenyaEMRInteropMessage> getAllMhealthOutboxMessagesByHl7Type(List<String> hl7MessageType, Boolean includeAll);
+
+    List<KenyaEMRInteropMessage> getKenyaEMROutboxMessagesToSend(boolean b);
 
     List<KenyaEMRILMessage> fetchAllViralLoadResults(boolean status);
 
     List<KenyaEMRILMessageErrorQueue> fetchAllViralLoadErrors();
 
-    List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors();
+    List<KenyaEMRILMessageErrorQueue> fetchAllMhealthErrors(List<String> hl7MessageTypes);
 
     void reQueueErrors(String errorList);
 
@@ -92,5 +95,19 @@ public interface KenyaEMRILDAO {
 
     void purgeErrors(String errorList);
 
-    List<KenyaEMRILMessageArchive> fetchRecentArchives();
+    List<KenyaEMRILMessageArchive> fetchRecentArchives(List<String> hl7MessageTypes);
+
+    ExpectedTransferInPatients createPatient(ExpectedTransferInPatients patient);
+
+    List<ExpectedTransferInPatients> getAllTransferIns();
+
+    List<ExpectedTransferInPatients> getAllTransferInsByServiceType(String serviceType);
+
+    List<ExpectedTransferInPatients> getTransferInPatient(String upn);
+
+    List<ExpectedTransferInPatients> getCommunityReferrals(String serviceType, String referralStatus);
+
+    ExpectedTransferInPatients getCommunityReferralsById(Integer id);
+    ExpectedTransferInPatients getCommunityReferralByNupi(String nupi) throws DAOException;
+
 }

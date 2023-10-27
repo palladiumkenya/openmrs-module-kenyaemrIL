@@ -75,4 +75,12 @@
 		<constructor-arg value="kenyaemrIL:apps/ushauri.png" />
 		<constructor-arg value="535" />
 	</bean>
+
+	<bean id="kenyaemr.mhealth.referrals.home" factory-bean="kenyacore.appFactoryBean" factory-method="createInstance">
+		<constructor-arg value="kenyaemr.referral.home" />
+		<constructor-arg value="Referrals" />
+		<constructor-arg value="kenyaemrIL/referralsHome.page" />
+		<constructor-arg value="kenyaemrIL:apps/referrals.png" />
+		<constructor-arg value="540" />
+	</bean>
 </beans>

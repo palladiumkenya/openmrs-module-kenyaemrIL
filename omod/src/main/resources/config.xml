@@ -21,9 +21,8 @@
     <require_modules>
         <require_module version="${kenyaemrVersion}">org.openmrs.module.kenyaemr</require_module>
         <require_module version="2.1">org.openmrs.module.webservices.rest</require_module>
-        <require_module version="${kenyacoreVersion}">
-            org.openmrs.module.kenyacore
-        </require_module>
+        <require_module version="${kenyacoreVersion}">org.openmrs.module.kenyacore</require_module>
+        <require_module version="${fhir2Version}">org.openmrs.module.fhir2</require_module>
     </require_modules>
     <!-- Adds link to admin page -->
     <extension>
@@ -39,9 +38,9 @@
         KenyaEMRILRegistration.hbm.xml
         KenyaEMRILMessageArchive.hbm.xml
         KenyaEMRILMessageErrorQueue.hbm.xml
-        KenyaEMRMhealthOutbox.hbm.xml
+        KenyaEMRInteropMessage.hbm.xml
         KenyaEMRMhealthPatientRegistration.hbm.xml
-
+        ExpectedTransferInPatients.hbm.xml
     </mappingFiles>
 
 
@@ -71,6 +70,26 @@
         <defaultValue>20190226120000</defaultValue>
         <description>
             The last date and time that the last fetch was done for appointment task
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <property>discontinuationTask.lastFetchDateAndTime</property>
+        <description>
+            The last date and time that the last fetch was done for discontinuation task
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <property>transferInsFetchTask.lastFetchDateAndTime</property>
+        <defaultValue>20230226120000</defaultValue>
+        <description>
+            The last date and time that the last fetch was done for discontinuation task
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <property>syncShrServedPatients.lastFetchDateAndTime</property>
+        <defaultValue>20230226120000</defaultValue>
+        <description>
+            The last date and time that the last fetch was done for shr sync job
         </description>
     </globalProperty>
     <globalProperty>
@@ -154,6 +173,14 @@
     </globalProperty>
 
     <globalProperty>
+        <property>kenyaemrIL.endpoint.artdirectory</property>
+        <defaultValue>http://prod.kenyahmis.org:8002/api</defaultValue>
+        <description>
+            ART Directory endpoint
+        </description>
+    </globalProperty>
+
+    <globalProperty>
         <property>kemr.ushauri.ssl_verification_enabled</property>
         <defaultValue>true</defaultValue>
         <description>
@@ -167,6 +194,53 @@
         <description>
             Configures how KenyaEMR sends messages to Mhealth servers. Valid options are IL or Direct
         </description>
+    </globalProperty>
+    <globalProperty>
+        <property>kemr.mhealth.middlware</property>
+        <defaultValue>IL</defaultValue>
+        <description>
+            Configures how KenyaEMR sends messages to Mhealth servers. Valid options are IL or Direct
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <property>kenyaemril.fhir.server.url</property>
+        <description>KenyaEMRIL Fhir Server URL</description>
+        <defaultValue>http://localhost:8098/fhir/</defaultValue>
+    </globalProperty>
+    <globalProperty>
+        <property>kenyaemril.fhir.server.username</property>
+        <description>KenyaEMRIL Fhir Server Username</description>
+        <defaultValue></defaultValue>
+    </globalProperty>
+    <globalProperty>
+        <property>kenyaemril.fhir.server.password</property>
+        <description>KenyaEMRIL Fhir Server Password</description>
+        <defaultValue></defaultValue>
+    </globalProperty>
+    <globalProperty>
+        <property>kenyaemril.fhir.server.token.url</property>
+        <description>KenyaEMRIL Fhir Server Token generation url</description>
+        <defaultValue></defaultValue>
+    </globalProperty>
+    <globalProperty>
+        <property>kenyaemril.fhir.server.token</property>
+        <description>KenyaEMRIL Token for connecting to the FHIR server</description>
+        <defaultValue></defaultValue>
+    </globalProperty>
+    <globalProperty>
+        <property>kenyaemril.fhir.server.oath2.scope</property>
+        <description>FHIR server oath2 authorization scope</description>
+        <defaultValue></defaultValue>
+    </globalProperty>
+    <globalProperty>
+        <property>kenyaemril.fhir.server.oath2.client.secret</property>
+        <description>FHIR server oath2 authorization client secret</description>
+        <defaultValue></defaultValue>
+    </globalProperty>
+    <globalProperty>
+        <property>kenyaemril.fhir.server.oath2.client.id</property>
+        <description>FHIR server oath2 authorization client ID</description>
+        <defaultValue></defaultValue>
     </globalProperty>
     <!-- /Internationalization -->
 </module>

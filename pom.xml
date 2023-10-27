@@ -42,18 +42,21 @@
         <htmlformentryVersion>3.9.2</htmlformentryVersion>
         <htmlwidgetsVersion>1.10.0</htmlwidgetsVersion>
         <idgenVersion>4.5.0</idgenVersion>
-        <kenyaemrVersion>18.1.2</kenyaemrVersion>
-        <kenyacoreVersion>3.0.0</kenyacoreVersion>
+        <kenyaemrVersion>18.6.2</kenyaemrVersion>
+        <kenyacoreVersion>3.0.1</kenyacoreVersion>
         <kenyauiVersion>3.0.0</kenyauiVersion>
+        <idgenVersion>4.5.0</idgenVersion>
         <metadatadeployVersion>1.11.0</metadatadeployVersion>
         <metadatasharingVersion>1.5.0</metadatasharingVersion>
         <reportingVersion>1.18.0</reportingVersion>
         <serializationxstreamVersion>0.2.14</serializationxstreamVersion>
         <uiframeworkVersion>3.15.0</uiframeworkVersion>
+        <fhir2Version>1.3.0</fhir2Version>
         <legacyUiVersion>1.5.0</legacyUiVersion>
         <jacksonVersion>2.10.1</jacksonVersion>
         <apacheHttpClientVersion>4.5.10</apacheHttpClientVersion>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <fhir-core.version>5.4.0</fhir-core.version>
     </properties>
 
     <dependencyManagement>
@@ -86,6 +89,13 @@
                 <artifactId>openmrs-web</artifactId>
                 <version>${openMRSVersion}</version>
                 <type>jar</type>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.openmrs.module</groupId>
+                <artifactId>fhir2-api</artifactId>
+                <version>${fhir2Version}</version>
                 <scope>provided</scope>
             </dependency>
 
@@ -199,7 +209,7 @@
             </dependency>
 
             <!-- https://mvnrepository.com/artifact/io.swagger/swagger-models -->
-           <dependency>
+            <dependency>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-models</artifactId>
                 <version>2.0.0-rc2</version>
@@ -325,44 +335,22 @@
                 </exclusions>
             </dependency>
 
+            <dependency>
+                <groupId>org.openmrs.module</groupId>
+                <artifactId>idgen-api</artifactId>
+                <version>${idgenVersion}</version>
+                <scope>provided</scope>
+            </dependency>
+
+
         </dependencies>
     </dependencyManagement>
-
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <configuration>
-                        <target>1.6</target>
-                        <source>1.6</source>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.openmrs.maven.plugins</groupId>
-                    <artifactId>maven-openmrs-plugin</artifactId>
-                    <version>1.0.1</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <version>2.4</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>2.9.1</version>
-                </plugin>
-               </plugins>
-        </pluginManagement>
-    </build>
 
     <repositories>
         <repository>
             <id>openmrs-repo</id>
             <name>OpenMRS Nexus Repository</name>
-            <url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+            <url>https://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
         </repository>
     </repositories>
 
@@ -370,11 +358,24 @@
         <pluginRepository>
             <id>openmrs-repo</id>
             <name>OpenMRS Nexus Repository</name>
-            <url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+            <url>https://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
         </pluginRepository>
     </pluginRepositories>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
 </project>
