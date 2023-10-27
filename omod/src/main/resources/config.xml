@@ -74,6 +74,7 @@
     </globalProperty>
     <globalProperty>
         <property>discontinuationTask.lastFetchDateAndTime</property>
+        <defaultValue>2021027120000</defaultValue>
         <description>
             The last date and time that the last fetch was done for discontinuation task
         </description>
