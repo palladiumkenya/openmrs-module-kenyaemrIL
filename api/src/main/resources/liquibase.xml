@@ -517,6 +517,7 @@
     <changeSet id="${project.parent.artifactId}-202307031030" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="mhealth_message_outbox"/>
+            <not><tableExists tableName="emr_interop_message"/></not>
         </preConditions>
         <comment>
             Reuse existing structure to support additional message types: Rename mhealth_message_outbox to emr_interop_message
