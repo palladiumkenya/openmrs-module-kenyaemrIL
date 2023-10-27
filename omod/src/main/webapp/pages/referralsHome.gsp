@@ -5,8 +5,7 @@
     ]
 
     def messageCategories = [
-        [label: "Facility Referral", iconProvider: "kenyaui", icon: "", label: "CCC Referrals", href: ui.pageLink("kenyaemrIL", "referralsHome")],
-        [label: "Community Referral", iconProvider: "kenyaui", icon: "", label: "Community Referrals", href: ui.pageLink("kenyaemrIL", "communityReferralsHome")]
+        [label: "Facility Referral", iconProvider: "kenyaui", icon: "", label: "CCC Referrals", href: ui.pageLink("kenyaemrIL", "referralsHome")]
     ]
 
     ui.includeJavascript("kenyaemrorderentry", "jquery.twbsPagination.min.js")
@@ -218,8 +217,6 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             <div class="ke-tabmenu-item" data-tabid="queue_data">Pending Referrals</div>
 
             <div class="ke-tabmenu-item" data-tabid="archive_data">Completed Referrals</div>
-
-            <div class="ke-tabmenu-item" data-tabid="general_error_queue">Error queue</div>
 
         </div>
 
