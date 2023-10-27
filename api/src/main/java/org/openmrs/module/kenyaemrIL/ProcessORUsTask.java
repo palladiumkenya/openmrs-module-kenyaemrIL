@@ -104,7 +104,7 @@ public class ProcessORUsTask extends AbstractTask {
      * @return
      */
     private List<Encounter> fetchPendingObservations(List<EncounterType> encounterTypes, Date date) {
-        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String effectiveDate = sd.format(date);
         StringBuilder q = new StringBuilder();
         q.append("select e.encounter_id ");

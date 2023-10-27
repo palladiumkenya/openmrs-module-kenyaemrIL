@@ -8,6 +8,7 @@ import org.openmrs.Obs;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PatientProgram;
+import org.openmrs.PersonAddress;
 import org.openmrs.PersonName;
 import org.openmrs.Program;
 import org.openmrs.api.context.Context;
@@ -64,10 +65,15 @@ public class ILPatientDiscontinuation {
                 ipd.setId(patientIdentifier.getIdentifier());
                 ipd.setIdentifier_type("CCC_NUMBER");
                 internalPatientIds.add(ipd);
-//        Form the default external patient IDs
+                // Form the default external patient IDs
                 epd.setAssigning_authority("MPI");
                 epd.setIdentifier_type("GODS_NUMBER");
                 patientIdentification.setExternal_patient_id(epd);
+            } else if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Patient Clinic Number")) {
+                ipd.setAssigning_authority("CCC");
+                ipd.setId(patientIdentifier.getIdentifier());
+                ipd.setIdentifier_type("PATIENT_CLINIC_NUMBER");
+                internalPatientIds.add(ipd);
             } else if (patientIdentifier.getIdentifierType().getUuid().equalsIgnoreCase("f85081e2-b4be-4e48-b3a4-7994b69bb101")) { // this is NUPI
                 ipd.setAssigning_authority("MOH");
                 ipd.setId(patientIdentifier.getIdentifier());
@@ -75,34 +81,62 @@ public class ILPatientDiscontinuation {
                 internalPatientIds.add(ipd);
             }
         }
-        //Set the patient name
-        PATIENT_NAME patientname = new PATIENT_NAME();
-        PersonName personName = patient.getPersonName();
-        patientname.setFirst_name(personName.getGivenName() != null ? personName.getGivenName() : "");
-        patientname.setMiddle_name(personName.getMiddleName() != null ? personName.getMiddleName() : "");
-        patientname.setLast_name(personName.getFamilyName() != null ? personName.getFamilyName() : "");
-        patientIdentification.setPatient_name(patientname);
 
-        // Set to empty string unwanted patient details for viral load
-        patientIdentification.setSex("");   //        Set the Gender, phone number and marital status
-        patientIdentification.setPhone_number("");
-        patientIdentification.setMarital_status("");
-        patientIdentification.setDate_of_birth("");
-        patientIdentification.setDate_of_birth_precision("");
-        patientIdentification.setDeath_date("");
-        patientIdentification.setDeath_indicator("");
-
-        PATIENT_ADDRESS patientAddress = new PATIENT_ADDRESS();
-        patientAddress.setPostal_address("");
-        patientAddress.setPhysical_address(new PHYSICAL_ADDRESS());
-        patientIdentification.setPatient_address(patientAddress);
-
-        //Set mothers name
-        patientIdentification.setMother_name(new MOTHER_NAME());
-
-        patientIdentification.setPatient_name(patientname);
         patientIdentification.setInternal_patient_id(internalPatientIds);
         patientIdentification.setExternal_patient_id(epd);
+
+        //Set the patient name
+        PATIENT_NAME patientName = new PATIENT_NAME();
+        PersonName personName = patient.getPersonName();
+        patientName.setFirst_name(personName.getGivenName() != null ? personName.getGivenName() : "");
+        patientName.setMiddle_name(personName.getMiddleName() != null ? personName.getMiddleName() : "");
+        patientName.setLast_name(personName.getFamilyName() != null ? personName.getFamilyName() : "");
+        patientIdentification.setPatient_name(patientName);
+
+        // Set to empty strings unwanted patient details for viral load
+        patientIdentification.setSex(patient.getGender());
+        patientIdentification.setPhone_number(patient.getAttribute("Telephone contact") != null ? patient.getAttribute("Telephone contact").getValue() : "");
+        patientIdentification.setMarital_status(patient.getAttribute("Civil Status") != null ? patient.getAttribute("Civil Status").getValue() : "");
+        String iLDob;
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+        iLDob = formatter.format(patient.getBirthdate());
+        patientIdentification.setDate_of_birth(iLDob);
+        //set dob precision
+        patientIdentification.setDate_of_birth_precision(patient.getBirthdateEstimated() == true ? "ESTIMATED" : "EXACT");
+        //set death date and indicator
+        if (patient.isDead()) {
+            patientIdentification.setDeath_date(String.valueOf(patient.getDeathDate()));
+            patientIdentification.setDeath_indicator(String.valueOf(patient.isDead()));
+        } else {
+            patientIdentification.setDeath_date("");
+            patientIdentification.setDeath_indicator("");
+        }
+
+        //add patientIdentification to IL message
+        PersonAddress personAddress = patient.getPersonAddress();
+        if (personAddress != null) {
+
+            PATIENT_ADDRESS pAddress = new PATIENT_ADDRESS();
+            PHYSICAL_ADDRESS physicalAddress = new PHYSICAL_ADDRESS();
+
+            physicalAddress.setWard(personAddress.getAddress6() != null ? personAddress.getAddress6() : "");
+            physicalAddress.setCounty(personAddress.getCountyDistrict() != null ? personAddress.getCountyDistrict() : "");
+            physicalAddress.setNearest_landmark(personAddress.getAddress2() != null ? personAddress.getAddress2() : "");
+            physicalAddress.setSub_county(personAddress.getAddress4() != null ? personAddress.getAddress4() : "");
+            physicalAddress.setVillage(personAddress.getCityVillage() != null ? personAddress.getCityVillage() : "");
+            physicalAddress.setGps_location("");
+            pAddress.setPhysical_address(physicalAddress);
+
+            pAddress.setPostal_address("");
+            patientIdentification.setPatient_address(pAddress);
+        }
+
+        //Set mothers name
+        MOTHER_NAME motherName = new MOTHER_NAME();
+        if (patient.getAttribute("Mother's Name") != null) {
+            motherName.setFirst_name(patient.getAttribute("Mother Name") != null ? patient.getAttribute("Mother Name").getValue() : "");
+            patientIdentification.setMother_name(motherName);
+        }
 
 
         Program_Discontinuation_Message programDiscontinuationMessage = new Program_Discontinuation_Message();

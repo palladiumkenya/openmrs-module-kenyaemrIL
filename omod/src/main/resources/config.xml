@@ -74,7 +74,6 @@
     </globalProperty>
     <globalProperty>
         <property>discontinuationTask.lastFetchDateAndTime</property>
-        <defaultValue>20230226120000</defaultValue>
         <description>
             The last date and time that the last fetch was done for discontinuation task
         </description>
@@ -170,6 +169,14 @@
         <defaultValue>https://il.mhealthkenya.co.ke/hl7_message</defaultValue>
         <description>
             End point for pushing messages to ushauri
+        </description>
+    </globalProperty>
+
+    <globalProperty>
+        <property>kenyaemrIL.endpoint.artdirectory</property>
+        <defaultValue>http://prod.kenyahmis.org:8002/api</defaultValue>
+        <description>
+            ART Directory endpoint
         </description>
     </globalProperty>
 

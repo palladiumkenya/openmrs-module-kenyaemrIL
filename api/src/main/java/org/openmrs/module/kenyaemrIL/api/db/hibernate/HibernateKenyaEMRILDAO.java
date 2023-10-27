@@ -13,6 +13,7 @@
  */
 package org.openmrs.module.kenyaemrIL.api.db.hibernate;
 
+import com.google.common.base.Strings;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
@@ -232,6 +233,7 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
         crit.add(Restrictions.eq("message_type", 2));
         crit.add(Restrictions.eq("retired", false));
         crit.setMaxResults(Integer.parseInt(batchSize.getValue().toString()));
+        crit.addOrder(Order.asc("message_id"));
         return crit.list();
     }
 
@@ -378,12 +380,11 @@ public class HibernateKenyaEMRILDAO implements KenyaEMRILDAO {
     }
 
     @Override
-    public List<ExpectedTransferInPatients> getTransferInPatient(Patient patient) {
-        if (patient == null) return null;
-        String stringQuery = "SELECT expectedTransferInPatient FROM ExpectedTransferInPatients AS expectedTransferInPatient WHERE patient = :patient AND retired = 0";
+    public List<ExpectedTransferInPatients> getTransferInPatient(String upn) {
+        if(Strings.isNullOrEmpty(upn)) return null;
+        String stringQuery = "SELECT expectedTransferInPatient FROM ExpectedTransferInPatients AS expectedTransferInPatient WHERE nupiNumber = '"+upn+"' AND voided = 0";
         Query query = this.sessionFactory.getCurrentSession().createQuery(
                 stringQuery);
-        query.setParameter("patient", patient);
         List<ExpectedTransferInPatients> expectedTransferInPatients = query.list();
         return expectedTransferInPatients;
     }

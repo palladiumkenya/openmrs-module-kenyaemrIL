@@ -28,6 +28,7 @@ import org.openmrs.EncounterType;
 import org.openmrs.Form;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Location;
+import org.openmrs.LocationAttributeType;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifierType;
 import org.openmrs.Person;
@@ -37,6 +38,7 @@ import org.openmrs.User;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
+import org.openmrs.module.kenyaemr.metadata.FacilityMetadata;
 import org.openmrs.module.kenyaemr.metadata.HivMetadata;
 import org.openmrs.module.kenyaemrIL.api.ILPatientRegistration;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
@@ -72,7 +74,9 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -88,6 +92,7 @@ public class ILUtils {
 	public static final String GP_SSL_VERIFICATION_ENABLED = "kemrorder.ssl_verification_enabled";
     public static final String GP_USHAURI_SSL_VERIFICATION_ENABLED = "kemr.ushauri.ssl_verification_enabled";
     public static final String GP_USHAURI_PUSH_SERVER_URL = "kenyaemrIL.endpoint.ushauri.push";
+	public static final String GP_ART_DIRECTORY_SERVER_URL = "kenyaemrIL.endpoint.artdirectory";
 	public static final String CCC_NUMBER_IDENTIFIER_TYPE = "CCC_NUMBER";
 	public static String GP_MHEALTH_MIDDLEWARE_TO_USE = "kemr.mhealth.middlware";
     public static String HL7_REGISTRATION_MESSAGE = "ADT^A04";
@@ -98,7 +103,6 @@ public class ILUtils {
 	public static final String REGISTRATION_DOES_NOT_EXIST_IN_THE_USHAURI_SYSTEM = "does not exists in the Ushauri system";
 	public static final String INVALID_CCC_NUMBER_IN_USHAURI = "The CCC must be 10 digits"; // a substring in the error message
 	public static final String CCC_NUMBER_ALREADY_EXISTS_IN_USHAURI = "The CCC number already exists."; // a substring in the error message
-
 	public static final String GP_SHR_SERVER_URL = "kenyaemril.fhir.server.url";
 	public static final String GP_SHR_USER_NAME = "kenyaemril.fhir.server.username";
 	public static final String GP_SHR_PASSWORD = "kenyaemril.fhir.server.password";
@@ -647,4 +651,13 @@ public class ILUtils {
 		return new ArrayList<Location>();
 	}
 
+	public static Location getLocationByMflCode(String mflCode) {
+		LocationAttributeType mflCodeAttrType = MetadataUtils.existing(LocationAttributeType.class, FacilityMetadata._LocationAttributeType.MASTER_FACILITY_CODE);
+		Map<LocationAttributeType, Object> attrVals = new HashMap<LocationAttributeType, Object>();
+		attrVals.put(mflCodeAttrType, mflCode);
+
+		List<Location> locations = Context.getLocationService().getLocations(null, null, attrVals, false, null, null);
+
+		return locations.size() > 0 ? locations.get(0) : null;
+	}
 }

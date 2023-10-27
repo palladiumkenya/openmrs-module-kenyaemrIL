@@ -103,7 +103,7 @@ public interface KenyaEMRILDAO {
 
     List<ExpectedTransferInPatients> getAllTransferInsByServiceType(String serviceType);
 
-    List<ExpectedTransferInPatients> getTransferInPatient(Patient patient);
+    List<ExpectedTransferInPatients> getTransferInPatient(String upn);
 
     List<ExpectedTransferInPatients> getCommunityReferrals(String serviceType, String referralStatus);
 
