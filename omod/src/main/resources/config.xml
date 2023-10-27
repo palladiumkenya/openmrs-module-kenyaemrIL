@@ -167,7 +167,7 @@
     <!--configuration for ushauri endpoint-->
     <globalProperty>
         <property>kenyaemrIL.endpoint.ushauri.push</property>
-        <defaultValue>https://il.mhealthkenya.co.ke/hl7_message</defaultValue>
+        <defaultValue>https://openhimapi.kenyahmis.org/rest/api/IL/art-directory</defaultValue>
         <description>
             End point for pushing messages to ushauri
         </description>
