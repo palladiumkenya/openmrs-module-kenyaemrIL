@@ -203,6 +203,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
 
     /**
      * Passes and additional patient param
+     *
      * @param ilMessage
      * @param patient
      * @return
@@ -293,6 +294,7 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     /**
      * TODO: remove the duplicate code
      * Adds an additional patient param
+     *
      * @param ilMessage
      * @param patient
      * @return
@@ -1206,31 +1208,37 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
         MESSAGE_HEADER messageHeader = MessageHeaderSingleton.getMessageHeaderInstance("SIU^S20");
         ilMessage.setMessage_header(messageHeader);
         KenyaEMRInteropMessage kenyaEMRInteropMessage = new KenyaEMRInteropMessage();
+        //check referral facility
+        if (ilMessage.getDiscontinuation_message() != null && ilMessage.getDiscontinuation_message().getService_request() != null && ilMessage.getDiscontinuation_message().getService_request().getReceiving_facility_mflcode() != null) {
+            Location location = ILUtils.getLocationByMflCode(ilMessage.getDiscontinuation_message().getService_request().getReceiving_facility_mflcode());
+            if (location != null) {
+                try {
+                    Patient_Program_Discontinuation_Message patientProgramDiscontinuationMessage = ilMessage.extractHivDiscontinuationMessage();
+                    String messageString = mapper.writeValueAsString(patientProgramDiscontinuationMessage);
 
-        try {
-            Patient_Program_Discontinuation_Message patientProgramDiscontinuationMessage = ilMessage.extractHivDiscontinuationMessage();
-            String messageString = mapper.writeValueAsString(patientProgramDiscontinuationMessage);
+                    kenyaEMRInteropMessage.setHl7_type("SIU^S20");
+                    kenyaEMRInteropMessage.setSource("KENYAEMR");
+                    kenyaEMRInteropMessage.setMessage(messageString);
+                    kenyaEMRInteropMessage.setDescription("");
+                    kenyaEMRInteropMessage.setName("");
+                    kenyaEMRInteropMessage.setPatient(patient);
+                    kenyaEMRInteropMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
+                    KenyaEMRInteropMessage savedInstance = saveMhealthOutboxMessage(kenyaEMRInteropMessage);
 
-            kenyaEMRInteropMessage.setHl7_type("SIU^S20");
-            kenyaEMRInteropMessage.setSource("KENYAEMR");
-            kenyaEMRInteropMessage.setMessage(messageString);
-            kenyaEMRInteropMessage.setDescription("");
-            kenyaEMRInteropMessage.setName("");
-            kenyaEMRInteropMessage.setPatient(patient);
-            kenyaEMRInteropMessage.setMessage_type(ILMessageType.OUTBOUND.getValue());
-            KenyaEMRInteropMessage savedInstance = saveMhealthOutboxMessage(kenyaEMRInteropMessage);
+                    if (savedInstance != null) {
+                        isSuccessful = true;
+                    } else {
+                        isSuccessful = false;
+                    }
 
-            if (savedInstance != null) {
-                isSuccessful = true;
-            } else {
-                isSuccessful = false;
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                    isSuccessful = false;
+                }
+                return isSuccessful;
             }
-
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            isSuccessful = false;
         }
-        return isSuccessful;
+        return false;
     }
 
     @Override
@@ -1313,13 +1321,13 @@ public class KenyaEMRILServiceImpl extends BaseOpenmrsService implements KenyaEM
     }
 
     @Override
-    public List<ExpectedTransferInPatients> getTransferInPatient(Patient patient) {
-        return dao.getTransferInPatient(patient);
+    public List<ExpectedTransferInPatients> getTransferInPatient(String upn) {
+        return dao.getTransferInPatient(upn);
     }
 
     @Override
-    public List<ExpectedTransferInPatients> getCommunityReferrals(String serviceType,String referralStatus) {
-        return dao.getCommunityReferrals(serviceType,referralStatus);
+    public List<ExpectedTransferInPatients> getCommunityReferrals(String serviceType, String referralStatus) {
+        return dao.getCommunityReferrals(serviceType, referralStatus);
     }
 
 

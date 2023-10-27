@@ -1,5 +1,6 @@
 package org.openmrs.module.kenyaemrIL;
 
+import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -84,6 +85,12 @@ public class PullExpectedTransferInsTask extends AbstractTask {
                         if (patientObject.get("MESSAGE_HEADER") != null) {
                             ExpectedTransferInPatients transferInPatient = transferInPatientTranslator(patientObject.toString());
                             transferInPatient.setPatientSummary(String.valueOf(patientObject));
+                            List<ExpectedTransferInPatients> existing =  Context.getService(KenyaEMRILService.class).getTransferInPatient(transferInPatient.getNupiNumber());
+                            if (!existing.isEmpty()) {
+                                if (existing.get(0).getReferralStatus().equals("ACTIVE")) {
+                                    continue;
+                                }
+                            }
                             Context.getService(KenyaEMRILService.class).createPatient(transferInPatient);
                         }
                     }
@@ -101,16 +108,35 @@ public class PullExpectedTransferInsTask extends AbstractTask {
     private ExpectedTransferInPatients transferInPatientTranslator(String referralObject) throws java.text.ParseException, ParseException, IOException {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         ExpectedTransferInPatients expectedTransferInPatient = new ExpectedTransferInPatients();
+
         ObjectMapper mapper = new ObjectMapper();
 
         ILMessage ilMessage = mapper.readValue(referralObject.toLowerCase(), ILMessage.class);
+        String ccc = "";
 
+        for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
+            if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
+                ccc = internalPatientId.getId();
+                expectedTransferInPatient.setNupiNumber(ccc);
+            }
+        }
         if (ilMessage != null) {
             Program_Discontinuation_Message discontinuation_message = ilMessage.getDiscontinuation_message();
-            expectedTransferInPatient.setAppointmentDate(formatter.parse(discontinuation_message.getService_request().getSupporting_info().getAppointment_date()));
-            expectedTransferInPatient.setEffectiveDiscontinuationDate(formatter.parse(discontinuation_message.getEffective_discontinuation_date()));
-            expectedTransferInPatient.setTransferOutDate(formatter.parse(discontinuation_message.getService_request().getTransfer_out_date()));
-            expectedTransferInPatient.setTransferOutFacility(discontinuation_message.getService_request().getSending_facility_mflcode());
+            if (discontinuation_message.getService_request() != null && discontinuation_message.getService_request().getSupporting_info() != null && !Strings.isNullOrEmpty(discontinuation_message.getService_request().getSupporting_info().getAppointment_date())) {
+                expectedTransferInPatient.setAppointmentDate(formatter.parse(discontinuation_message.getService_request().getSupporting_info().getAppointment_date()));
+            }
+
+            if (discontinuation_message.getService_request() != null && discontinuation_message.getEffective_discontinuation_date() != null) {
+                expectedTransferInPatient.setEffectiveDiscontinuationDate(formatter.parse(discontinuation_message.getEffective_discontinuation_date()));
+            }
+
+            if (discontinuation_message.getService_request() != null && discontinuation_message.getService_request().getTransfer_out_date()!= null) {
+                expectedTransferInPatient.setTransferOutDate(formatter.parse(discontinuation_message.getService_request().getTransfer_out_date()));
+
+            }
+            if (discontinuation_message.getService_request() != null && discontinuation_message.getService_request().getSending_facility_mflcode()!= null) {
+                expectedTransferInPatient.setTransferOutFacility(discontinuation_message.getService_request().getSending_facility_mflcode());
+            }
             expectedTransferInPatient.setReferralStatus("ACTIVE");
             expectedTransferInPatient.setServiceType("HIV");
         }

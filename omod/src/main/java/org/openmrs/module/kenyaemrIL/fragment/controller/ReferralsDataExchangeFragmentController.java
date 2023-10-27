@@ -424,7 +424,7 @@ public class ReferralsDataExchangeFragmentController {
                 List<Patient> results = Context.getPatientService().getPatients(internalPatientId.getId());
                 if (!results.isEmpty()) return results.get(0);
             } else if (internalPatientId.getIdentifier_type().equalsIgnoreCase("NUPI")) {
-                List<Patient> results = Context.getPatientService().getPatients(internalPatientId.getId());
+                List<Patient> results = Context.getPatientService().getPatients(internalPatientId.getId().toUpperCase());
                 if (!results.isEmpty()) return results.get(0);
             }
         }
@@ -440,13 +440,13 @@ public class ReferralsDataExchangeFragmentController {
             System.out.println("NullPointerException ================> Age cannot be null");
             return null;
         }
-        person.setBirthdate(getDateFromString(patient_identification.getDate_of_birth(),"yyyy-mm-dd" ));
+        person.setBirthdate(getDateFromString(patient_identification.getDate_of_birth(),"yyyyMMdd" ));
         person.setBirthdateEstimated(Boolean.getBoolean(patient_identification.getDate_of_birth_precision()));
         if (patient_identification.getSex() == null) {
             System.out.println("NullPointerException ================> Gender cannot be null");
             person.setGender("F");
         } else {
-            person.setGender(patient_identification.getSex());
+            person.setGender(patient_identification.getSex().toUpperCase());
         }
         PersonAttribute phoneNumber = new PersonAttribute(Context.getPersonService().getPersonAttributeTypeByName("Telephone contact"), patient_identification.getPhone_number());
         PersonAttribute maritalStatus = new PersonAttribute(Context.getPersonService().getPersonAttributeTypeByName("Civil Status"), patient_identification.getMarital_status());
@@ -463,7 +463,7 @@ public class ReferralsDataExchangeFragmentController {
                 ccc.setPreferred(true);
                 patient.addIdentifier(ccc);
             } else if (internalPatientId.getIdentifier_type().equalsIgnoreCase("NUPI")) {
-                patient.addIdentifier(new PatientIdentifier(internalPatientId.getId(), upiIdType, MessageHeaderSingleton.getDefaultLocation()));
+                patient.addIdentifier(new PatientIdentifier(internalPatientId.getId().toUpperCase(), upiIdType, MessageHeaderSingleton.getDefaultLocation()));
             }
         }
         // Assign a patient an OpenMRS ID

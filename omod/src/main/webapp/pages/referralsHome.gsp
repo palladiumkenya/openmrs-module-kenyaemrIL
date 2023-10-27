@@ -5,8 +5,8 @@
     ]
 
     def messageCategories = [
-        [label: "Facility Referral", iconProvider: "kenyaui", icon: "", label: "ART Facility Referrals", href: ui.pageLink("kenyaemrIL", "referralsHome")],
-        [label: "Community Referral", iconProvider: "kenyaui", icon: "", label: "SHR Referrals", href: ui.pageLink("kenyaemrIL", "communityReferralsHome")]
+        [label: "Facility Referral", iconProvider: "kenyaui", icon: "", label: "CCC Referrals", href: ui.pageLink("kenyaemrIL", "referralsHome")],
+        [label: "Community Referral", iconProvider: "kenyaui", icon: "", label: "Community Referrals", href: ui.pageLink("kenyaemrIL", "communityReferralsHome")]
     ]
 
     ui.includeJavascript("kenyaemrorderentry", "jquery.twbsPagination.min.js")
@@ -241,7 +241,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                                             <th class="cccNumberColumn">Patient Name</th>
                                             <th class="dateRequestColumn">TransferOut Date</th>
                                             <th class="dateRequestColumn">Appointment Date</th>
-                                            <th class="dateRequestColumn">TO Acceptance Date</th>
+                                            <th class="dateRequestColumn">Transfer In Date</th>
                                             <th class="action">Action</th>
                                         </tr>
                                         </thead>
@@ -452,7 +452,6 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             visibleQueuePages = 5;
         }
 
-
         if(numberOfRecordsToProcess > 0) {
             apply_pagination(queuePaginationDiv, queueListDisplayArea, totalQueuePages, visibleQueuePages, queueRecords, queueDataDisplayRecords, 'queue', queueStartPage); // records in queue
         }
@@ -582,7 +581,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
             tr = jq('<tr/>');
             tr.append("<td>" + displayRecords[i].cccNumber + "</td>");
-            tr.append("<td>" + displayRecords[i].patientName + "</td>");
+            tr.append("<td>" + displayRecords[i].upiNumber + "</td>");
             tr.append("<td>" + displayRecords[i].patientName + "</td>");
             tr.append("<td>" + displayRecords[i].transferOutDate + "</td>");
             tr.append("<td>" + displayRecords[i].appointmentDate + "</td>");

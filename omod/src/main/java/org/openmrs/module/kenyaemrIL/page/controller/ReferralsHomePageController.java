@@ -6,6 +6,7 @@ import com.google.common.base.Strings;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.Patient_Program_Discontinuation_Message;
+import org.openmrs.module.kenyaemrIL.hivDicontinuation.Program_Discontinuation_Message;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.KenyaEMRILMessageArchive;
@@ -35,8 +36,8 @@ public class ReferralsHomePageController {
     public void get(@SpringBean KenyaUiUtils kenyaUi, UiUtils ui, PageModel model) throws JsonProcessingException, ParseException {
 
         KenyaEMRILService ilService = Context.getService(KenyaEMRILService.class);
-        List<ExpectedTransferInPatients> activeReferralsDataList = ilService.getCommunityReferrals("HIV","ACTIVE");
-        List<ExpectedTransferInPatients> completedReferralsDataList = ilService.getCommunityReferrals("HIV","COMPLETED");
+        List<ExpectedTransferInPatients> activeReferralsDataList = ilService.getCommunityReferrals("HIV", "ACTIVE");
+        List<ExpectedTransferInPatients> completedReferralsDataList = ilService.getCommunityReferrals("HIV", "COMPLETED");
 
         List<SimpleObject> queueList = new ArrayList<SimpleObject>();
         List<SimpleObject> archiveList = new ArrayList<SimpleObject>();
@@ -49,6 +50,7 @@ public class ReferralsHomePageController {
         for (ExpectedTransferInPatients expectedTransferInPatient : activeReferralsDataList) { // get records in queue
 
             String cccNumber = "";
+            String upiNumber = "";
             String messageType = "";
             String transferOutDate = "";
             String appointmentDate = "";
@@ -62,7 +64,9 @@ public class ReferralsHomePageController {
                     .getInternal_patient_id()) {
                 if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
                     cccNumber = internalPatientId.getId().replaceAll("\\D", "");
-                    break;
+                }
+                if (internalPatientId.getIdentifier_type().equalsIgnoreCase("NUPI")) {
+                    upiNumber = internalPatientId.getId().toUpperCase();
                 }
             }
 
@@ -83,10 +87,21 @@ public class ReferralsHomePageController {
                 }
             }
 
+            Program_Discontinuation_Message discontinuation_message = ilMessage.getDiscontinuation_message();
+            if (discontinuation_message.getService_request() != null && !Strings.isNullOrEmpty(discontinuation_message.getService_request().getTransfer_out_date())) {
+                transferOutDate = discontinuation_message.getService_request().getTransfer_out_date();
+            }
+
+            if (discontinuation_message.getService_request() != null && discontinuation_message.getService_request().getSupporting_info() != null && !Strings.isNullOrEmpty(discontinuation_message.getService_request().getSupporting_info().getAppointment_date())) {
+                appointmentDate = discontinuation_message.getService_request().getSupporting_info().getAppointment_date();
+            }
+
+
             SimpleObject queueObject = SimpleObject.create(
                     "id", expectedTransferInPatient.getId(),
                     "uuid", expectedTransferInPatient.getUuid(),
                     "cccNumber", cccNumber,
+                    "upiNumber", upiNumber,
                     "patientName", fullName,
                     "messageType", messageType,
                     "discontinuationReason", discontinuationReason,
@@ -100,6 +115,7 @@ public class ReferralsHomePageController {
         for (ExpectedTransferInPatients expectedTransferInPatient : completedReferralsDataList) {
 
             String cccNumber = "";
+            String upiNumber = "";
             String messageType = "";
             String transferOutDate = "";
             String appointmentDate = "";
@@ -113,7 +129,9 @@ public class ReferralsHomePageController {
                     .getInternal_patient_id()) {
                 if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
                     cccNumber = internalPatientId.getId().replaceAll("\\D", "");
-                    break;
+                }
+                if (internalPatientId.getIdentifier_type().equalsIgnoreCase("NUPI")) {
+                    upiNumber = internalPatientId.getId().toUpperCase();
                 }
             }
 
@@ -133,11 +151,20 @@ public class ReferralsHomePageController {
                     fullName = fullName + patientName.getLast_name();
                 }
             }
+            Program_Discontinuation_Message discontinuation_message = ilMessage.getDiscontinuation_message();
+            if (discontinuation_message.getService_request() != null && !Strings.isNullOrEmpty(discontinuation_message.getService_request().getTransfer_out_date())) {
+                transferOutDate = discontinuation_message.getService_request().getTransfer_out_date();
+            }
+
+            if (discontinuation_message.getService_request() != null && discontinuation_message.getService_request().getSupporting_info() != null && !Strings.isNullOrEmpty(discontinuation_message.getService_request().getSupporting_info().getAppointment_date())) {
+                appointmentDate = discontinuation_message.getService_request().getSupporting_info().getAppointment_date();
+            }
 
             SimpleObject queueObject = SimpleObject.create(
                     "id", expectedTransferInPatient.getId(),
                     "uuid", expectedTransferInPatient.getUuid(),
                     "cccNumber", cccNumber,
+                    "upiNumber", upiNumber,
                     "patientName", fullName,
                     "messageType", messageType,
                     "discontinuationReason", discontinuationReason,

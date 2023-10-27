@@ -126,7 +126,6 @@ public class ILPatientEnrollment {
             }
            if (ob.getConcept().getUuid().equals("160535AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                referralInformation.setSending_facility_mflcode(ob.getValueText().split("-")[0]);
-               
            }
         }
         hivProgramEnrolmentMessage.setService_request(referralInformation);

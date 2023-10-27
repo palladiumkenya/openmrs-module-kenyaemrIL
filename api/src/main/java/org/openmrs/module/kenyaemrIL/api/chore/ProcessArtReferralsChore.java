@@ -1,6 +1,7 @@
 package org.openmrs.module.kenyaemrIL.api.chore;
 
 import org.openmrs.Encounter;
+import org.openmrs.GlobalProperty;
 import org.openmrs.Obs;
 import org.openmrs.Patient;
 import org.openmrs.api.APIException;
@@ -14,8 +15,10 @@ import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.springframework.stereotype.Component;
 
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,6 +47,13 @@ public class ProcessArtReferralsChore extends AbstractChore {
                     discontinuationEvent(e.getPatient(), e);
                 }
             }
+        }
+        GlobalProperty globalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("discontinuationTask.lastFetchDateAndTime");
+        if (globalPropertyObject != null) {
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+            Date nextProcessingDate = new Date();
+            globalPropertyObject.setPropertyValue(formatter.format(nextProcessingDate));
+            Context.getAdministrationService().saveGlobalProperty(globalPropertyObject);
         }
     }
 
