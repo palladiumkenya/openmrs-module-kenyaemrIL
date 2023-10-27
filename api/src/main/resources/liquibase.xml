@@ -723,7 +723,7 @@
         </sql>
     </changeSet>
     <!--Adding scheduled task :Set SyncShrServedPatientsTask task-->
-    <changeSet id="${project.parent.artifactId}-20231000011630" author="jecihjoy">
+    <!-- <changeSet id="${project.parent.artifactId}-20231000011630" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
                 SELECT COUNT(*) FROM scheduler_task_config
@@ -745,5 +745,5 @@
             <column name="started" value="1" />
             <column name="uuid" value="36bb93cc-67bf-11ee-8c99-0242ac120002" />
         </insert>
-    </changeSet>
+    </changeSet> -->
 </databaseChangeLog>
