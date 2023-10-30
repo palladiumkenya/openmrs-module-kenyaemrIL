@@ -35,8 +35,10 @@ import org.openmrs.scheduler.tasks.AbstractTask;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PullExpectedTransferInsTask extends AbstractTask {
 
@@ -64,13 +66,13 @@ public class PullExpectedTransferInsTask extends AbstractTask {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        String serverUrl =   artDirectoryServerUrl.getPropertyValue() + "/patients/transfer-in/";
+        String serverUrl = artDirectoryServerUrl.getPropertyValue() + "/patients/transfer-in/";
         String mflParam = MessageHeaderSingleton.getDefaultLocationMflCode(MessageHeaderSingleton.getDefaultLocation());
 
         CloseableHttpClient httpClient = HttpClients.custom().setSSLSocketFactory(ILUtils.sslConnectionSocketFactoryWithDisabledSSLVerification()).build();
 
         HttpGet httpGet = new HttpGet(serverUrl + mflParam + "/" + fetchDate);
-        System.out.println("PULL EXPECTED TIs URL "+serverUrl + mflParam + "/" + fetchDate);
+        System.out.println("PULL EXPECTED TIs URL " + serverUrl + mflParam + "/" + fetchDate);
 
         httpGet.addHeader("content-type", "application/json");
         try {
@@ -85,13 +87,21 @@ public class PullExpectedTransferInsTask extends AbstractTask {
                         if (patientObject.get("MESSAGE_HEADER") != null) {
                             ExpectedTransferInPatients transferInPatient = transferInPatientTranslator(patientObject.toString());
                             transferInPatient.setPatientSummary(String.valueOf(patientObject));
-                            List<ExpectedTransferInPatients> existing =  Context.getService(KenyaEMRILService.class).getTransferInPatient(transferInPatient.getNupiNumber());
-                            if (!existing.isEmpty()) {
-                                if (existing.get(0).getReferralStatus().equals("ACTIVE")) {
-                                    continue;
+                            List<ExpectedTransferInPatients> existing = Context.getService(KenyaEMRILService.class).getTransferInPatient(transferInPatient.getNupiNumber());
+                            List<ExpectedTransferInPatients> existingActive = existing.stream().filter(r -> r.getReferralStatus().equalsIgnoreCase("ACTIVE")).collect(Collectors.toList());
+                            if (existingActive.isEmpty()) {
+                                Context.getService(KenyaEMRILService.class).createPatient(transferInPatient);
+                                /*ExpectedTransferInPatients in = existing.get(0);
+                                Calendar cal1 = Calendar.getInstance();
+                                Calendar cal2 = Calendar.getInstance();
+                                cal1.setTime(in.getTransferOutDate());
+                                cal2.setTime(transferInPatient.getTransferOutDate());
+                                if (in.getTransferOutDate() != null && transferInPatient.getTransferOutDate() != null
+                                        && (!cal1.equals(cal2))) {
+                                    Context.getService(KenyaEMRILService.class).createPatient(transferInPatient);
                                 }
+                                */
                             }
-                            Context.getService(KenyaEMRILService.class).createPatient(transferInPatient);
                         }
                     }
                 }
@@ -130,11 +140,11 @@ public class PullExpectedTransferInsTask extends AbstractTask {
                 expectedTransferInPatient.setEffectiveDiscontinuationDate(formatter.parse(discontinuation_message.getEffective_discontinuation_date()));
             }
 
-            if (discontinuation_message.getService_request() != null && discontinuation_message.getService_request().getTransfer_out_date()!= null) {
+            if (discontinuation_message.getService_request() != null && discontinuation_message.getService_request().getTransfer_out_date() != null) {
                 expectedTransferInPatient.setTransferOutDate(formatter.parse(discontinuation_message.getService_request().getTransfer_out_date()));
 
             }
-            if (discontinuation_message.getService_request() != null && discontinuation_message.getService_request().getSending_facility_mflcode()!= null) {
+            if (discontinuation_message.getService_request() != null && discontinuation_message.getService_request().getSending_facility_mflcode() != null) {
                 expectedTransferInPatient.setTransferOutFacility(discontinuation_message.getService_request().getSending_facility_mflcode());
             }
             expectedTransferInPatient.setReferralStatus("ACTIVE");
