@@ -36,13 +36,14 @@ import java.util.List;
  * controller for pivotTableCharts fragment
  */
 public class InteropManagerFragmentController {
-       // Logger
+    // Logger
     private static final Logger log = LoggerFactory.getLogger(InteropManagerFragmentController.class);
 
-    public void controller(FragmentModel model){
+    public void controller(FragmentModel model) {
         DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
 
         final String sqlSelectQuery = "SELECT date_created, hl7_type, source, retired, status FROM il_message order by date_created desc limit 10;";
+        final String sqlSelectQueryReferrals = "SELECT date_created, hl7_type, source, retired, status FROM emr_interop_message order by date_created desc limit 5;";
         final List<SimpleObject> ret = new ArrayList<SimpleObject>();
 
         try {
@@ -51,39 +52,58 @@ public class InteropManagerFragmentController {
                 @Override
                 public void execute(Connection connection) throws SQLException {
                     PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
-
+                    PreparedStatement statementReferrals = connection.prepareStatement(sqlSelectQueryReferrals);
                     try {
 
                         ResultSet resultSet = statement.executeQuery();
                         if (resultSet != null) {
                             ResultSetMetaData metaData = resultSet.getMetaData();
-                            while (resultSet.next()) {
+                            while(resultSet.next()) {
                                 Object[] row = new Object[metaData.getColumnCount()];
                                 for (int i = 1; i <= metaData.getColumnCount(); i++) {
                                     row[i - 1] = resultSet.getObject(i);
                                 }
-                                ret.add(SimpleObject.create(
-                                        "date_created", row[0] != null ? row[0].toString() : "",
-                                        "message_type", row[1] != null? row[1].toString() : "",
-                                        "source", row[2] != null ? row[2].toString() : "",
-                                        "status", row[3].toString().equals("1") ? "Processed": "Pending",
-                                        "error", row[4] != null ? row[4].toString() : ""
-                                ));
+                                SimpleObject object = new SimpleObject();
+
+
+                                object.put("date_created", row[0] != null ? row[0].toString() : "");
+                                object.put("message_type", row[1] != null ? row[1].toString() : "");
+                                object.put("source", row[2] != null ? row[2].toString() : "");
+                                object.put("status", row[3].toString().equals("1") ? "Processed" : "Pending");
+                                object.put("error", row[4] != null ? row[4].toString() : "");
+                                ret.add(object);
                             }
                         }
-                    }
-                    finally {
+
+                        ResultSet resultSetReferrals = statementReferrals.executeQuery();
+                        if (resultSetReferrals != null) {
+                            ResultSetMetaData metaData = resultSetReferrals.getMetaData();
+                            while (resultSetReferrals.next()) {
+                                Object[] row = new Object[metaData.getColumnCount()];
+                                for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                                    row[i - 1] = resultSetReferrals.getObject(i);
+                                }
+                                SimpleObject object = new SimpleObject();
+
+
+                                object.put("date_created", row[0] != null ? row[0].toString() : "");
+                                object.put("message_type", row[1] != null ? row[1].toString() : "");
+                                object.put("source", row[2] != null ? row[2].toString() : "");
+                                object.put("status", row[3].toString().equals("1") ? "Processed" : "Pending");
+                                object.put("error", row[4] != null ? row[4].toString() : "");
+                                ret.add(object);
+                            }
+                        }
+                    } finally {
                         try {
                             if (statement != null) {
                                 statement.close();
                             }
-                        }
-                        catch (Exception e) {}
+                        } catch (Exception e) {}
                     }
                 }
             });
-        }
-        catch (Exception e) {
+        }catch (Exception e) {
             throw new IllegalArgumentException("Unable to execute query", e);
         }
 
@@ -126,32 +146,31 @@ public class InteropManagerFragmentController {
 
                                 ret.add(SimpleObject.create(
                                         "date_created", row[0] != null ? row[0].toString() : "",
-                                        "message_type", row[1] != null? row[1].toString() : "",
+                                        "message_type", row[1] != null ? row[1].toString() : "",
                                         "source", row[2] != null ? row[2].toString() : "",
-                                        "status", row[3].toString().equals("1") ? "Processed": "Pending",
+                                        "status", row[3].toString().equals("1") ? "Processed" : "Pending",
                                         "error", row[4] != null ? row[4].toString() : ""
                                 ));
                             }
                         }
                         finalTx.commit();
-                    }
-                    finally {
+                    } finally {
                         try {
                             if (statement != null) {
                                 statement.close();
                             }
+                        } catch (Exception e) {
                         }
-                        catch (Exception e) {}
                     }
                 }
             });
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new IllegalArgumentException("Unable to execute query", e);
         }
 
         return ret;
     }
+
     public List<SimpleObject> errorMessages(UiUtils ui) {
 
         DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
@@ -181,27 +200,25 @@ public class InteropManagerFragmentController {
                                 }
                                 ret.add(SimpleObject.create(
                                         "date_created", row[0] != null ? row[0].toString() : "",
-                                        "message_type", row[1] != null? row[1].toString() : "",
+                                        "message_type", row[1] != null ? row[1].toString() : "",
                                         "source", row[2] != null ? row[2].toString() : "",
-                                        "status", row[3].toString().equals("1") ? "Processed": "Pending",
+                                        "status", row[3].toString().equals("1") ? "Processed" : "Pending",
                                         "error", row[4] != null ? row[4].toString() : ""
                                 ));
                             }
                         }
                         finalTx.commit();
-                    }
-                    finally {
+                    } finally {
                         try {
                             if (statement != null) {
                                 statement.close();
                             }
+                        } catch (Exception e) {
                         }
-                        catch (Exception e) {}
                     }
                 }
             });
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new IllegalArgumentException("Unable to execute query", e);
         }
 
@@ -217,33 +234,33 @@ public class InteropManagerFragmentController {
         KenyaEMRILRegistration kenyaEMRILRegistration = new KenyaEMRILRegistration();
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
         KenyaEMRILRegistration registered = service.getKenyaEMRILRegistrationForPatient(patient);
-       try{
+        try {
             if (registered == null) { // check if registration for patient has never been sent to IL
-                    //Send to  registration message to outbox
+                //Send to  registration message to outbox
                 ILMessage ilMessage = ILPatientRegistration.iLPatientWrapper(patient);
                 service.sendAddPersonRequest(ilMessage);
 
-                   // Save copy to il_registration table
-                    String messageString = mapper.writeValueAsString(ilMessage);
-                    kenyaEMRILRegistration.setPatient_id(patient.getPatientId());
-                    kenyaEMRILRegistration.setHl7_type("ADT^A04");
-                    kenyaEMRILRegistration.setSource("KENYAEMR");
-                    kenyaEMRILRegistration.setMessage(messageString);
-                    kenyaEMRILRegistration.setDescription("");
-                    kenyaEMRILRegistration.setName("");
-                    kenyaEMRILRegistration.setMessage_type(ILMessageType.OUTBOUND.getValue());
-                    KenyaEMRILRegistration savedInstance = service.saveKenyaEMRILRegistration(kenyaEMRILRegistration);
-                            if (savedInstance != null) {
-                                isSuccessful = true;
-                            } else {
-                                isSuccessful = false;
-                            }
+                // Save copy to il_registration table
+                String messageString = mapper.writeValueAsString(ilMessage);
+                kenyaEMRILRegistration.setPatient_id(patient.getPatientId());
+                kenyaEMRILRegistration.setHl7_type("ADT^A04");
+                kenyaEMRILRegistration.setSource("KENYAEMR");
+                kenyaEMRILRegistration.setMessage(messageString);
+                kenyaEMRILRegistration.setDescription("");
+                kenyaEMRILRegistration.setName("");
+                kenyaEMRILRegistration.setMessage_type(ILMessageType.OUTBOUND.getValue());
+                KenyaEMRILRegistration savedInstance = service.saveKenyaEMRILRegistration(kenyaEMRILRegistration);
+                if (savedInstance != null) {
+                    isSuccessful = true;
+                } else {
+                    isSuccessful = false;
+                }
                 log.info("Executing new enrollment " + isSuccessful);
-               }
+            }
 
-            } catch (Exception e) {
-               e.printStackTrace();
-           }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         StringBuilder q = new StringBuilder();
         q.append("select e.encounter_id ");

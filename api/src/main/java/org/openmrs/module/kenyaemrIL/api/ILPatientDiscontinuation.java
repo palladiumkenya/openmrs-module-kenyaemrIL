@@ -146,11 +146,11 @@ public class ILPatientDiscontinuation {
                 if (ob.getValueCoded().getUuid().equals("159492AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                     programDiscontinuationMessage.setDiscontinuation_reason("Transfer Out");
                     programDiscontinuationMessage.setService_request(referralInfo(encounter));
-                }else if (ob.getValueCoded().getUuid().equals("160034AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                } else if (ob.getValueCoded().getUuid().equals("160034AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                     programDiscontinuationMessage.setDiscontinuation_reason("Death");
                 } else if (ob.getValueCoded().getUuid().equals("5240AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                     programDiscontinuationMessage.setDiscontinuation_reason("LTFU");
-                }else if (ob.getValueCoded().getUuid().equals("164349AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                } else if (ob.getValueCoded().getUuid().equals("164349AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                     programDiscontinuationMessage.setDiscontinuation_reason("Stopped Treatment");
                 }
             }
@@ -190,6 +190,8 @@ public class ILPatientDiscontinuation {
                 referralInformation.setReceiving_facility_mflcode(obs.getValueText().split("-")[0]);
             }
             if (obs.getConcept().getUuid().equals("160649AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
+                referralInformation.setTransfer_out_date(formatter.format(obs.getValueDatetime()));
+            } else if (referralInformation.getTransfer_out_date() == null && obs.getConcept().getUuid().equals("164384AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                 referralInformation.setTransfer_out_date(formatter.format(obs.getValueDatetime()));
             }
         }
@@ -273,7 +275,7 @@ public class ILPatientDiscontinuation {
         // regimen change history
         List<SimpleObject> regimenChangeHistory = EncounterBasedRegimenUtils.getRegimenHistoryFromObservations(encounter.getPatient(), "ARV");
         serviceRequestSupportingInfo.setRegimen_change_history(regimenChangeHistory);
-        
+
         Integer latestVLConcept = 856;
         Integer LDLQuestionConcept = 1305;
         if (lastLabResultsEncounter != null) {
