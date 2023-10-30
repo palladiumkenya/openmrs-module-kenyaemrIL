@@ -98,12 +98,14 @@ public class ValidateTransferOutsTasks extends AbstractTask {
         LocalDateTime today = LocalDateTime.now();
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String effectiveToday = today.format(dateTimeFormatter);
-        String effectivePastDate = today.minusDays(90).format(dateTimeFormatter);
+        String effectivePastDate = "2023-07-15";
         StringBuilder q = new StringBuilder();
-        q.append("select patient_id  ");
-        q.append("from kenyaemr_etl.etl_patient_program_discontinuation  where program_name='HIV' and discontinuation_reason = 159492 and (trf_out_verified = 1066 or trf_out_verified is null)  " +
-                "and ((date(transfer_date) between '" + effectivePastDate + "' and '" + effectiveToday + "') or (date(visit_date) between '" + effectivePastDate + "' and '" + effectiveToday + "'))");
-        System.out.println("Pending TO Queries " + new String(q));
+        q.append("select  e.patient_id from encounter e inner join (\n" +
+                "    select encounter_type_id, uuid, name from encounter_type where uuid ='2bdada65-4c72-4a48-8730-859890e25cee')\n" +
+                "    et on (et.encounter_type_id = e.encounter_type and e.voided = 0 )\n" +
+                "    left join obs o on (e.encounter_id = o.encounter_id and o.voided = 0 and ( o.concept_id = 1285 or o.concept_id is null) )\n" +
+                "    and (o.value_coded = 1066 or o.value_coded is null)  ");
+        q.append("where e.date_created >=  '" + effectivePastDate + "' or e.date_changed >=  '" + effectivePastDate + "' group by e.patient_id");
         List<Patient> patients = new ArrayList<>();
         List<List<Object>> queryData = Context.getAdministrationService().executeSQL(q.toString(), true);
 
