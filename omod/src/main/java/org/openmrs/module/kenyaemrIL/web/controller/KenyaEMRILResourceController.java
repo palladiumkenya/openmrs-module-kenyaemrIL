@@ -81,7 +81,7 @@ public class KenyaEMRILResourceController extends MainResourceController {
             if (!transferInPatient.isEmpty()) {
                 Location locationByMflCode = Context.getService(KenyaEmrService.class).getLocationByMflCode(transferInPatient.get(0).getTransferOutFacility());
                 object.put("transfer_out_facility", transferInPatient.get(0).getTransferOutFacility() + "-" + locationByMflCode.getName());
-                object.put("upi_number", patientId);
+                object.put("upi_number", ccc.get(0).getIdentifier());
                 try {
                     ILMessage ilMessage = mapper.readValue(transferInPatient.get(0).getPatientSummary().toLowerCase(), ILMessage.class);
 
