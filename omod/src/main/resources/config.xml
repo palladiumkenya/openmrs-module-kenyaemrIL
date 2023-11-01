@@ -175,7 +175,7 @@
 
     <globalProperty>
         <property>kenyaemrIL.endpoint.artdirectory</property>
-        <defaultValue>http://prod.kenyahmis.org:8002/api</defaultValue>
+        <defaultValue>https://artrefferal.kenyahmis.org/api</defaultValue>
         <description>
             ART Directory endpoint
         </description>
