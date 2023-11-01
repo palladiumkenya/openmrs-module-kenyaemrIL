@@ -77,7 +77,11 @@ public class KenyaEmrInteropDirectPushTask extends AbstractTask {
                 }
 
                 for (KenyaEMRInteropMessage pendingOutbox : pendingOutboxes) {
-                    sendMessageDirectToMhealthServer(pendingOutbox, gpMiddlewareServerUrl.getPropertyValue());
+                    Boolean isServerAcceptingRequests = sendMessageDirectToMhealthServer(pendingOutbox, gpMiddlewareServerUrl.getPropertyValue());
+                    if (!isServerAcceptingRequests) {
+                        System.out.println("OpenHim upstream servers throwing error 429 (Too many Requets)");
+                        break;
+                    }
                 }
 
             }
@@ -101,7 +105,7 @@ public class KenyaEmrInteropDirectPushTask extends AbstractTask {
      * Send message direct to Mhealth server
      * @param outbox
      */
-    private void sendMessageDirectToMhealthServer(KenyaEMRInteropMessage outbox, String serverUrl) {
+    private Boolean sendMessageDirectToMhealthServer(KenyaEMRInteropMessage outbox, String serverUrl) {
 
         SSLConnectionSocketFactory sslsf = null;
         GlobalProperty gpSslVerification = Context.getAdministrationService().getGlobalPropertyObject(ILUtils.GP_USHAURI_SSL_VERIFICATION_ENABLED);
@@ -133,9 +137,13 @@ public class KenyaEmrInteropDirectPushTask extends AbstractTask {
             HttpResponse response = httpClient.execute(postRequest);
 
             //verify the valid error code first
-            int statusCode = response.getStatusLine().getStatusCode();
+            Integer statusCode = response.getStatusLine().getStatusCode();
             //System.out.println("Server response: " + statusCode);
             KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
+
+            if (statusCode.equals(429)) {
+                return false;
+            }
             if (statusCode != 200) {
                 String errorsString = "";
                 JSONParser parser = new JSONParser();
@@ -171,12 +179,12 @@ public class KenyaEmrInteropDirectPushTask extends AbstractTask {
                 Context.getService(KenyaEMRILService.class).deleteMhealthOutboxMessage(outbox);
 
             } else {
+                //Purge from the il_messages table
+                service.deleteMhealthOutboxMessage(outbox);
 
                 KenyaEMRILMessageArchive messageArchive = ILUtils.createArchiveForMhealthOutbox(outbox);
                 messageArchive.setMiddleware("Direct");
                 service.saveKenyaEMRILMessageArchive(messageArchive);
-                //Purge from the il_messages table
-                service.deleteMhealthOutboxMessage(outbox);
 
                 log.info("Successfully sent message to interop server");
                 System.out.println("Successfully sent message to interop server");
@@ -186,5 +194,6 @@ public class KenyaEmrInteropDirectPushTask extends AbstractTask {
             e.printStackTrace();
             log.error(e.getMessage());
         }
+        return true;
     }
 }

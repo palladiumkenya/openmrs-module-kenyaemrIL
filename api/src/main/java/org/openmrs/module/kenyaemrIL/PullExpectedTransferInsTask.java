@@ -81,34 +81,25 @@ public class PullExpectedTransferInsTask extends AbstractTask {
                 String res = EntityUtils.toString(httpResponse.getEntity());
                 JSONParser parser = new JSONParser();
                 JSONObject responseObj = (JSONObject) parser.parse(res);
+                String lastPullDatetime = "";
+                if (responseObj.get("pull_timestamp") != null) {
+                    lastPullDatetime = (String) responseObj.get("pull_timestamp");
+                }
                 List<JSONObject> message = (List<JSONObject>) responseObj.get("message");
                 if (!message.isEmpty()) {
                     for (JSONObject patientObject : message) {
                         if (patientObject.get("MESSAGE_HEADER") != null) {
                             ExpectedTransferInPatients transferInPatient = transferInPatientTranslator(patientObject.toString());
                             transferInPatient.setPatientSummary(String.valueOf(patientObject));
-                            List<ExpectedTransferInPatients> existing = Context.getService(KenyaEMRILService.class).getTransferInPatient(transferInPatient.getNupiNumber());
-                            List<ExpectedTransferInPatients> existingActive = existing.stream().filter(r -> r.getReferralStatus().equalsIgnoreCase("ACTIVE")).collect(Collectors.toList());
-                            if (existingActive.isEmpty()) {
-                                Context.getService(KenyaEMRILService.class).createPatient(transferInPatient);
-                                /*ExpectedTransferInPatients in = existing.get(0);
-                                Calendar cal1 = Calendar.getInstance();
-                                Calendar cal2 = Calendar.getInstance();
-                                cal1.setTime(in.getTransferOutDate());
-                                cal2.setTime(transferInPatient.getTransferOutDate());
-                                if (in.getTransferOutDate() != null && transferInPatient.getTransferOutDate() != null
-                                        && (!cal1.equals(cal2))) {
-                                    Context.getService(KenyaEMRILService.class).createPatient(transferInPatient);
-                                }
-                                */
-                            }
+                            Context.getService(KenyaEMRILService.class).createPatient(transferInPatient);
                         }
                     }
                 }
+                if (!Strings.isNullOrEmpty(lastPullDatetime)) {
+                    globalPropertyObject.setPropertyValue(lastPullDatetime);
+                    Context.getAdministrationService().saveGlobalProperty(globalPropertyObject);
+                }
             }
-            Date nextProcessingDate = new Date();
-            globalPropertyObject.setPropertyValue(formatter.format(nextProcessingDate));
-            Context.getAdministrationService().saveGlobalProperty(globalPropertyObject);
         } catch (IOException | ParseException | java.text.ParseException e) {
             System.out.println(e.getMessage());
             throw new RuntimeException(e);
