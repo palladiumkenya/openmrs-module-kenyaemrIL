@@ -197,8 +197,12 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                     </thead>
                     <tbody>
                     <tr>
-                        <td width="15%">Total data in queue</td>
+                        <td width="15%">Total Expected Transfer Ins</td>
                         <td>${queueListSize}</td>
+                    </tr>
+                    <tr>
+                        <td width="15%">Total Completed Referrals</td>
+                        <td>${archiveListSize}</td>
                     </tr>
                     <tr>
                         <td width="15%">Total errors</td>
@@ -584,7 +588,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             tr.append("<td>" + displayRecords[i].appointmentDate + "</td>");
             tr.append("<td>" + displayRecords[i].toAcceptanceDate + "</td>");
 
-            //if (tableId === 'queue_data') {
+            if (tableId === 'queue') {
                 var actionTd = jq('<td/>');
 
                 var btnView = jq('<button/>', {
@@ -596,8 +600,8 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                 actionTd.append(btnView);
 
                 tr.append(actionTd);
+            }
                 displayObject.append(tr);
-            //}
 
         }
     }
