@@ -546,6 +546,22 @@
         </sql>
     </changeSet>
 
+    <!--Update start on start to yes KenyaEmrInteropDirectPushTask-->
+    <changeSet id="${project.parent.artifactId}-20231101192630" author="jecihjoy">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.KenyaEmrInteropDirectPushTask'
+                And name = 'OpenHIM Message Publisher'
+            </sqlCheck>
+        </preConditions>
+        <comment>Update start on start to yes of KenyaEmrInteropDirectPushTask</comment>
+        <sql>
+            UPDATE openmrs.scheduler_task_config SET start_on_startup = "1"
+            where uuid = '7351bb07-97b2-47b6-804b-c9c018c36609'
+        </sql>
+    </changeSet>
+
     <!-- Adding scheduled task : Validate transfer out patients -->
     <changeSet id="${project.parent.artifactId}-202310100430" author="jecihjoy">
         <preConditions onFail="MARK_RAN">
