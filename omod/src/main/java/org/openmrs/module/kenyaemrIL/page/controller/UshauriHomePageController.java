@@ -2,6 +2,7 @@ package org.openmrs.module.kenyaemrIL.page.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
@@ -65,7 +66,10 @@ public class UshauriHomePageController {
 			for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
 				if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
 					cccNumber = internalPatientId.getId().replaceAll("\\D", "");
-					break;
+				}
+
+				if (Strings.isNullOrEmpty(cccNumber) && internalPatientId.getIdentifier_type().equalsIgnoreCase("PREP Unique Number")){
+					cccNumber = internalPatientId.getId();
 				}
 			}
 
@@ -139,7 +143,10 @@ public class UshauriHomePageController {
 			for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
 				if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
 					cccNumber = internalPatientId.getId().replaceAll("\\D", "");
-					break;
+				}
+
+				if (Strings.isNullOrEmpty(cccNumber) && internalPatientId.getIdentifier_type().equalsIgnoreCase("PREP Unique Number")){
+					cccNumber = internalPatientId.getId();
 				}
 			}
 
@@ -215,7 +222,10 @@ public class UshauriHomePageController {
 			for (INTERNAL_PATIENT_ID internalPatientId : ilErrorMessage.getPatient_identification().getInternal_patient_id()) {
 				if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
 					cccNumber = internalPatientId.getId().replaceAll("\\D", "");
-					break;
+				}
+
+				if (Strings.isNullOrEmpty(cccNumber) && internalPatientId.getIdentifier_type().equalsIgnoreCase("PREP Unique Number")){
+					cccNumber = internalPatientId.getId();
 				}
 			}
 
