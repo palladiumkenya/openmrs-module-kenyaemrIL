@@ -534,9 +534,9 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                             if(data.isClinician) {
                                 ui.navigate('kenyaemr', 'clinician/clinicianViewPatient', { patientId: data.patientId,  returnUrl: location.href });
                             } else {
-                                ui.navigate('kenyaemr', 'registration/registrationHome');
+                                ui.navigate('kenyaemr', 'registration/registrationViewPatient', { patientId: data.patientId,  returnUrl: location.href });
                             }
-                        },3000)
+                        },2000)
                     }else{
                         console.log("Data ==>"+data);
                         display_loading_spinner(false);
