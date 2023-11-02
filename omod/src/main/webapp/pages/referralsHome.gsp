@@ -172,6 +172,13 @@ tr:nth-child(even) {background-color: #f2f2f2;}
     max-width: 660px;
     font-weight: bold;
 }
+.success-message-text {
+    color: green;
+}
+
+.error-message-text {
+    color: red;
+}
 @media screen and (min-width: 676px) {
     .modal-dialog {
         max-width: 600px; /* New width for default modal */
@@ -213,6 +220,9 @@ tr:nth-child(even) {background-color: #f2f2f2;}
             </div>
         </fieldset>
     </div>
+    <fieldset>
+        <div class="text-wrap" align="left" id="pull-msgBox"></div>
+    </fieldset>
 
     <div id="program-tabs" class="ke-tabs">
 
@@ -511,20 +521,29 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                     'patientId': jq(this).val()
                 })
                 .success(function (data) {
-                console.log("DATA", data)
                     if(data.patientId !== " ") {
                         // Hide spinner
 
                         display_loading_spinner(false);
-                        console.log("Successfully updated client referral: ");
+                        console.log("Successfully registered patient");
                         jQuery("#pull-msgBox").text("Successfully registered patient");
                         jQuery("#pull-msgBox").show();
-                        ui.navigate('kenyaemr', 'clinician/clinicianViewPatient', { patientId: data.patientId,  returnUrl: location.href });
+                        jQuery("#pull-msgBox").toggleClass("success-message-text", true);
+                        jQuery("#pull-msgBox").toggleClass("error-message-text", false);
+                        setTimeout(function () {
+                            if(data.isClinician) {
+                                ui.navigate('kenyaemr', 'clinician/clinicianViewPatient', { patientId: data.patientId,  returnUrl: location.href });
+                            } else {
+                                ui.navigate('kenyaemr', 'registration/registrationHome');
+                            }
+                        },3000)
                     }else{
                         console.log("Data ==>"+data);
                         display_loading_spinner(false);
                         jQuery("#pull-msgBox").text("Error registering client");
                         jQuery("#pull-msgBox").show();
+                        jQuery("#pull-msgBox").toggleClass("error-message-text", true);
+                        jQuery("#pull-msgBox").toggleClass("success-message-text", false);
                     }
                 })
                 .fail(function (err) {
