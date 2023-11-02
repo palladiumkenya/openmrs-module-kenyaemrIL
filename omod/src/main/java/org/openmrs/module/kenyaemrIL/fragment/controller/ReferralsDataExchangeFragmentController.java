@@ -30,6 +30,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.idgen.service.IdentifierSourceService;
 import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemr.metadata.HivMetadata;
+import org.openmrs.module.kenyaemr.metadata.SecurityMetadata;
 import org.openmrs.module.kenyaemr.nupi.UpiUtilsDataExchange;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.shr.FhirConfig;
@@ -321,8 +322,12 @@ public class ReferralsDataExchangeFragmentController {
             referred.setReferralStatus("COMPLETED");
             referred.setPatient(patient);
             service.createPatient(referred);
+            if(Context.getAuthenticatedUser().containsRole(SecurityMetadata._Role.CLINICIAN)) {
+                return SimpleObject.create("patientId", patient.getPatientId(), "isClinician",true);
+            } else {
+                return SimpleObject.create("patientId", patient.getPatientId(), "isClinician",false);
+            }
 
-            return SimpleObject.create("patientId", patient.getPatientId());
         }
 
         return SimpleObject.create("patientId", "");
