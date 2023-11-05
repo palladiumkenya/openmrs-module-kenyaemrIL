@@ -269,4 +269,22 @@ public class Utils {
             throw new IllegalArgumentException("Unable to queue Mlab results through REST", e);
         }
     }
+
+    public static String getLocationMflCode(Location location) {
+        String mflCodeAttribute = "8a845a89-6aa5-4111-81d3-0af31c45c002";
+        try {
+            Context.addProxyPrivilege(PrivilegeConstants.GET_LOCATION_ATTRIBUTE_TYPES);
+            Iterator var2 = location.getAttributes().iterator();
+
+            while (var2.hasNext()) {
+                LocationAttribute attr = (LocationAttribute) var2.next();
+                if (attr.getAttributeType().getUuid().equals(mflCodeAttribute) && !attr.isVoided()) {
+                    return (String) attr.getValue();
+                }
+            }
+        } finally {
+            Context.removeProxyPrivilege(PrivilegeConstants.GET_LOCATION_ATTRIBUTE_TYPES);
+        }
+        return "";
+    }
 }

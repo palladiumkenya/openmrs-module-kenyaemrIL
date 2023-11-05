@@ -1,14 +1,17 @@
 package org.openmrs.module.kenyaemrIL.api;
 
+import com.google.common.base.Strings;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.ServiceRequest;
 import org.openmrs.Encounter;
+import org.openmrs.Location;
 import org.openmrs.Obs;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PersonAddress;
 import org.openmrs.PersonName;
+import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral.PATIENT_REFERRAL_INFORMATION;
 import org.openmrs.module.kenyaemrIL.il.EXTERNAL_PATIENT_ID;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
@@ -19,6 +22,7 @@ import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_NAME;
 import org.openmrs.module.kenyaemrIL.il.PHYSICAL_ADDRESS;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
+import org.openmrs.module.kenyaemrIL.kenyaemrUtils.Utils;
 import org.openmrs.module.kenyaemrIL.programEnrollment.Program_Enrollment_Message;
 
 import java.text.SimpleDateFormat;
@@ -124,8 +128,14 @@ public class ILPatientEnrollment {
             if (ob.getConcept().getUuid().equals("160540AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                 hivProgramEnrolmentMessage.setEntry_point(ob.getValueCoded().getName().getName());
             }
-           if (ob.getConcept().getUuid().equals("160535AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-               referralInformation.setSending_facility_mflcode(ob.getValueText().split("-")[0]);
+           if (ob.getConcept().getUuid().equals("160535AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") && !Strings.isNullOrEmpty(ob.getValueText())) {
+               String valueText = ob.getValueText();
+               Location location = Context.getLocationService().getLocationByUuid(valueText);
+               if (location == null) {
+                   referralInformation.setSending_facility_mflcode(ob.getValueText().split("-")[0]);
+               } else {
+                   referralInformation.setSending_facility_mflcode(Utils.getLocationMflCode(location));
+               }
            }
         }
         hivProgramEnrolmentMessage.setService_request(referralInformation);
