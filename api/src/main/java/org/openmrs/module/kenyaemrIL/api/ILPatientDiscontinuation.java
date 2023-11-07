@@ -1,9 +1,11 @@
 package org.openmrs.module.kenyaemrIL.api;
 
+import com.google.common.base.Strings;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.ServiceRequest;
 import org.openmrs.Encounter;
+import org.openmrs.Location;
 import org.openmrs.Obs;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
@@ -35,6 +37,7 @@ import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
 import org.openmrs.module.kenyaemrIL.il.PATIENT_NAME;
 import org.openmrs.module.kenyaemrIL.il.PHYSICAL_ADDRESS;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
+import org.openmrs.module.kenyaemrIL.kenyaemrUtils.Utils;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.ui.framework.SimpleObject;
@@ -186,8 +189,14 @@ public class ILPatientDiscontinuation {
         referralInformation.setTransfer_priority("asap");
         referralInformation.setSending_facility_mflcode(facilityMfl);
         for (Obs obs : encounter.getObs()) {
-            if (obs.getConcept().getUuid().equals("159495AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                referralInformation.setReceiving_facility_mflcode(obs.getValueText().split("-")[0]);
+            if (obs.getConcept().getUuid().equals("159495AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") && !Strings.isNullOrEmpty(obs.getValueText())) {
+                String valueText = obs.getValueText();
+                Location location = Context.getLocationService().getLocationByUuid(valueText);
+                if (location == null) {
+                    referralInformation.setReceiving_facility_mflcode(obs.getValueText().split("-")[0]);
+                } else {
+                    referralInformation.setReceiving_facility_mflcode(Utils.getLocationMflCode(location));
+                }
             }
             if (obs.getConcept().getUuid().equals("160649AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
                 referralInformation.setTransfer_out_date(formatter.format(obs.getValueDatetime()));
