@@ -5,8 +5,9 @@
     ]
 
     def messageCategories = [
-        [label: "Facility Referral", iconProvider: "kenyaui", icon: "", label: "CCC Referrals", href: ui.pageLink("kenyaemrIL", "referralsHome")]    ]
-
+            [label: "Facility Referral", iconProvider: "kenyaui", icon: "", label: "CCC Referrals", href: ui.pageLink("kenyaemrIL", "referralsHome")],
+            [label: "Community Referral", iconProvider: "kenyaui", icon: "", label: "Community Referrals", href: ui.pageLink("kenyaemrIL", "communityReferralsHome")]
+    ]
     ui.includeJavascript("kenyaemrorderentry", "jquery.twbsPagination.min.js")
     ui.includeJavascript("afyastat", "jsonViewer/jquery.json-editor.min.js")
 
