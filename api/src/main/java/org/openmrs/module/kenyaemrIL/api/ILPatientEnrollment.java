@@ -70,11 +70,12 @@ public class ILPatientEnrollment {
         //Set the patient name
         PATIENT_NAME patientName = new PATIENT_NAME();
         PersonName personName = patient.getPersonName();
-        patientName.setFirst_name(personName.getGivenName() != null ? personName.getGivenName() : "");
-        patientName.setMiddle_name(personName.getMiddleName() != null ? personName.getMiddleName() : "");
-        patientName.setLast_name(personName.getFamilyName() != null ? personName.getFamilyName() : "");
-        patientIdentification.setPatient_name(patientName);
-
+        if(personName != null) {
+            patientName.setFirst_name(personName.getGivenName() != null ? personName.getGivenName() : "");
+            patientName.setMiddle_name(personName.getMiddleName() != null ? personName.getMiddleName() : "");
+            patientName.setLast_name(personName.getFamilyName() != null ? personName.getFamilyName() : "");
+            patientIdentification.setPatient_name(patientName);
+        }
         // Set to empty strings unwanted patient details for viral load
         patientIdentification.setSex(patient.getGender());
         patientIdentification.setPhone_number(patient.getAttribute("Telephone contact") != null ? patient.getAttribute("Telephone contact").getValue() : "");
