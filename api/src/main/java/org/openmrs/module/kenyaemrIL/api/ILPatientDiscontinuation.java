@@ -345,7 +345,9 @@ public class ILPatientDiscontinuation {
                 serviceRequestSupportingInfo.setTpt_end_date(formatter.format(patientIptProgram.get(0).getDateCompleted()));
                 if (lastIptOutcomeEncounter != null) {
                     List<Obs> stopReasonList = lastIptOutcomeEncounter.getObs().stream().filter(ob -> ob.getConcept().getUuid().equals("161555AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")).collect(Collectors.toList());
-                    serviceRequestSupportingInfo.setTpt_end_reason(stopReasonList.get(0).getValueCoded().getName().getName());
+                    if (!stopReasonList.isEmpty()) {
+                        serviceRequestSupportingInfo.setTpt_end_reason(stopReasonList.get(0).getValueCoded().getName().getName());
+                    }
                 }
             }
         }
