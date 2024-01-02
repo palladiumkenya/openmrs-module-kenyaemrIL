@@ -5,8 +5,9 @@
     ]
 
     def messageCategories = [
-        [label: "Facility Referral", iconProvider: "kenyaui", icon: "", label: "CCC Referrals", href: ui.pageLink("kenyaemrIL", "referralsHome")]    ]
-
+            [label: "Facility Referral", iconProvider: "kenyaui", icon: "", label: "CCC Referrals", href: ui.pageLink("kenyaemrIL", "referralsHome")],
+            [label: "Community Referral", iconProvider: "kenyaui", icon: "", label: "Community Referrals", href: ui.pageLink("kenyaemrIL", "communityReferralsHome")]
+    ]
     ui.includeJavascript("kenyaemrorderentry", "jquery.twbsPagination.min.js")
     ui.includeJavascript("afyastat", "jsonViewer/jquery.json-editor.min.js")
 
@@ -345,16 +346,16 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                     <td></td>
                 </tr>
 
-                <table>
-                    <thead>
-                        <tr>
-                            <td>Screening Done</td>
-                            <td>Findings</td>
-                        </tr>
-                    </thead>
-                    <tbody id="cancer_referral_data">
-                    </tbody>
-                </table>
+%{--                <table>--}%
+%{--                    <thead>--}%
+%{--                        <tr>--}%
+%{--                            <td>Screening Done</td>--}%
+%{--                            <td>Findings</td>--}%
+%{--                        </tr>--}%
+%{--                    </thead>--}%
+%{--                    <tbody id="cancer_referral_data">--}%
+%{--                    </tbody>--}%
+%{--                </table>--}%
             </table>
         </fieldset>
     </div>
@@ -609,18 +610,18 @@ tr:nth-child(even) {background-color: #f2f2f2;}
                         jQuery('#shr-referral-reasons').text(data.reasonCode);
                         jQuery('#shr-referral-clinical-notes').text(data.clinicalNote);
 
-                        if(data.cancerReferral.length > 0) {
-                            var referral_data_display_area = jq('#cancer_referral_data');
-                            var tr;
-                            referral_data_display_area.html('');
-                            for (var i = 0; i < data.cancerReferral.length; i++) {
-
-                                tr = jq('<tr/>');
-                                tr.append("<td>" + data.cancerReferral[i].theTests + "</td>");
-                                tr.append("<td>" + data.cancerReferral[i].theFindings + "</td>");
-                                referral_data_display_area.append(tr);
-                            }
-                        }
+                        // if(data.cancerReferral.length > 0) {
+                        //     var referral_data_display_area = jq('#cancer_referral_data');
+                        //     var tr;
+                        //     referral_data_display_area.html('');
+                        //     for (var i = 0; i < data.cancerReferral.length; i++) {
+                        //
+                        //         tr = jq('<tr/>');
+                        //         tr.append("<td>" + data.cancerReferral[i].theTests + "</td>");
+                        //         tr.append("<td>" + data.cancerReferral[i].theFindings + "</td>");
+                        //         referral_data_display_area.append(tr);
+                        //     }
+                        // }
                         jQuery("#show-shr-info").show();
 
                     }else{
