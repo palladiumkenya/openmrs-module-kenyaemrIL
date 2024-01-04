@@ -74,7 +74,6 @@ nb-configuration.xml
 ################
 
 ### Linux ###
-.*
 !.gitignore
 !.gitattributes
 !.travis.yml

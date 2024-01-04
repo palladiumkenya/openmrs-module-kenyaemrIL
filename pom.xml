@@ -42,7 +42,7 @@
         <htmlformentryVersion>3.9.2</htmlformentryVersion>
         <htmlwidgetsVersion>1.10.0</htmlwidgetsVersion>
         <idgenVersion>4.5.0</idgenVersion>
-        <kenyaemrVersion>18.6.2</kenyaemrVersion>
+        <kenyaemrVersion>18.7.0</kenyaemrVersion>
         <kenyacoreVersion>3.0.1</kenyacoreVersion>
         <kenyauiVersion>3.0.0</kenyauiVersion>
         <idgenVersion>4.5.0</idgenVersion>
@@ -365,16 +365,16 @@
         </pluginRepository>
     </pluginRepositories>
 
-    <distributionManagement>
+	<distributionManagement>
 		<repository>
-			<id>mks-nexus</id>
-			<name>Mekom Nexus Releases</name>
-			<url>https://nexus.mekomsolutions.net/releases</url>
+			<id>mks-repo</id>
+			<name>Mekom Solutions Nexus Releases</name>
+			<url>https://nexus.mekomsolutions.net/repository/maven-releases</url>
 		</repository>
 		<snapshotRepository>
-			<id>mks-nexus</id>
-			<name>Mekom Nexus Snapshots</name>
-			<url>https://nexus.mekomsolutions.net/snapshots</url>
+			<id>mks-repo-snapshots</id>
+			<name>Mekom Solutions Nexus Snapshots</name>
+			<url>https://nexus.mekomsolutions.net/repository/maven-snapshots</url>
 		</snapshotRepository>
 	</distributionManagement>
 
