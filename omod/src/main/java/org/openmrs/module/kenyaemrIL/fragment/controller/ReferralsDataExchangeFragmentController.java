@@ -341,7 +341,7 @@ public class ReferralsDataExchangeFragmentController {
         } else {
             defaultFacility = getDefaultLocation();
         }
-        return defaultFacility;
+        return getDefaultLocation();
     }
 
     public String getDefaultLocationMflCode() {
