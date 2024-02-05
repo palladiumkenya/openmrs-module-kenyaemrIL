@@ -18,7 +18,7 @@ import ca.uhn.fhir.parser.IParser;
 import com.google.common.base.Strings;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.hl7.fhir.r4.model.ServiceRequest;
+import org.hl7.fhir.r4.model.*;
 import org.openmrs.Location;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
@@ -45,9 +45,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -220,6 +218,7 @@ public class KenyaEMRILResourceController extends MainResourceController {
                 activeReferralsObject.put("birthdate", formatDate(expectedTransferInPatients.getClientBirthDate()));
                 activeReferralsObject.put("gender", expectedTransferInPatients.getClientGender());
                 activeReferralsObject.put("status", expectedTransferInPatients.getReferralStatus());
+                activeReferralsObject.add("referralReasons", extractReferralReasons(serviceRequest));
                 activeReferrals.add(activeReferralsObject);
             }
             return activeReferrals;
@@ -252,6 +251,7 @@ public class KenyaEMRILResourceController extends MainResourceController {
                 completedReferralsObject.put("birthdate", formatDate(expectedTransferInPatients.getClientBirthDate()));
                 completedReferralsObject.put("gender", expectedTransferInPatients.getClientGender());
                 completedReferralsObject.put("status", expectedTransferInPatients.getReferralStatus());
+                completedReferralsObject.add("referralReasons", extractReferralReasons(serviceRequest));
                 completedReferrals.add(completedReferralsObject);
             }
             return completedReferrals;
@@ -263,6 +263,45 @@ public class KenyaEMRILResourceController extends MainResourceController {
     public String formatDate(Date date) {
         DateFormat dateFormatter = new SimpleDateFormat("dd-MMM-yyyy");
         return date == null ? "" : dateFormatter.format(date);
+    }
+
+    public SimpleObject extractReferralReasons(ServiceRequest serviceRequest) {
+        SimpleObject referralReasons = new SimpleObject();
+
+        Set<String> category = new HashSet<>();
+        String referralDate = "";
+        if (!serviceRequest.getCategory().isEmpty()) {
+            for (CodeableConcept c : serviceRequest.getCategory()) {
+                for (Coding code : c.getCoding()) {
+                    category.add(code.getDisplay());
+                }
+            }
+        }
+
+        List<String> reasons = new ArrayList<>();
+
+        for (CodeableConcept codeableConcept : serviceRequest.getReasonCode()) {
+            if (!codeableConcept.getCoding().isEmpty()) {
+                for (Coding code : codeableConcept.getCoding()) {
+                    reasons.add(code.getDisplay());
+                }
+            }
+        }
+        if (serviceRequest.getAuthoredOn() != null) {
+            referralDate = new SimpleDateFormat("yyyy-MM-dd").format(serviceRequest.getAuthoredOn());
+        }
+
+
+        String note = "";
+        if (!serviceRequest.getNote().isEmpty()) {
+            note = serviceRequest.getNoteFirstRep().getText();
+        }
+
+        referralReasons.put("category", String.join(",  ", category));
+        referralReasons.put("reasonCode", String.join(", ", reasons));
+        referralReasons.put("referralDate", referralDate);
+        referralReasons.put("clinicalNote", note);
+        return referralReasons;
     }
 
 }
