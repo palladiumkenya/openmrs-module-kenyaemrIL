@@ -243,6 +243,13 @@
         <description>FHIR server oath2 authorization client ID</description>
         <defaultValue></defaultValue>
     </globalProperty>
+    <globalProperty>
+        <property>dmiTask.lastFetchDateAndTime</property>
+        <defaultValue>20230126120000</defaultValue>
+        <description>
+            The last date and time that the last fetch was done for dmi push task
+        </description>
+    </globalProperty>
     <!-- /Internationalization -->
 </module>
 
