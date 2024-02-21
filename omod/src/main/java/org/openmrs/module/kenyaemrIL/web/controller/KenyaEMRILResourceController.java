@@ -14,15 +14,18 @@
 package org.openmrs.module.kenyaemrIL.web.controller;
 
 
+import ca.uhn.fhir.parser.IParser;
 import com.google.common.base.Strings;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.hl7.fhir.r4.model.*;
 import org.openmrs.Location;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemr.api.KenyaEmrService;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
+import org.openmrs.module.kenyaemrIL.api.shr.FhirConfig;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.Program_Discontinuation_Message;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral.SERVICE_REQUEST_SUPPORTING_INFO;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
@@ -39,10 +42,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.IOException;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -88,10 +91,10 @@ public class KenyaEMRILResourceController extends MainResourceController {
                     Program_Discontinuation_Message discontinuation_message = ilMessage.getDiscontinuation_message();
                     SERVICE_REQUEST_SUPPORTING_INFO supporting_info = discontinuation_message.getService_request().getSupporting_info();
                     object.put("transfer_out_date", discontinuation_message.getService_request().getTransfer_out_date());
-                    object.put("appointment_date", !Strings.isNullOrEmpty(supporting_info.getAppointment_date()) ? DateFormatUtils.format(formatter.parse(supporting_info.getAppointment_date()) , "yyyy-MM-dd"): "");
-                    object.put("hiv_enrollment_date", !Strings.isNullOrEmpty(supporting_info.getDate_first_enrolled()) ? DateFormatUtils.format(formatter.parse(supporting_info.getDate_first_enrolled()),"yyyy-MM-dd") : "");
-                    object.put("art_start_date", !Strings.isNullOrEmpty(supporting_info.getDate_started_art_at_transferring_facility()) ? DateFormatUtils.format(formatter.parse(supporting_info.getDate_started_art_at_transferring_facility()),"yyyy-MM-dd") : "");
-                    object.put("date_confirmed_positive", !Strings.isNullOrEmpty(supporting_info.getDate_confirmed_positive()) ? DateFormatUtils.format(formatter.parse(supporting_info.getDate_confirmed_positive()),"yyyy-MM-dd") : "");
+                    object.put("appointment_date", !Strings.isNullOrEmpty(supporting_info.getAppointment_date()) ? DateFormatUtils.format(formatter.parse(supporting_info.getAppointment_date()), "yyyy-MM-dd") : "");
+                    object.put("hiv_enrollment_date", !Strings.isNullOrEmpty(supporting_info.getDate_first_enrolled()) ? DateFormatUtils.format(formatter.parse(supporting_info.getDate_first_enrolled()), "yyyy-MM-dd") : "");
+                    object.put("art_start_date", !Strings.isNullOrEmpty(supporting_info.getDate_started_art_at_transferring_facility()) ? DateFormatUtils.format(formatter.parse(supporting_info.getDate_started_art_at_transferring_facility()), "yyyy-MM-dd") : "");
+                    object.put("date_confirmed_positive", !Strings.isNullOrEmpty(supporting_info.getDate_confirmed_positive()) ? DateFormatUtils.format(formatter.parse(supporting_info.getDate_confirmed_positive()), "yyyy-MM-dd") : "");
                     object.put("hiv_confirmation_facility", transferInPatient.get(0).getTransferOutFacility() + " - " + ILUtils.getLocationByMflCode(transferInPatient.get(0).getTransferOutFacility()));
                     object.put("who_stage", !Strings.isNullOrEmpty(supporting_info.getWho_stage()) ? supporting_info.getWho_stage() : "");
                     object.put("current_regimen", supporting_info.getCurrent_regimen());
@@ -104,7 +107,7 @@ public class KenyaEMRILResourceController extends MainResourceController {
                     }
 
                     object.put("cd4_count", supporting_info.getCd4_value());
-                    object.put("cd4_date", !Strings.isNullOrEmpty(supporting_info.getCd4_date()) ? DateFormatUtils.format(formatter.parse(supporting_info.getCd4_date()),"yyyy-MM-dd") : "");
+                    object.put("cd4_date", !Strings.isNullOrEmpty(supporting_info.getCd4_date()) ? DateFormatUtils.format(formatter.parse(supporting_info.getCd4_date()), "yyyy-MM-dd") : "");
                     if (!Strings.isNullOrEmpty(supporting_info.getViral_load())) {
                         if (supporting_info.getViral_load().equals("ldl")) {
                             object.put("vl_result", "200");
@@ -112,7 +115,7 @@ public class KenyaEMRILResourceController extends MainResourceController {
                             object.put("vl_result", supporting_info.getViral_load());
                         }
                     }
-                    object.put("last_vl_date", !Strings.isNullOrEmpty(supporting_info.getLast_vl_date()) ? DateFormatUtils.format(formatter.parse(supporting_info.getLast_vl_date()),"yyyy-MM-dd") : "");
+                    object.put("last_vl_date", !Strings.isNullOrEmpty(supporting_info.getLast_vl_date()) ? DateFormatUtils.format(formatter.parse(supporting_info.getLast_vl_date()), "yyyy-MM-dd") : "");
                     object.put("hbv_infected", "");
                     object.put("tb_infected", "");
                     object.put("arv_adherence_outcome", !Strings.isNullOrEmpty(supporting_info.getArv_adherence_outcome()) ? supporting_info.getArv_adherence_outcome() : "");
@@ -153,7 +156,7 @@ public class KenyaEMRILResourceController extends MainResourceController {
         }
         return null;
     }
-  
+
     @RequestMapping(method = RequestMethod.GET, value = "/shrPatientSummary")
     @ResponseBody
     public SimpleObject shrSummary(@RequestParam("patientUuid") String patientUuid) {
@@ -165,4 +168,140 @@ public class KenyaEMRILResourceController extends MainResourceController {
         }
         return result;
     }
+
+    @RequestMapping(method = RequestMethod.GET, value = "/communityReferrals")
+    @ResponseBody
+    public List<SimpleObject> fetchCommunityReferrals(@RequestParam("status") String status) {
+        SimpleObject result = null;
+
+        KenyaEMRILService ilService = Context.getService(KenyaEMRILService.class);
+        FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
+
+        List<SimpleObject> activeReferrals = new ArrayList<>();
+        List<SimpleObject> completedReferrals = new ArrayList<>();
+
+        if (status.equals("active")) {
+            // Filter all community referrals with active referral status
+            List<ExpectedTransferInPatients> activeCommunityReferralsList = ilService.getCommunityReferrals("COMMUNITY", "ACTIVE");
+            for (ExpectedTransferInPatients expectedTransferInPatients : activeCommunityReferralsList) {
+                IParser parser = fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
+                ServiceRequest serviceRequest = parser.parseResource(ServiceRequest.class, expectedTransferInPatients.getPatientSummary());
+                String requester = "";
+                if (serviceRequest.hasRequester()) {
+                    if (serviceRequest.getRequester().getDisplay() != null) {
+                        Location location = ILUtils.getLocationByMflCode(serviceRequest.getRequester().getDisplay());
+                        if (location != null) {
+                            requester = location.getName();
+                        } else {
+                            requester = "Community";
+                        }
+
+                    } else if (serviceRequest.getRequester().getIdentifier() != null && serviceRequest.getRequester().getIdentifier().getValue() != null) {
+                        Location location = ILUtils.getLocationByMflCode(serviceRequest.getRequester().getIdentifier().getValue());
+                        if (location != null) {
+                            requester = location.getName();
+                        } else {
+                            requester = "Community";
+                        }
+                    }
+                }
+
+                SimpleObject activeReferralsObject = new SimpleObject();
+                activeReferralsObject.put("id", expectedTransferInPatients.getId());
+                activeReferralsObject.put("uuid", expectedTransferInPatients.getUuid());
+                activeReferralsObject.put("nupi", expectedTransferInPatients.getNupiNumber());
+                activeReferralsObject.put("dateReferred", serviceRequest.getAuthoredOn() != null ? new SimpleDateFormat("yyyy-MM-dd").format(serviceRequest.getAuthoredOn()) : "");
+                activeReferralsObject.put("referredFrom", requester);
+                activeReferralsObject.put("givenName", expectedTransferInPatients.getClientFirstName() != null ? expectedTransferInPatients.getClientFirstName() : "");
+                activeReferralsObject.put("middleName", expectedTransferInPatients.getClientMiddleName() != null ? expectedTransferInPatients.getClientMiddleName() : "");
+                activeReferralsObject.put("familyName", expectedTransferInPatients.getClientLastName() != null ? expectedTransferInPatients.getClientLastName() : "");
+                activeReferralsObject.put("birthdate", formatDate(expectedTransferInPatients.getClientBirthDate()));
+                activeReferralsObject.put("gender", expectedTransferInPatients.getClientGender());
+                activeReferralsObject.put("status", expectedTransferInPatients.getReferralStatus());
+                activeReferralsObject.add("referralReasons", extractReferralReasons(serviceRequest));
+                activeReferrals.add(activeReferralsObject);
+            }
+            return activeReferrals;
+
+        } else if (status.equals("completed")) {
+
+            // Filter all community referrals with active referral status
+            List<ExpectedTransferInPatients> completedCommunityReferralsList = ilService.getCommunityReferrals("COMMUNITY", "COMPLETED");
+
+            for (ExpectedTransferInPatients expectedTransferInPatients : completedCommunityReferralsList) {
+                IParser parser = fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
+                ServiceRequest serviceRequest = parser.parseResource(ServiceRequest.class, expectedTransferInPatients.getPatientSummary());
+                String requester = "";
+                if (serviceRequest.hasRequester()) {
+                    if (serviceRequest.getRequester().getDisplay() != null) {
+                        requester = serviceRequest.getRequester().getDisplay();
+                    }
+                }
+
+
+                SimpleObject completedReferralsObject = new SimpleObject();
+                completedReferralsObject.put("id", expectedTransferInPatients.getId());
+                completedReferralsObject.put("uuid", expectedTransferInPatients.getUuid());
+                completedReferralsObject.put("nupi", expectedTransferInPatients.getNupiNumber());
+                completedReferralsObject.put("dateReferred", serviceRequest.getAuthoredOn() != null ? new SimpleDateFormat("yyyy-MM-dd").format(serviceRequest.getAuthoredOn()) : "");
+                completedReferralsObject.put("referredFrom", requester);
+                completedReferralsObject.put("givenName", expectedTransferInPatients.getClientFirstName() != null ? expectedTransferInPatients.getClientFirstName() : "");
+                completedReferralsObject.put("middleName", expectedTransferInPatients.getClientMiddleName() != null ? expectedTransferInPatients.getClientMiddleName() : "");
+                completedReferralsObject.put("familyName", expectedTransferInPatients.getClientLastName() != null ? expectedTransferInPatients.getClientLastName() : "");
+                completedReferralsObject.put("birthdate", formatDate(expectedTransferInPatients.getClientBirthDate()));
+                completedReferralsObject.put("gender", expectedTransferInPatients.getClientGender());
+                completedReferralsObject.put("status", expectedTransferInPatients.getReferralStatus());
+                completedReferralsObject.add("referralReasons", extractReferralReasons(serviceRequest));
+                completedReferrals.add(completedReferralsObject);
+            }
+            return completedReferrals;
+        }
+
+        return new ArrayList<>();
+    }
+
+    public String formatDate(Date date) {
+        DateFormat dateFormatter = new SimpleDateFormat("dd-MMM-yyyy");
+        return date == null ? "" : dateFormatter.format(date);
+    }
+
+    public SimpleObject extractReferralReasons(ServiceRequest serviceRequest) {
+        SimpleObject referralReasons = new SimpleObject();
+
+        Set<String> category = new HashSet<>();
+        String referralDate = "";
+        if (!serviceRequest.getCategory().isEmpty()) {
+            for (CodeableConcept c : serviceRequest.getCategory()) {
+                for (Coding code : c.getCoding()) {
+                    category.add(code.getDisplay());
+                }
+            }
+        }
+
+        List<String> reasons = new ArrayList<>();
+
+        for (CodeableConcept codeableConcept : serviceRequest.getReasonCode()) {
+            if (!codeableConcept.getCoding().isEmpty()) {
+                for (Coding code : codeableConcept.getCoding()) {
+                    reasons.add(code.getDisplay());
+                }
+            }
+        }
+        if (serviceRequest.getAuthoredOn() != null) {
+            referralDate = new SimpleDateFormat("yyyy-MM-dd").format(serviceRequest.getAuthoredOn());
+        }
+
+
+        String note = "";
+        if (!serviceRequest.getNote().isEmpty()) {
+            note = serviceRequest.getNoteFirstRep().getText();
+        }
+
+        referralReasons.put("category", String.join(",  ", category));
+        referralReasons.put("reasonCode", String.join(", ", reasons));
+        referralReasons.put("referralDate", referralDate);
+        referralReasons.put("clinicalNote", note);
+        return referralReasons;
+    }
+
 }
