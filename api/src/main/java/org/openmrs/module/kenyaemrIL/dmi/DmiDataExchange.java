@@ -50,13 +50,20 @@ public class DmiDataExchange {
         List<SimpleObject> labs = new ArrayList<SimpleObject>();
         List<SimpleObject> complaints = new ArrayList<SimpleObject>();
         List<SimpleObject> diagnosis = new ArrayList<SimpleObject>();
+        JSONObject subject = new JSONObject();
+        List<SimpleObject> vitalSigns = new ArrayList<SimpleObject>();
+        List<SimpleObject> riskFactors = new ArrayList<SimpleObject>();
+        List<SimpleObject> vaccinations = new ArrayList<SimpleObject>();
         //Considering triage and greencard forms
         Patient patient = encounter.getPatient();
 
         Form hivGreencardForm = MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD);
         Form traigeForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.TRIAGE);
+        Form clinicalEncounterForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.CLINICAL_ENCOUNTER);
+        Form iliForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.ILI_SURVEILLANCE_FORM);
+        Form sariForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.SARI_SURVEILLANCE_FORM);
         List<Encounter> encounters = Context.getEncounterService().getEncounters(patient, null,
-                fetchDate, null, Arrays.asList(hivGreencardForm, traigeForm), null, null, null, null, false);
+                fetchDate, null, Arrays.asList(hivGreencardForm, traigeForm, clinicalEncounterForm, iliForm, sariForm), null, null, null, null, false);
         System.out.println("Count of encounters  ==> " + encounters.size());
 
         //Unique id
@@ -71,16 +78,20 @@ public class DmiDataExchange {
         //Patient address
         String county = "";
         String subcounty = "";
+        String address = "";
         Person person = Context.getPersonService().getPerson(patient.getPatientId());
         if(person.getPersonAddress() != null){
-            county = person.getPersonAddress().getCountyDistrict();
-            subcounty = person.getPersonAddress().getStateProvince();
+            county = person.getPersonAddress().getCountyDistrict() !=null ? person.getPersonAddress().getCountyDistrict() : "";
+            subcounty = person.getPersonAddress().getStateProvince() !=null ? person.getPersonAddress().getStateProvince() : "";
+            address = person.getPersonAddress().getAddress1() != null ? person.getPersonAddress().getAddress1() : "";
+
         }
 
         String facilityMfl = MessageHeaderSingleton.getDefaultLocationMflCode(MessageHeaderSingleton.getDefaultLocation());
-        String dob = patient.getBirthdate() != null ? dmiUtils.getSimpleDateFormat("yyyy-MM-dd").format(patient.getBirthdate()) : "";
+        String dob = patient.getBirthdate() != null ? dmiUtils.getSimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(patient.getBirthdate()) : "";
         Age age = new Age(patient.getBirthdate());
         Integer ageInYears = age.getFullYears();
+        Integer encounterId = null;
         String gender = patient.getGender();
         String encounterDate = null;
         String outPatientDate = null;
@@ -90,15 +101,34 @@ public class DmiDataExchange {
         Double duration = null;
         String diagnosisName = "";
         Integer diagnosisId = null;
+        String diagnosisSystem = "CIEL";
         Integer orderId = null;
         String testName = "";
         String testResult = "";
         String temperature = "";
-        for (Obs obs : encounter.getObs()) {
+        String respiratoryRate = "";
+        String oxygenSaturation = "";
+        String riskFactor = "";
+        Integer riskFactorId = null;
+        String vaccination = "";
+        Integer vaccinationId = null;
+        Integer doses = null;
 
+        for (Obs obs : encounter.getObs()) {
+            encounterId = obs.getEncounter().getId();
             encounterDate = sd.format(encounter.getEncounterDatetime());
-            outPatientDate = formatter.format(encounter.getEncounterDatetime());
-               //Complaints
+            outPatientDate = sd.format(encounter.getEncounterDatetime());
+              //Vital signs
+            if (obs.getConcept().getConceptId().equals(5088)) {
+                temperature = obs.getValueNumeric().toString();
+            }
+            if (obs.getConcept().getConceptId().equals(5242)) {
+                respiratoryRate = obs.getValueNumeric().toString();
+            }
+            if (obs.getConcept().getConceptId().equals(5092)) {
+                oxygenSaturation = obs.getValueNumeric().toString();
+            }
+              //Complaints
             if (obs.getConcept().getConceptId().equals(5219)) {
                 complaint = obs.getValueCoded().getName().getName();
                 complaintId = obs.getValueCoded().getConceptId();
@@ -109,13 +139,20 @@ public class DmiDataExchange {
             if (obs.getConcept().getConceptId().equals(159368)) {
                 duration = obs.getValueNumeric();
             }
-            if (obs.getConcept().getConceptId().equals(5088)) {
-                temperature = obs.getValueNumeric().toString();
-            }
                //Diagnosis
             if (obs.getConcept().getConceptId().equals(6042)) {
                 diagnosisName = obs.getValueCoded().getName().getName();
                 diagnosisId = obs.getValueCoded().getConceptId();
+            }
+            //Risk factors
+            if (obs.getConcept().getConceptId().equals(1284)) {
+                riskFactor = obs.getValueCoded().getName().getName();
+                riskFactorId = obs.getValueCoded().getConceptId();
+            }
+            //Vaccinations
+            if (obs.getConcept().getConceptId().equals(1198)) {
+                vaccination = obs.getValueCoded().getName().getName();
+                vaccinationId = obs.getValueCoded().getConceptId();
             }
             //labs
             if(obs.getOrder() != null) {
@@ -133,57 +170,103 @@ public class DmiDataExchange {
             }
         }
         //add to list
-        payloadObj.put("patientUniqueId", openmrsId != null ? openmrsId.getIdentifier() : "");
-        payloadObj.put("nupi", nupiId != null ? nupiId.getIdentifier() : "");
         payloadObj.put("caseUniqueId",caseUniqueId );
         payloadObj.put("hospitalIdNumber", facilityMfl);
+        payloadObj.put("status", "final");
+        payloadObj.put("finalOutcome", "Discharge from hospital");
+        payloadObj.put("finalOutcomeDate", encounterDate);
         payloadObj.put("interviewDate", encounterDate);
-        payloadObj.put("verbalConsentDone", true);
-        payloadObj.put("dateOfBirth", dob);
-        payloadObj.put("age", ageInYears);
-        payloadObj.put("sex", gender != null ? dmiUtils.formatGender(gender) : "");
-        payloadObj.put("address", "");
-        payloadObj.put("county", county);
-        payloadObj.put("subCounty", subcounty);
         payloadObj.put("admissionDate", null);
         payloadObj.put("outpatientDate", outPatientDate);
-        payloadObj.put("temperature", temperature);
-        payloadObj.put("voided", false);
         payloadObj.put("createdAt", encounterDate);
         payloadObj.put("updatedAt", null);
-        if (orderId != null && testName != "") {
-            SimpleObject labsObject = new SimpleObject();
-            labsObject.put("orderId", orderId);
-            labsObject.put("testName", testName);
-            labsObject.put("testResult", testResult);
-            labsObject.put("labDate", encounterDate);
-            labs.add(labsObject);
-            payloadObj.put("labDtoList", labs);
-        }else{
-            payloadObj.put("labDtoList", labs);
+        if (person.getId() != null) {
+            SimpleObject subjectObject = new SimpleObject();
+            subjectObject.put("patientUniqueId", openmrsId != null ? openmrsId.getIdentifier() : "");
+            subjectObject.put("nupi", nupiId != null ? nupiId.getIdentifier() : "");
+            subjectObject.put("sex", gender != null ? dmiUtils.formatGender(gender) : "");
+            subjectObject.put("address", address);
+            subjectObject.put("dateOfBirth", dob);
+            subjectObject.put("county", county);
+            subjectObject.put("subCounty", subcounty);
+            payloadObj.put("subject", subjectObject);
         }
-        if (complaintId != null && complaint != "") {
-            SimpleObject complaintObject = new SimpleObject();
-            complaintObject.put("complaintId", complaintId);
-            complaintObject.put("complaint", complaint);
-            complaintObject.put("onsetDate", onsetDate);
-            complaintObject.put("duration", duration);
-            complaintObject.put("voided", false);
-            complaints.add(complaintObject);
-            payloadObj.put("complaintDtoList", complaints);
-        }else {
-            payloadObj.put("complaintDtoList", complaints);
+        if (person.getId() != null && (temperature != null || respiratoryRate != null || oxygenSaturation != null)) {
+            SimpleObject vitalSignObject = new SimpleObject();
+            vitalSignObject.put("vitalSignId", encounterId);
+            vitalSignObject.put("temperature", temperature);
+            vitalSignObject.put("temperatureMode", temperature != null ? "Auxiliary" : "");
+            vitalSignObject.put("respiratoryRate", respiratoryRate);
+            vitalSignObject.put("oxygenSaturation", oxygenSaturation);
+            vitalSignObject.put("oxygenSaturationMode", oxygenSaturation != null ? "Room air" : "");
+            vitalSignObject.put("vitalSignDate", encounterDate);
+            vitalSignObject.put("voided", false);
+            vitalSigns.add(vitalSignObject);
+            payloadObj.put("vitalSigns", vitalSigns);
+        }else{
+            payloadObj.put("vitalSigns", vitalSigns);
         }
         if (diagnosisId != null && diagnosisName != "") {
             SimpleObject diagnosisObject = new SimpleObject();
             diagnosisObject.put("diagnosisId", diagnosisId);
             diagnosisObject.put("diagnosisDate", encounterDate);
             diagnosisObject.put("diagnosis", diagnosisName);
+            diagnosisObject.put("system", diagnosisSystem);
+            diagnosisObject.put("systemCode", diagnosisId);
             diagnosisObject.put("voided", false);
             diagnosis.add(diagnosisObject);
             payloadObj.put("diagnosis", diagnosis);
         }else{
             payloadObj.put("diagnosis", diagnosis);
+        }
+        if (person.getId() != null && riskFactor != "") {
+            SimpleObject riskFactorsObject = new SimpleObject();
+            riskFactorsObject.put("riskFactorId", riskFactorId);
+            riskFactorsObject.put("condition", riskFactor);
+            riskFactorsObject.put("voided", false);
+            riskFactors.add(riskFactorsObject);
+            payloadObj.put("riskFactors", riskFactors);
+        }else{
+            payloadObj.put("riskFactors", riskFactors);
+        }
+        if (person.getId() != null && vaccination != "") {
+            SimpleObject vaccinationsObject = new SimpleObject();
+            vaccinationsObject.put("vaccinationId", vaccinationId);
+            vaccinationsObject.put("vaccination", vaccination);
+            vaccinationsObject.put("doses", null);
+            vaccinationsObject.put("verified", true);
+            vaccinationsObject.put("voided", false);
+            vaccinations.add(vaccinationsObject);
+            payloadObj.put("vaccinations", vaccinations);
+        }else{
+            payloadObj.put("vaccinations", vaccinations);
+        }
+        if (complaintId != null && complaint != "") {
+            SimpleObject complaintObject = new SimpleObject();
+            complaintObject.put("complaintId", complaintId);
+            complaintObject.put("complaint", complaint);
+            complaintObject.put("voided", false);
+            complaintObject.put("onsetDate", onsetDate);
+            complaintObject.put("duration", duration);
+            complaints.add(complaintObject);
+            payloadObj.put("complaintDtoList", complaints);
+        }else {
+            payloadObj.put("complaintDtoList", complaints);
+        }
+        if (orderId != null && testName != "") {
+            SimpleObject labsObject = new SimpleObject();
+            labsObject.put("orderId", orderId);
+            labsObject.put("testName", testName);
+            labsObject.put("unit", " ");
+            labsObject.put("upperLimit", null);
+            labsObject.put("lowerLimit", null);
+            labsObject.put("testResult", testResult);
+            labsObject.put("labDate", encounterDate);
+            labsObject.put("voided", false);
+            labs.add(labsObject);
+            payloadObj.put("labDtoList", labs);
+        }else{
+            payloadObj.put("labDtoList", labs);
         }
 
         payload.add(payloadObj);
