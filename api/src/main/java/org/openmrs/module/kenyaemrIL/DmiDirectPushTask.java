@@ -92,7 +92,7 @@ public class DmiDirectPushTask extends AbstractTask {
      * @return a list of patients who have had complaints or diagnosis or labs recorded as at the provided timestamp
      */
     private List<Encounter> getComplaintsAndDiagnosis (Date date) {
-        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String effectiveDate = sd.format(date);
         StringBuilder q = new StringBuilder();
         q.append("select e.encounter_id ");
