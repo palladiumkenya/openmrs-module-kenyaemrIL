@@ -105,9 +105,9 @@ public class DmiDataExchange {
         Integer orderId = null;
         String testName = "";
         String testResult = "";
-        String temperature = "";
-        String respiratoryRate = "";
-        String oxygenSaturation = "";
+        Double temperature = null;
+        Double respiratoryRate = null;
+        Double oxygenSaturation = null;
         String riskFactor = "";
         Integer riskFactorId = null;
         String vaccination = "";
@@ -120,13 +120,13 @@ public class DmiDataExchange {
             outPatientDate = sd.format(encounter.getEncounterDatetime());
               //Vital signs
             if (obs.getConcept().getConceptId().equals(5088)) {
-                temperature = obs.getValueNumeric().toString();
+                temperature = obs.getValueNumeric();
             }
             if (obs.getConcept().getConceptId().equals(5242)) {
-                respiratoryRate = obs.getValueNumeric().toString();
+                respiratoryRate = obs.getValueNumeric();
             }
             if (obs.getConcept().getConceptId().equals(5092)) {
-                oxygenSaturation = obs.getValueNumeric().toString();
+                oxygenSaturation = obs.getValueNumeric();
             }
               //Complaints
             if (obs.getConcept().getConceptId().equals(5219)) {
