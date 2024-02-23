@@ -43,7 +43,6 @@ public class DmiDataExchange {
      * @return
      */
     public static JSONArray generateDMIpostPayload(Encounter encounter, Date fetchDate) {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         JSONArray payload = new JSONArray();
         JSONObject payloadObj = new JSONObject();
@@ -134,7 +133,7 @@ public class DmiDataExchange {
                 complaintId = obs.getValueCoded().getConceptId();
             }
             if (obs.getConcept().getConceptId().equals(159948)) {
-                onsetDate = formatter.format(obs.getValueDate());
+                onsetDate = sd.format(obs.getValueDate());
             }
             if (obs.getConcept().getConceptId().equals(159368)) {
                 duration = obs.getValueNumeric().intValue();
