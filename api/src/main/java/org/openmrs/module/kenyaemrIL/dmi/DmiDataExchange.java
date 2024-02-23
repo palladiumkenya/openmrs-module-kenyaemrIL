@@ -98,7 +98,7 @@ public class DmiDataExchange {
         String complaint = "";
         Integer complaintId = null;
         String onsetDate = "";
-        Double duration = null;
+        Integer duration = null;
         String diagnosisName = "";
         Integer diagnosisId = null;
         String diagnosisSystem = "CIEL";
@@ -137,7 +137,7 @@ public class DmiDataExchange {
                 onsetDate = formatter.format(obs.getValueDate());
             }
             if (obs.getConcept().getConceptId().equals(159368)) {
-                duration = obs.getValueNumeric();
+                duration = obs.getValueNumeric().intValue();
             }
                //Diagnosis
             if (obs.getConcept().getConceptId().equals(6042)) {
@@ -249,9 +249,9 @@ public class DmiDataExchange {
             complaintObject.put("onsetDate", onsetDate);
             complaintObject.put("duration", duration);
             complaints.add(complaintObject);
-            payloadObj.put("complaintDtoList", complaints);
+            payloadObj.put("complaints", complaints);
         }else {
-            payloadObj.put("complaintDtoList", complaints);
+            payloadObj.put("complaints", complaints);
         }
         if (orderId != null && testName != "") {
             SimpleObject labsObject = new SimpleObject();
@@ -264,9 +264,9 @@ public class DmiDataExchange {
             labsObject.put("labDate", encounterDate);
             labsObject.put("voided", false);
             labs.add(labsObject);
-            payloadObj.put("labDtoList", labs);
+            payloadObj.put("lab", labs);
         }else{
-            payloadObj.put("labDtoList", labs);
+            payloadObj.put("lab", labs);
         }
 
         payload.add(payloadObj);
