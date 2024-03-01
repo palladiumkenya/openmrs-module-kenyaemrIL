@@ -250,6 +250,13 @@
             The last date and time that the last fetch was done for dmi push task
         </description>
     </globalProperty>
+    <globalProperty>
+        <property>visualizationTask.lastFetchDateAndTime</property>
+        <defaultValue>20240301120000</defaultValue>
+        <description>
+            The last date and time that the last fetch was done for visualization push task
+        </description>
+    </globalProperty>
     <!-- /Internationalization -->
 </module>
 
