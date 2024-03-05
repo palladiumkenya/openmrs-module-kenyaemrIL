@@ -3,13 +3,14 @@ package org.openmrs.module.kenyaemrIL.visualizationMetrics;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.simple.JSONObject;
-import org.openmrs.Diagnosis;
-import org.openmrs.Encounter;
-import org.openmrs.Visit;
+import org.openmrs.*;
 import org.openmrs.api.DiagnosisService;
 import org.openmrs.api.VisitService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
+import org.openmrs.module.kenyaemr.metadata.HivMetadata;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
+import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.util.PrivilegeConstants;
 
@@ -21,6 +22,7 @@ public class VisualizationDataExchange {
 
 	private static Log log = LogFactory.getLog(VisualizationDataExchange.class);
 	private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	private static List<Diagnosis> allDiagnosis;
 
 	/**
 	 * Generates the payload used to post to visualization server     *
@@ -70,38 +72,22 @@ public class VisualizationDataExchange {
 				visitsObject.put("total", visitEntry.getValue().toString());
 				visits.add(visitsObject);
 			}
+			payloadObj.put("visits", visits);
 		} else {
-			SimpleObject visitsObject = new SimpleObject();
-			visitsObject.put("visit_type", "");
-			visitsObject.put("total", "");
-			visits.add(visitsObject);
+			payloadObj.put("visits", visits);
 		}
-		payloadObj.put("visits", visits);
 
-
-		diagnosisMap = allDiagnosis(encounter);
+		diagnosisMap = allDiagnosis();
 		if (!diagnosisMap.isEmpty()) {
 			for (Map.Entry<String, Integer> diagnosisEntry : diagnosisMap.entrySet()) {
-			SimpleObject diagnosisObject = new SimpleObject();
-			diagnosisObject.put("diagnosis_name", diagnosisEntry.getKey());
-			diagnosisObject.put("total", diagnosisEntry.getValue().toString());
-			diagnosis.add(diagnosisObject);
+				SimpleObject diagnosisObject = new SimpleObject();
+				diagnosisObject.put("diagnosis_name", diagnosisEntry.getKey());
+				diagnosisObject.put("total", diagnosisEntry.getValue().toString());
+				diagnosis.add(diagnosisObject);
 			}
-		} else {
-			SimpleObject diagnosisObject = new SimpleObject();
-			diagnosisObject.put("diagnosis_name", "");
-			diagnosisObject.put("total", "");
-			diagnosis.add(diagnosisObject);
-		}			
 			payloadObj.put("diagnosis", diagnosis);
-		if (workload.size() > 0) {
-			SimpleObject workloadObject = new SimpleObject();
-			workloadObject.put("department", "");
-			workloadObject.put("total", "");
-			workload.add(workloadObject);
-			payloadObj.put("workload", workload);
 		} else {
-			payloadObj.put("workload", workload);
+			payloadObj.put("diagnosis", diagnosis);
 		}
 		if (workload.size() > 0) {
 			SimpleObject workloadObject = new SimpleObject();
@@ -177,16 +163,29 @@ public class VisualizationDataExchange {
 		return visitMap;
 	}
 
-	public static Map<String, Integer> allDiagnosis(Encounter encounter) {
+	public static Map<String, Integer> allDiagnosis() {
 
 		Map<String, Integer> diagnosisMap = new HashMap<>();
-		DiagnosisService diagnosisService = Context.getDiagnosisService();
-		List<Diagnosis> allDiagnosis = diagnosisService.getPrimaryDiagnoses(encounter);		
-		if(!allDiagnosis.isEmpty()) {	
-			for (Diagnosis diagnosis : allDiagnosis) {
-				String diagnosisName = diagnosis.getDiagnosis().getCoded().getName().getName();				
-				System.out.println("Diagnosis Name : " + diagnosisName);
-				diagnosisMap.put(diagnosisName, diagnosisMap.getOrDefault(diagnosisName, 0) + 1);
+		//Forms with diagnosis
+		Form hivGreencardForm = MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD);
+		Form clinicalEncounterForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.CLINICAL_ENCOUNTER);
+
+		List<Patient> allPatients = Context.getPatientService().getAllPatients();
+		for (Patient patient : allPatients) {
+
+			List<Encounter> encounters = Context.getEncounterService().getEncounters(patient, null,
+				null, null, Arrays.asList(hivGreencardForm, clinicalEncounterForm), null, null, null, null, false);
+			//System.out.println("Count of encounters  ==> " + encounters.size());
+			for (Encounter encounterWithDiagnosis : encounters) {
+				DiagnosisService diagnosisService = Context.getDiagnosisService();
+				List<Diagnosis> allDiagnosis = diagnosisService.getPrimaryDiagnoses(encounterWithDiagnosis);
+				if (!allDiagnosis.isEmpty()) {
+					for (Diagnosis diagnosis : allDiagnosis) {
+						String diagnosisName = diagnosis.getDiagnosis().getCoded().getName().getName();
+						System.out.println("Diagnosis Name : " + diagnosisName);
+						diagnosisMap.put(diagnosisName, diagnosisMap.getOrDefault(diagnosisName, 0) + 1);
+					}
+				}
 			}
 		}
 		return diagnosisMap;
