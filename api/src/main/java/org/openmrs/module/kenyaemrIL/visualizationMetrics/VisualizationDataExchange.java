@@ -3,6 +3,8 @@ package org.openmrs.module.kenyaemrIL.visualizationMetrics;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.simple.JSONObject;
+import org.openmrs.Visit;
+import org.openmrs.api.VisitService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.ui.framework.SimpleObject;
@@ -10,13 +12,11 @@ import org.openmrs.util.PrivilegeConstants;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public class VisualizationDataExchange {
 
-    private Log log = LogFactory.getLog(VisualizationDataExchange.class);
+    private static Log log = LogFactory.getLog(VisualizationDataExchange.class);
     private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     /**
      * Generates the payload used to post to visualization server     *
@@ -25,10 +25,10 @@ public class VisualizationDataExchange {
      */
     public static JSONObject generateVisualizationPayload(Date fetchDate) {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-        JSONObject payload = new JSONObject();
         JSONObject payloadObj = new JSONObject();
         List<SimpleObject> bedManagement = new ArrayList<SimpleObject>();
-        List<SimpleObject> visits = new ArrayList<SimpleObject>();
+        List<SimpleObject> visits = new ArrayList<>();
+        Map<String, Integer> visitsMap;
         List<SimpleObject> diagnosis = new ArrayList<SimpleObject>();
         List<SimpleObject> workload = new ArrayList<SimpleObject>();
         List<SimpleObject> billing = new ArrayList<SimpleObject>();
@@ -55,24 +55,23 @@ public class VisualizationDataExchange {
         }else{
             payloadObj.put("bed_management", bedManagement);
         }
-        if (visits.size() > 0) {
+
+        visitsMap = allVisits(fetchDate);
+        if (!visitsMap.isEmpty()) {
+            for (Map.Entry<String, Integer> visitEntry : visitsMap.entrySet()) {
+                SimpleObject visitsObject = new SimpleObject();
+                visitsObject.put("visit_type", visitEntry.getKey());
+                visitsObject.put("total", visitEntry.getValue());
+                visits.add(visitsObject);
+            }
+        } else {
             SimpleObject visitsObject = new SimpleObject();
             visitsObject.put("visit_type", "");
             visitsObject.put("total", "");
             visits.add(visitsObject);
-            payloadObj.put("visits", visits);
-        }else{
-            payloadObj.put("visits", visits);
         }
-        if (visits.size() > 0) {
-            SimpleObject visitsObject = new SimpleObject();
-            visitsObject.put("visit_type", "");
-            visitsObject.put("total", "");
-            visits.add(visitsObject);
-            payloadObj.put("visits", visits);
-        }else{
-            payloadObj.put("visits", visits);
-        }
+        payloadObj.put("visits", visits);
+
         if (diagnosis.size() > 0) {
             SimpleObject diagnosisObject = new SimpleObject();
             diagnosisObject.put("diagnosis_name", "");
@@ -148,6 +147,21 @@ public class VisualizationDataExchange {
         System.out.println("Payload generated: " + payloadObj);
 
         return payloadObj;
+    }
+
+    public static Map<String, Integer> allVisits(Date fetchDate) {
+
+        Map<String, Integer> visitMap = new HashMap<>();
+        VisitService visitService = Context.getVisitService();
+        List<Visit> allVisits = visitService.getVisits(null, null, null, null, fetchDate, null, null, null, null, true, false);
+
+        if (!allVisits.isEmpty()) {
+            for (Visit visit : allVisits) {
+                String visitType = visit.getVisitType().getName();
+                visitMap.put(visitType, visitMap.getOrDefault(visitType, 0) + 1);
+            }
+        }
+        return visitMap;
     }
 }
 
