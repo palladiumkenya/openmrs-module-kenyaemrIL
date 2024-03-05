@@ -87,7 +87,7 @@ public class VisualizationMetricsPushTask extends AbstractTask {
     }
 
     /**
-     * Gets a list of visualization matrices since the last timestamp
+     * Gets a list of visualization metrices since the last timestamp
      * @param date last timestamp
      * @return a list of visualization matrices recorded as at the provided timestamp
      */
