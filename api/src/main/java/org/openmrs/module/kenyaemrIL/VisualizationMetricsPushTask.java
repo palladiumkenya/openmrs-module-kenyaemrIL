@@ -55,7 +55,7 @@ public class VisualizationMetricsPushTask extends AbstractTask {
             for (Encounter encounter : encounters) {
                 if (encounter != null) {
                     VisualizationDataExchange vDataExchange = new VisualizationDataExchange();
-                    JSONObject params = vDataExchange.generateVisualizationPayload(fetchDate);
+                    JSONObject params = vDataExchange.generateVisualizationPayload(encounter,fetchDate);
                     System.out.println("Payload to Visualization server ==> "+params);
 
                     try {
