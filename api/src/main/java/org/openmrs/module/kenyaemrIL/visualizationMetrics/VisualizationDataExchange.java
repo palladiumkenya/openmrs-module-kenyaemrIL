@@ -166,6 +166,7 @@ public class VisualizationDataExchange {
 	public static Map<String, Integer> allDiagnosis() {
 
 		Map<String, Integer> diagnosisMap = new HashMap<>();
+		// Does not use fetchDate . Sends cumulative data . Expensive
 		//Forms with diagnosis
 		Form hivGreencardForm = MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD);
 		Form clinicalEncounterForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.CLINICAL_ENCOUNTER);
@@ -190,6 +191,21 @@ public class VisualizationDataExchange {
 		}
 		return diagnosisMap;
 	}
+// Uses fetchDate . Does not send cumulative data only incremental updates as at fetch date
+//	public static Map<String, Integer> allDiagnosis(Encounter encounter) {
+//
+//		Map<String, Integer> diagnosisMap = new HashMap<>();
+//		DiagnosisService diagnosisService = Context.getDiagnosisService();
+//		List<Diagnosis> allDiagnosis = diagnosisService.getPrimaryDiagnoses(encounter);
+//		if(!allDiagnosis.isEmpty()) {
+//			for (Diagnosis diagnosis : allDiagnosis) {
+//				String diagnosisName = diagnosis.getDiagnosis().getCoded().getName().getName();
+//				System.out.println("Diagnosis Name : " + diagnosisName);
+//				diagnosisMap.put(diagnosisName, diagnosisMap.getOrDefault(diagnosisName, 0) + 1);
+//			}
+//		}
+//		return diagnosisMap;
+//	}
 
 }
 
