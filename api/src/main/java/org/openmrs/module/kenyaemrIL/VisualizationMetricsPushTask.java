@@ -55,7 +55,7 @@ public class VisualizationMetricsPushTask extends AbstractTask {
             for (Encounter encounter : encounters) {
                 if (encounter != null) {
                     VisualizationDataExchange vDataExchange = new VisualizationDataExchange();
-                    JSONObject params = vDataExchange.generateVisualizationPayload(fetchDate);
+                    JSONObject params = vDataExchange.generateVisualizationPayload(encounter,fetchDate);
                     System.out.println("Payload to Visualization server ==> "+params);
 
                     try {
@@ -87,7 +87,7 @@ public class VisualizationMetricsPushTask extends AbstractTask {
     }
 
     /**
-     * Gets a list of visualization matrices since the last timestamp
+     * Gets a list of visualization metrices since the last timestamp
      * @param date last timestamp
      * @return a list of visualization matrices recorded as at the provided timestamp
      */
