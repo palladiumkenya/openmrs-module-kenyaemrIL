@@ -5,14 +5,16 @@ import org.apache.commons.logging.LogFactory;
 import org.hibernate.Transaction;
 import org.hibernate.jdbc.Work;
 import org.json.simple.JSONObject;
-import org.openmrs.Diagnosis;
-import org.openmrs.Encounter;
-import org.openmrs.Visit;
+import org.openmrs.*;
 import org.openmrs.api.DiagnosisService;
+import org.openmrs.api.FormService;
+import org.openmrs.api.PersonService;
 import org.openmrs.api.VisitService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.db.hibernate.DbSessionFactory;
+import org.openmrs.module.kenyaemr.metadata.*;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
+import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.util.PrivilegeConstants;
 
@@ -21,6 +23,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class VisualizationDataExchange {
 
@@ -41,6 +44,7 @@ public class VisualizationDataExchange {
 		List<SimpleObject> visits = new ArrayList<>();
 		Map<String, Integer> visitsMap;
 		Map<String, Integer> diagnosisMap;
+		Map<String, Integer> mortalityMap;
 		List<SimpleObject> diagnosis = new ArrayList<SimpleObject>();
 		List<SimpleObject> workload = new ArrayList<SimpleObject>();
 		List<SimpleObject> billing = new ArrayList<SimpleObject>();
@@ -135,7 +139,7 @@ public class VisualizationDataExchange {
 			}
 		} else {
 			payloadObj.put("payments", payments);
-		}		
+		}
 		if (inventory.size() > 0) {
 			SimpleObject inventoryObject = new SimpleObject();
 			inventoryObject.put("item_name", "");
@@ -148,15 +152,21 @@ public class VisualizationDataExchange {
 		} else {
 			payloadObj.put("inventory", inventory);
 		}
-		if (mortality.size() > 0) {
+		mortalityMap = mortality(fetchDate);
+		if (!mortalityMap.isEmpty()) {
+			for (Map.Entry<String, Integer> mortalityEntry : mortalityMap.entrySet()) {
+				SimpleObject mortalityObject = new SimpleObject();
+				mortalityObject.put("cause_of_death", mortalityEntry.getKey());
+				mortalityObject.put("total", mortalityEntry.getValue().toString());
+				mortality.add(mortalityObject);
+			}
+		} else {
 			SimpleObject mortalityObject = new SimpleObject();
 			mortalityObject.put("cause_of_death", "");
 			mortalityObject.put("total", "");
 			mortality.add(mortalityObject);
-			payloadObj.put("mortality", mortality);
-		} else {
-			payloadObj.put("mortality", mortality);
 		}
+		payloadObj.put("mortality", mortality);
 
 		Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
 		System.out.println("Payload generated: " + payloadObj);
@@ -339,6 +349,84 @@ public class VisualizationDataExchange {
 		}
 		System.out.println(" Payment details ==> "+ret);
 		return ret;
+	}
+
+	public static Map<String, Integer> mortality(Date midNightDateTime) {
+		PersonService personService = Context.getPersonService();
+		Map<String, Integer> mortalityMap = new HashMap<>();
+		List<Person> deceasedPersons = personService.getPeople("", true);
+
+		List<Form> discForms = Arrays.asList(
+				MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_DISCONTINUATION),
+				MetadataUtils.existing(Form.class, MchMetadata._Form.MCHCS_DISCONTINUATION),
+				MetadataUtils.existing(Form.class, MchMetadata._Form.MCHMS_DISCONTINUATION),
+				MetadataUtils.existing(Form.class, MchMetadata._Form.MCHCS_HEI_COMPLETION),
+				MetadataUtils.existing(Form.class, OTZMetadata._Form.OTZ_DISCONTINUATION_FORM)
+		);
+
+		List<Encounter> discontinuationEncounters = Context.getEncounterService().getEncounters(null, null,
+				midNightDateTime, null, discForms, null, null, null, null, false);
+
+		Set<Person> personSet = new HashSet<>();
+		for (Encounter encounter : discontinuationEncounters) {
+			Person person = encounter.getPatient().getPerson();
+			personSet.add(person);
+		}
+		if (!discontinuationEncounters.isEmpty()) {
+			for (Encounter encounter : discontinuationEncounters) {
+
+				List<Obs> deathReasonsObs = encounter.getObs().stream()
+						.filter(ob -> ob.getConcept().getUuid().equals("1599AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
+						.collect(Collectors.toList());
+				List<Obs> deathDateObs = encounter.getObs().stream()
+						.filter(ob -> ob.getConcept().getUuid().equals("1543AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
+						.collect(Collectors.toList());
+				Map<Integer, String> obsDeathReasonsMap = new HashMap<>();
+
+				if(!deathReasonsObs.isEmpty()) {
+
+						for (Obs obs : deathReasonsObs) {
+							Integer personId = obs.getPersonId();
+							String valueCoded = (obs.getValueCoded() != null) ? obs.getValueCoded().getName().getName() : null;
+							obsDeathReasonsMap.put(personId, valueCoded);
+						}
+					}
+
+				Map<Integer, Date> obsDeathDateMap = new HashMap<>();
+
+				for (Obs obs : deathDateObs) {
+					Integer personId = obs.getPersonId();
+					Date deathDate = (obs.getValueDatetime() != null) ? obs.getValueDatetime() : obs.getObsDatetime();
+					obsDeathDateMap.put(personId, deathDate);
+				}
+
+				Map<String, Date> mergedMap = new HashMap<>();
+				for (Integer key : obsDeathDateMap.keySet()) {
+					if (obsDeathReasonsMap.containsKey(key)) {
+						Date date = obsDeathDateMap.get(key);
+						String reason = obsDeathReasonsMap.get(key);
+						mergedMap.put(reason, date);
+					}
+				}
+				for (Map.Entry<String, Date> mergedMapEntry : mergedMap.entrySet()) {
+					if (!mergedMapEntry.getValue().before(midNightDateTime)) {
+						mortalityMap.put(mergedMapEntry.getKey(), mortalityMap.getOrDefault(mergedMapEntry.getKey(), 0) + 1);
+					}
+				}
+			}
+		}
+		for (Person person : deceasedPersons) {
+			Date dateOfDeath;
+			if (!personSet.contains(person) && person.getDeathDate() != null) {
+				dateOfDeath = person.getDeathDate();
+				if (!dateOfDeath.before(midNightDateTime)) {
+					String causeOfDeath = person.getCauseOfDeath().getName().getName();
+					mortalityMap.put(causeOfDeath, mortalityMap.getOrDefault(causeOfDeath, 0) + 1);
+				}
+
+			}
+		}
+		return mortalityMap;
 	}
 
 }
