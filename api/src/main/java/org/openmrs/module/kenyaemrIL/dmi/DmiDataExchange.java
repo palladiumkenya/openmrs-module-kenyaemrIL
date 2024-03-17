@@ -43,7 +43,6 @@ public class DmiDataExchange {
      * @return
      */
     public static JSONArray generateDMIpostPayload(Encounter encounter, Date fetchDate) {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         JSONArray payload = new JSONArray();
         JSONObject payloadObj = new JSONObject();
@@ -98,16 +97,16 @@ public class DmiDataExchange {
         String complaint = "";
         Integer complaintId = null;
         String onsetDate = "";
-        Double duration = null;
+        Integer duration = null;
         String diagnosisName = "";
         Integer diagnosisId = null;
         String diagnosisSystem = "CIEL";
         Integer orderId = null;
         String testName = "";
         String testResult = "";
-        String temperature = "";
-        String respiratoryRate = "";
-        String oxygenSaturation = "";
+        Double temperature = null;
+        Double respiratoryRate = null;
+        Double oxygenSaturation = null;
         String riskFactor = "";
         Integer riskFactorId = null;
         String vaccination = "";
@@ -120,13 +119,13 @@ public class DmiDataExchange {
             outPatientDate = sd.format(encounter.getEncounterDatetime());
               //Vital signs
             if (obs.getConcept().getConceptId().equals(5088)) {
-                temperature = obs.getValueNumeric().toString();
+                temperature = obs.getValueNumeric();
             }
             if (obs.getConcept().getConceptId().equals(5242)) {
-                respiratoryRate = obs.getValueNumeric().toString();
+                respiratoryRate = obs.getValueNumeric();
             }
             if (obs.getConcept().getConceptId().equals(5092)) {
-                oxygenSaturation = obs.getValueNumeric().toString();
+                oxygenSaturation = obs.getValueNumeric();
             }
               //Complaints
             if (obs.getConcept().getConceptId().equals(5219)) {
@@ -134,10 +133,10 @@ public class DmiDataExchange {
                 complaintId = obs.getValueCoded().getConceptId();
             }
             if (obs.getConcept().getConceptId().equals(159948)) {
-                onsetDate = formatter.format(obs.getValueDate());
+                onsetDate = sd.format(obs.getValueDate());
             }
             if (obs.getConcept().getConceptId().equals(159368)) {
-                duration = obs.getValueNumeric();
+                duration = obs.getValueNumeric().intValue();
             }
                //Diagnosis
             if (obs.getConcept().getConceptId().equals(6042)) {
@@ -249,9 +248,9 @@ public class DmiDataExchange {
             complaintObject.put("onsetDate", onsetDate);
             complaintObject.put("duration", duration);
             complaints.add(complaintObject);
-            payloadObj.put("complaintDtoList", complaints);
+            payloadObj.put("complaints", complaints);
         }else {
-            payloadObj.put("complaintDtoList", complaints);
+            payloadObj.put("complaints", complaints);
         }
         if (orderId != null && testName != "") {
             SimpleObject labsObject = new SimpleObject();
@@ -264,9 +263,9 @@ public class DmiDataExchange {
             labsObject.put("labDate", encounterDate);
             labsObject.put("voided", false);
             labs.add(labsObject);
-            payloadObj.put("labDtoList", labs);
+            payloadObj.put("lab", labs);
         }else{
-            payloadObj.put("labDtoList", labs);
+            payloadObj.put("lab", labs);
         }
 
         payload.add(payloadObj);
