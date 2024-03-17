@@ -68,7 +68,7 @@ public class ILMetadata extends AbstractMetadataBundle {
 			install(globalProperty(GP_DMI_SERVER_CLIENT_SECRET, "Dmi server client secret", "vCPf2QNkg8ehSoIXBelAVY6GvWdgg3E5"));
 		}
 		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_VISUALIZATION_SERVER_POST_END_POINT) == null) {
-			install(globalProperty(GP_VISUALIZATION_SERVER_POST_END_POINT, "A POST API for posting visualization metrics data", "https://kvisual.kenyahmis.org/superset"));
+			install(globalProperty(GP_VISUALIZATION_SERVER_POST_END_POINT, "A POST API for posting visualization metrics data", "https://openhimapi.kenyahmis.org/rest/api/IL/superset"));
 		}
 	}
 }

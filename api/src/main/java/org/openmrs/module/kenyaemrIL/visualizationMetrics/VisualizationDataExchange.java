@@ -7,12 +7,14 @@ import org.hibernate.jdbc.Work;
 import org.json.simple.JSONObject;
 import org.openmrs.*;
 import org.openmrs.api.DiagnosisService;
-import org.openmrs.api.FormService;
 import org.openmrs.api.PersonService;
 import org.openmrs.api.VisitService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.db.hibernate.DbSessionFactory;
-import org.openmrs.module.kenyaemr.metadata.*;
+import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
+import org.openmrs.module.kenyaemr.metadata.HivMetadata;
+import org.openmrs.module.kenyaemr.metadata.MchMetadata;
+import org.openmrs.module.kenyaemr.metadata.OTZMetadata;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.ui.framework.SimpleObject;
@@ -37,7 +39,7 @@ public class VisualizationDataExchange {
 	 * @param
 	 * @return
 	 */
-	public static JSONObject generateVisualizationPayload(Encounter encounter, Date fetchDate) {
+	public static JSONObject generateVisualizationPayload(Date fetchDate) {
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
 		JSONObject payloadObj = new JSONObject();
 		List<SimpleObject> bedManagement = new ArrayList<SimpleObject>();
@@ -50,6 +52,7 @@ public class VisualizationDataExchange {
 		List<SimpleObject> billing = new ArrayList<SimpleObject>();
 		List<SimpleObject> billingItems= new ArrayList<SimpleObject>();
 		List<SimpleObject> paymentItems= new ArrayList<SimpleObject>();
+		List<SimpleObject> inventoryItems= new ArrayList<SimpleObject>();
 		List<SimpleObject> payments = new ArrayList<SimpleObject>();
 		List<SimpleObject> inventory = new ArrayList<SimpleObject>();
 		List<SimpleObject> mortality = new ArrayList<SimpleObject>();
@@ -87,18 +90,18 @@ public class VisualizationDataExchange {
 			payloadObj.put("visits", visits);
 		}
 
-		diagnosisMap = allDiagnosis(encounter);
-		if (!diagnosisMap.isEmpty()) {
-			for (Map.Entry<String, Integer> diagnosisEntry : diagnosisMap.entrySet()) {
-				SimpleObject diagnosisObject = new SimpleObject();
-				diagnosisObject.put("diagnosis_name", diagnosisEntry.getKey());
-				diagnosisObject.put("total", diagnosisEntry.getValue().toString());
-				diagnosis.add(diagnosisObject);
-			}
-			payloadObj.put("diagnosis", diagnosis);
-		} else {
-			payloadObj.put("diagnosis", diagnosis);
-		}
+//		diagnosisMap = allDiagnosis(fetchDate);
+//		if (!diagnosisMap.isEmpty()) {
+//			for (Map.Entry<String, Integer> diagnosisEntry : diagnosisMap.entrySet()) {
+//				SimpleObject diagnosisObject = new SimpleObject();
+//				diagnosisObject.put("diagnosis_name", diagnosisEntry.getKey());
+//				diagnosisObject.put("total", diagnosisEntry.getValue().toString());
+//				diagnosis.add(diagnosisObject);
+//			}
+//			payloadObj.put("diagnosis", diagnosis);
+//		} else {
+//			payloadObj.put("diagnosis", diagnosis);
+//		}
 		if (workload.size() > 0) {
 			SimpleObject workloadObject = new SimpleObject();
 			workloadObject.put("department", "");
@@ -108,7 +111,7 @@ public class VisualizationDataExchange {
 		} else {
 			payloadObj.put("workload", workload);
 		}
-		billingItems = getBillingItems();
+		billingItems = getBillingItems(fetchDate);
 		if (billingItems.size() > 0) {
 			System.out.println("We have some bills");		
 			for (int i = 0; i < billingItems.size(); i++) {
@@ -125,7 +128,7 @@ public class VisualizationDataExchange {
 		} else {
 			payloadObj.put("billing", billing);
 		}
-		paymentItems = getPayments();
+		paymentItems = getPayments(fetchDate);
 		if (paymentItems.size() > 0) {
 			System.out.println("We have some payments");
 			for (int i = 0; i < paymentItems.size(); i++) {
@@ -140,15 +143,20 @@ public class VisualizationDataExchange {
 		} else {
 			payloadObj.put("payments", payments);
 		}
-		if (inventory.size() > 0) {
-			SimpleObject inventoryObject = new SimpleObject();
-			inventoryObject.put("item_name", "");
-			inventoryObject.put("item_type", "");
-			inventoryObject.put("unit_of_measure", "");
-			inventoryObject.put("quantity_at_hand", "");
-			inventoryObject.put("quantity_consumed", "");
-			inventory.add(inventoryObject);
-			payloadObj.put("inventory", inventory);
+		inventoryItems = getInventory(fetchDate);
+		if (inventoryItems.size() > 0) {
+			System.out.println("We have some inventory");
+			for (int i = 0; i < inventoryItems.size(); i++) {
+				SimpleObject inventoryList= inventoryItems.get(i);
+				SimpleObject inventoryObject = new SimpleObject();
+				inventoryObject.put("item_name", inventoryList.get("item_name"));
+				inventoryObject.put("item_type", inventoryList.get("item_type"));
+				inventoryObject.put("unit_of_measure", inventoryList.get("unit_of_measure"));
+				inventoryObject.put("quantity_at_hand", inventoryList.get("quantity_at_hand"));
+				inventoryObject.put("quantity_consumed", inventoryList.get("quantity_consumed"));
+				inventory.add(inventoryObject);
+				payloadObj.put("inventory", inventory);
+			}
 		} else {
 			payloadObj.put("inventory", inventory);
 		}
@@ -189,60 +197,44 @@ public class VisualizationDataExchange {
 		return visitMap;
 	}
 
-//	public static Map<String, Integer> allDiagnosis(Encounter encounter) {
-//
-//		Map<String, Integer> diagnosisMap = new HashMap<>();
-//		// Does not use fetchDate . Sends cumulative data . Expensive
-//		//Forms with diagnosis
-//		Form hivGreencardForm = MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD);
-//		Form clinicalEncounterForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.CLINICAL_ENCOUNTER);
-//
-//		List<Patient> allPatients = Context.getPatientService().getAllPatients();
-//		for (Patient patient : allPatients) {
-//
-//			List<Encounter> encounters = Context.getEncounterService().getEncounters(patient, null,
-//				null, null, Arrays.asList(hivGreencardForm, clinicalEncounterForm), null, null, null, null, false);
-//			//System.out.println("Count of encounters  ==> " + encounters.size());
-//			for (Encounter encounterWithDiagnosis : encounters) {
-//				DiagnosisService diagnosisService = Context.getDiagnosisService();
-//				List<Diagnosis> allDiagnosis = diagnosisService.getPrimaryDiagnoses(encounterWithDiagnosis);
-//				if (!allDiagnosis.isEmpty()) {
-//					for (Diagnosis diagnosis : allDiagnosis) {
-//						String diagnosisName = diagnosis.getDiagnosis().getCoded().getName().getName();
-//						System.out.println("Diagnosis Name : " + diagnosisName);
-//						diagnosisMap.put(diagnosisName, diagnosisMap.getOrDefault(diagnosisName, 0) + 1);
-//					}
-//				}
-//			}
-//		}
-//		return diagnosisMap;
-//	}
- //Uses fetchDate . Does not send cumulative data only incremental updates as at fetch date
-	public static Map<String, Integer> allDiagnosis(Encounter encounter) {
+	public static Map<String, Integer> allDiagnosis(Date fetchDate) {
 
-		Map<String, Integer> diagnosisMap = new HashMap<>();
-		DiagnosisService diagnosisService = Context.getDiagnosisService();
-		List<Diagnosis> allDiagnosis = diagnosisService.getPrimaryDiagnoses(encounter);
-		if(!allDiagnosis.isEmpty()) {
-			for (Diagnosis diagnosis : allDiagnosis) {
-				String diagnosisName = diagnosis.getDiagnosis().getCoded().getName().getName();
-				System.out.println("Diagnosis Name : " + diagnosisName);
-				diagnosisMap.put(diagnosisName, diagnosisMap.getOrDefault(diagnosisName, 0) + 1);
+		Map<String, Integer> diagnosisMap = new HashMap<>();		
+		//Forms with diagnosis
+		Form hivGreencardForm = MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD);
+		Form clinicalEncounterForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.CLINICAL_ENCOUNTER);
+
+		List<Patient> allPatients = Context.getPatientService().getAllPatients();
+		for (Patient patient : allPatients) {
+
+			List<Encounter> encounters = Context.getEncounterService().getEncounters(patient, null,
+				fetchDate, null, Arrays.asList(hivGreencardForm, clinicalEncounterForm), null, null, null, null, false);
+			//System.out.println("Count of diagnosis encounters  ==> " + encounters.size());
+			for (Encounter encounterWithDiagnosis : encounters) {
+				DiagnosisService diagnosisService = Context.getDiagnosisService();
+				List<Diagnosis> allDiagnosis = diagnosisService.getPrimaryDiagnoses(encounterWithDiagnosis);
+				if (!allDiagnosis.isEmpty()) {
+					for (Diagnosis diagnosis : allDiagnosis) {
+						String diagnosisName = diagnosis.getDiagnosis().getCoded().getName().getName();
+						System.out.println("We got some Diagnosis Name : " + diagnosisName);
+						diagnosisMap.put(diagnosisName, diagnosisMap.getOrDefault(diagnosisName, 0) + 1);
+					}
+				}
 			}
 		}
+		System.out.println("Diagnosis Map"+ diagnosisMap);
 		return diagnosisMap;
 	}
-
 	/**
 	 * Gets details of all bills
 	 * @param 
 	 * @return details of all bills
 	 */
-	public static List<SimpleObject> getBillingItems() {
-
-		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
-
-		final String sqlSelectQuery = "select cbl.service_id, cbl.bill_id, cbs.name, SUM(cbp.amount), SUM(cbp.amount_tendered), SUM(cbp.amount - cbp.amount_tendered ) from openmrs.cashier_bill_line_item cbl inner join openmrs.cashier_bill_payment cbp on cbl.bill_id = cbp.bill_id inner join openmrs.cashier_billable_service cbs on cbs.service_id = cbl.service_id group by cbl.service_id;";
+	public static List<SimpleObject> getBillingItems(Date fetchDate) {
+		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String effectiveDate = sd.format(fetchDate);
+		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);		
+		final String sqlSelectQuery = "select cbl.service_id, cbl.bill_id, cbs.name, SUM(cbp.amount), SUM(cbp.amount_tendered), SUM(cbp.amount - cbp.amount_tendered ) from openmrs.cashier_bill_line_item cbl inner join openmrs.cashier_bill_payment cbp on cbl.bill_id = cbp.bill_id inner join openmrs.cashier_billable_service cbs on cbs.service_id = cbl.service_id where date(cbl.date_created) >= '" + effectiveDate + "' or date(cbl.date_changed) >= '" + effectiveDate + "' group by cbl.service_id;";
 		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
 		Transaction tx = null;
 		try {
@@ -298,11 +290,11 @@ public class VisualizationDataExchange {
 	 * @param
 	 * @return details of all payments
 	 */
-	public static List<SimpleObject> getPayments() {
-
-		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
-
-		final String sqlSelectQuery = "select cbm.payment_mode_id, cbm.name, count(cb.patient_id), SUM( cbp.amount_tendered) as amount_paid from openmrs.cashier_bill_payment cbp inner join openmrs.cashier_payment_mode cbm on cbm.payment_mode_id = cbp.payment_mode_id inner join openmrs.cashier_bill cb on cb.bill_id = cbp.bill_id group by cbm.payment_mode_id;";
+	public static List<SimpleObject> getPayments(Date fetchDate) {
+		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String effectiveDate = sd.format(fetchDate);
+		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);	
+		final String sqlSelectQuery = "select cbm.payment_mode_id, cbm.name, count(cb.patient_id), SUM( cbp.amount_tendered) as amount_paid from openmrs.cashier_bill_payment cbp inner join openmrs.cashier_payment_mode cbm on cbm.payment_mode_id = cbp.payment_mode_id inner join openmrs.cashier_bill cb on cb.bill_id = cbp.bill_id where cbp.date_created >= '" + effectiveDate + "' or cbp.date_changed >= '" + effectiveDate + "' group by cbm.payment_mode_id;";
 		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
 		Transaction tx = null;
 		try {
@@ -427,6 +419,65 @@ public class VisualizationDataExchange {
 			}
 		}
 		return mortalityMap;
+	}
+	/**
+	 * Gets details of  inventory
+	 * @param
+	 * @return details of  inventory
+	 */
+	public static List<SimpleObject> getInventory(Date fetchDate) {
+		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String effectiveDate = sd.format(fetchDate);
+		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);		
+		final String sqlSelectQuery = "select sti.common_name, if (sti.is_drug = 1, 'Drug','Non drug'), cn.name, SUM( stt.quantity), SUM( If (stt.quantity<0, stt.quantity*-1,0)) from stockmgmt_stock_item_transaction stt inner join openmrs.stockmgmt_stock_item sti on sti.stock_item_id = stt.stock_item_id inner join openmrs.concept_name cn on cn.concept_id = sti.dispensing_unit_id where stt.date_created >= '" + effectiveDate + "' group by sti.stock_item_id,stt.party_id;";
+		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
+		Transaction tx = null;
+		try {
+
+			tx = sf.getHibernateSessionFactory().getCurrentSession().beginTransaction();
+			final Transaction finalTx = tx;
+			sf.getCurrentSession().doWork(new Work() {
+
+				@Override
+				public void execute(Connection connection) throws SQLException {
+					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
+					try {
+
+						ResultSet resultSet = statement.executeQuery();
+						if (resultSet != null) {
+							ResultSetMetaData metaData = resultSet.getMetaData();
+
+							while (resultSet.next()) {
+								Object[] row = new Object[metaData.getColumnCount()];
+								for (int i = 1; i <= metaData.getColumnCount(); i++) {
+									row[i - 1] = resultSet.getObject(i);
+								}
+
+								ret.add(SimpleObject.create(
+									"item_name", row[0] != null ? row[0].toString() : "",
+									"item_type", row[1] != null ? row[1].toString() : "",
+									"unit_of_measure", row[2] != null ? row[2].toString() : "",
+									"quantity_at_hand", row[3] != null ? row[3].toString() : "",
+									"quantity_consumed", row[4] != null ? row[4].toString() : ""
+								));
+							}
+						}
+						finalTx.commit();
+					} finally {
+						try {
+							if (statement != null) {
+								statement.close();
+							}
+						} catch (Exception e) {
+						}
+					}
+				}
+			});
+		} catch (Exception e) {
+			throw new IllegalArgumentException("Unable to execute query", e);
+		}
+		System.out.println(" Inventory details ==> "+ret);
+		return ret;
 	}
 
 }
