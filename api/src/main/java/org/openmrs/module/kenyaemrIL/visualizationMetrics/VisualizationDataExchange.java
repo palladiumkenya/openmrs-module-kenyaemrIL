@@ -169,12 +169,8 @@ public class VisualizationDataExchange {
 				mortality.add(mortalityObject);
 			}
 		} else {
-			SimpleObject mortalityObject = new SimpleObject();
-			mortalityObject.put("cause_of_death", "");
-			mortalityObject.put("total", "");
-			mortality.add(mortalityObject);
+			payloadObj.put("mortality", mortality);
 		}
-		payloadObj.put("mortality", mortality);
 
 		Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
 		System.out.println("Payload generated: " + payloadObj);
