@@ -16,6 +16,7 @@ import org.openmrs.module.kenyaemr.metadata.HivMetadata;
 import org.openmrs.module.kenyaemr.metadata.MchMetadata;
 import org.openmrs.module.kenyaemr.metadata.OTZMetadata;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
+import org.openmrs.module.kenyaemrIL.util.ServiceDepartments;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.util.PrivilegeConstants;
@@ -33,6 +34,8 @@ public class VisualizationDataExchange {
 	private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	private static List<Diagnosis> allDiagnosis;
 
+	final static String FAMILY_PLANNING_FORM_UUID = "a52c57d4-110f-4879-82ae-907b0d90add6";
+
 	/**
 	 * Generates the payload used to post to visualization server     *
 	 *
@@ -47,6 +50,7 @@ public class VisualizationDataExchange {
 		Map<String, Integer> visitsMap;
 		Map<String, Integer> diagnosisMap;
 		Map<String, Integer> mortalityMap;
+		Map<String, Integer> workloadMap;
 		List<SimpleObject> diagnosis = new ArrayList<SimpleObject>();
 		List<SimpleObject> workload = new ArrayList<SimpleObject>();
 		List<SimpleObject> billing = new ArrayList<SimpleObject>();
@@ -57,6 +61,7 @@ public class VisualizationDataExchange {
 		List<SimpleObject> inventory = new ArrayList<SimpleObject>();
 		List<SimpleObject> mortality = new ArrayList<SimpleObject>();
 		String timestamp = formatter.format(fetchDate);
+
 		//Data extraction
 		String facilityMfl = MessageHeaderSingleton.getDefaultLocationMflCode(MessageHeaderSingleton.getDefaultLocation());
 
@@ -102,12 +107,15 @@ public class VisualizationDataExchange {
 //		} else {
 //			payloadObj.put("diagnosis", diagnosis);
 //		}
-		if (workload.size() > 0) {
+		workloadMap = workLoad(fetchDate);
+		if (!workloadMap.isEmpty()){
+			for(Map.Entry<String, Integer> workloadEntry : workloadMap.entrySet()){
 			SimpleObject workloadObject = new SimpleObject();
-			workloadObject.put("department", "");
-			workloadObject.put("total", "");
+			workloadObject.put("department", workloadEntry.getKey());
+			workloadObject.put("total", workloadEntry.getValue().toString());
 			workload.add(workloadObject);
 			payloadObj.put("workload", workload);
+		}
 		} else {
 			payloadObj.put("workload", workload);
 		}
@@ -335,7 +343,6 @@ public class VisualizationDataExchange {
 		} catch (Exception e) {
 			throw new IllegalArgumentException("Unable to execute query", e);
 		}
-		System.out.println(" Payment details ==> "+ret);
 		return ret;
 	}
 
@@ -474,6 +481,38 @@ public class VisualizationDataExchange {
 		}
 		System.out.println(" Inventory details ==> "+ret);
 		return ret;
+	}
+
+	public static Map<String, Integer> workLoad(Date midNightDateTime){
+		Map<String, Integer> workLoadMap = new HashMap<>();
+
+		List<Form> serviceUnitsForms = Arrays.asList(
+				MetadataUtils.existing(Form.class, CommonMetadata._Form.CLINICAL_ENCOUNTER),
+				MetadataUtils.existing(Form.class, MchMetadata._Form.MCHCS_FOLLOW_UP),
+				MetadataUtils.existing(Form.class, MchMetadata._Form.MCHMS_ANTENATAL_VISIT),
+				MetadataUtils.existing(Form.class, MchMetadata._Form.MCHMS_POSTNATAL_VISIT),
+				MetadataUtils.existing(Form.class, FAMILY_PLANNING_FORM_UUID),
+				MetadataUtils.existing(Form.class, MchMetadata._Form.MCHMS_DELIVERY)
+		);
+
+		List<Encounter> serviceUnitsEncounters = Context.getEncounterService().getEncounters(null, null,
+				midNightDateTime, null, serviceUnitsForms, null, null, null, null, false);
+		if (!serviceUnitsEncounters.isEmpty()) {
+			for (Encounter e : serviceUnitsEncounters) {
+				if (e.getForm().equals(MetadataUtils.existing(Form.class, CommonMetadata._Form.CLINICAL_ENCOUNTER))) {
+					workLoadMap.put(ServiceDepartments.GENERALOUTPATIENT.getDepartmentName(), workLoadMap.getOrDefault(ServiceDepartments.GENERALOUTPATIENT.getDepartmentName(), 0) + 1);
+				}
+				if (e.getForm().equals(MetadataUtils.existing(Form.class, MchMetadata._Form.MCHCS_FOLLOW_UP)) || e.getForm().equals(MetadataUtils.existing(Form.class, MchMetadata._Form.MCHMS_ANTENATAL_VISIT))
+						|| e.getForm().equals(MetadataUtils.existing(Form.class, MchMetadata._Form.MCHMS_POSTNATAL_VISIT)) || e.getForm().equals(MetadataUtils.existing(Form.class,FAMILY_PLANNING_FORM_UUID))) {
+					workLoadMap.put(ServiceDepartments.MCHANDFAMILYPLANNING.getDepartmentName(), workLoadMap.getOrDefault(ServiceDepartments.MCHANDFAMILYPLANNING.getDepartmentName(), 0) + 1);
+				}
+				if (e.getForm().equals(MetadataUtils.existing(Form.class, MchMetadata._Form.MCHMS_DELIVERY))) {
+					workLoadMap.put(ServiceDepartments.MATERNITY.getDepartmentName(), workLoadMap.getOrDefault(ServiceDepartments.MATERNITY.getDepartmentName(), 0) + 1);
+				}
+			}
+		}
+
+		return workLoadMap;
 	}
 
 }
