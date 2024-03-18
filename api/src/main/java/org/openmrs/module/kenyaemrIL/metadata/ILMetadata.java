@@ -32,6 +32,7 @@ public class ILMetadata extends AbstractMetadataBundle {
 	public static final String GP_DMI_SERVER_TOKEN = "dmi.surveillance.token";
 	public static final String GP_DMI_SERVER_CLIENT_ID = "dmi.surveillance.client.id";
 	public static final String GP_DMI_SERVER_CLIENT_SECRET = "dmi.surveillance.client.secret";
+	public static final String GP_VISUALIZATION_SERVER_POST_END_POINT = "visualization.metrics.post.api";
 
 	public static final class _PersonAttributeType {
 
@@ -52,7 +53,7 @@ public class ILMetadata extends AbstractMetadataBundle {
 				String.class, null, false, 5.1, _PersonAttributeType.REFERRAL_STATUS));
 
 		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_POST_END_POINT) == null) {
-			install(globalProperty(GP_DMI_SERVER_POST_END_POINT, "A GET API for posting dmi surveillance data", "https://dmistaging.kenyahmis.org/api/case/batch"));
+			install(globalProperty(GP_DMI_SERVER_POST_END_POINT, "A POST API for posting dmi surveillance data", "https://dmistaging.kenyahmis.org/api/case/batch"));
 		}
 		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_TOKEN_URL) == null) {
 			install(globalProperty(GP_DMI_SERVER_TOKEN_URL, "Authorization token URL", "https://keycloak.kenyahmis.org/realms/dmi/protocol/openid-connect/token"));
@@ -65,6 +66,9 @@ public class ILMetadata extends AbstractMetadataBundle {
 		}
 		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_CLIENT_SECRET) == null) {
 			install(globalProperty(GP_DMI_SERVER_CLIENT_SECRET, "Dmi server client secret", "vCPf2QNkg8ehSoIXBelAVY6GvWdgg3E5"));
+		}
+		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_VISUALIZATION_SERVER_POST_END_POINT) == null) {
+			install(globalProperty(GP_VISUALIZATION_SERVER_POST_END_POINT, "A POST API for posting visualization metrics data", "https://openhimapi.kenyahmis.org/rest/api/IL/superset"));
 		}
 	}
 }
