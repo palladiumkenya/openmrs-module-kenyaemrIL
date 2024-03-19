@@ -791,8 +791,6 @@
             <column name="uuid" value="a63b35e1-9b4d-4cb9-8a26-4fbf33b353e5" />
         </insert>
     </changeSet>
-<<<<<<< HEAD
-
     <changeSet id="${project.parent.artifactId}-20240301-1224" author="pwangoo">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
@@ -816,6 +814,4 @@
             <column name="uuid" value="9f883bf3-447a-4c7e-aed3-c77fe7dc755a" />
         </insert>
     </changeSet>
-=======
->>>>>>> bd4cbc0 (Added IDSR flagged clients for DMI transmission, updated liquibase to run after 1 hour)
 </databaseChangeLog>
