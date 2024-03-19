@@ -9,6 +9,7 @@ import org.openmrs.module.kenyaemrIL.dmi.DmiDataExchange;
 import org.openmrs.module.kenyaemrIL.dmi.dmiUtils;
 import org.openmrs.scheduler.tasks.AbstractTask;
 import org.openmrs.ui.framework.SimpleObject;
+import org.openmrs.util.OpenmrsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +70,9 @@ public class DmiDirectPushTask extends AbstractTask {
 					}
 				}
 			}
-			globalPropertyObject.setPropertyValue(formatter.format(new Date()));
+
+			Date nextProcessingDate = OpenmrsUtil.getLastMomentOfDay(new Date());
+			globalPropertyObject.setPropertyValue(formatter.format(nextProcessingDate));
 			Context.getAdministrationService().saveGlobalProperty(globalPropertyObject);
 			Context.flushSession();
 		} catch (IOException ioe) {
