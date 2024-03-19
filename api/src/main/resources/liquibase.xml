@@ -786,7 +786,7 @@
             <column name="repeat_interval" value="3600" />
             <column name="date_created" valueDate="CURRENT_TIMESTAMP" />
             <column name="created_by" value="1" />
-            <column name="start_on_startup" value="0" />
+            <column name="start_on_startup" value="1" />
             <column name="started" value="0" />
             <column name="uuid" value="a63b35e1-9b4d-4cb9-8a26-4fbf33b353e5" />
         </insert>

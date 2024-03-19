@@ -34,7 +34,6 @@ import java.util.Set;
 /**
  * Calculates the eligibility for Cholera screening flag for  patients
  *
- * @should calculate Active visit
  * @should calculate person over 2 years Old
  * @should calculate  diarrhoea
  * @should calculate Vomiting
@@ -107,7 +106,6 @@ public class CholeraCalculation extends AbstractPatientCalculation {
 
 			ret.put(ptId, new BooleanResult(result, this));
 		} 
-
 		return ret;
 	}
 }

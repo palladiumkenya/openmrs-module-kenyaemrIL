@@ -29,7 +29,6 @@ import java.util.*;
 
 /**
  * Calculates the eligibility for Chikungunya screening flag for  patients
- * @should calculate Active visit
  * @should calculate Fever
  * @should calculate Joint pains
  * @should calculate Temperature  >37.5C
@@ -55,6 +54,7 @@ public class ChikungunyaCalculation extends AbstractPatientCalculation {
 		CalculationResultMap ret = new CalculationResultMap();
 
 		for (Integer ptId : alive) {
+			System.out.println("Checking chiks eligibility ==>"+patientService.getPatient(ptId));
 			boolean eligible = false;
              
 			Date currentDate = new Date();
@@ -123,10 +123,9 @@ public class ChikungunyaCalculation extends AbstractPatientCalculation {
 					}
 				}
 			}
+			System.out.println("Eligibility chiks==>"+eligible);
 			ret.put(ptId, new BooleanResult(eligible, this));
-
 		}
-
 		return ret;
 	}
 }
