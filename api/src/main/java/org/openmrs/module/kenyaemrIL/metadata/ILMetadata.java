@@ -62,10 +62,10 @@ public class ILMetadata extends AbstractMetadataBundle {
 			install(globalProperty(GP_DMI_SERVER_TOKEN, "Authorization token", ""));
 		}
 		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_CLIENT_ID) == null) {
-			install(globalProperty(GP_DMI_SERVER_CLIENT_ID, "Dmi server client id", "test-emr"));
+			install(globalProperty(GP_DMI_SERVER_CLIENT_ID, "Dmi server client id", "kenya-emr-test"));
 		}
 		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_CLIENT_SECRET) == null) {
-			install(globalProperty(GP_DMI_SERVER_CLIENT_SECRET, "Dmi server client secret", "vCPf2QNkg8ehSoIXBelAVY6GvWdgg3E5"));
+			install(globalProperty(GP_DMI_SERVER_CLIENT_SECRET, "Dmi server client secret", "HoWsbHH53zxO0jTSyV52tW5FZaE9wb1J"));
 		}
 		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_VISUALIZATION_SERVER_POST_END_POINT) == null) {
 			install(globalProperty(GP_VISUALIZATION_SERVER_POST_END_POINT, "A POST API for posting visualization metrics data", "https://openhimapi.kenyahmis.org/rest/api/IL/superset"));

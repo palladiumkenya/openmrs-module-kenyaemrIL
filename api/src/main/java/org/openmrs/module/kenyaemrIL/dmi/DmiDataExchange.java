@@ -7,8 +7,6 @@ import org.json.simple.JSONObject;
 import org.openmrs.*;
 import org.openmrs.api.DiagnosisService;
 import org.openmrs.api.context.Context;
-import org.openmrs.calculation.patient.PatientCalculationContext;
-import org.openmrs.calculation.patient.PatientCalculationService;
 import org.openmrs.calculation.result.CalculationResult;
 import org.openmrs.module.kenyaemr.calculation.EmrCalculationUtils;
 import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
@@ -22,9 +20,7 @@ import org.openmrs.util.PrivilegeConstants;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import static org.openmrs.module.kenyaemr.metadata.CommonMetadata._PatientIdentifierType.NATIONAL_UNIQUE_PATIENT_IDENTIFIER;
 import static org.openmrs.module.kenyaemr.metadata.CommonMetadata._PatientIdentifierType.OPENMRS_ID;
@@ -36,8 +32,7 @@ public class DmiDataExchange {
 	private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
 	/**
-	 * Generates the payload used to post to DMI server
-	 *
+	 * Generates the payload used to post to DMI server	 *
 	 * @param visit
 	 * @return
 	 */
@@ -45,52 +40,95 @@ public class DmiDataExchange {
 
 		JSONArray payload = new JSONArray();
 		JSONObject payloadObj = new JSONObject();
-
+		Patient patient = visit.getPatient();
 		// Evaluate for flagged clients
-		PatientCalculationContext context = Context.getService(PatientCalculationService.class).createCalculationContext();
-		// 1. suspected ili case
-		CalculationResult iliFlaggedResults = EmrCalculationUtils.evaluateForPatient(IliScreeningCalculation.class, null, visit.getPatient());
-		Boolean iliFlagged = (Boolean) iliFlaggedResults.getValue();
-		// 2. suspected sari case
-		CalculationResult sariFlaggedResults = EmrCalculationUtils.evaluateForPatient(SariScreeningCalculation.class, null, visit.getPatient());
-		Boolean sariFlagged = (Boolean) sariFlaggedResults.getValue();
-		// 3. suspected cholera case
-		CalculationResult choleraFlaggedResults = EmrCalculationUtils.evaluateForPatient(CholeraCalculation.class, null, visit.getPatient());
-		Boolean choleraFlagged = (Boolean) choleraFlaggedResults.getValue();
-		// 4. suspected dysentery case
-		CalculationResult dysenteryFlaggedResults = EmrCalculationUtils.evaluateForPatient(DysenteryCalculation.class, null, visit.getPatient());
-		Boolean dysenteryFlagged = (Boolean) dysenteryFlaggedResults.getValue();
-		// 5. suspected dysentery case
-		CalculationResult chikungunyaFlaggedResults = EmrCalculationUtils.evaluateForPatient(ChikungunyaCalculation.class, null, visit.getPatient());
-		Boolean chikungunyaFlagged = (Boolean) chikungunyaFlaggedResults.getValue();
-		// 6. suspected viral haemorrhagic fever case
-		CalculationResult vhfFlaggedResults = EmrCalculationUtils.evaluateForPatient(ViralHaemorrhagicFeverCalculation.class, null, visit.getPatient());
-		Boolean vhfFlagged = (Boolean) vhfFlaggedResults.getValue();
-		// 7. suspected viral malaria fever case
-		CalculationResult malariaFlaggedResults = EmrCalculationUtils.evaluateForPatient(MalariaCalculation.class, null, visit.getPatient());
-		Boolean malariaFlagged = (Boolean) malariaFlaggedResults.getValue();
-		// 8. suspected viral measles fever case
-		CalculationResult measlesFlaggedResults = EmrCalculationUtils.evaluateForPatient(MeaslesCalculation.class, null, visit.getPatient());
-		Boolean measlesFlagged = (Boolean) measlesFlaggedResults.getValue();
-		// 9. suspected viral polio fever case
-		CalculationResult polioFlaggedResults = EmrCalculationUtils.evaluateForPatient(PoliomyelitisCalculation.class, null, visit.getPatient());
-		Boolean polioFlagged = (Boolean) measlesFlaggedResults.getValue();
-		// 10. suspected viral polio fever case
-		CalculationResult rvfFlaggedResults = EmrCalculationUtils.evaluateForPatient(RiftValleyFeverCalculation.class, null, visit.getPatient());
-		Boolean rvfFlagged = (Boolean) rvfFlaggedResults.getValue();
+		Map<Integer, String> conditionMap = new HashMap<>();
+		String conditionName = "";
+		Integer conditionId = null;		
+		
+		  // 1. suspected ili case
+		CalculationResult iliFlaggedResults = EmrCalculationUtils.evaluateForPatient(IliScreeningCalculation.class, null, patient);
+		if(!iliFlaggedResults.isEmpty()) {
+			conditionName = "ILI";
+			conditionId = 1;
+			conditionMap.put(conditionId, conditionName);
+		}
+		   // 2. suspected sari case
+		CalculationResult sariFlaggedResults = EmrCalculationUtils.evaluateForPatient(SariScreeningCalculation.class, null, patient);
+		if(!sariFlaggedResults.isEmpty()) {
+			conditionName = "SARI";
+			conditionId = 2;
+			conditionMap.put(conditionId, conditionName);
+		}
+		  // 3. suspected cholera case
+		CalculationResult choleraFlaggedResults = EmrCalculationUtils.evaluateForPatient(CholeraCalculation.class, null, patient);
+		if(!choleraFlaggedResults.isEmpty()) {
+			conditionName = "CHOLERA";
+			conditionId = 3;
+			conditionMap.put(conditionId, conditionName);
+		}
+			// 4. suspected dysentery case
+		CalculationResult dysenteryFlaggedResults = EmrCalculationUtils.evaluateForPatient(DysenteryCalculation.class, null, patient);
+		if(!dysenteryFlaggedResults.isEmpty()) {
+			conditionName = "DYSENTERY";
+			conditionId = 4;
+			conditionMap.put(conditionId, conditionName);
+		}
+			// 5. suspected chikungunya case
+		CalculationResult chikungunyaFlaggedResults = EmrCalculationUtils.evaluateForPatient(ChikungunyaCalculation.class, null, patient);
+		if(!chikungunyaFlaggedResults.isEmpty()) {
+			conditionName = "CHIKUNGUNYA";
+			conditionId = 5;
+			conditionMap.put(conditionId, conditionName);
+		}
+		   	// 6. suspected viral haemorrhagic fever case
+		CalculationResult vhfFlaggedResults = EmrCalculationUtils.evaluateForPatient(ViralHaemorrhagicFeverCalculation.class, null, patient);
+		if(!vhfFlaggedResults.isEmpty()){
+			conditionName = "VIRAL HAEMORRHAGIC FEVER";
+			conditionId = 6;
+			conditionMap.put(conditionId, conditionName);
+		}		
+		   // 7. suspected malaria  case
+		CalculationResult malariaFlaggedResults = EmrCalculationUtils.evaluateForPatient(MalariaCalculation.class, null, patient);
+		if(!malariaFlaggedResults.isEmpty()) {
+			conditionName = "MALARIA";
+			conditionId = 7;
+			conditionMap.put(conditionId, conditionName);
+		}
+		   // 8. suspected measles  case
+		CalculationResult measlesFlaggedResults = EmrCalculationUtils.evaluateForPatient(MeaslesCalculation.class, null, patient);
+		if(!measlesFlaggedResults.isEmpty()) {
+			conditionName = "MEASLES";
+			conditionId = 8;
+			conditionMap.put(conditionId, conditionName);
+		}
+			// 9. suspected polio case
+		CalculationResult polioFlaggedResults = EmrCalculationUtils.evaluateForPatient(PoliomyelitisCalculation.class, null, patient);
+		if(polioFlaggedResults != null) {
+			conditionName = "POLIOMYELITIS";
+			conditionId = 9;
+			conditionMap.put(conditionId, conditionName);
+		}
+			// 10. suspected rift valley fever case
+		CalculationResult rvfFlaggedResults = EmrCalculationUtils.evaluateForPatient(RiftValleyFeverCalculation.class, null, patient);
+		if(!rvfFlaggedResults.isEmpty()) {
+			conditionName = "RIFT VALLEY FEVER";
+			conditionId = 10;
+			conditionMap.put(conditionId, conditionName);
+		}
 
-		if (iliFlagged || sariFlagged  || choleraFlagged || dysenteryFlagged || chikungunyaFlagged || vhfFlagged || malariaFlagged || measlesFlagged || polioFlagged || rvfFlagged) {
-
+		//if (iliFlagged || sariFlagged  || choleraFlagged || dysenteryFlagged || chikungunyaFlagged || vhfFlagged || malariaFlagged || measlesFlagged || polioFlagged || rvfFlagged) {
+		if(!conditionMap.isEmpty()){			
 			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 			SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			List<SimpleObject> labs = new ArrayList<SimpleObject>();
 			List<SimpleObject> complaints = new ArrayList<SimpleObject>();
+			List<SimpleObject> conditionFlagged = new ArrayList<SimpleObject>();
 			List<SimpleObject> diagnosis = new ArrayList<SimpleObject>();
 			JSONObject subject = new JSONObject();
 			List<SimpleObject> vitalSigns = new ArrayList<SimpleObject>();
 			List<SimpleObject> riskFactors = new ArrayList<SimpleObject>();
-			List<SimpleObject> vaccinations = new ArrayList<SimpleObject>();
-			Patient patient = visit.getPatient();
+			List<SimpleObject> vaccinations = new ArrayList<SimpleObject>();			
 
 			//Unique id
 			PatientIdentifierType openmrsIdType = MetadataUtils.existing(PatientIdentifierType.class, OPENMRS_ID);
@@ -164,7 +202,6 @@ public class DmiDataExchange {
 
 
 							for (Obs obs : encounter.getObs()) {
-								System.out.println("Obsing ==> ");
 								encounterId = obs.getEncounter().getId();
 								encounterDate = sd.format(encounter.getEncounterDatetime());
 								outPatientDate = sd.format(encounter.getEncounterDatetime());
@@ -300,7 +337,7 @@ public class DmiDataExchange {
 								payloadObj.put("complaintDtoList", complaints);
 							} else {
 								payloadObj.put("complaintDtoList", complaints);
-							}
+							}							
 							if (orderId != null && testName != "") {
 								SimpleObject labsObject = new SimpleObject();
 								labsObject.put("orderId", orderId);
@@ -322,6 +359,18 @@ public class DmiDataExchange {
 
 						}
 					}
+				}
+				if(!conditionMap.isEmpty()) {
+					for (Map.Entry<Integer, String> conditionEntry : conditionMap.entrySet()) {
+						SimpleObject conditionsObject = new SimpleObject();
+						conditionsObject.put("conditionId", conditionEntry.getKey());
+						conditionsObject.put("conditionName", conditionEntry.getValue());
+						conditionsObject.put("voided", false);
+						conditionFlagged.add(conditionsObject);
+						payloadObj.put("flaggedConditions", conditionFlagged);
+					}
+				}else {
+					payloadObj.put("flaggedConditions", conditionFlagged);
 				}
 
 				System.out.println("Payload generated: " + payload);

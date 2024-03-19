@@ -3,7 +3,7 @@
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can
  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
  * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
- *
+ * <p>
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
@@ -29,7 +29,6 @@ import java.util.*;
 
 /**
  * Calculates the eligibility for ILI screening flag for  patients
- * @should calculate Active visit
  * @should calculate cough for <= 10 days
  * @should calculate fever for <= 10 days
  * @should calculate temperature  for >= 38.0 same day
@@ -37,141 +36,141 @@ import java.util.*;
  * @should calculate duration < 10 days
  */
 public class IliScreeningCalculation extends AbstractPatientCalculation {
-    protected static final Log log = LogFactory.getLog(IliScreeningCalculation.class);
-    public static final EncounterType triageEncType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.TRIAGE);
-    public static final Form triageScreeningForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.TRIAGE);
-    public static final EncounterType consultationEncType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.CONSULTATION);
-    public static final Form clinicalEncounterForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.CLINICAL_ENCOUNTER);
-    public static final EncounterType greenCardEncType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION);
-    public static final Form greenCardForm = MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD);
+	protected static final Log log = LogFactory.getLog(IliScreeningCalculation.class);
+	public static final EncounterType triageEncType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.TRIAGE);
+	public static final Form triageScreeningForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.TRIAGE);
+	public static final EncounterType consultationEncType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.CONSULTATION);
 
-    Integer MEASURE_FEVER = 140238;
-    Integer COUGH_PRESENCE = 143264;
-    Integer DURATION = 159368;
-    Integer SCREENING_QUESTION = 5219;
-    Integer TEMPERATURE = 5088;
-    Integer PATIENT_OUTCOME = 160433;
-    Integer INPATIENT_ADMISSION = 1654;
+	public static final Form clinicalEncounterForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.CLINICAL_ENCOUNTER);
+	public static final EncounterType greenCardEncType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION);
+	public static final Form greenCardForm = MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD);
 
-    /**
-     * Evaluates the calculation
-     */
+	Integer MEASURE_FEVER = 140238;
+	Integer COUGH_PRESENCE = 143264;
+	Integer DURATION = 159368;
+	Integer SCREENING_QUESTION = 5219;
+	Integer TEMPERATURE = 5088;
+	Integer PATIENT_OUTCOME = 160433;
+	Integer INPATIENT_ADMISSION = 1654;
 
-    @Override
-    public CalculationResultMap evaluate(Collection<Integer> cohort, Map<String, Object> parameterValues, PatientCalculationContext context) {
+	/**
+	 * Evaluates the calculation
+	 */
 
-        Set<Integer> alive = Filters.alive(cohort, context);
-        PatientService patientService = Context.getPatientService();
-        CalculationResultMap ret = new CalculationResultMap();
+	@Override
+	public CalculationResultMap evaluate(Collection<Integer> cohort, Map<String, Object> parameterValues, PatientCalculationContext context) {
 
-        for (Integer ptId : alive) {
-            boolean eligible = false;
-            List<Visit> activeVisits = Context.getVisitService().getActiveVisitsByPatient(patientService.getPatient(ptId));
-            if (!activeVisits.isEmpty()) {
-                Date currentDate = new Date();
-                Double tempValue = 0.0;
-                Double duration = 0.0;
-                Date dateCreated = null;
-                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                String todayDate = dateFormat.format(currentDate);
-                Patient patient = patientService.getPatient(ptId);
+		Set<Integer> alive = Filters.alive(cohort, context);
+		PatientService patientService = Context.getPatientService();
+		CalculationResultMap ret = new CalculationResultMap();
 
-                Encounter lastTriageEnc = EmrUtils.lastEncounter(patient, triageEncType, triageScreeningForm);
-                Encounter lastFollowUpEncounter = EmrUtils.lastEncounter(patient, greenCardEncType, greenCardForm);   //last greencard followup form
-                Encounter lastClinicalEncounter = EmrUtils.lastEncounter(patient, consultationEncType, clinicalEncounterForm);   //last clinical encounter form
+		for (Integer ptId : alive) {
+			System.out.println("Checking ili eligibility ==>"+patientService.getPatient(ptId));
+			boolean eligible = false;
+			Date currentDate = new Date();
+			Double tempValue = 0.0;
+			Double duration = 0.0;
+			Date dateCreated = null;
+			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+			String todayDate = dateFormat.format(currentDate);
+			Patient patient = patientService.getPatient(ptId);
 
-                ConceptService cs = Context.getConceptService();
-                Concept measureFeverResult = cs.getConcept(MEASURE_FEVER);
-                Concept coughPresenceResult = cs.getConcept(COUGH_PRESENCE);
-                Concept screeningQuestion = cs.getConcept(SCREENING_QUESTION);
-                Concept adminQuestion = cs.getConcept(PATIENT_OUTCOME);
-                Concept admissionAnswer = cs.getConcept(INPATIENT_ADMISSION);
+			Encounter lastTriageEnc = EmrUtils.lastEncounter(patient, triageEncType, triageScreeningForm);
+			Encounter lastFollowUpEncounter = EmrUtils.lastEncounter(patient, greenCardEncType, greenCardForm);   //last greencard followup form
+			Encounter lastClinicalEncounter = EmrUtils.lastEncounter(patient, consultationEncType, clinicalEncounterForm);   //last clinical encounter form
 
-                CalculationResultMap tempMap = Calculations.lastObs(cs.getConcept(TEMPERATURE), cohort, context);
-                boolean patientFeverResult = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, measureFeverResult) : false;
-                boolean patientCoughResult = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, coughPresenceResult) : false;
-                boolean patientFeverResultGreenCard = lastFollowUpEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastFollowUpEncounter, screeningQuestion, measureFeverResult) : false;
-                boolean patientCoughResultGreenCard = lastFollowUpEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastFollowUpEncounter, screeningQuestion, coughPresenceResult) : false;
-                boolean patientFeverResultClinical = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, measureFeverResult) : false;
-                boolean patientCoughResultClinical = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, coughPresenceResult) : false;
-                //Check admission status : Only found in clinical encounter
-                boolean patientAdmissionStatus = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, adminQuestion, admissionAnswer) : false;
+			ConceptService cs = Context.getConceptService();
+			Concept measureFeverResult = cs.getConcept(MEASURE_FEVER);
+			Concept coughPresenceResult = cs.getConcept(COUGH_PRESENCE);
+			Concept screeningQuestion = cs.getConcept(SCREENING_QUESTION);
+			Concept adminQuestion = cs.getConcept(PATIENT_OUTCOME);
+			Concept admissionAnswer = cs.getConcept(INPATIENT_ADMISSION);
 
-                Obs lastTempObs = EmrCalculationUtils.obsResultForPatient(tempMap, ptId);
-                if (lastTempObs != null) {
-                    tempValue = lastTempObs.getValueNumeric();
-                }
+			CalculationResultMap tempMap = Calculations.lastObs(cs.getConcept(TEMPERATURE), cohort, context);
+			boolean patientFeverResult = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, measureFeverResult) : false;
+			boolean patientCoughResult = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, coughPresenceResult) : false;
+			boolean patientFeverResultGreenCard = lastFollowUpEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastFollowUpEncounter, screeningQuestion, measureFeverResult) : false;
+			boolean patientCoughResultGreenCard = lastFollowUpEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastFollowUpEncounter, screeningQuestion, coughPresenceResult) : false;
+			boolean patientFeverResultClinical = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, measureFeverResult) : false;
+			boolean patientCoughResultClinical = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, coughPresenceResult) : false;
+			//Check admission status : Only found in clinical encounter
+			boolean patientAdmissionStatus = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, adminQuestion, admissionAnswer) : false;
 
-                if (lastTriageEnc != null) {
-                    if (patientFeverResult && patientCoughResult) {
-                        for (Obs obs : lastTriageEnc.getObs()) {
-                            dateCreated = obs.getDateCreated();
-                            if (obs.getConcept().getConceptId().equals(DURATION)) {
-                                duration = obs.getValueNumeric();
-                            }
-                            if (dateCreated != null) {
-                                String createdDate = dateFormat.format(dateCreated);
-                                if ((duration > 0.0 && duration < 10) && tempValue != null && tempValue >= 38.0) {
-                                    if (createdDate.equals(todayDate)) {
-                                        if (!patientAdmissionStatus) {
-                                            eligible = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+			Obs lastTempObs = EmrCalculationUtils.obsResultForPatient(tempMap, ptId);
+			if (lastTempObs != null) {
+				tempValue = lastTempObs.getValueNumeric();
+			}
 
-                if (lastFollowUpEncounter != null) {
-                    if (patientFeverResultGreenCard && patientCoughResultGreenCard) {
-                        for (Obs obs : lastFollowUpEncounter.getObs()) {
-                            dateCreated = obs.getDateCreated();
-                            if (obs.getConcept().getConceptId().equals(DURATION)) {
-                                duration = obs.getValueNumeric();
-                            }
-                            if (dateCreated != null) {
-                                String createdDate = dateFormat.format(dateCreated);
-                                if ((duration > 0.0 && duration < 10) && tempValue != null && tempValue >= 38.0) {
-                                    if (createdDate.equals(todayDate)) {
-                                        if (!patientAdmissionStatus) {
-                                            eligible = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                if (lastClinicalEncounter != null) {
-                    if (patientFeverResultClinical && patientCoughResultClinical) {
-                        for (Obs obs : lastClinicalEncounter.getObs()) {
-                            dateCreated = obs.getDateCreated();
-                            if (obs.getConcept().getConceptId().equals(DURATION)) {
-                                duration = obs.getValueNumeric();
-                            }
-                            if (dateCreated != null) {
-                                String createdDate = dateFormat.format(dateCreated);
-                                if ((duration > 0.0 && duration < 10) && tempValue != null && tempValue >= 38.0) {
-                                    if (createdDate.equals(todayDate)) {
-                                        if (!patientAdmissionStatus) {
-                                            eligible = true;
-                                            break;
-                                        }
+			if (lastTriageEnc != null) {
+				if (patientFeverResult && patientCoughResult) {
+					for (Obs obs : lastTriageEnc.getObs()) {
+						dateCreated = obs.getDateCreated();
+						if (obs.getConcept().getConceptId().equals(DURATION)) {
+							duration = obs.getValueNumeric();
+						}
+						if (dateCreated != null) {
+							String createdDate = dateFormat.format(dateCreated);
+							if ((duration > 0.0 && duration < 10) && tempValue != null && tempValue >= 38.0) {
+								if (createdDate.equals(todayDate)) {
+									if (!patientAdmissionStatus) {
+										eligible = true;
+										break;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
 
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+			if (lastFollowUpEncounter != null) {
+				if (patientFeverResultGreenCard && patientCoughResultGreenCard) {
+					for (Obs obs : lastFollowUpEncounter.getObs()) {
+						dateCreated = obs.getDateCreated();
+						if (obs.getConcept().getConceptId().equals(DURATION)) {
+							duration = obs.getValueNumeric();
+						}
+						if (dateCreated != null) {
+							String createdDate = dateFormat.format(dateCreated);
+							if ((duration > 0.0 && duration < 10) && tempValue != null && tempValue >= 38.0) {
+								if (createdDate.equals(todayDate)) {
+									if (!patientAdmissionStatus) {
+										eligible = true;
+										break;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			if (lastClinicalEncounter != null) {
+				if (patientFeverResultClinical && patientCoughResultClinical) {
+					for (Obs obs : lastClinicalEncounter.getObs()) {
+						dateCreated = obs.getDateCreated();
+						if (obs.getConcept().getConceptId().equals(DURATION)) {
+							duration = obs.getValueNumeric();
+						}
+						if (dateCreated != null) {
+							String createdDate = dateFormat.format(dateCreated);
+							if ((duration > 0.0 && duration < 10) && tempValue != null && tempValue >= 38.0) {
+								if (createdDate.equals(todayDate)) {
+									if (!patientAdmissionStatus) {
+										eligible = true;
+										break;
+									}
 
-                ret.put(ptId, new BooleanResult(eligible, this));
-            }
-        }
+								}
+							}
+						}
+					}
+				}
+			}
+			System.out.println("Eligibility ili==>"+eligible);
+			ret.put(ptId, new BooleanResult(eligible, this));
+          
+		}
 
-        return ret;
-    }
+		return ret;
+	}
 }

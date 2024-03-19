@@ -30,7 +30,6 @@ import java.util.*;
 
 /**
  * Calculates the eligibility for Haemorrhagic fever screening flag for  patients
- * @should calculate Active visit
  * @should calculate Fever
  * @should calculate Onset at least 72hours.
  * @should calculate bleeding
@@ -57,8 +56,6 @@ public class ViralHaemorrhagicFeverCalculation extends AbstractPatientCalculatio
 
         for (Integer ptId : alive) {
             boolean eligible = false;
-            List<Visit> activeVisits = Context.getVisitService().getActiveVisitsByPatient(patientService.getPatient(ptId));
-            if (!activeVisits.isEmpty()) {
                 Date currentDate = new Date();              
                 Date dateCreated = null;
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -108,8 +105,7 @@ public class ViralHaemorrhagicFeverCalculation extends AbstractPatientCalculatio
                     }
                 }
                 ret.put(ptId, new BooleanResult(eligible, this));
-            }
-        }
+             }
         return ret;
     }
 }
