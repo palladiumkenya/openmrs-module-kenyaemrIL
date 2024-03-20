@@ -18,7 +18,11 @@ import ca.uhn.fhir.parser.IParser;
 import com.google.common.base.Strings;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.hl7.fhir.r4.model.*;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.ServiceRequest;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.openmrs.Location;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
@@ -26,29 +30,28 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemr.api.KenyaEmrService;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.api.shr.FhirConfig;
+import org.openmrs.module.kenyaemrIL.fragment.controller.ReferralsDataExchangeFragmentController;
+import org.openmrs.module.kenyaemrIL.fragment.controller.ShrSummariesFragmentController;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.Program_Discontinuation_Message;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.artReferral.SERVICE_REQUEST_SUPPORTING_INFO;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
-import org.openmrs.module.kenyaemrIL.fragment.controller.ShrSummariesFragmentController;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.MainResourceController;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 
 
 /**
@@ -260,6 +263,29 @@ public class KenyaEMRILResourceController extends MainResourceController {
         return new ArrayList<>();
     }
 
+    @RequestMapping(method = RequestMethod.POST, value = "/serveReferredClient")
+    @ResponseBody
+    public ResponseEntity<SimpleObject> processReferredPatient(@RequestBody String referralMessage) throws Exception {
+        JSONParser parser = new JSONParser();
+        JSONObject responseObj = (JSONObject) parser.parse(referralMessage);
+        Long messageId = (Long) responseObj.get("referralMessageId");
+        Patient patient = processReferral(messageId.intValue());
+        return ResponseEntity.ok()
+                .body(formattedResponse(patient));
+    }
+
+    @RequestMapping(method = RequestMethod.GET, value = "/pullShrReferrals")
+    @ResponseBody
+    public SimpleObject pullShrReferrals() throws Exception {
+        ReferralsDataExchangeFragmentController component =
+                Context.getRegisteredComponent("referralsDataExchangeFragmentController", ReferralsDataExchangeFragmentController.class);
+
+        org.openmrs.ui.framework.SimpleObject result = component.pullCommunityReferralsFromFhir();
+        SimpleObject formattedResponse = new SimpleObject();
+        formattedResponse.put("result", result.get("status"));
+        return formattedResponse;
+    }
+
     public String formatDate(Date date) {
         DateFormat dateFormatter = new SimpleDateFormat("dd-MMM-yyyy");
         return date == null ? "" : dateFormatter.format(date);
@@ -304,4 +330,26 @@ public class KenyaEMRILResourceController extends MainResourceController {
         return referralReasons;
     }
 
+    public Patient processReferral(Integer referralMessageId) throws Exception {
+        KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
+        ExpectedTransferInPatients referred = service.getCommunityReferralsById(referralMessageId);
+        ReferralsDataExchangeFragmentController component =
+                Context.getRegisteredComponent("referralsDataExchangeFragmentController", ReferralsDataExchangeFragmentController.class);
+        Patient patient = component.registerReferredPatient(referred);
+        if (patient != null) {
+            referred.setReferralStatus("COMPLETED");
+            referred.setPatient(patient);
+            service.createPatient(referred);
+        }
+
+        return patient;
+    }
+
+    public SimpleObject formattedResponse(Patient patient) {
+        SimpleObject response = new SimpleObject();
+        response.put("uuid", patient.getUuid());
+        response.put("givenName", patient.getGivenName());
+        return response;
+    }
 }
+

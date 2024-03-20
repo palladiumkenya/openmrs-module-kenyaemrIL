@@ -48,6 +48,7 @@ import org.openmrs.util.PrivilegeConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -72,6 +73,7 @@ import java.util.Set;
 /**
  * controller for pivotTableCharts fragment
  */
+@Component
 public class ReferralsDataExchangeFragmentController {
     // Logger
     private static final Logger log = LoggerFactory.getLogger(ReferralsDataExchangeFragmentController.class);
@@ -380,7 +382,7 @@ public class ReferralsDataExchangeFragmentController {
     /**
      * Create referred patient
      */
-    private Patient registerReferredPatient(ExpectedTransferInPatients referredPatient) {
+    public Patient registerReferredPatient(ExpectedTransferInPatients referredPatient) {
         List<Patient> results = Context.getPatientService().getPatients(referredPatient.getNupiNumber());
         //Assign  active referral_status attribute
         PersonAttribute referralStatusAttribute = new PersonAttribute();
