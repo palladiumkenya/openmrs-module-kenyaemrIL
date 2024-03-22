@@ -9,7 +9,6 @@ import org.openmrs.module.kenyaemrIL.dmi.DmiDataExchange;
 import org.openmrs.module.kenyaemrIL.dmi.dmiUtils;
 import org.openmrs.scheduler.tasks.AbstractTask;
 import org.openmrs.ui.framework.SimpleObject;
-import org.openmrs.util.OpenmrsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,8 +70,7 @@ public class DmiDirectPushTask extends AbstractTask {
 				}
 			}
 
-			Date nextProcessingDate = OpenmrsUtil.getLastMomentOfDay(new Date());
-			globalPropertyObject.setPropertyValue(formatter.format(nextProcessingDate));
+			globalPropertyObject.setPropertyValue(formatter.format(new Date()));
 			Context.getAdministrationService().saveGlobalProperty(globalPropertyObject);
 			Context.flushSession();
 		} catch (IOException ioe) {
@@ -100,7 +98,7 @@ public class DmiDirectPushTask extends AbstractTask {
 		StringBuilder q = new StringBuilder();
 		q.append("select v.visit_id ");
 		q.append("from visit v " );
-		q.append("where v.date_started > '" + effectiveDate + "' ");
+		q.append("where v.date_stopped >= '" + effectiveDate + "' ");
 
 		List<Visit> visits = new ArrayList<>();
 		VisitService visitService = Context.getVisitService();
