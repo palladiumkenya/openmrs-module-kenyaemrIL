@@ -44,7 +44,7 @@ public class ViralHaemorrhagicFeverCalculation extends AbstractPatientCalculatio
     public static final Form greenCardForm = MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD);
    
     Integer FEVER = 140238;
-    Integer BLEEDING_TENDENCIES = 159339;  
+    Integer BLEEDING_TENDENCIES = 162628;  
     Integer SCREENING_QUESTION = 5219;
 
     @Override

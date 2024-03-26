@@ -41,7 +41,7 @@ public class DysenteryCalculation extends AbstractPatientCalculation {
 	public static final Form clinicalEncounterForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.CLINICAL_ENCOUNTER);
 	public static final EncounterType greenCardEncType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION);
 	public static final Form greenCardForm = MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD);
-	Integer BLOOD_IN_STOOL = 132494;
+	Integer BLOOD_IN_STOOL = 117671;
 	Integer DIARRHEA = 142412;
 	Integer SCREENING_QUESTION = 5219;
 

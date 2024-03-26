@@ -59,11 +59,12 @@ public class DmiDirectPushTask extends AbstractTask {
 						DmiDataExchange dmiDataExchange = new DmiDataExchange();
 						JSONArray params = dmiDataExchange.generateDMIpostPayload(visit, fetchDate);
 						System.out.println("Payload to DMI server ==> " + params);
-
-						try {
-							SimpleObject results = dmiUtils.sendPOST(params.toJSONString());
-						} catch (Exception e) {
-							System.out.println(e.getMessage());
+						if (!params.isEmpty()) {
+							try {
+								SimpleObject results = dmiUtils.sendPOST(params.toJSONString());
+							} catch (Exception e) {
+								System.out.println(e.getMessage());
+							}
 						}
 
 					}
@@ -89,15 +90,16 @@ public class DmiDirectPushTask extends AbstractTask {
 
 	/**
 	 * Gets a list of patients who have had complaints or diagnosis or labs recorded in triage or greencard forms since the last timestamp
+	 *
 	 * @param date last timestamp
 	 * @return a list of patients who have had complaints or diagnosis or labs recorded as at the provided timestamp
 	 */
-	private List<Visit> getComplaintsAndDiagnosis (Date date) {
+	private List<Visit> getComplaintsAndDiagnosis(Date date) {
 		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String effectiveDate = sd.format(date);
 		StringBuilder q = new StringBuilder();
 		q.append("select v.visit_id ");
-		q.append("from visit v " );
+		q.append("from visit v ");
 		q.append("where v.date_stopped >= '" + effectiveDate + "' ");
 
 		List<Visit> visits = new ArrayList<>();
