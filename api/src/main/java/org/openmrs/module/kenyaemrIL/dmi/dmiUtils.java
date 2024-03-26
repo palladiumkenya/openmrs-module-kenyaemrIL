@@ -201,17 +201,17 @@ public class dmiUtils {
 
 		GlobalProperty globalClientSecret = Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_CLIENT_SECRET);
 		strClientSecret = globalClientSecret.getPropertyValue();
-		System.out.println("strClientSecret==>"+strClientSecret);
+		//System.out.println("strClientSecret==>"+strClientSecret);
 		GlobalProperty globalClientId = Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_CLIENT_ID);
 		strClientId = globalClientId.getPropertyValue();
-		System.out.println("strClientId==>"+strClientId);
+		//System.out.println("strClientId==>"+strClientId);
 		String auth = strClientId + ":" + strClientSecret;
-		System.out.println("Auth==>"+auth);
+		//System.out.println("Auth==>"+auth);
 		BufferedReader reader = null;
 		HttpsURLConnection connection = null;
 		String returnValue = "";
 		try {
-			System.out.println("Inside try catch");
+			//System.out.println("Inside try catch");
 			StringBuilder parameters = new StringBuilder();
 			parameters.append("grant_type=" + URLEncoder.encode("client_credentials", "UTF-8"));
 			parameters.append("&");
@@ -219,17 +219,17 @@ public class dmiUtils {
 			parameters.append("&");
 			parameters.append("client_secret=" + URLEncoder.encode(strClientSecret, "UTF-8"));
 			URL url = new URL(strTokenUrl);
-			System.out.println("String url==>"+url);
+			//System.out.println("String url==>"+url);
 			connection = (HttpsURLConnection) url.openConnection();
 			connection.setRequestMethod("POST");
 			connection.setDoOutput(true);
 			connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 			connection.setRequestProperty("Accept", "application/json");
 			connection.setConnectTimeout(10000); // set timeout to 10 seconds
-			System.out.println("String connection==>"+connection);
-			System.out.println("String parameters==>"+parameters);
+			//System.out.println("String connection==>"+connection);
+			//System.out.println("String parameters==>"+parameters);
 			PrintStream os = new PrintStream(connection.getOutputStream());
-			System.out.println("Parameters==>"+parameters);
+			//System.out.println("Parameters==>"+parameters);
 			os.print(parameters);
 			os.close();
 			reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
@@ -239,11 +239,11 @@ public class dmiUtils {
 				out.append(line);
 			}
 			String response = out.toString();
-			System.out.println("Return generated string token ==>"+response);
+			//System.out.println("Return generated string token ==>"+response);
 			Matcher matcher = pat.matcher(response);
 			if (matcher.matches() && matcher.groupCount() > 0) {
 				returnValue = matcher.group(1);
-				System.out.println("Return token value ==>"+returnValue);
+				System.out.println("Return token successfully ==>");
 			} else {
 				System.out.println("Return token value missing==>");
 				System.err.println("OAUTH Error : Token pattern mismatch");
@@ -325,7 +325,7 @@ public class dmiUtils {
 			if (varsOk) {
 				//Get the OAuth Token
 				String credentials = getClientCredentials();
-				System.out.println("Credentials ==>"+credentials);
+				//System.out.println("Credentials ==>"+credentials);
 				//Save on global and return token
 				if (credentials != null) {
 					Context.getAdministrationService().setGlobalProperty(ILMetadata.GP_DMI_SERVER_TOKEN, credentials);
@@ -358,7 +358,7 @@ public class dmiUtils {
 		System.out.println("Running send function");
 		GlobalProperty globalPostUrl = Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_POST_END_POINT);
 		String strPostUrl = globalPostUrl.getPropertyValue();
-		System.out.println("Retrieving post url ==>"+strPostUrl);
+		//System.out.println("Retrieving post url ==>"+strPostUrl);
 		URL url = new URL(strPostUrl);
 
 		HttpsURLConnection con =(HttpsURLConnection) url.openConnection();
@@ -366,8 +366,8 @@ public class dmiUtils {
 
 		dmiUtils dmiUtils = new dmiUtils();
 		String authToken = dmiUtils.getToken();
-		System.out.println("Retrieving token ==>"+authToken);
-		System.out.println("Params to send ==>"+params);
+		//System.out.println("Retrieving token ==>"+authToken);
+		//System.out.println("Params to send ==>"+params);
 
 		con.setRequestProperty("Authorization", "Bearer " + authToken);
 		con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
@@ -382,9 +382,9 @@ public class dmiUtils {
 
 		int responseCode = con.getResponseCode();
 		System.out.println("Response code ==>"+responseCode);
-		System.out.println("Response message ==>"+con.getResponseMessage());
-		System.out.println("Response error message ==>"+con.getErrorStream());
-		System.out.println("Response con message ==>"+con.toString());
+//		System.out.println("Response message ==>"+con.getResponseMessage());
+//		System.out.println("Response error message ==>"+con.getErrorStream());
+//		System.out.println("Response con message ==>"+con.toString());
 		SimpleObject responseObj = null;
 
 		if (responseCode == HttpURLConnection.HTTP_OK) { //success
