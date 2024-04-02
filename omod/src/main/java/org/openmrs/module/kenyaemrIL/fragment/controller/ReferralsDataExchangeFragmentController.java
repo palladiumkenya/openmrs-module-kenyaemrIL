@@ -387,7 +387,6 @@ public class ReferralsDataExchangeFragmentController {
         //Assign  active referral_status attribute
         PersonAttribute referralStatusAttribute = new PersonAttribute();
         PersonAttributeType referralStatusAttributeType = Context.getPersonService().getPersonAttributeTypeByUuid("df7e9996-23b5-4f66-a799-97498d19850d");
-
         if (!results.isEmpty()) {
             if (referralStatusAttributeType != null) {
                 referralStatusAttribute.setAttributeType(referralStatusAttributeType);
@@ -402,7 +401,7 @@ public class ReferralsDataExchangeFragmentController {
             pn.setMiddleName(referredPatient.getClientMiddleName());
             pn.setFamilyName(referredPatient.getClientLastName());
             patient.addName(pn);
-            patient.setBirthdate(new Date());
+            patient.setBirthdate(referredPatient.getClientBirthDate());
             patient.setGender(referredPatient.getClientGender());
             PatientIdentifierType nupiIdType = MetadataUtils.existing(PatientIdentifierType.class, NUPI);
             PatientIdentifier fetchedNupi = new PatientIdentifier(referredPatient.getNupiNumber(), nupiIdType, getDefaultLocation());
