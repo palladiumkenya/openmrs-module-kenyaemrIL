@@ -95,18 +95,18 @@ public class VisualizationDataExchange {
 			payloadObj.put("visits", visits);
 		}
 
-//		diagnosisMap = allDiagnosis(fetchDate);
-//		if (!diagnosisMap.isEmpty()) {
-//			for (Map.Entry<String, Integer> diagnosisEntry : diagnosisMap.entrySet()) {
-//				SimpleObject diagnosisObject = new SimpleObject();
-//				diagnosisObject.put("diagnosis_name", diagnosisEntry.getKey());
-//				diagnosisObject.put("total", diagnosisEntry.getValue().toString());
-//				diagnosis.add(diagnosisObject);
-//			}
-//			payloadObj.put("diagnosis", diagnosis);
-//		} else {
-//			payloadObj.put("diagnosis", diagnosis);
-//		}
+		diagnosisMap = allDiagnosis(fetchDate);
+		if (!diagnosisMap.isEmpty()) {
+			for (Map.Entry<String, Integer> diagnosisEntry : diagnosisMap.entrySet()) {
+				SimpleObject diagnosisObject = new SimpleObject();
+				diagnosisObject.put("diagnosis_name", diagnosisEntry.getKey());
+				diagnosisObject.put("total", diagnosisEntry.getValue().toString());
+				diagnosis.add(diagnosisObject);
+			}
+			payloadObj.put("diagnosis", diagnosis);
+		} else {
+			payloadObj.put("diagnosis", diagnosis);
+		}
 		workloadMap = workLoad(fetchDate);
 		if (!workloadMap.isEmpty()){
 			for(Map.Entry<String, Integer> workloadEntry : workloadMap.entrySet()){
@@ -203,29 +203,29 @@ public class VisualizationDataExchange {
 
 	public static Map<String, Integer> allDiagnosis(Date fetchDate) {
 
-		Map<String, Integer> diagnosisMap = new HashMap<>();		
-		//Forms with diagnosis
-		Form hivGreencardForm = MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD);
-		Form clinicalEncounterForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.CLINICAL_ENCOUNTER);
+		Map<String, Integer> diagnosisMap = new HashMap<>();
+		VisitService visitService = Context.getVisitService();
+		List<Visit> allVisits = visitService.getVisits(null, null, null, null, fetchDate, null, null, null, null, true, false);
 
-		List<Patient> allPatients = Context.getPatientService().getAllPatients();
-		for (Patient patient : allPatients) {
-
-			List<Encounter> encounters = Context.getEncounterService().getEncounters(patient, null,
-				fetchDate, null, Arrays.asList(hivGreencardForm, clinicalEncounterForm), null, null, null, null, false);
-			//System.out.println("Count of diagnosis encounters  ==> " + encounters.size());
-			for (Encounter encounterWithDiagnosis : encounters) {
-				DiagnosisService diagnosisService = Context.getDiagnosisService();
-				List<Diagnosis> allDiagnosis = diagnosisService.getPrimaryDiagnoses(encounterWithDiagnosis);
-				if (!allDiagnosis.isEmpty()) {
-					for (Diagnosis diagnosis : allDiagnosis) {
-						String diagnosisName = diagnosis.getDiagnosis().getCoded().getName().getName();
-						System.out.println("We got some Diagnosis Name : " + diagnosisName);
-						diagnosisMap.put(diagnosisName, diagnosisMap.getOrDefault(diagnosisName, 0) + 1);
+		if (!allVisits.isEmpty()) {
+			for (Visit visit : allVisits) {
+				if (!visit.getEncounters().isEmpty()) {					
+					for (Encounter encounter : visit.getEncounters()) {
+						//Get diagnosis
+						DiagnosisService diagnosisService = Context.getDiagnosisService();
+						List<Diagnosis> allDiagnosis = diagnosisService.getDiagnosesByEncounter(encounter, false, false);
+						if (!allDiagnosis.isEmpty()) {
+							for (Diagnosis diagnosis : allDiagnosis) {
+								String diagnosisName = diagnosis.getDiagnosis().getCoded().getName().getName();
+								System.out.println("We got some Diagnosis Name : " + diagnosisName);
+								diagnosisMap.put(diagnosisName, diagnosisMap.getOrDefault(diagnosisName, 0) + 1);
+							}
+						}
 					}
 				}
 			}
 		}
+		
 		System.out.println("Diagnosis Map"+ diagnosisMap);
 		return diagnosisMap;
 	}
