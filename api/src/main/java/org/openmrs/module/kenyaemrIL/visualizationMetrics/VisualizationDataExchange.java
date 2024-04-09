@@ -217,7 +217,6 @@ public class VisualizationDataExchange {
 						if (!allDiagnosis.isEmpty()) {
 							for (Diagnosis diagnosis : allDiagnosis) {
 								String diagnosisName = diagnosis.getDiagnosis().getCoded().getName().getName();
-								System.out.println("We got some Diagnosis Name : " + diagnosisName);
 								diagnosisMap.put(diagnosisName, diagnosisMap.getOrDefault(diagnosisName, 0) + 1);
 							}
 						}
@@ -226,8 +225,7 @@ public class VisualizationDataExchange {
 			}
 		}
 		
-		System.out.println("Diagnosis Map"+ diagnosisMap);
-		return diagnosisMap;
+	return diagnosisMap;
 	}
 	/**
 	 * Gets details of all bills
