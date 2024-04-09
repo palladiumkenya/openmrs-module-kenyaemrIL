@@ -57,8 +57,7 @@ public class DmiDirectPushTask extends AbstractTask {
 				for (Visit visit : visits) {
 					if (visit != null) {
 						DmiDataExchange dmiDataExchange = new DmiDataExchange();
-						JSONArray params = dmiDataExchange.generateDMIpostPayload(visit, fetchDate);
-						System.out.println("Payload to DMI server ==> " + params);
+						JSONArray params = dmiDataExchange.generateDMIpostPayload(visit, fetchDate);						
 						if (!params.isEmpty()) {
 							try {
 								SimpleObject results = dmiUtils.sendPOST(params.toJSONString());

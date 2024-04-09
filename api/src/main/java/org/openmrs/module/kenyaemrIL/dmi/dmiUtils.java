@@ -175,8 +175,7 @@ public class dmiUtils {
 	 * @return the token as a string and null on failure
 	 */
 	private String getClientCredentials() throws IOException, NoSuchAlgorithmException, KeyManagementException{
-
-		System.out.println("Generating credentials ==>");
+		
 
 		TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
 			public java.security.cert.X509Certificate[] getAcceptedIssuers() {
@@ -200,36 +199,28 @@ public class dmiUtils {
 		strTokenUrl = globalTokenUrl.getPropertyValue();
 
 		GlobalProperty globalClientSecret = Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_CLIENT_SECRET);
-		strClientSecret = globalClientSecret.getPropertyValue();
-		//System.out.println("strClientSecret==>"+strClientSecret);
+		strClientSecret = globalClientSecret.getPropertyValue();		
 		GlobalProperty globalClientId = Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_CLIENT_ID);
-		strClientId = globalClientId.getPropertyValue();
-		//System.out.println("strClientId==>"+strClientId);
-		String auth = strClientId + ":" + strClientSecret;
-		//System.out.println("Auth==>"+auth);
+		strClientId = globalClientId.getPropertyValue();	
+		String auth = strClientId + ":" + strClientSecret;		
 		BufferedReader reader = null;
 		HttpsURLConnection connection = null;
 		String returnValue = "";
-		try {
-			//System.out.println("Inside try catch");
+		try {			
 			StringBuilder parameters = new StringBuilder();
 			parameters.append("grant_type=" + URLEncoder.encode("client_credentials", "UTF-8"));
 			parameters.append("&");
 			parameters.append("client_id=" + URLEncoder.encode(strClientId, "UTF-8"));
 			parameters.append("&");
 			parameters.append("client_secret=" + URLEncoder.encode(strClientSecret, "UTF-8"));
-			URL url = new URL(strTokenUrl);
-			//System.out.println("String url==>"+url);
+			URL url = new URL(strTokenUrl);			
 			connection = (HttpsURLConnection) url.openConnection();
 			connection.setRequestMethod("POST");
 			connection.setDoOutput(true);
 			connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 			connection.setRequestProperty("Accept", "application/json");
-			connection.setConnectTimeout(10000); // set timeout to 10 seconds
-			//System.out.println("String connection==>"+connection);
-			//System.out.println("String parameters==>"+parameters);
-			PrintStream os = new PrintStream(connection.getOutputStream());
-			//System.out.println("Parameters==>"+parameters);
+			connection.setConnectTimeout(10000); // set timeout to 10 seconds			
+			PrintStream os = new PrintStream(connection.getOutputStream());			
 			os.print(parameters);
 			os.close();
 			reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
@@ -238,12 +229,10 @@ public class dmiUtils {
 			while ((line = reader.readLine()) != null) {
 				out.append(line);
 			}
-			String response = out.toString();
-			//System.out.println("Return generated string token ==>"+response);
+			String response = out.toString();			
 			Matcher matcher = pat.matcher(response);
 			if (matcher.matches() && matcher.groupCount() > 0) {
-				returnValue = matcher.group(1);
-				System.out.println("Return token successfully ==>");
+				returnValue = matcher.group(1);			
 			} else {
 				System.out.println("Return token value missing==>");
 				System.err.println("OAUTH Error : Token pattern mismatch");
@@ -313,8 +302,7 @@ public class dmiUtils {
 	 * @return String the token or empty on failure
 	 */
 	public String getToken() throws IOException, NoSuchAlgorithmException, KeyManagementException {
-		//check if current token is valid
-		System.out.println("Generating token ==>");
+		//check if current token is valid	
 		if(isValidToken()) {
 			return(Context.getAdministrationService().getGlobalProperty(ILMetadata.GP_DMI_SERVER_TOKEN));
 
@@ -324,8 +312,7 @@ public class dmiUtils {
 			System.out.println("If vars are okay ==>"+varsOk);
 			if (varsOk) {
 				//Get the OAuth Token
-				String credentials = getClientCredentials();
-				//System.out.println("Credentials ==>"+credentials);
+				String credentials = getClientCredentials();				
 				//Save on global and return token
 				if (credentials != null) {
 					Context.getAdministrationService().setGlobalProperty(ILMetadata.GP_DMI_SERVER_TOKEN, credentials);
@@ -354,11 +341,9 @@ public class dmiUtils {
 		sc.init(null, trustAllCerts, new java.security.SecureRandom());
 		HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
 
-		String stringResponse= "";
-		System.out.println("Running send function");
+		String stringResponse= "";		
 		GlobalProperty globalPostUrl = Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_POST_END_POINT);
 		String strPostUrl = globalPostUrl.getPropertyValue();
-		//System.out.println("Retrieving post url ==>"+strPostUrl);
 		URL url = new URL(strPostUrl);
 
 		HttpsURLConnection con =(HttpsURLConnection) url.openConnection();
@@ -366,8 +351,6 @@ public class dmiUtils {
 
 		dmiUtils dmiUtils = new dmiUtils();
 		String authToken = dmiUtils.getToken();
-		//System.out.println("Retrieving token ==>"+authToken);
-		//System.out.println("Params to send ==>"+params);
 
 		con.setRequestProperty("Authorization", "Bearer " + authToken);
 		con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
@@ -382,9 +365,6 @@ public class dmiUtils {
 
 		int responseCode = con.getResponseCode();
 		System.out.println("Response code ==>"+responseCode);
-//		System.out.println("Response message ==>"+con.getResponseMessage());
-//		System.out.println("Response error message ==>"+con.getErrorStream());
-//		System.out.println("Response con message ==>"+con.toString());
 		SimpleObject responseObj = null;
 
 		if (responseCode == HttpURLConnection.HTTP_OK) { //success

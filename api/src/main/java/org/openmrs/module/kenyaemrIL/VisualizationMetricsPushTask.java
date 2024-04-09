@@ -50,8 +50,7 @@ public class VisualizationMetricsPushTask extends AbstractTask {
 			connection.connect();		
 			
 			VisualizationDataExchange vDataExchange = new VisualizationDataExchange();
-			JSONObject params = vDataExchange.generateVisualizationPayload(fetchDate);
-			System.out.println("Payload to Visualization server ==> " + params);
+			JSONObject params = vDataExchange.generateVisualizationPayload(fetchDate);		
 
 			try {
 				Boolean results = VisualizationUtils.sendPOST(params.toJSONString());
@@ -64,8 +63,7 @@ public class VisualizationMetricsPushTask extends AbstractTask {
 			Date nextProcessingDate = new Date();
 			nextProcessingDate.setTime(System.currentTimeMillis());
 			Date startOfDayMidnight = new Date(nextProcessingDate.getTime() - (1000 * 60 * 60 * 24));
-			Date midnightDateTime = OpenmrsUtil.getLastMomentOfDay(startOfDayMidnight);
-			System.out.println("Midnight date ==> "+midnightDateTime);
+			Date midnightDateTime = OpenmrsUtil.getLastMomentOfDay(startOfDayMidnight);			
 			
 			globalPropertyObject.setPropertyValue(formatter.format(midnightDateTime));
 			Context.getAdministrationService().saveGlobalProperty(globalPropertyObject);
