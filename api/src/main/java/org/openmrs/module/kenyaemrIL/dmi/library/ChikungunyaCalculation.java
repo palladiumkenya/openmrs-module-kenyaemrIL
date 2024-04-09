@@ -53,8 +53,7 @@ public class ChikungunyaCalculation extends AbstractPatientCalculation {
 		PatientService patientService = Context.getPatientService();
 		CalculationResultMap ret = new CalculationResultMap();
 
-		for (Integer ptId : alive) {
-			System.out.println("Checking chiks eligibility ==>"+patientService.getPatient(ptId));
+		for (Integer ptId : alive) {			
 			boolean eligible = false;
              
 			Date currentDate = new Date();
@@ -122,8 +121,7 @@ public class ChikungunyaCalculation extends AbstractPatientCalculation {
 						}
 					}
 				}
-			}
-			System.out.println("Eligibility chiks==>"+eligible);
+			}			
 			ret.put(ptId, new BooleanResult(eligible, this));
 		}
 		return ret;

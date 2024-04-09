@@ -32,12 +32,9 @@ public class VisualizationUtils {
         CloseableHttpClient httpClient = HttpClients.custom().setSSLSocketFactory(ILUtils.sslConnectionSocketFactoryWithDisabledSSLVerification()).build();
 
         try {
-            String stringResponse = "";
-            System.out.println("Running send function");
+            String stringResponse = "";           
             GlobalProperty globalPostUrl = Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_VISUALIZATION_SERVER_POST_END_POINT);
             String strPostUrl = globalPostUrl.getPropertyValue();
-            System.out.println("Retrieving post url ==>" + strPostUrl);
-
             HttpPost postRequest = new HttpPost(strPostUrl);
 
             //Set the API media type in http content-type header

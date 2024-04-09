@@ -120,8 +120,7 @@ public class VisualizationDataExchange {
 			payloadObj.put("workload", workload);
 		}
 		billingItems = getBillingItems(fetchDate);
-		if (billingItems.size() > 0) {
-			System.out.println("We have some bills");		
+		if (billingItems.size() > 0) {		
 			for (int i = 0; i < billingItems.size(); i++) {
 				SimpleObject bill = billingItems.get(i);
 				SimpleObject billingObject = new SimpleObject();				
@@ -137,8 +136,7 @@ public class VisualizationDataExchange {
 			payloadObj.put("billing", billing);
 		}
 		paymentItems = getPayments(fetchDate);
-		if (paymentItems.size() > 0) {
-			System.out.println("We have some payments");
+		if (paymentItems.size() > 0) {		
 			for (int i = 0; i < paymentItems.size(); i++) {
 				SimpleObject paymentsList= paymentItems.get(i);
 				SimpleObject paymentsObject = new SimpleObject();
@@ -152,8 +150,7 @@ public class VisualizationDataExchange {
 			payloadObj.put("payments", payments);
 		}
 		inventoryItems = getInventory(fetchDate);
-		if (inventoryItems.size() > 0) {
-			System.out.println("We have some inventory");
+		if (inventoryItems.size() > 0) {			
 			for (int i = 0; i < inventoryItems.size(); i++) {
 				SimpleObject inventoryList= inventoryItems.get(i);
 				SimpleObject inventoryObject = new SimpleObject();
@@ -181,7 +178,7 @@ public class VisualizationDataExchange {
 		}
 
 		Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
-		System.out.println("Payload generated: " + payloadObj);
+		//System.out.println("Payload generated: " + payloadObj);
 
 		return payloadObj;
 	}
@@ -282,8 +279,7 @@ public class VisualizationDataExchange {
 			});
 		} catch (Exception e) {
 			throw new IllegalArgumentException("Unable to execute query", e);
-		}
-		System.out.println(" Bill details ==> "+ret);
+		}	
 		return ret;
 	}
 
@@ -476,8 +472,7 @@ public class VisualizationDataExchange {
 			});
 		} catch (Exception e) {
 			throw new IllegalArgumentException("Unable to execute query", e);
-		}
-		System.out.println(" Inventory details ==> "+ret);
+		}		
 		return ret;
 	}
 

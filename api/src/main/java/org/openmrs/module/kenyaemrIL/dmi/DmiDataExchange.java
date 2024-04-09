@@ -182,8 +182,7 @@ public class DmiDataExchange {
 			Integer doses = null;
 
 			//Set<Encounter> encounters = visit.getEncounters();
-			if (!visit.getEncounters().isEmpty()) {
-				System.out.println("Count of encounters in visit ==> " + visit.getEncounters().size());
+			if (!visit.getEncounters().isEmpty()) {				
 				for (Encounter encounter : visit.getEncounters()) {
 					if (encounter.getEncounterType().equals(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.CONSULTATION)) ||
 						encounter.getEncounterType().equals(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.TRIAGE)) ||
@@ -395,8 +394,7 @@ public class DmiDataExchange {
 					} else {
 						payloadObj.put("flaggedConditions", conditionFlagged);
 					}
-
-					System.out.println("Payload generated: " + payload);
+					
 					payload.add(payloadObj);
 				}
 			}

@@ -64,8 +64,7 @@ public class IliScreeningCalculation extends AbstractPatientCalculation {
 		PatientService patientService = Context.getPatientService();
 		CalculationResultMap ret = new CalculationResultMap();
 
-		for (Integer ptId : alive) {
-			System.out.println("Checking ili eligibility ==>"+patientService.getPatient(ptId));
+		for (Integer ptId : alive) {			
 			boolean eligible = false;
 			Date currentDate = new Date();
 			Double tempValue = 0.0;
@@ -165,8 +164,7 @@ public class IliScreeningCalculation extends AbstractPatientCalculation {
 						}
 					}
 				}
-			}
-			System.out.println("Eligibility ili==>"+eligible);
+			}		
 			ret.put(ptId, new BooleanResult(eligible, this));
           
 		}
