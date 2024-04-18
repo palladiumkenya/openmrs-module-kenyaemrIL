@@ -57,9 +57,11 @@ public class VisualizationDataExchange {
 		List<SimpleObject> billingItems= new ArrayList<SimpleObject>();
 		List<SimpleObject> paymentItems= new ArrayList<SimpleObject>();
 		List<SimpleObject> inventoryItems= new ArrayList<SimpleObject>();
+		List<SimpleObject> queueItems= new ArrayList<SimpleObject>();
 		List<SimpleObject> payments = new ArrayList<SimpleObject>();
 		List<SimpleObject> inventory = new ArrayList<SimpleObject>();
 		List<SimpleObject> mortality = new ArrayList<SimpleObject>();
+		List<SimpleObject> queueWaitTime = new ArrayList<SimpleObject>();
 		String timestamp = formatter.format(fetchDate);
 
 		//Data extraction
@@ -172,13 +174,28 @@ public class VisualizationDataExchange {
 				mortalityObject.put("cause_of_death", mortalityEntry.getKey());
 				mortalityObject.put("total", mortalityEntry.getValue().toString());
 				mortality.add(mortalityObject);
+				payloadObj.put("mortality", mortality);
 			}
 		} else {
 			payloadObj.put("mortality", mortality);
 		}
 
+		queueItems = getWaitTime(fetchDate);
+		if (queueItems.size() > 0) {
+			for (int i = 0; i < queueItems.size(); i++) {
+				SimpleObject queueList= queueItems.get(i);
+				SimpleObject queueObject = new SimpleObject();
+				queueObject.put("queue", queueList.get("queue"));
+				queueObject.put("average_wait_time", queueList.get("average_wait_time"));
+				queueWaitTime.add(queueObject);
+				payloadObj.put("wait_time", queueWaitTime);
+			}
+		} else {
+			payloadObj.put("wait_time", queueWaitTime);
+		}
+
 		Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
-		//System.out.println("Payload generated: " + payloadObj);
+		System.out.println("Payload generated: " + payloadObj);
 
 		return payloadObj;
 	}
@@ -506,6 +523,62 @@ public class VisualizationDataExchange {
 		}
 
 		return workLoadMap;
+	}
+
+	/**
+	 * Gets details of  wait_time
+	 * @param
+	 * @return details of  wait_time
+	 */
+	public static List<SimpleObject> getWaitTime(Date fetchDate) {
+		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String effectiveDate = sd.format(fetchDate);
+		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
+		final String sqlSelectQuery = "SELECT tbl.name,ROUND(AVG(tbl.diff),2) FROM (select q.name,qe.started_at,qe.ended_at, TIMESTAMPDIFF(MINUTE, qe.started_at, qe.ended_at) as diff from openmrs.queue_entry qe inner join openmrs.queue q on q.queue_id = qe.queue_id where date(qe.date_created) >= '" + effectiveDate + "'or date(qe.date_created) >= '" + effectiveDate + "') tbl GROUP BY tbl.name;";
+		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
+		Transaction tx = null;
+		try {
+
+			tx = sf.getHibernateSessionFactory().getCurrentSession().beginTransaction();
+			final Transaction finalTx = tx;
+			sf.getCurrentSession().doWork(new Work() {
+
+				@Override
+				public void execute(Connection connection) throws SQLException {
+					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
+					try {
+
+						ResultSet resultSet = statement.executeQuery();
+						if (resultSet != null) {
+							ResultSetMetaData metaData = resultSet.getMetaData();
+
+							while (resultSet.next()) {
+								Object[] row = new Object[metaData.getColumnCount()];
+								for (int i = 1; i <= metaData.getColumnCount(); i++) {
+									row[i - 1] = resultSet.getObject(i);
+								}
+
+								ret.add(SimpleObject.create(
+									"queue", row[0] != null ? row[0].toString() : "",
+									"average_wait_time", row[1] != null ? row[1].toString() : ""									
+								));
+							}
+						}
+						finalTx.commit();
+					} finally {
+						try {
+							if (statement != null) {
+								statement.close();
+							}
+						} catch (Exception e) {
+						}
+					}
+				}
+			});
+		} catch (Exception e) {
+			throw new IllegalArgumentException("Unable to execute query", e);
+		}
+		return ret;
 	}
 
 }
