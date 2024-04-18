@@ -195,7 +195,7 @@ public class VisualizationDataExchange {
 		}
 
 		Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
-		System.out.println("Payload generated: " + payloadObj);
+		//System.out.println("Payload generated: " + payloadObj);
 
 		return payloadObj;
 	}
