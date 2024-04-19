@@ -47,7 +47,7 @@ public class CholeraCalculation extends AbstractPatientCalculation {
 	public static final EncounterType greenCardEncType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION);
 	public static final Form greenCardForm = MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD);
 	Integer VOMITING = 122983;
-	Integer DIARRHEA = 142412;
+	Integer WATERY_DIARRHEA = 161887;
 	Integer SCREENING_QUESTION = 5219;
 
 	@Override
@@ -66,7 +66,7 @@ public class CholeraCalculation extends AbstractPatientCalculation {
 			Encounter lastGreenCardEnc = EmrUtils.lastEncounter(patient, greenCardEncType, greenCardForm);   //last greencard followup form
 			ConceptService cs = Context.getConceptService();
 			Concept vomitingResult = cs.getConcept(VOMITING);
-			Concept diarrheaResult = cs.getConcept(DIARRHEA);
+			Concept diarrheaResult = cs.getConcept(WATERY_DIARRHEA);
 			Concept screeningQuestion = cs.getConcept(SCREENING_QUESTION);
 			boolean patientVomitClinicalEncResult = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, vomitingResult) : false;
 			boolean patientDiarrheaClinicalEncResult = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, diarrheaResult) : false;
