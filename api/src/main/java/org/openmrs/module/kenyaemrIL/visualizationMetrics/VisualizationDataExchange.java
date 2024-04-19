@@ -534,7 +534,7 @@ public class VisualizationDataExchange {
 		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String effectiveDate = sd.format(fetchDate);
 		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
-		final String sqlSelectQuery = "SELECT tbl.name,ROUND(AVG(tbl.diff),2) FROM (select q.name,qe.started_at,qe.ended_at, TIMESTAMPDIFF(MINUTE, qe.started_at, qe.ended_at) as diff from openmrs.queue_entry qe inner join openmrs.queue q on q.queue_id = qe.queue_id where date(qe.date_created) >= '" + effectiveDate + "'or date(qe.date_created) >= '" + effectiveDate + "') tbl GROUP BY tbl.name;";
+		final String sqlSelectQuery = "SELECT tbl.name,ROUND(AVG(tbl.diff),2) FROM (select q.name,qe.started_at,qe.ended_at, TIMESTAMPDIFF(MINUTE, qe.started_at, qe.ended_at) as diff from openmrs.queue_entry qe inner join openmrs.queue q on q.queue_id = qe.queue_id where (date(qe.date_created) >= '" + effectiveDate + "'or date(qe.date_created) >= '" + effectiveDate + "' ) and qe.ended_at is not null) tbl GROUP BY tbl.name;";
 		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
 		Transaction tx = null;
 		try {
