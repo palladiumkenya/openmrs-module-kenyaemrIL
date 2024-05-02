@@ -26,7 +26,10 @@ import org.openmrs.module.kenyaemr.util.EmrUtils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Calculates the eligibility for Poliomyelitis screening flag for  patients
@@ -98,9 +101,9 @@ public class PoliomyelitisCalculation extends AbstractPatientCalculation {
 							}
 						}
 					}
-				}
-				ret.put(ptId, new BooleanResult(eligible, this));
+				}				
 			}
+			ret.put(ptId, new BooleanResult(eligible, this));
 		}
 
 		return ret;
