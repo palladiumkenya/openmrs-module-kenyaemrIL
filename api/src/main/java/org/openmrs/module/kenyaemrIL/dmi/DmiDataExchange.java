@@ -105,7 +105,7 @@ public class DmiDataExchange {
 		}
 		// 9. suspected polio case
 		CalculationResult polioFlaggedResults = EmrCalculationUtils.evaluateForPatient(PoliomyelitisCalculation.class, null, patient);
-		if (polioFlaggedResults != null) {
+		if (!polioFlaggedResults.isEmpty()) {
 			conditionName = "POLIOMYELITIS";
 			conditionId = 9;
 			conditionMap.put(conditionId, conditionName);
