@@ -23,6 +23,7 @@
         <require_module version="2.1">org.openmrs.module.webservices.rest</require_module>
         <require_module version="${kenyacoreVersion}">org.openmrs.module.kenyacore</require_module>
         <require_module version="${fhir2Version}">org.openmrs.module.fhir2</require_module>
+        <require_module>org.bahmni.module.appointments</require_module>
     </require_modules>
     <!-- Adds link to admin page -->
     <extension>
