@@ -37,6 +37,8 @@ import java.util.*;
 public class DysenteryCalculation extends AbstractPatientCalculation {
 	protected static final Log log = LogFactory.getLog(DysenteryCalculation.class);
 
+	public static final EncounterType triageEncType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.TRIAGE);
+	public static final Form triageScreeningForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.TRIAGE);
 	public static final EncounterType consultationEncType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.CONSULTATION);
 	public static final Form clinicalEncounterForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.CLINICAL_ENCOUNTER);
 	public static final EncounterType greenCardEncType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION);
@@ -57,12 +59,17 @@ public class DysenteryCalculation extends AbstractPatientCalculation {
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 			String todayDate = dateFormat.format(currentDate);
 			Patient patient = patientService.getPatient(ptId);
+
+			Encounter lastTriageEnc = EmrUtils.lastEncounter(patient, triageEncType, triageScreeningForm);
 			Encounter lastClinicalEncounter = EmrUtils.lastEncounter(patient, consultationEncType, clinicalEncounterForm); //last clinical encounter form
 			Encounter lastGreenCardEnc = EmrUtils.lastEncounter(patient, greenCardEncType, greenCardForm);   //last greencard followup form
 			ConceptService cs = Context.getConceptService();
 			Concept bloodyStoolResult = cs.getConcept(BLOOD_IN_STOOL);
 			Concept diarrheaResult = cs.getConcept(DIARRHEA);
 			Concept screeningQuestion = cs.getConcept(SCREENING_QUESTION);
+
+			boolean patientBloodyStoolTriageEncResult = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, bloodyStoolResult) : false;
+			boolean patientDiarrheaTriageEncResult = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, diarrheaResult) : false;
 			boolean patientBloodyStoolClinicalEncResult = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, bloodyStoolResult) : false;
 			boolean patientDiarrheaClinicalEncResult = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, diarrheaResult) : false;
 			boolean patientBloodyStoolGreenCardResult = lastGreenCardEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastGreenCardEnc, screeningQuestion, bloodyStoolResult) : false;
@@ -85,6 +92,20 @@ public class DysenteryCalculation extends AbstractPatientCalculation {
 			if (lastGreenCardEnc != null) {
 				for (Obs obs : lastGreenCardEnc.getObs()) {
 					if (patientBloodyStoolGreenCardResult && patientDiarrheaGreenCardResult) {
+						dateCreated = obs.getDateCreated();
+						if (dateCreated != null) {
+							String createdDate = dateFormat.format(dateCreated);
+							if (createdDate.equals(todayDate)) {
+								result = true;
+								break;
+							}
+						}
+					}
+				}
+			}
+			if (lastTriageEnc != null) {
+				for (Obs obs : lastTriageEnc.getObs()) {
+					if (patientBloodyStoolTriageEncResult && patientDiarrheaTriageEncResult) {
 						dateCreated = obs.getDateCreated();
 						if (dateCreated != null) {
 							String createdDate = dateFormat.format(dateCreated);

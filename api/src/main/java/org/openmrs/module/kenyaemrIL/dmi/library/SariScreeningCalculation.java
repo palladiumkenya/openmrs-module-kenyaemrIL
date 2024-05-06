@@ -65,6 +65,7 @@ public class SariScreeningCalculation extends AbstractPatientCalculation {
 			Double tempValue = 0.0;
 			Double duration = 0.0;
 			Date dateCreated = null;
+			Visit lastVisit = null;
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 			String todayDate = dateFormat.format(currentDate);
 			Patient patient = patientService.getPatient(ptId);
@@ -89,7 +90,11 @@ public class SariScreeningCalculation extends AbstractPatientCalculation {
 			boolean patientCoughResultClinical = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, coughPresenceResult) : false;
 			//Check admission status : Only found in clinical encounter
 			boolean patientAdmissionStatus = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, adminQuestion, admissionAnswer) : false;
-
+			//Last visit type is inpatient
+			List<Visit> allVisits = Context.getVisitService().getVisitsByPatient(patient);			
+			if (!allVisits.isEmpty()) {
+				lastVisit = allVisits.get(allVisits.size() -1) ;
+			}
 			Obs lastTempObs = EmrCalculationUtils.obsResultForPatient(tempMap, ptId);
 			if (lastTempObs != null) {
 				tempValue = lastTempObs.getValueNumeric();
@@ -106,7 +111,7 @@ public class SariScreeningCalculation extends AbstractPatientCalculation {
 							String createdDate = dateFormat.format(dateCreated);
 							if ((duration > 0.0 && duration < 10) && tempValue != null && tempValue >= 38.0) {
 								if (createdDate.equals(todayDate)) {
-									if (patientAdmissionStatus) {
+									if (patientAdmissionStatus || (lastVisit != null && lastVisit.getVisitType().equals("Inpatient"))) {
 										eligible = true;
 										break;
 									}
@@ -128,7 +133,7 @@ public class SariScreeningCalculation extends AbstractPatientCalculation {
 							String createdDate = dateFormat.format(dateCreated);
 							if ((duration > 0.0 && duration < 10) && tempValue != null && tempValue >= 38.0) {
 								if (createdDate.equals(todayDate)) {
-									if (patientAdmissionStatus) {
+									if (patientAdmissionStatus || (lastVisit != null && lastVisit.getVisitType().equals("Inpatient"))) {
 										eligible = true;
 										break;
 									}
@@ -149,7 +154,7 @@ public class SariScreeningCalculation extends AbstractPatientCalculation {
 							String createdDate = dateFormat.format(dateCreated);
 							if ((duration > 0.0 && duration < 10) && tempValue != null && tempValue >= 38.0) {
 								if (createdDate.equals(todayDate)) {
-									if (patientAdmissionStatus) {
+									if (patientAdmissionStatus || (lastVisit != null && lastVisit.getVisitType().equals("Inpatient"))) {
 										eligible = true;
 										break;
 									}
