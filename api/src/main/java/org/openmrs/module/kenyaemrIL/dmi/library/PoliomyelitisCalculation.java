@@ -40,6 +40,8 @@ import java.util.Set;
 public class PoliomyelitisCalculation extends AbstractPatientCalculation {
 	protected static final Log log = LogFactory.getLog(PoliomyelitisCalculation.class);
 
+	public static final EncounterType triageEncType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.TRIAGE);
+	public static final Form triageScreeningForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.TRIAGE);
 	public static final EncounterType consultationEncType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.CONSULTATION);
 	public static final Form clinicalEncounterForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.CLINICAL_ENCOUNTER);
 	public static final EncounterType greenCardEncType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION);
@@ -63,6 +65,7 @@ public class PoliomyelitisCalculation extends AbstractPatientCalculation {
 			String todayDate = dateFormat.format(currentDate);
 			Patient patient = patientService.getPatient(ptId);
 
+			Encounter lastTriageEnc = EmrUtils.lastEncounter(patient, triageEncType, triageScreeningForm);
 			Encounter lastHivFollowUpEncounter = EmrUtils.lastEncounter(patient, greenCardEncType, greenCardForm);   //last greencard followup form
 			Encounter lastClinicalEncounter = EmrUtils.lastEncounter(patient, consultationEncType, clinicalEncounterForm);   //last clinical encounter form
 
@@ -70,6 +73,7 @@ public class PoliomyelitisCalculation extends AbstractPatientCalculation {
 			Concept limbsWeaknessResult = cs.getConcept(LIMBS_WEAKNESS);
 			Concept screeningQuestion = cs.getConcept(SCREENING_QUESTION);
 
+			boolean patientWeakLimbsResultTriage = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, limbsWeaknessResult) : false;
 			boolean patientWeakLimbsResultGreenCard = lastHivFollowUpEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastHivFollowUpEncounter, screeningQuestion, limbsWeaknessResult) : false;
 			boolean patientWeakLimbsResultClinical = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, limbsWeaknessResult) : false;
 
@@ -101,7 +105,21 @@ public class PoliomyelitisCalculation extends AbstractPatientCalculation {
 							}
 						}
 					}
-				}				
+				}
+				if (lastTriageEnc != null) {
+					if (patientWeakLimbsResultTriage) {
+						for (Obs obs : lastTriageEnc.getObs()) {
+							dateCreated = obs.getDateCreated();
+							if (dateCreated != null) {
+								String createdDate = dateFormat.format(dateCreated);
+								if (createdDate.equals(todayDate)) {
+									eligible = true;
+									break;
+								}
+							}
+						}
+					}
+				}
 			}
 			ret.put(ptId, new BooleanResult(eligible, this));
 		}

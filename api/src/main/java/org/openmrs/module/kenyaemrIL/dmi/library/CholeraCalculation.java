@@ -42,6 +42,8 @@ import java.util.Set;
 public class CholeraCalculation extends AbstractPatientCalculation {
 	protected static final Log log = LogFactory.getLog(CholeraCalculation.class);
 
+	public static final EncounterType triageEncType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.TRIAGE);
+	public static final Form triageScreeningForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.TRIAGE);
 	public static final EncounterType consultationEncType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.CONSULTATION);
 	public static final Form clinicalEncounterForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.CLINICAL_ENCOUNTER);
 	public static final EncounterType greenCardEncType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION);
@@ -62,12 +64,17 @@ public class CholeraCalculation extends AbstractPatientCalculation {
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 			String todayDate = dateFormat.format(currentDate);
 			Patient patient = patientService.getPatient(ptId);
+
+			Encounter lastTriageEnc = EmrUtils.lastEncounter(patient, triageEncType, triageScreeningForm);
 			Encounter lastClinicalEncounter = EmrUtils.lastEncounter(patient, consultationEncType, clinicalEncounterForm); //last clinical encounter form
 			Encounter lastGreenCardEnc = EmrUtils.lastEncounter(patient, greenCardEncType, greenCardForm);   //last greencard followup form
 			ConceptService cs = Context.getConceptService();
 			Concept vomitingResult = cs.getConcept(VOMITING);
 			Concept diarrheaResult = cs.getConcept(WATERY_DIARRHEA);
 			Concept screeningQuestion = cs.getConcept(SCREENING_QUESTION);
+
+			boolean patientVomitTriageEncResult = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, vomitingResult) : false;
+			boolean patientDiarrheaTriageEncResult = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, diarrheaResult) : false;
 			boolean patientVomitClinicalEncResult = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, vomitingResult) : false;
 			boolean patientDiarrheaClinicalEncResult = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, diarrheaResult) : false;
 			boolean patientVomitGreenCardResult = lastGreenCardEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastGreenCardEnc, screeningQuestion, vomitingResult) : false;
@@ -100,7 +107,20 @@ public class CholeraCalculation extends AbstractPatientCalculation {
 							}
 						}
 					}
-
+				}
+				if (lastTriageEnc != null) {
+					for (Obs obs : lastTriageEnc.getObs()) {
+						if (patientVomitTriageEncResult && patientDiarrheaTriageEncResult) {
+							dateCreated = obs.getDateCreated();
+							if (dateCreated != null) {
+								String createdDate = dateFormat.format(dateCreated);
+								if (createdDate.equals(todayDate)) {
+									result = true;
+									break;
+								}
+							}
+						}
+					}
 				}
 			}
 
