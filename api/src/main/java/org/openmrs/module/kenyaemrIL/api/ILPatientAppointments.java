@@ -29,6 +29,7 @@ import org.openmrs.module.kenyaemrIL.il.observation.OBSERVATION_RESULT;
 import org.openmrs.module.kenyaemrIL.kenyaemrUtils.Utils;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
 import org.openmrs.ui.framework.SimpleObject;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -39,20 +40,20 @@ import java.util.List;
  * A fragment controller for an IL Appointment Scheduling
  */
 public class ILPatientAppointments {
+public static String HIV_FOLLOWUP_APPOINTMENT_UUID = "885b4ad3-fd4c-4a16-8ed3-08813e6b01fa";
+public static String HIV_DRUG_REFILL_APPOINTMENT_UUID = "a96921a1-b89e-4dd2-b6b4-7310f13bbabe";
+public static String PREP_FOLLOWUP_APPOINTMENT_UUID = "6f9b19f6-ac25-41f9-a75c-b8b125dec3da";
+public static String PREP_REFILL_APPOINTMENT_UUID = "b8c3efd9-e106-4409-ae0e-b9c651484a20";
+
 
     private final Log log = LogFactory.getLog(this.getClass());
-    static ConceptService conceptService = Context.getConceptService();
-
-
-    public static ILMessage iLPatientWrapper(Patient patient, Appointment appointment) {
+    public static ILMessage iLPatientWrapper(Patient patient, Appointment appointment, boolean consentForReminder) {
         ILMessage ilMessage = new ILMessage();
         PATIENT_IDENTIFICATION patientIdentification = new PATIENT_IDENTIFICATION();
         List<INTERNAL_PATIENT_ID> internalPatientIds = new ArrayList<INTERNAL_PATIENT_ID>();
         EXTERNAL_PATIENT_ID epd = new EXTERNAL_PATIENT_ID();
         INTERNAL_PATIENT_ID ipd;
-//set external identifier if available
 
-//        Form the internal patient IDs
         for (PatientIdentifier patientIdentifier : patient.getIdentifiers()) {
             ipd = new INTERNAL_PATIENT_ID();
             if (patientIdentifier.getIdentifierType().getName().equalsIgnoreCase("Unique Patient Number")) {
@@ -101,10 +102,8 @@ public class ILPatientAppointments {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         iLDob = formatter.format(patient.getBirthdate());
         patientIdentification.setDate_of_birth(iLDob);
-        //set dob precision
         patientIdentification.setDate_of_birth_precision(patient.getBirthdateEstimated() == true ? "ESTIMATED" : "EXACT");
-        //set death date and indicator
-        if (patient.isDead()) {
+        if (patient.getDead()) {
             patientIdentification.setDeath_date(String.valueOf(patient.getDeathDate()));
             patientIdentification.setDeath_indicator(String.valueOf(patient.isDead()));
         } else {
@@ -143,7 +142,7 @@ public class ILPatientAppointments {
         APPOINTMENT_INFORMATION appointments[] = new APPOINTMENT_INFORMATION[1];
         APPOINTMENT_INFORMATION appointmentInformation = new APPOINTMENT_INFORMATION();
 
-        setCommonAppointmentVariables(appointmentInformation, appointment);
+        setCommonAppointmentVariables(appointmentInformation, appointment, consentForReminder);
         appointments[0] = appointmentInformation;
         ilMessage.setAppointment_information(appointments);
 
@@ -156,7 +155,7 @@ public class ILPatientAppointments {
 
         // extract triage information
         try {
-            List<Obs> latestWeightObs = Utils.getNLastObs(conceptService.getConcept(weightConcept), patient, 1);
+            List<Obs> latestWeightObs = Utils.getNLastObs(Context.getConceptService().getConcept(weightConcept), patient, 1);
 
             if (latestWeightObs.size() > 0) {
                 Obs weightObs = latestWeightObs.get(0);
@@ -181,7 +180,7 @@ public class ILPatientAppointments {
 
         // latest height
         try {
-            List<Obs> latestHeightObs = Utils.getNLastObs(conceptService.getConcept(heightConcept), patient, 1);
+            List<Obs> latestHeightObs = Utils.getNLastObs(Context.getConceptService().getConcept(heightConcept), patient, 1);
             if (latestHeightObs.size() > 0) {
                 Obs heightObs = latestHeightObs.get(0);
 
@@ -277,24 +276,32 @@ public class ILPatientAppointments {
         return ilMessage;
     }
 
-    private static void setCommonAppointmentVariables(APPOINTMENT_INFORMATION appointmentInformation, Appointment appointment) {
+    private static void setCommonAppointmentVariables(APPOINTMENT_INFORMATION appointmentInformation, Appointment appointment, boolean consentForReminder) {
         PLACER_APPOINTMENT_NUMBER placerAppointmentNumber = new PLACER_APPOINTMENT_NUMBER();
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         if (appointment != null) {
             placerAppointmentNumber.setNumber(String.valueOf(appointment.getAppointmentId().intValue()));
             appointmentInformation.setPlacer_appointment_number(placerAppointmentNumber);
-            appointmentInformation.setVisit_date(formatter.format(appointment.getDateCreated()));
+            appointmentInformation.setVisit_date(formatter.format(appointment.getDateAppointmentScheduled()));
             appointmentInformation.setAppointment_date(formatter.format((appointment.getDateFromStartDateTime())));
             appointmentInformation.setAction_code("A");
             appointmentInformation.setAppointment_note("N/A");
             appointmentInformation.setAppointment_status("PENDING");
             appointmentInformation.setAppointment_placing_entity("KENYAEMR");
-            appointmentInformation.setAppointment_type("FOLLOWUP");
+            String serviceTypeUuid = appointment.getService().getUuid();
 
-            // the current appointment generated from the emr is the clinical. we'll populate the defaults
+            if (HIV_FOLLOWUP_APPOINTMENT_UUID.equals(serviceTypeUuid)) {
+                appointmentInformation.setAppointment_type("FOLLOWUP");
+            } else if (HIV_DRUG_REFILL_APPOINTMENT_UUID.equals(serviceTypeUuid)) {
+                appointmentInformation.setAppointment_type("PHARMACY_REFILL");
+            } else if (PREP_FOLLOWUP_APPOINTMENT_UUID.equals(serviceTypeUuid)) {
+                appointmentInformation.setAppointment_type("PREP_FOLLOWUP");
+            } else if (PREP_REFILL_APPOINTMENT_UUID.equals(serviceTypeUuid)) {
+                appointmentInformation.setAppointment_type("PREP_REFILL");
+            }
             appointmentInformation.setAppointment_reason("CLINICAL");
             appointmentInformation.setAppointment_location("CLINIC");
-            appointmentInformation.setConsent_for_reminder("Y"); // TODO: find how else to document and get this from the visit i.e. switch to visit attribute
+            appointmentInformation.setConsent_for_reminder(consentForReminder? "Y" : "N");
 
         }
     }

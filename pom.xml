@@ -57,7 +57,7 @@
         <apacheHttpClientVersion>4.5.10</apacheHttpClientVersion>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <fhir-core.version>5.4.0</fhir-core.version>
-        <bahmniAppointmentsVersion>1.5.0-SNAPSHOT</bahmniAppointmentsVersion>
+        <bahmniAppointmentsVersion>2.0.0-SNAPSHOT</bahmniAppointmentsVersion>
     </properties>
 
     <dependencyManagement>
