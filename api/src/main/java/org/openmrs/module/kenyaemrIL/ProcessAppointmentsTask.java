@@ -1,13 +1,11 @@
 package org.openmrs.module.kenyaemrIL;
 
-import org.codehaus.jackson.map.ObjectMapper;
-import org.openmrs.Encounter;
-import org.openmrs.EncounterType;
+import org.apache.commons.lang3.StringUtils;
 import org.openmrs.GlobalProperty;
-import org.openmrs.Obs;
 import org.openmrs.Patient;
-import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.appointments.model.Appointment;
+import org.openmrs.module.appointments.service.AppointmentsService;
 import org.openmrs.module.kenyaemrIL.api.ILPatientAppointments;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
@@ -17,25 +15,24 @@ import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Implementation of a task that processes appointment tasks and marks them for sending to IL.
+ * Implementation of a task that processes appointment tasks and marks them for sending to an Interoperability layer.
  */
 public class ProcessAppointmentsTask extends AbstractTask {
-
-    // Logger
     private static final Logger log = LoggerFactory.getLogger(ProcessAppointmentsTask.class);
-    private ObjectMapper mapper = new ObjectMapper();
-
     /**
      * @see AbstractTask#execute()
      */
     @Override
     public void execute() {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        AppointmentsService appointmentsService = Context.getService(AppointmentsService.class);
+
         log.info("Executing appointments task at " + new Date());
 
         Date fetchDate = null;
@@ -47,68 +44,87 @@ public class ProcessAppointmentsTask extends AbstractTask {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        EncounterType encounterTypeGreencard = Context.getEncounterService().getEncounterTypeByUuid("a0034eee-1940-4e35-847f-97537a35d05e");
-        //Fetch all encounters
-        List<EncounterType> encounterTypes = new ArrayList<>();
-        encounterTypes.add(encounterTypeGreencard);
-        List<Encounter> pendingAppointments = fetchPendingAppointments(encounterTypes, fetchDate);
 
-        Integer patientTCAConcept = 5096;
-        Integer patientRefillConcept = 162549;
-        List<String> prepEncounterTypes = Arrays.asList("c4a2be28-6673-4c36-b886-ea89b0a42116", "706a8b12-c4ce-40e4-aec3-258b989bf6d3");
-        for (Encounter e : pendingAppointments) {
-            Patient p = e.getPatient();
-            for (Obs obs : e.getObs()) {
-                if (prepEncounterTypes.contains(e.getEncounterType().getUuid()) &&
-                        obs.getConcept().getConceptId().equals(patientTCAConcept)) {
-                    appointmentsEvent(p, e, patientTCAConcept);
-                } else if (obs.getConcept().getConceptId().equals(patientRefillConcept)) {
-                    appointmentsEvent(p, e, patientRefillConcept);
-                } else if (e.getEncounterType().getUuid().equals("a0034eee-1940-4e35-847f-97537a35d05e") &&
-                        obs.getConcept().getConceptId().equals(patientTCAConcept)) {
-                    appointmentsEvent(p, e, patientTCAConcept);
-                }
-            }
+        Map<String, Integer> appointmentMap = fetchPendingAppointments(null, fetchDate);
+        System.out.println("Total appointments found: ......." + appointmentMap.size());
+
+        if (appointmentMap.isEmpty()) {
+            return;
         }
+        ArrayList<Integer> patientIdListFromAppointments = new ArrayList<>(appointmentMap.values());
+        Map<Integer, Boolean> patientConsentMap = getLatestConsentForReminder(patientIdListFromAppointments);
+
+        for (String appointmentUuid : appointmentMap.keySet()) {
+            Appointment appt = appointmentsService.getAppointmentByUuid(appointmentUuid);
+            Integer patientId = appt.getPatient().getPatientId();
+
+            boolean consentForReminder = patientConsentMap.get(patientId);
+            appointmentsEvent(appt.getPatient(), appt, consentForReminder);
+        }
+
         Date nextProcessingDate = new Date();
         globalPropertyObject.setPropertyValue(formatter.format(nextProcessingDate));
         Context.getAdministrationService().saveGlobalProperty(globalPropertyObject);
 
     }
 
-    private List<Encounter> fetchPendingAppointments(List<EncounterType> encounterTypes, Date date) {
+    /**
+     * Fetch appointments from the Bahmni appointment backend
+     * @param appointmentTypes
+     * @param date
+     * @return a map of appointment uuuid and patient id from appointment model
+     */
+    private Map<String, Integer> fetchPendingAppointments(List<Integer> appointmentTypes, Date date) {
 
         SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String effectiveDate = sd.format(date);
-        StringBuilder q = new StringBuilder(); //TODO: We should add extra filter on form since the encounter type uuid used is shared by a number of forms
-        q.append("select e.encounter_id ");
-        q.append("from encounter e inner join " +
-                "( " +
-                " select encounter_type_id, uuid, name from encounter_type where uuid in ( 'a0034eee-1940-4e35-847f-97537a35d05e', 'c4a2be28-6673-4c36-b886-ea89b0a42116', '706a8b12-c4ce-40e4-aec3-258b989bf6d3') " +
-                " ) et on et.encounter_type_id = e.encounter_type " +
-                " inner join obs o on o.encounter_id = e.encounter_id and o.voided = 0 " +
-                " and o.concept_id = 5096 and date(o.value_datetime) >= curdate() ");
-        q.append("where e.date_created >= '" + effectiveDate + "' or e.date_changed >= '" + effectiveDate + "'" + " or o.date_created >= '" + effectiveDate + "'");
-        q.append(" and e.voided = 0  ");
+        StringBuilder q = new StringBuilder();
+        q.append("select apt.uuid, apt.patient_id " +
+                "from patient_appointment apt " +
+                "inner join appointment_service aps on aps.appointment_service_id = apt.appointment_service_id and aps.uuid in ('885b4ad3-fd4c-4a16-8ed3-08813e6b01fa', 'a96921a1-b89e-4dd2-b6b4-7310f13bbabe') " +
+                "where apt.voided = 0 and apt.status = 'Scheduled' and (apt.date_created >= '" + effectiveDate + "' or apt.date_changed >= '" + effectiveDate + "' )" );
 
-        List<Encounter> encounters = new ArrayList<>();
-        EncounterService encounterService = Context.getEncounterService();
+        Map<String, Integer> patientAppointmentMap = new HashMap<>();
         List<List<Object>> queryData = Context.getAdministrationService().executeSQL(q.toString(), true);
         for (List<Object> row : queryData) {
-            Integer encounterId = (Integer) row.get(0);
-            Encounter e = encounterService.getEncounter(encounterId);
-            encounters.add(e);
+            String appointmentUuid = (String) row.get(0);
+            Integer patientId = (Integer) row.get(1);
+            patientAppointmentMap.put(appointmentUuid, patientId);
         }
-        return encounters;
-
+        return patientAppointmentMap;
     }
 
-    private boolean appointmentsEvent(Patient patient, Encounter e, Integer appointmentType) {
-        ILMessage ilMessage = ILPatientAppointments.iLPatientWrapper(patient, e, appointmentType);
+    /**
+     * Get patient consent from the last green card encounter
+     * It would be ideal if consent is added to the appointment model
+     * @param patientList
+     * @return
+     */
+    private Map<Integer, Boolean> getLatestConsentForReminder(List<Integer> patientList) {
+        Map<Integer, Boolean> patientConsentMap = new HashMap<>();
+        if (patientList.isEmpty()) {
+            return patientConsentMap;
+        }
+        String joinedIds = StringUtils.join(patientList, ",");
+        String query = "select o.person_id, mid(max(concat(o.obs_datetime, o.value_coded)),20) latest_consent\n" +
+                "from obs o\n" +
+                "inner join encounter e on e.encounter_id = o.encounter_id\n" +
+                "inner join form f on f.form_id = e.form_id and f.uuid in ('22c68f86-bbf0-49ba-b2d1-23fa7ccf0259')\n" +
+                "inner join encounter_type et on et.encounter_type_id = e.encounter_type\n" +
+                "where o.concept_id = 166607 and o.person_id in (" + joinedIds +")\n" +
+                "group by o.person_id;";
+
+        List<List<Object>> queryData = Context.getAdministrationService().executeSQL(query, true);
+        for (List<Object> row : queryData) {
+            Integer patientId = (Integer) row.get(0);
+            Integer consentConceptId = Integer.valueOf((String) row.get(1));
+            patientConsentMap.put(patientId, consentConceptId == 1065 ? true : false);
+        }
+        return patientConsentMap;
+    }
+    private boolean appointmentsEvent(Patient patient, Appointment apt, boolean consentForReminder) {
+        ILMessage ilMessage = ILPatientAppointments.iLPatientWrapper(patient, apt, consentForReminder);
         KenyaEMRILService service = Context.getService(KenyaEMRILService.class);
-        return service.logAppointmentSchedule(ilMessage, e.getPatient());
+        return service.logAppointmentSchedule(ilMessage, apt.getPatient());
     }
-
-
-
 }
