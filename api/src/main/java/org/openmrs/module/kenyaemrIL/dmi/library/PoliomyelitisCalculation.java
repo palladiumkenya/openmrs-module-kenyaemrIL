@@ -35,6 +35,7 @@ import java.util.Set;
  * Calculates the eligibility for Poliomyelitis screening flag for  patients
  * @should calculate Child less than 15years of age.
  * @should calculate limb weakness
+ * @should calculate onset should be sudden
  * @should calculate no duration
  */
 public class PoliomyelitisCalculation extends AbstractPatientCalculation {
@@ -47,8 +48,10 @@ public class PoliomyelitisCalculation extends AbstractPatientCalculation {
 	public static final EncounterType greenCardEncType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION);
 	public static final Form greenCardForm = MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD);
 
-	Integer LIMBS_WEAKNESS = 157498;
-	Integer SCREENING_QUESTION = 5219;
+	String LIMBS_WEAKNESS = "157498AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+	String SCREENING_QUESTION = "5219AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+	String ONSET_QUESTION = "d7a3441d-6aeb-49be-b7d6-b2a3bb39e78d";
+	String SUDDEN_ONSET = "162707AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
 	@Override
 	public CalculationResultMap evaluate(Collection<Integer> cohort, Map<String, Object> parameterValues, PatientCalculationContext context) {
@@ -61,6 +64,8 @@ public class PoliomyelitisCalculation extends AbstractPatientCalculation {
 			boolean eligible = false;
 			Date currentDate = new Date();
 			Date dateCreated = null;
+			String onsetStatus = null;
+			
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 			String todayDate = dateFormat.format(currentDate);
 			Patient patient = patientService.getPatient(ptId);
@@ -70,21 +75,24 @@ public class PoliomyelitisCalculation extends AbstractPatientCalculation {
 			Encounter lastClinicalEncounter = EmrUtils.lastEncounter(patient, consultationEncType, clinicalEncounterForm);   //last clinical encounter form
 
 			ConceptService cs = Context.getConceptService();
-			Concept limbsWeaknessResult = cs.getConcept(LIMBS_WEAKNESS);
-			Concept screeningQuestion = cs.getConcept(SCREENING_QUESTION);
+			Concept limbsWeaknessResult = cs.getConceptByUuid(LIMBS_WEAKNESS);
+			Concept screeningQuestion = cs.getConceptByUuid(SCREENING_QUESTION);			
 
-			boolean patientWeakLimbsResultTriage = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, limbsWeaknessResult) : false;
-			boolean patientWeakLimbsResultGreenCard = lastHivFollowUpEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastHivFollowUpEncounter, screeningQuestion, limbsWeaknessResult) : false;
-			boolean patientWeakLimbsResultClinical = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, limbsWeaknessResult) : false;
+			boolean traigeEncounterHasWeakLimbs = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, limbsWeaknessResult) : false;
+			boolean hivFollowupEncounterHasWeakLimbs = lastHivFollowUpEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastHivFollowUpEncounter, screeningQuestion, limbsWeaknessResult) : false;
+			boolean clinicalEncounterHasWeakLimb = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, limbsWeaknessResult) : false;
 
 			if (patient.getAge() < 15) {
 				if (lastHivFollowUpEncounter != null) {
-					if (patientWeakLimbsResultGreenCard) {
+					if (hivFollowupEncounterHasWeakLimbs) {
 						for (Obs obs : lastHivFollowUpEncounter.getObs()) {
 							dateCreated = obs.getDateCreated();
-							if (dateCreated != null) {
+							if (obs.getConcept().getUuid().equals(ONSET_QUESTION)) {
+								onsetStatus = obs.getValueCoded().getUuid();
+							}
+							if (dateCreated != null && onsetStatus != null) {
 								String createdDate = dateFormat.format(dateCreated);
-								if (createdDate.equals(todayDate)) {
+								if (createdDate.equals(todayDate) && onsetStatus.equals(SUDDEN_ONSET)) {
 									eligible = true;
 									break;
 								}
@@ -93,12 +101,15 @@ public class PoliomyelitisCalculation extends AbstractPatientCalculation {
 					}
 				}
 				if (lastClinicalEncounter != null) {
-					if (patientWeakLimbsResultClinical) {
+					if (clinicalEncounterHasWeakLimb) {
 						for (Obs obs : lastClinicalEncounter.getObs()) {
 							dateCreated = obs.getDateCreated();
-							if (dateCreated != null) {
+							if (obs.getConcept().getUuid().equals(ONSET_QUESTION)) {
+								onsetStatus = obs.getValueCoded().getUuid();
+							}
+							if (dateCreated != null && onsetStatus != null) {
 								String createdDate = dateFormat.format(dateCreated);
-								if (createdDate.equals(todayDate)) {
+								if (createdDate.equals(todayDate) && onsetStatus.equals(SUDDEN_ONSET)) {
 									eligible = true;
 									break;
 								}
@@ -107,12 +118,15 @@ public class PoliomyelitisCalculation extends AbstractPatientCalculation {
 					}
 				}
 				if (lastTriageEnc != null) {
-					if (patientWeakLimbsResultTriage) {
+					if (traigeEncounterHasWeakLimbs) {
 						for (Obs obs : lastTriageEnc.getObs()) {
 							dateCreated = obs.getDateCreated();
-							if (dateCreated != null) {
+							if (obs.getConcept().getUuid().equals(ONSET_QUESTION)) {
+								onsetStatus = obs.getValueCoded().getUuid();
+							}
+							if (dateCreated != null && onsetStatus != null) {
 								String createdDate = dateFormat.format(dateCreated);
-								if (createdDate.equals(todayDate)) {
+								if (createdDate.equals(todayDate) && onsetStatus.equals(SUDDEN_ONSET)) {
 									eligible = true;
 									break;
 								}
