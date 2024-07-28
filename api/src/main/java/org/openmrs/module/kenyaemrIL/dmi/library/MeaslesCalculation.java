@@ -40,6 +40,8 @@ import java.util.*;
 public class MeaslesCalculation extends AbstractPatientCalculation {
 	protected static final Log log = LogFactory.getLog(MeaslesCalculation.class);
 
+	public static final EncounterType triageEncType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.TRIAGE);
+	public static final Form triageScreeningForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.TRIAGE);
 	public static final EncounterType consultationEncType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.CONSULTATION);
 	public static final Form clinicalEncounterForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.CLINICAL_ENCOUNTER);
 
@@ -70,6 +72,7 @@ public class MeaslesCalculation extends AbstractPatientCalculation {
 			String todayDate = dateFormat.format(currentDate);
 			Patient patient = patientService.getPatient(ptId);
 
+			Encounter lastTriageEnc = EmrUtils.lastEncounter(patient, triageEncType, triageScreeningForm);
 			Encounter lastHivFollowUpEncounter = EmrUtils.lastEncounter(patient, greenCardEncType, greenCardForm);   //last greencard followup form
 			Encounter lastClinicalEncounter = EmrUtils.lastEncounter(patient, consultationEncType, clinicalEncounterForm);   //last clinical encounter form
 
@@ -81,6 +84,11 @@ public class MeaslesCalculation extends AbstractPatientCalculation {
 			Concept conjuctivitisResult = cs.getConcept(CONJUCTIVITIS);
 			Concept screeningQuestion = cs.getConcept(SCREENING_QUESTION);
 
+			boolean patientFeverResultTriage = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, feverResult) : false;
+			boolean patientRashResultTriage = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, rashResult) : false;
+			boolean patientCoryzaResultTriage = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, coryzaResult) : false;
+			boolean patientCoughResultTriage = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, coughResult) : false;
+			boolean patientConjuctivitisResultTriage = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, conjuctivitisResult) : false;
 			boolean patientFeverResultGreenCard = lastHivFollowUpEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastHivFollowUpEncounter, screeningQuestion, feverResult) : false;
 			boolean patientRashResultGreenCard = lastHivFollowUpEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastHivFollowUpEncounter, screeningQuestion, rashResult) : false;
 			boolean patientCoryzaResultGreenCard = lastHivFollowUpEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastHivFollowUpEncounter, screeningQuestion, coryzaResult) : false;
@@ -114,6 +122,25 @@ public class MeaslesCalculation extends AbstractPatientCalculation {
 			if (lastClinicalEncounter != null) {
 				if (patientFeverResultClinical && patientRashResultClinical && patientCoryzaResultClinical && patientCoughResultClinical && patientConjuctivitisResultClinical) {
 					for (Obs obs : lastClinicalEncounter.getObs()) {
+						dateCreated = obs.getDateCreated();
+						if (obs.getConcept().getConceptId().equals(DURATION)) {
+							duration = obs.getValueNumeric();
+						}
+						if (dateCreated != null) {
+							String createdDate = dateFormat.format(dateCreated);
+							if (duration > 2) {
+								if (createdDate.equals(todayDate)) {
+									eligible = true;
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+			if (lastTriageEnc != null) {
+				if (patientFeverResultTriage && patientRashResultTriage && patientCoryzaResultTriage && patientCoughResultTriage && patientConjuctivitisResultTriage) {
+					for (Obs obs : lastTriageEnc.getObs()) {
 						dateCreated = obs.getDateCreated();
 						if (obs.getConcept().getConceptId().equals(DURATION)) {
 							duration = obs.getValueNumeric();
