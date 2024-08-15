@@ -66,7 +66,7 @@ public class FhirConfig {
      * TODO - Change this to fetch from CR instead
      */
     public Bundle fetchPatientAllergies(String identifier) {
-        String url = ILUtils.getShrServerUrl() + "AllergyIntolerance?patient=Patient/"
+        String url = ILUtils.getShrServerUrl() + "AllergyIntolerance/_search?patient.identifier="
                 + identifier;
         try {
             IGenericClient client = getFhirClient();
@@ -154,7 +154,7 @@ public class FhirConfig {
     }
 
     public Bundle fetchPatientReferrals(String identifier) {
-        String url = ILUtils.getShrServerUrl() + "ServiceRequest?patient=Patient/"
+        String url = ILUtils.getShrServerUrl() + "ServiceRequest/_search?subject.identifier="
                 + identifier;
         System.out.println("Fhir: fetchAllergies ==>");
         try {
@@ -191,7 +191,7 @@ public class FhirConfig {
         try {
             String encodedParam2 = URLEncoder.encode(patientId, "UTF-8");
 
-            String url = ILUtils.getShrServerUrl() + "Observation?subject:Patient=Patient/"
+            String url = ILUtils.getShrServerUrl() + "Observation/_search?subject.identifier="
                     + patientId;
             URL localUrl = new URL(url);
 
@@ -235,7 +235,7 @@ public class FhirConfig {
         String encodedParam1 = URLEncoder.encode(patientIdentifier, "UTF-8");
         String encodedParam2 = URLEncoder.encode(categoryString, "UTF-8");
 
-        String url = ILUtils.getShrServerUrl() + "Condition?subject:Patient=Patient/"
+        String url = ILUtils.getShrServerUrl() + "Condition/_search?subject.identifier="
                 + encodedParam1 + "&category=" + encodedParam2;
         URL localUrl = new URL(url);
 
