@@ -60,7 +60,7 @@ public class ShrSummariesFragmentController {
 
         Bundle allObs = fhirConfig.fetchObservationResource(patientUniqueNumber);
 
-        if (!allObs.getEntry().isEmpty()) {
+        if (allObs != null && allObs.getEntry() != null && !allObs.getEntry().isEmpty()) {
             for (Bundle.BundleEntryComponent resource : allObs.getEntry()) {
                 Observation observation = (Observation) resource.getResource();
 
@@ -104,7 +104,7 @@ public class ShrSummariesFragmentController {
             }
         }
 
-        if (!conditionsBundle.getEntry().isEmpty()) {
+        if (conditionsBundle != null && conditionsBundle.getEntry() != null && !conditionsBundle.getEntry().isEmpty()) {
             for (Bundle.BundleEntryComponent resource : conditionsBundle.getEntry()) {
                 Condition condition = (Condition) resource.getResource();
                 if (condition.hasCode() && condition.getCode().hasCoding()) {
@@ -123,7 +123,7 @@ public class ShrSummariesFragmentController {
             }
         }
 
-        if (!diagnosisBundle.getEntry().isEmpty()) {
+        if (diagnosisBundle != null && diagnosisBundle.getEntry() != null && !diagnosisBundle.getEntry().isEmpty()) {
             for (Bundle.BundleEntryComponent resource : diagnosisBundle.getEntry()) {
                 Condition condition = (Condition) resource.getResource();
                 if (condition.hasCode() && condition.getCode().hasCoding()) {
@@ -138,7 +138,7 @@ public class ShrSummariesFragmentController {
             }
         }
 
-        if (!allergyBundle.getEntry().isEmpty()) {
+        if (allergyBundle != null && allergyBundle.getEntry() != null && !allergyBundle.getEntry().isEmpty()) {
             for (Bundle.BundleEntryComponent resource : allergyBundle.getEntry()) {
                 AllergyIntolerance allergyIntolerance = (AllergyIntolerance) resource.getResource();
                 if (allergyIntolerance.hasCode() && allergyIntolerance.getCode().hasCoding() && allergyIntolerance.hasReaction()
@@ -157,7 +157,7 @@ public class ShrSummariesFragmentController {
             }
         }
 
-        if (!referralsBundle.getEntry().isEmpty()) {
+        if (referralsBundle != null && referralsBundle.getEntry() != null && !referralsBundle.getEntry().isEmpty()) {
             for (Bundle.BundleEntryComponent resource : referralsBundle.getEntry()) {
                 ServiceRequest serviceRequest = (ServiceRequest) resource.getResource();
                 String category = "";
