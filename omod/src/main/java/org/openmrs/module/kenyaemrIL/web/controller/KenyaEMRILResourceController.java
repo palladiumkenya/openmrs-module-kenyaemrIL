@@ -360,33 +360,42 @@ public class KenyaEMRILResourceController extends MainResourceController {
         FhirConfig fhirConfig = Context.getRegisteredComponents(FhirConfig.class).get(0);
         SimpleObject referralsObject = new SimpleObject();
         ExpectedTransferInPatients expectedTransferInPatients = ilService.getCommunityReferralByNupi(nupi);
-        IParser parser = fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
-        ServiceRequest serviceRequest = parser.parseResource(ServiceRequest.class, expectedTransferInPatients.getPatientSummary());
-        String requester = "";
-        if (serviceRequest.hasRequester()) {
-            if (serviceRequest.getRequester().getDisplay() != null) {
-                Location location = ILUtils.getLocationByMflCode(serviceRequest.getRequester().getDisplay());
-                if (location != null) {
-                    requester = location.getName();
-                } else {
-                    requester = "Community";
-                }
+        if (expectedTransferInPatients != null) {
+            IParser parser = fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
+            ServiceRequest serviceRequest = parser.parseResource(ServiceRequest.class,
+                    expectedTransferInPatients.getPatientSummary());
+            String requester = "";
+            if (serviceRequest.hasRequester()) {
+                if (serviceRequest.getRequester().getDisplay() != null) {
+                    Location location = ILUtils.getLocationByMflCode(serviceRequest.getRequester().getDisplay());
+                    if (location != null) {
+                        requester = location.getName();
+                    } else {
+                        requester = "Community";
+                    }
 
-            } else if (serviceRequest.getRequester().getIdentifier() != null && serviceRequest.getRequester().getIdentifier().getValue() != null) {
-                Location location = ILUtils.getLocationByMflCode(serviceRequest.getRequester().getIdentifier().getValue());
-                if (location != null) {
-                    requester = location.getName();
-                } else {
-                    requester = "Community";
+                } else if (serviceRequest.getRequester().getIdentifier() != null
+                        && serviceRequest.getRequester().getIdentifier().getValue() != null) {
+                    Location location = ILUtils
+                            .getLocationByMflCode(serviceRequest.getRequester().getIdentifier().getValue());
+                    if (location != null) {
+                        requester = location.getName();
+                    } else {
+                        requester = "Community";
+                    }
                 }
             }
+
+            referralsObject.put("status", expectedTransferInPatients.getReferralStatus());
+            referralsObject.add("referralReasons", extractReferralReasons(serviceRequest));
+            referralsObject.put("referredFrom", requester);
+        } else {
+            referralsObject.put("status", new ArrayList<>());
+            referralsObject.add("referralReasons", new ArrayList<>());
+            referralsObject.put("referredFrom", new ArrayList<>());
         }
 
-        referralsObject.put("status", expectedTransferInPatients.getReferralStatus());
-        referralsObject.add("referralReasons", extractReferralReasons(serviceRequest));
-        referralsObject.put("referredFrom", requester);
-
-      return referralsObject;
+        return referralsObject;
     }
 
 }
