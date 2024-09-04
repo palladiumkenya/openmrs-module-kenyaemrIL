@@ -7,10 +7,12 @@ import org.hibernate.jdbc.Work;
 import org.json.simple.JSONObject;
 import org.openmrs.*;
 import org.openmrs.api.DiagnosisService;
+import org.openmrs.api.EncounterService;
 import org.openmrs.api.PersonService;
 import org.openmrs.api.VisitService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.db.hibernate.DbSessionFactory;
+import org.openmrs.module.kenyaemr.Dictionary;
 import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemr.metadata.HivMetadata;
 import org.openmrs.module.kenyaemr.metadata.MchMetadata;
@@ -205,10 +207,18 @@ public class VisualizationDataExchange {
 		Map<String, Integer> visitMap = new HashMap<>();
 		VisitService visitService = Context.getVisitService();
 		List<Visit> allVisits = visitService.getVisits(null, null, null, null, fetchDate, null, null, null, null, true, false);
-
 		if (!allVisits.isEmpty()) {
 			for (Visit visit : allVisits) {
 				String visitType = visit.getVisitType().getName();
+				Patient patient = visit.getPatient();
+
+				if(visitType.equals("Outpatient")) {
+					if (patient.getAge() < 5) {
+						visitMap.put("Outpatient Under 5", visitMap.getOrDefault("Outpatient Under 5", 0) + 1);
+					} else {
+						visitMap.put("Outpatient 5 And Above", visitMap.getOrDefault("Outpatient 5 And Above", 0) + 1);
+					}
+				}
 				visitMap.put(visitType, visitMap.getOrDefault(visitType, 0) + 1);
 			}
 		}
