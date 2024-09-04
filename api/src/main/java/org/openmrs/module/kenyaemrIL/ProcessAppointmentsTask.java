@@ -58,8 +58,10 @@ public class ProcessAppointmentsTask extends AbstractTask {
             Appointment appt = appointmentsService.getAppointmentByUuid(appointmentUuid);
             Integer patientId = appt.getPatient().getPatientId();
 
+            if (patientConsentMap !=null && !patientConsentMap.isEmpty()) {
             boolean consentForReminder = patientConsentMap.get(patientId);
             appointmentsEvent(appt.getPatient(), appt, consentForReminder);
+            }
         }
 
         Date nextProcessingDate = new Date();
