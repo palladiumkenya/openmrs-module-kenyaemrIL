@@ -20,6 +20,7 @@ import org.openmrs.module.kenyaemr.metadata.OTZMetadata;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.module.kenyaemrIL.util.ServiceDepartments;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
+import org.openmrs.parameter.EncounterSearchCriteria;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.util.PrivilegeConstants;
 
@@ -35,9 +36,10 @@ public class VisualizationDataExchange {
 	private static Log log = LogFactory.getLog(VisualizationDataExchange.class);
 	private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	private static List<Diagnosis> allDiagnosis;
-
+	private static EncounterService service= Context.getEncounterService();
 	final static String FAMILY_PLANNING_FORM_UUID = "a52c57d4-110f-4879-82ae-907b0d90add6";
-
+	public static final String IMMUNIZATION = "29c02aff-9a93-46c9-bf6f-48b552fcb1fa";
+	public static Concept immunizationConcept = Dictionary.getConcept(Dictionary.IMMUNIZATIONS);
 	/**
 	 * Generates the payload used to post to visualization server     *
 	 *
@@ -49,12 +51,19 @@ public class VisualizationDataExchange {
 		JSONObject payloadObj = new JSONObject();
 		List<SimpleObject> bedManagement = new ArrayList<SimpleObject>();
 		List<SimpleObject> visits = new ArrayList<>();
+		List<SimpleObject> visitsByAge = new ArrayList<>();
+		List<SimpleObject> outPatientByService = new ArrayList<>();
+		List<SimpleObject> immunizations = new ArrayList<>();
 		Map<String, Integer> visitsMap;
 		Map<String, Integer> diagnosisMap;
 		Map<String, Integer> mortalityMap;
 		Map<String, Integer> workloadMap;
+		Map<String, Integer> visitByAgeMap;
+		Map<String, Integer> outpatientByServiceMap;
+		Map<String, Integer> immunizationsMap;
 		List<SimpleObject> diagnosis = new ArrayList<SimpleObject>();
 		List<SimpleObject> workload = new ArrayList<SimpleObject>();
+		List<SimpleObject> outPatientServices = new ArrayList<SimpleObject>();
 		List<SimpleObject> billing = new ArrayList<SimpleObject>();
 		List<SimpleObject> billingItems= new ArrayList<SimpleObject>();
 		List<SimpleObject> paymentItems= new ArrayList<SimpleObject>();
@@ -97,6 +106,45 @@ public class VisualizationDataExchange {
 			payloadObj.put("visits", visits);
 		} else {
 			payloadObj.put("visits", visits);
+		}
+
+		visitByAgeMap = outPatientVisitsByAge(fetchDate);
+		if (!visitByAgeMap.isEmpty()) {
+			for (Map.Entry<String, Integer> visitEntry : visitByAgeMap.entrySet()) {
+				SimpleObject visitsByAgeObject = new SimpleObject();
+				visitsByAgeObject.put("age", visitEntry.getKey());
+				visitsByAgeObject.put("total", visitEntry.getValue().toString());
+				visitsByAge.add(visitsByAgeObject);
+			}
+			payloadObj.put("OPD Visits", visitsByAge);
+		} else {
+			payloadObj.put("OPD Visits", visitsByAge);
+		}
+
+		outpatientByServiceMap = outPatientVisitsByService(fetchDate);
+		if (!outpatientByServiceMap.isEmpty()) {
+			for (Map.Entry<String, Integer> visitEntry : outpatientByServiceMap.entrySet()) {
+				SimpleObject outpatientByServiceObject = new SimpleObject();
+				outpatientByServiceObject.put("service", visitEntry.getKey());
+				outpatientByServiceObject.put("total", visitEntry.getValue().toString());
+				outPatientByService.add(outpatientByServiceObject);
+			}
+			payloadObj.put("OPD Visits By Service Type", outPatientByService);
+		} else {
+			payloadObj.put("OPD Visits By Service Type", outPatientByService);
+		}
+
+		immunizationsMap = immunizations(fetchDate);
+		if(!immunizationsMap.isEmpty()) {
+			for (Map.Entry<String, Integer> immunizationEntry : immunizationsMap.entrySet()) {
+				SimpleObject immunizationsObject = new SimpleObject();
+				immunizationsObject.put("Vaccine", immunizationEntry.getKey());
+				immunizationsObject.put("total", immunizationEntry.getValue().toString());
+				immunizations.add(immunizationsObject);
+			}
+			payloadObj.put("Immunization", immunizations);
+		} else {
+			payloadObj.put("Immunization", immunizations);
 		}
 
 		diagnosisMap = allDiagnosis(fetchDate);
@@ -198,7 +246,6 @@ public class VisualizationDataExchange {
 
 		Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
 		//System.out.println("Payload generated: " + payloadObj);
-
 		return payloadObj;
 	}
 
@@ -210,19 +257,86 @@ public class VisualizationDataExchange {
 		if (!allVisits.isEmpty()) {
 			for (Visit visit : allVisits) {
 				String visitType = visit.getVisitType().getName();
-				Patient patient = visit.getPatient();
-
-				if(visitType.equals("Outpatient")) {
-					if (patient.getAge() < 5) {
-						visitMap.put("Outpatient Under 5", visitMap.getOrDefault("Outpatient Under 5", 0) + 1);
-					} else {
-						visitMap.put("Outpatient 5 And Above", visitMap.getOrDefault("Outpatient 5 And Above", 0) + 1);
-					}
-				}
 				visitMap.put(visitType, visitMap.getOrDefault(visitType, 0) + 1);
 			}
 		}
 		return visitMap;
+	}
+	public static Map<String, Integer> outPatientVisitsByAge(Date fetchDate) {
+
+		Map<String, Integer> outpatientByByAgeMap = new HashMap<>();
+		VisitService visitService = Context.getVisitService();
+		List<Visit> allVisits = visitService.getVisits(null, null, null, null, fetchDate, null, null, null, null, true, false);
+		if (!allVisits.isEmpty()) {
+			for (Visit visit : allVisits) {
+				String visitType = visit.getVisitType().getName();
+				Patient patient = visit.getPatient();
+
+				if (visitType.equals("Outpatient")) {
+					if (patient.getAge() < 5) {
+						outpatientByByAgeMap.put("Outpatient Under 5", outpatientByByAgeMap.getOrDefault("Outpatient Under 5", 0) + 1);
+					} else {
+						outpatientByByAgeMap.put("Outpatient 5 And Above", outpatientByByAgeMap.getOrDefault("Outpatient 5 And Above", 0) + 1);
+					}
+				}
+			}
+		}
+		return outpatientByByAgeMap;
+	}
+	public static Map<String, Integer> outPatientVisitsByService(Date fetchDate) {
+
+		Map<String, Integer> outpatientByServiceMap = new HashMap<>();
+		VisitService visitService = Context.getVisitService();
+		List<Visit> allVisits = visitService.getVisits(null, null, null, null, fetchDate, null, null, null, null, true, false);
+
+		if (!allVisits.isEmpty()) {
+			for (Visit visit : allVisits) {
+				String visitType = visit.getVisitType().getName();
+
+				if (visitType.equals("Outpatient")) {
+					List<Encounter> encounters = service.getEncountersByVisit(visit, false);
+					if (!encounters.isEmpty()){
+						for (Encounter encounter : encounters) {
+							String serviceName = encounter.getEncounterType().getName();
+							outpatientByServiceMap.put(serviceName, outpatientByServiceMap.getOrDefault(serviceName, 0) + 1);
+						}
+				}
+				}
+			}
+		}
+		return outpatientByServiceMap;
+	}
+
+	public static Map<String, Integer> immunizations(Date fetchDate) {
+
+		Map<String, Integer> immunizationsMap = new HashMap<>();
+		EncounterSearchCriteria encounterSearchCriteria = new EncounterSearchCriteria(null,
+				null,
+				fetchDate,
+				null,
+				null,
+				null,
+				Arrays.asList(MetadataUtils.existing(EncounterType.class, IMMUNIZATION)),
+				null,
+				null,
+				null,
+				false);
+		List<Encounter> immunizationEncounters = service.getEncounters(encounterSearchCriteria);
+
+		if (!immunizationEncounters.isEmpty()) {
+			String immunizationGiven;
+			for (Encounter encounter : immunizationEncounters) {
+				for (Obs obs : encounter.getObs()) {
+					if (obs.getConcept().equals(immunizationConcept)) {
+						immunizationGiven = obs.getValueCoded().getName().toString();
+						if(!immunizationGiven.equals( "None")) {
+							immunizationsMap.put(immunizationGiven, immunizationsMap.getOrDefault(immunizationGiven, 0) + 1);
+						}
+					}
+				}
+			}
+		}
+		return immunizationsMap;
 	}
 
 	public static Map<String, Integer> allDiagnosis(Date fetchDate) {
