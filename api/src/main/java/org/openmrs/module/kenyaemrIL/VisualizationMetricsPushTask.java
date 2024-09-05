@@ -53,6 +53,7 @@ public class VisualizationMetricsPushTask extends AbstractTask {
 			JSONObject params = vDataExchange.generateVisualizationPayload(fetchDate);		
 
 			try {
+				System.err.println("KenyaEMR IL: sending visualization data: " + params.toJSONString());
 				Boolean results = VisualizationUtils.sendPOST(params.toJSONString());
 				System.out.println("Send status ==>" + results);
 			} catch (Exception e) {

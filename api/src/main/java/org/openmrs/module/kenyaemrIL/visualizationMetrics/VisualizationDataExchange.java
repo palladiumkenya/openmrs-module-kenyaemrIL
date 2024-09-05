@@ -73,6 +73,10 @@ public class VisualizationDataExchange {
 		List<SimpleObject> inventory = new ArrayList<SimpleObject>();
 		List<SimpleObject> mortality = new ArrayList<SimpleObject>();
 		List<SimpleObject> queueWaitTime = new ArrayList<SimpleObject>();
+		List<SimpleObject> staff = new ArrayList<SimpleObject>();
+		List<SimpleObject> staffCount = new ArrayList<SimpleObject>();
+		List<SimpleObject> waivers = new ArrayList<SimpleObject>();
+		List<SimpleObject> waiversCount = new ArrayList<SimpleObject>();
 		String timestamp = formatter.format(fetchDate);
 
 		//Data extraction
@@ -242,6 +246,28 @@ public class VisualizationDataExchange {
 			}
 		} else {
 			payloadObj.put("wait_time", queueWaitTime);
+		}
+
+		staff = getStaffByCadre(fetchDate);
+		if (staff.size() > 0) {
+			for (int i = 0; i < staff.size(); i++) {
+				SimpleObject staffList= staff.get(i);
+				SimpleObject staffObject = new SimpleObject();
+				staffObject.put("staff", staffList.get("staff"));
+				staffObject.put("staff_count", staffList.get("staff_count"));
+				staffCount.add(staffObject);
+				payloadObj.put("staff_count", staffCount);
+			}
+		} else {
+			payloadObj.put("staff_count", staffCount);
+		}
+
+		waivers = getTotalWaivers(fetchDate);
+		if (waivers.size() > 0) {
+			SimpleObject waiversList= waivers.get(0);
+			payloadObj.put("waivers", waiversList.get("waivers"));
+		} else {
+			payloadObj.put("waivers", waiversCount);
 		}
 
 		Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
@@ -685,6 +711,127 @@ public class VisualizationDataExchange {
 								ret.add(SimpleObject.create(
 									"queue", row[0] != null ? row[0].toString() : "",
 									"average_wait_time", row[1] != null ? row[1].toString() : ""									
+								));
+							}
+						}
+						finalTx.commit();
+					} finally {
+						try {
+							if (statement != null) {
+								statement.close();
+							}
+						} catch (Exception e) {
+						}
+					}
+				}
+			});
+		} catch (Exception e) {
+			throw new IllegalArgumentException("Unable to execute query", e);
+		}
+		return ret;
+	}
+
+	/**
+	 * Gets details of staff by cadre
+	 * @param
+	 * @return details of staff by cadre
+	 */
+	public static List<SimpleObject> getStaffByCadre(Date fetchDate) {
+		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String effectiveDate = sd.format(fetchDate);
+		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
+		final String sqlSelectQuery = "SELECT role, COUNT(DISTINCT user_id) AS role_count\n" + //
+						"FROM user_role\n" + //
+						"WHERE role LIKE '%Clinician' \n" + //
+						"   OR role LIKE '%Data Clerk' \n" + //
+						"   OR role LIKE '%Manager' \n" + //
+						"   OR role LIKE '%Pharmacist'\n" + //
+						"   OR role LIKE '%Provider'\n" + //
+						"   OR role LIKE '%Nurse%'\n" + //
+						"   OR role LIKE '%Cashier%'\n" + //
+						"   OR role LIKE '%Dentist%'\n" + //
+						"GROUP BY role;";
+		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
+		Transaction tx = null;
+		try {
+
+			tx = sf.getHibernateSessionFactory().getCurrentSession().beginTransaction();
+			final Transaction finalTx = tx;
+			sf.getCurrentSession().doWork(new Work() {
+
+				@Override
+				public void execute(Connection connection) throws SQLException {
+					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
+					try {
+
+						ResultSet resultSet = statement.executeQuery();
+						if (resultSet != null) {
+							ResultSetMetaData metaData = resultSet.getMetaData();
+
+							while (resultSet.next()) {
+								Object[] row = new Object[metaData.getColumnCount()];
+								for (int i = 1; i <= metaData.getColumnCount(); i++) {
+									row[i - 1] = resultSet.getObject(i);
+								}
+
+								ret.add(SimpleObject.create(
+									"staff", row[0] != null ? row[0].toString() : "",
+									"staff_count", row[1] != null ? row[1].toString() : ""									
+								));
+							}
+						}
+						finalTx.commit();
+					} finally {
+						try {
+							if (statement != null) {
+								statement.close();
+							}
+						} catch (Exception e) {
+						}
+					}
+				}
+			});
+		} catch (Exception e) {
+			throw new IllegalArgumentException("Unable to execute query", e);
+		}
+		return ret;
+	}
+
+	/**
+	 * Gets details of total waivers
+	 * @param
+	 * @return details of total waivers
+	 */
+	public static List<SimpleObject> getTotalWaivers(Date fetchDate) {
+		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String effectiveDate = sd.format(fetchDate);
+		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
+		final String sqlSelectQuery = "SELECT sum(amount_tendered) as total FROM openmrs.cashier_bill_payment where payment_mode_id = 7";
+		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
+		Transaction tx = null;
+		try {
+
+			tx = sf.getHibernateSessionFactory().getCurrentSession().beginTransaction();
+			final Transaction finalTx = tx;
+			sf.getCurrentSession().doWork(new Work() {
+
+				@Override
+				public void execute(Connection connection) throws SQLException {
+					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
+					try {
+
+						ResultSet resultSet = statement.executeQuery();
+						if (resultSet != null) {
+							ResultSetMetaData metaData = resultSet.getMetaData();
+
+							while (resultSet.next()) {
+								Object[] row = new Object[metaData.getColumnCount()];
+								for (int i = 1; i <= metaData.getColumnCount(); i++) {
+									row[i - 1] = resultSet.getObject(i);
+								}
+
+								ret.add(SimpleObject.create(
+									"waivers", row[0] != null ? row[0].toString() : ""									
 								));
 							}
 						}
