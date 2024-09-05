@@ -264,13 +264,8 @@ public class VisualizationDataExchange {
 
 		waivers = getTotalWaivers(fetchDate);
 		if (waivers.size() > 0) {
-			for (int i = 0; i < waivers.size(); i++) {
-				SimpleObject waiversList= waivers.get(i);
-				SimpleObject waiversObject = new SimpleObject();
-				waiversObject.put("waivers", waiversList.get("waivers"));
-				waiversCount.add(waiversObject);
-				payloadObj.put("waivers", waiversCount);
-			}
+			SimpleObject waiversList= waivers.get(0);
+			payloadObj.put("waivers", waiversList.get("waivers"));
 		} else {
 			payloadObj.put("waivers", waiversCount);
 		}
