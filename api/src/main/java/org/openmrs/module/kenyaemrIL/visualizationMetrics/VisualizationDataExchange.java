@@ -130,9 +130,9 @@ public class VisualizationDataExchange {
 					visitsByAgeObject.put("total", visitEntry.getValue().toString());
 					visitsByAge.add(visitsByAgeObject);
 				}
-				payloadObj.put("OPD Visits", visitsByAge);
+				payloadObj.put("opd_visits", visitsByAge);
 			} else {
-				payloadObj.put("OPD Visits", visitsByAge);
+				payloadObj.put("opd_visits", visitsByAge);
 			}
 		} catch(Exception ex) {
 			System.err.println("KenyaEMR IL: ERROR visualization data : OPD Visits : " + ex.getMessage());
@@ -148,9 +148,9 @@ public class VisualizationDataExchange {
 					outpatientByServiceObject.put("total", visitEntry.getValue().toString());
 					outPatientByService.add(outpatientByServiceObject);
 				}
-				payloadObj.put("OPD Visits By Service Type", outPatientByService);
+				payloadObj.put("opd_visits_by_service_type", outPatientByService);
 			} else {
-				payloadObj.put("OPD Visits By Service Type", outPatientByService);
+				payloadObj.put("opd_visits_by_service_type", outPatientByService);
 			}
 		} catch(Exception ex) {
 			System.err.println("KenyaEMR IL: ERROR visualization data : OPD Visits By Service Type : " + ex.getMessage());
@@ -162,13 +162,13 @@ public class VisualizationDataExchange {
 			if(!immunizationsMap.isEmpty()) {
 				for (Map.Entry<String, Integer> immunizationEntry : immunizationsMap.entrySet()) {
 					SimpleObject immunizationsObject = new SimpleObject();
-					immunizationsObject.put("Vaccine", immunizationEntry.getKey());
+					immunizationsObject.put("vaccine", immunizationEntry.getKey());
 					immunizationsObject.put("total", immunizationEntry.getValue().toString());
 					immunizations.add(immunizationsObject);
 				}
-				payloadObj.put("Immunization", immunizations);
+				payloadObj.put("immunization", immunizations);
 			} else {
-				payloadObj.put("Immunization", immunizations);
+				payloadObj.put("immunization", immunizations);
 			}
 		} catch(Exception ex) {
 			System.err.println("KenyaEMR IL: ERROR visualization data : immunization : " + ex.getMessage());
@@ -213,10 +213,10 @@ public class VisualizationDataExchange {
 
 		try {
 			billingItems = getBillingItems(fetchDate);
-			if (billingItems.size() > 0) {		
+			if (billingItems.size() > 0) {
 				for (int i = 0; i < billingItems.size(); i++) {
 					SimpleObject bill = billingItems.get(i);
-					SimpleObject billingObject = new SimpleObject();				
+					SimpleObject billingObject = new SimpleObject();
 					billingObject.put("service_type", bill.get("service_type"));
 					billingObject.put("invoices", bill.get("invoices"));
 					billingObject.put("amount_due", bill.get("amount_due"));
@@ -235,7 +235,7 @@ public class VisualizationDataExchange {
 
 		try {
 			paymentItems = getPayments(fetchDate);
-			if (paymentItems.size() > 0) {		
+			if (paymentItems.size() > 0) {
 				for (int i = 0; i < paymentItems.size(); i++) {
 					SimpleObject paymentsList= paymentItems.get(i);
 					SimpleObject paymentsObject = new SimpleObject();
@@ -255,7 +255,7 @@ public class VisualizationDataExchange {
 
 		try {
 			inventoryItems = getInventory(fetchDate);
-			if (inventoryItems.size() > 0) {			
+			if (inventoryItems.size() > 0) {
 				for (int i = 0; i < inventoryItems.size(); i++) {
 					SimpleObject inventoryList= inventoryItems.get(i);
 					SimpleObject inventoryObject = new SimpleObject();
@@ -375,9 +375,9 @@ public class VisualizationDataExchange {
 				if (visitType.equals("Outpatient")) {
 					if(patient != null) {
 						if (patient.getAge() < 5) {
-							outpatientByByAgeMap.put("Outpatient Under 5", outpatientByByAgeMap.getOrDefault("Outpatient Under 5", 0) + 1);
+							outpatientByByAgeMap.put("outpatient_under_5", outpatientByByAgeMap.getOrDefault("Outpatient Under 5", 0) + 1);
 						} else {
-							outpatientByByAgeMap.put("Outpatient 5 And Above", outpatientByByAgeMap.getOrDefault("Outpatient 5 And Above", 0) + 1);
+							outpatientByByAgeMap.put("outpatient_5_and_above", outpatientByByAgeMap.getOrDefault("Outpatient 5 And Above", 0) + 1);
 						}
 					}
 				}
