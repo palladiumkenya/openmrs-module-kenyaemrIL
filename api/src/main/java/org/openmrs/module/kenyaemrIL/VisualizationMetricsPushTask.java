@@ -39,6 +39,7 @@ public class VisualizationMetricsPushTask extends AbstractTask {
 			String ts = globalPropertyObject.getValue().toString();
 			fetchDate = formatter.parse(ts);
 		} catch (Exception e) {
+			System.err.println("KenyaEMR IL: Error formating date" + e.getMessage());
 			e.printStackTrace();
 		}
 
@@ -60,7 +61,7 @@ public class VisualizationMetricsPushTask extends AbstractTask {
 				System.out.println(e.getMessage());
 			}
 
-        //Set next fetch date start time
+        	//Set next fetch date start time
 			Date nextProcessingDate = new Date();
 			nextProcessingDate.setTime(System.currentTimeMillis());
 			Date startOfDayMidnight = new Date(nextProcessingDate.getTime() - (1000 * 60 * 60 * 24));
@@ -69,17 +70,18 @@ public class VisualizationMetricsPushTask extends AbstractTask {
 			globalPropertyObject.setPropertyValue(formatter.format(midnightDateTime));
 			Context.getAdministrationService().saveGlobalProperty(globalPropertyObject);
 			Context.flushSession();
-		} catch (IOException ioe) {
-
+		} catch (Exception ex) {
 			try {
-				String text = "IL - Visualization PUSH: At " + new Date() + " there was connectivity error. ";
+				String text = "KenyaEMR IL: IL - Visualization PUSH: At " + new Date() + " there was connectivity error. ";
+				System.err.println("KenyaEMR IL: " + text);
 				log.warn(text);
 			} catch (Exception e) {
-				log.error("IL - Visualization PUSH: Failed to check internet connectivity", e);
+				System.err.println("KenyaEMR IL: " + e.getMessage());
+				log.error("KenyaEMR IL: IL - Visualization PUSH: Failed to check internet connectivity", e);
 			}
+			ex.printStackTrace();
 		} finally {
 			Context.closeSession();
-
 		}
 	}
 
