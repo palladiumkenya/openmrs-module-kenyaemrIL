@@ -373,12 +373,10 @@ public class VisualizationDataExchange {
 				Patient patient = visit.getPatient();
 
 				if (visitType.equals("Outpatient")) {
-					if(patient != null) {
-						if (patient.getAge() < 5) {
-							outpatientByByAgeMap.put("outpatient_under_5", outpatientByByAgeMap.getOrDefault("Outpatient Under 5", 0) + 1);
-						} else {
-							outpatientByByAgeMap.put("outpatient_5_and_above", outpatientByByAgeMap.getOrDefault("Outpatient 5 And Above", 0) + 1);
-						}
+					if (patient.getAge() < 5) {
+						outpatientByByAgeMap.put("outpatient_under_5", outpatientByByAgeMap.getOrDefault("outpatient_under_5", 0) + 1);
+					} else {
+						outpatientByByAgeMap.put("outpatient_5_and_above", outpatientByByAgeMap.getOrDefault("outpatient_5_and_above", 0) + 1);
 					}
 				}
 			}
