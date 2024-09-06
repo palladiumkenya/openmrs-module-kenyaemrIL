@@ -86,188 +86,262 @@ public class VisualizationDataExchange {
 		payloadObj.put("mfl_code", facilityMfl);
 		payloadObj.put("timestamp", timestamp);
 
-
-		if (bedManagement.size() > 0) {
-			SimpleObject bedManagementObject = new SimpleObject();
-			bedManagementObject.put("ward", "");
-			bedManagementObject.put("capacity", "");
-			bedManagementObject.put("occupancy", "");
-			bedManagementObject.put("new_admissions", "");
-			bedManagement.add(bedManagementObject);
-			payloadObj.put("bed_management", bedManagement);
-		} else {
-			payloadObj.put("bed_management", bedManagement);
-		}
-
-		visitsMap = allVisits(fetchDate);
-		if (!visitsMap.isEmpty()) {
-			for (Map.Entry<String, Integer> visitEntry : visitsMap.entrySet()) {
-				SimpleObject visitsObject = new SimpleObject();
-				visitsObject.put("visit_type", visitEntry.getKey());
-				visitsObject.put("total", visitEntry.getValue().toString());
-				visits.add(visitsObject);
+		try {
+			if (bedManagement.size() > 0) {
+				SimpleObject bedManagementObject = new SimpleObject();
+				bedManagementObject.put("ward", "");
+				bedManagementObject.put("capacity", "");
+				bedManagementObject.put("occupancy", "");
+				bedManagementObject.put("new_admissions", "");
+				bedManagement.add(bedManagementObject);
+				payloadObj.put("bed_management", bedManagement);
+			} else {
+				payloadObj.put("bed_management", bedManagement);
 			}
-			payloadObj.put("visits", visits);
-		} else {
-			payloadObj.put("visits", visits);
+		} catch(Exception ex) {
+			System.err.println("KenyaEMR IL: ERROR visualization data : bed_management : " + ex.getMessage());
+			ex.printStackTrace();
 		}
 
-		visitByAgeMap = outPatientVisitsByAge(fetchDate);
-		if (!visitByAgeMap.isEmpty()) {
-			for (Map.Entry<String, Integer> visitEntry : visitByAgeMap.entrySet()) {
-				SimpleObject visitsByAgeObject = new SimpleObject();
-				visitsByAgeObject.put("age", visitEntry.getKey());
-				visitsByAgeObject.put("total", visitEntry.getValue().toString());
-				visitsByAge.add(visitsByAgeObject);
+		try {
+			visitsMap = allVisits(fetchDate);
+			if (!visitsMap.isEmpty()) {
+				for (Map.Entry<String, Integer> visitEntry : visitsMap.entrySet()) {
+					SimpleObject visitsObject = new SimpleObject();
+					visitsObject.put("visit_type", visitEntry.getKey());
+					visitsObject.put("total", visitEntry.getValue().toString());
+					visits.add(visitsObject);
+				}
+				payloadObj.put("visits", visits);
+			} else {
+				payloadObj.put("visits", visits);
 			}
-			payloadObj.put("OPD Visits", visitsByAge);
-		} else {
-			payloadObj.put("OPD Visits", visitsByAge);
+		} catch(Exception ex) {
+			System.err.println("KenyaEMR IL: ERROR visualization data : visits : " + ex.getMessage());
+			ex.printStackTrace();
 		}
 
-		outpatientByServiceMap = outPatientVisitsByService(fetchDate);
-		if (!outpatientByServiceMap.isEmpty()) {
-			for (Map.Entry<String, Integer> visitEntry : outpatientByServiceMap.entrySet()) {
-				SimpleObject outpatientByServiceObject = new SimpleObject();
-				outpatientByServiceObject.put("service", visitEntry.getKey());
-				outpatientByServiceObject.put("total", visitEntry.getValue().toString());
-				outPatientByService.add(outpatientByServiceObject);
+		try {
+			visitByAgeMap = outPatientVisitsByAge(fetchDate);
+			if (!visitByAgeMap.isEmpty()) {
+				for (Map.Entry<String, Integer> visitEntry : visitByAgeMap.entrySet()) {
+					SimpleObject visitsByAgeObject = new SimpleObject();
+					visitsByAgeObject.put("age", visitEntry.getKey());
+					visitsByAgeObject.put("total", visitEntry.getValue().toString());
+					visitsByAge.add(visitsByAgeObject);
+				}
+				payloadObj.put("OPD Visits", visitsByAge);
+			} else {
+				payloadObj.put("OPD Visits", visitsByAge);
 			}
-			payloadObj.put("OPD Visits By Service Type", outPatientByService);
-		} else {
-			payloadObj.put("OPD Visits By Service Type", outPatientByService);
+		} catch(Exception ex) {
+			System.err.println("KenyaEMR IL: ERROR visualization data : OPD Visits : " + ex.getMessage());
+			ex.printStackTrace();
 		}
 
-		immunizationsMap = immunizations(fetchDate);
-		if(!immunizationsMap.isEmpty()) {
-			for (Map.Entry<String, Integer> immunizationEntry : immunizationsMap.entrySet()) {
-				SimpleObject immunizationsObject = new SimpleObject();
-				immunizationsObject.put("Vaccine", immunizationEntry.getKey());
-				immunizationsObject.put("total", immunizationEntry.getValue().toString());
-				immunizations.add(immunizationsObject);
+		try {
+			outpatientByServiceMap = outPatientVisitsByService(fetchDate);
+			if (!outpatientByServiceMap.isEmpty()) {
+				for (Map.Entry<String, Integer> visitEntry : outpatientByServiceMap.entrySet()) {
+					SimpleObject outpatientByServiceObject = new SimpleObject();
+					outpatientByServiceObject.put("service", visitEntry.getKey());
+					outpatientByServiceObject.put("total", visitEntry.getValue().toString());
+					outPatientByService.add(outpatientByServiceObject);
+				}
+				payloadObj.put("OPD Visits By Service Type", outPatientByService);
+			} else {
+				payloadObj.put("OPD Visits By Service Type", outPatientByService);
 			}
-			payloadObj.put("Immunization", immunizations);
-		} else {
-			payloadObj.put("Immunization", immunizations);
+		} catch(Exception ex) {
+			System.err.println("KenyaEMR IL: ERROR visualization data : OPD Visits By Service Type : " + ex.getMessage());
+			ex.printStackTrace();
 		}
 
-		diagnosisMap = allDiagnosis(fetchDate);
-		if (!diagnosisMap.isEmpty()) {
-			for (Map.Entry<String, Integer> diagnosisEntry : diagnosisMap.entrySet()) {
-				SimpleObject diagnosisObject = new SimpleObject();
-				diagnosisObject.put("diagnosis_name", diagnosisEntry.getKey());
-				diagnosisObject.put("total", diagnosisEntry.getValue().toString());
-				diagnosis.add(diagnosisObject);
+		try {
+			immunizationsMap = immunizations(fetchDate);
+			if(!immunizationsMap.isEmpty()) {
+				for (Map.Entry<String, Integer> immunizationEntry : immunizationsMap.entrySet()) {
+					SimpleObject immunizationsObject = new SimpleObject();
+					immunizationsObject.put("Vaccine", immunizationEntry.getKey());
+					immunizationsObject.put("total", immunizationEntry.getValue().toString());
+					immunizations.add(immunizationsObject);
+				}
+				payloadObj.put("Immunization", immunizations);
+			} else {
+				payloadObj.put("Immunization", immunizations);
 			}
-			payloadObj.put("diagnosis", diagnosis);
-		} else {
-			payloadObj.put("diagnosis", diagnosis);
+		} catch(Exception ex) {
+			System.err.println("KenyaEMR IL: ERROR visualization data : immunization : " + ex.getMessage());
+			ex.printStackTrace();
 		}
-		workloadMap = workLoad(fetchDate);
-		if (!workloadMap.isEmpty()){
-			for(Map.Entry<String, Integer> workloadEntry : workloadMap.entrySet()){
-			SimpleObject workloadObject = new SimpleObject();
-			workloadObject.put("department", workloadEntry.getKey());
-			workloadObject.put("total", workloadEntry.getValue().toString());
-			workload.add(workloadObject);
-			payloadObj.put("workload", workload);
+
+		try {
+			diagnosisMap = allDiagnosis(fetchDate);
+			if (!diagnosisMap.isEmpty()) {
+				for (Map.Entry<String, Integer> diagnosisEntry : diagnosisMap.entrySet()) {
+					SimpleObject diagnosisObject = new SimpleObject();
+					diagnosisObject.put("diagnosis_name", diagnosisEntry.getKey());
+					diagnosisObject.put("total", diagnosisEntry.getValue().toString());
+					diagnosis.add(diagnosisObject);
+				}
+				payloadObj.put("diagnosis", diagnosis);
+			} else {
+				payloadObj.put("diagnosis", diagnosis);
+			}
+		} catch(Exception ex) {
+			System.err.println("KenyaEMR IL: ERROR visualization data : diagnosis : " + ex.getMessage());
+			ex.printStackTrace();
 		}
-		} else {
-			payloadObj.put("workload", workload);
+
+		try {
+			workloadMap = workLoad(fetchDate);
+			if (!workloadMap.isEmpty()){
+				for(Map.Entry<String, Integer> workloadEntry : workloadMap.entrySet()){
+				SimpleObject workloadObject = new SimpleObject();
+				workloadObject.put("department", workloadEntry.getKey());
+				workloadObject.put("total", workloadEntry.getValue().toString());
+				workload.add(workloadObject);
+				payloadObj.put("workload", workload);
+			}
+			} else {
+				payloadObj.put("workload", workload);
+			}
+		} catch(Exception ex) {
+			System.err.println("KenyaEMR IL: ERROR visualization data : workload : " + ex.getMessage());
+			ex.printStackTrace();
 		}
-		billingItems = getBillingItems(fetchDate);
-		if (billingItems.size() > 0) {		
-			for (int i = 0; i < billingItems.size(); i++) {
-				SimpleObject bill = billingItems.get(i);
-				SimpleObject billingObject = new SimpleObject();				
-				billingObject.put("service_type", bill.get("service_type"));
-				billingObject.put("invoices", bill.get("invoices"));
-				billingObject.put("amount_due", bill.get("amount_due"));
-				billingObject.put("amount_paid",bill.get("amount_paid"));
-				billingObject.put("balance_due", bill.get("balance_due"));
-				billing.add(billingObject);
+
+		try {
+			billingItems = getBillingItems(fetchDate);
+			if (billingItems.size() > 0) {		
+				for (int i = 0; i < billingItems.size(); i++) {
+					SimpleObject bill = billingItems.get(i);
+					SimpleObject billingObject = new SimpleObject();				
+					billingObject.put("service_type", bill.get("service_type"));
+					billingObject.put("invoices", bill.get("invoices"));
+					billingObject.put("amount_due", bill.get("amount_due"));
+					billingObject.put("amount_paid",bill.get("amount_paid"));
+					billingObject.put("balance_due", bill.get("balance_due"));
+					billing.add(billingObject);
+					payloadObj.put("billing", billing);
+				}
+			} else {
 				payloadObj.put("billing", billing);
 			}
-		} else {
-			payloadObj.put("billing", billing);
+		} catch(Exception ex) {
+			System.err.println("KenyaEMR IL: ERROR visualization data : billing : " + ex.getMessage());
+			ex.printStackTrace();
 		}
-		paymentItems = getPayments(fetchDate);
-		if (paymentItems.size() > 0) {		
-			for (int i = 0; i < paymentItems.size(); i++) {
-				SimpleObject paymentsList= paymentItems.get(i);
-				SimpleObject paymentsObject = new SimpleObject();
-				paymentsObject.put("payment_mode", paymentsList.get("payment_mode"));
-				paymentsObject.put("no_of_patients", paymentsList.get("no_of_patients"));
-				paymentsObject.put("amount_paid", paymentsList.get("amount_paid"));
-				payments.add(paymentsObject);
+
+		try {
+			paymentItems = getPayments(fetchDate);
+			if (paymentItems.size() > 0) {		
+				for (int i = 0; i < paymentItems.size(); i++) {
+					SimpleObject paymentsList= paymentItems.get(i);
+					SimpleObject paymentsObject = new SimpleObject();
+					paymentsObject.put("payment_mode", paymentsList.get("payment_mode"));
+					paymentsObject.put("no_of_patients", paymentsList.get("no_of_patients"));
+					paymentsObject.put("amount_paid", paymentsList.get("amount_paid"));
+					payments.add(paymentsObject);
+					payloadObj.put("payments", payments);
+				}
+			} else {
 				payloadObj.put("payments", payments);
 			}
-		} else {
-			payloadObj.put("payments", payments);
+		} catch(Exception ex) {
+			System.err.println("KenyaEMR IL: ERROR visualization data : payments : " + ex.getMessage());
+			ex.printStackTrace();
 		}
-		inventoryItems = getInventory(fetchDate);
-		if (inventoryItems.size() > 0) {			
-			for (int i = 0; i < inventoryItems.size(); i++) {
-				SimpleObject inventoryList= inventoryItems.get(i);
-				SimpleObject inventoryObject = new SimpleObject();
-				inventoryObject.put("item_name", inventoryList.get("item_name"));
-				inventoryObject.put("item_type", inventoryList.get("item_type"));
-				inventoryObject.put("unit_of_measure", inventoryList.get("unit_of_measure"));
-				inventoryObject.put("quantity_at_hand", inventoryList.get("quantity_at_hand"));
-				inventoryObject.put("quantity_consumed", inventoryList.get("quantity_consumed"));
-				inventory.add(inventoryObject);
+
+		try {
+			inventoryItems = getInventory(fetchDate);
+			if (inventoryItems.size() > 0) {			
+				for (int i = 0; i < inventoryItems.size(); i++) {
+					SimpleObject inventoryList= inventoryItems.get(i);
+					SimpleObject inventoryObject = new SimpleObject();
+					inventoryObject.put("item_name", inventoryList.get("item_name"));
+					inventoryObject.put("item_type", inventoryList.get("item_type"));
+					inventoryObject.put("unit_of_measure", inventoryList.get("unit_of_measure"));
+					inventoryObject.put("quantity_at_hand", inventoryList.get("quantity_at_hand"));
+					inventoryObject.put("quantity_consumed", inventoryList.get("quantity_consumed"));
+					inventory.add(inventoryObject);
+					payloadObj.put("inventory", inventory);
+				}
+			} else {
 				payloadObj.put("inventory", inventory);
 			}
-		} else {
-			payloadObj.put("inventory", inventory);
+		} catch(Exception ex) {
+			System.err.println("KenyaEMR IL: ERROR visualization data : inventory : " + ex.getMessage());
+			ex.printStackTrace();
 		}
-		mortalityMap = mortality(fetchDate);
-		if (!mortalityMap.isEmpty()) {
-			for (Map.Entry<String, Integer> mortalityEntry : mortalityMap.entrySet()) {
-				SimpleObject mortalityObject = new SimpleObject();
-				mortalityObject.put("cause_of_death", mortalityEntry.getKey());
-				mortalityObject.put("total", mortalityEntry.getValue().toString());
-				mortality.add(mortalityObject);
+
+		try {
+			mortalityMap = mortality(fetchDate);
+			if (!mortalityMap.isEmpty()) {
+				for (Map.Entry<String, Integer> mortalityEntry : mortalityMap.entrySet()) {
+					SimpleObject mortalityObject = new SimpleObject();
+					mortalityObject.put("cause_of_death", mortalityEntry.getKey());
+					mortalityObject.put("total", mortalityEntry.getValue().toString());
+					mortality.add(mortalityObject);
+					payloadObj.put("mortality", mortality);
+				}
+			} else {
 				payloadObj.put("mortality", mortality);
 			}
-		} else {
-			payloadObj.put("mortality", mortality);
+		} catch(Exception ex) {
+			System.err.println("KenyaEMR IL: ERROR visualization data : mortality : " + ex.getMessage());
+			ex.printStackTrace();
 		}
 
-		queueItems = getWaitTime(fetchDate);
-		if (queueItems.size() > 0) {
-			for (int i = 0; i < queueItems.size(); i++) {
-				SimpleObject queueList= queueItems.get(i);
-				SimpleObject queueObject = new SimpleObject();
-				queueObject.put("queue", queueList.get("queue"));
-				queueObject.put("average_wait_time", queueList.get("average_wait_time"));
-				queueWaitTime.add(queueObject);
+		try {
+			queueItems = getWaitTime(fetchDate);
+			if (queueItems.size() > 0) {
+				for (int i = 0; i < queueItems.size(); i++) {
+					SimpleObject queueList= queueItems.get(i);
+					SimpleObject queueObject = new SimpleObject();
+					queueObject.put("queue", queueList.get("queue"));
+					queueObject.put("average_wait_time", queueList.get("average_wait_time"));
+					queueWaitTime.add(queueObject);
+					payloadObj.put("wait_time", queueWaitTime);
+				}
+			} else {
 				payloadObj.put("wait_time", queueWaitTime);
 			}
-		} else {
-			payloadObj.put("wait_time", queueWaitTime);
+		} catch(Exception ex) {
+			System.err.println("KenyaEMR IL: ERROR visualization data : wait time : " + ex.getMessage());
+			ex.printStackTrace();
 		}
 
-		staff = getStaffByCadre(fetchDate);
-		if (staff.size() > 0) {
-			for (int i = 0; i < staff.size(); i++) {
-				SimpleObject staffList= staff.get(i);
-				SimpleObject staffObject = new SimpleObject();
-				staffObject.put("staff", staffList.get("staff"));
-				staffObject.put("staff_count", staffList.get("staff_count"));
-				staffCount.add(staffObject);
+		try {
+			staff = getStaffByCadre(fetchDate);
+			if (staff.size() > 0) {
+				for (int i = 0; i < staff.size(); i++) {
+					SimpleObject staffList= staff.get(i);
+					SimpleObject staffObject = new SimpleObject();
+					staffObject.put("staff", staffList.get("staff"));
+					staffObject.put("staff_count", staffList.get("staff_count"));
+					staffCount.add(staffObject);
+					payloadObj.put("staff_count", staffCount);
+				}
+			} else {
 				payloadObj.put("staff_count", staffCount);
 			}
-		} else {
-			payloadObj.put("staff_count", staffCount);
+		} catch(Exception ex) {
+			System.err.println("KenyaEMR IL: ERROR visualization data : staff : " + ex.getMessage());
+			ex.printStackTrace();
 		}
 
-		waivers = getTotalWaivers(fetchDate);
-		if (waivers.size() > 0) {
-			SimpleObject waiversList= waivers.get(0);
-			payloadObj.put("waivers", waiversList.get("waivers"));
-		} else {
-			payloadObj.put("waivers", waiversCount);
+		try {
+			waivers = getTotalWaivers(fetchDate);
+			if (waivers.size() > 0) {
+				SimpleObject waiversList= waivers.get(0);
+				payloadObj.put("waivers", waiversList.get("waivers"));
+			} else {
+				payloadObj.put("waivers", waiversCount);
+			}
+		} catch(Exception ex) {
+			System.err.println("KenyaEMR IL: ERROR visualization data : waivers : " + ex.getMessage());
+			ex.printStackTrace();
 		}
 
 		Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
@@ -299,10 +373,12 @@ public class VisualizationDataExchange {
 				Patient patient = visit.getPatient();
 
 				if (visitType.equals("Outpatient")) {
-					if (patient.getAge() < 5) {
-						outpatientByByAgeMap.put("Outpatient Under 5", outpatientByByAgeMap.getOrDefault("Outpatient Under 5", 0) + 1);
-					} else {
-						outpatientByByAgeMap.put("Outpatient 5 And Above", outpatientByByAgeMap.getOrDefault("Outpatient 5 And Above", 0) + 1);
+					if(patient != null) {
+						if (patient.getAge() < 5) {
+							outpatientByByAgeMap.put("Outpatient Under 5", outpatientByByAgeMap.getOrDefault("Outpatient Under 5", 0) + 1);
+						} else {
+							outpatientByByAgeMap.put("Outpatient 5 And Above", outpatientByByAgeMap.getOrDefault("Outpatient 5 And Above", 0) + 1);
+						}
 					}
 				}
 			}
@@ -740,8 +816,9 @@ public class VisualizationDataExchange {
 		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String effectiveDate = sd.format(fetchDate);
 		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
-		final String sqlSelectQuery = "SELECT role, COUNT(DISTINCT user_id) AS role_count\n" + //
-						"FROM user_role\n" + //
+		final String sqlSelectQuery = "SELECT ur.role as role, COUNT(DISTINCT ur.user_id) AS role_count\n" + //
+						"FROM user_role ur\n" + //
+						"JOIN users u ON ur.user_id = u.user_id\n" + //
 						"WHERE role LIKE '%Clinician' \n" + //
 						"   OR role LIKE '%Data Clerk' \n" + //
 						"   OR role LIKE '%Manager' \n" + //
@@ -750,7 +827,8 @@ public class VisualizationDataExchange {
 						"   OR role LIKE '%Nurse%'\n" + //
 						"   OR role LIKE '%Cashier%'\n" + //
 						"   OR role LIKE '%Dentist%'\n" + //
-						"GROUP BY role;";
+						"and u.date_created >= '" + effectiveDate + "'\n" + //
+						"GROUP BY ur.role;";
 		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
 		Transaction tx = null;
 		try {
@@ -792,6 +870,8 @@ public class VisualizationDataExchange {
 				}
 			});
 		} catch (Exception e) {
+			System.err.println("KenyaEMR IL: Unable to get staff by cadre: " + e.getMessage());
+			e.printStackTrace();
 			throw new IllegalArgumentException("Unable to execute query", e);
 		}
 		return ret;
@@ -806,7 +886,7 @@ public class VisualizationDataExchange {
 		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String effectiveDate = sd.format(fetchDate);
 		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
-		final String sqlSelectQuery = "SELECT sum(amount_tendered) as total FROM openmrs.cashier_bill_payment where payment_mode_id = 7";
+		final String sqlSelectQuery = "SELECT sum(amount_tendered) as total FROM openmrs.cashier_bill_payment where payment_mode_id = 7 and date_created >= '" + effectiveDate + "'";
 		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
 		Transaction tx = null;
 		try {
