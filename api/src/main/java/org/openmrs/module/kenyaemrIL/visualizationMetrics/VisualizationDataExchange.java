@@ -345,7 +345,7 @@ public class VisualizationDataExchange {
 		}
 
 		Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
-		//System.out.println("Payload generated: " + payloadObj);
+		System.out.println("Payload generated: " + payloadObj);
 		return payloadObj;
 	}
 
@@ -760,7 +760,17 @@ public class VisualizationDataExchange {
 		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String effectiveDate = sd.format(fetchDate);
 		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
-		final String sqlSelectQuery = "SELECT tbl.name,ROUND(AVG(tbl.diff),2) FROM (select q.name,qe.started_at,qe.ended_at, TIMESTAMPDIFF(MINUTE, qe.started_at, qe.ended_at) as diff from openmrs.queue_entry qe inner join openmrs.queue q on q.queue_id = qe.queue_id where (date(qe.date_created) >= '" + effectiveDate + "'or date(qe.date_created) >= '" + effectiveDate + "' ) and qe.ended_at is not null) tbl GROUP BY tbl.name;";
+		final String sqlSelectQuery = "SELECT tbl.name, ROUND(AVG(tbl.diff), 2)\n" +
+				"FROM (select q.name, qe.started_at, qe.ended_at, (TIMESTAMPDIFF(SECOND, qe.started_at, qe.ended_at) / 60) as diff\n" +
+				"      from openmrs.queue_entry qe\n" +
+				"               inner join openmrs.queue q on q.queue_id = qe.queue_id\n" +
+				"               inner join (select t.name, v.visit_id\n" +
+				"                           from openmrs.visit v\n" +
+				"                                    inner join openmrs.visit_type t on v.visit_type_id = t.visit_type_id where t.name = 'Outpatient') v\n" +
+				"                          on qe.visit_id = v.visit_id\n" +
+				"      where (date(qe.date_created) >= '" + effectiveDate + "' or date(qe.date_created) >= '" + effectiveDate + "')\n" +
+				"        and qe.ended_at is not null) tbl\n" +
+				"GROUP BY tbl.name;";
 		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
 		Transaction tx = null;
 		try {
