@@ -130,9 +130,9 @@ public class VisualizationDataExchange {
 					visitsByAgeObject.put("total", visitEntry.getValue().toString());
 					visitsByAge.add(visitsByAgeObject);
 				}
-				payloadObj.put("OPD Visits", visitsByAge);
+				payloadObj.put("opd_visits", visitsByAge);
 			} else {
-				payloadObj.put("OPD Visits", visitsByAge);
+				payloadObj.put("opd_visits", visitsByAge);
 			}
 		} catch(Exception ex) {
 			System.err.println("KenyaEMR IL: ERROR visualization data : OPD Visits : " + ex.getMessage());
@@ -148,9 +148,9 @@ public class VisualizationDataExchange {
 					outpatientByServiceObject.put("total", visitEntry.getValue().toString());
 					outPatientByService.add(outpatientByServiceObject);
 				}
-				payloadObj.put("OPD Visits By Service Type", outPatientByService);
+				payloadObj.put("opd_visits_by_service_type", outPatientByService);
 			} else {
-				payloadObj.put("OPD Visits By Service Type", outPatientByService);
+				payloadObj.put("opd_visits_by_service_type", outPatientByService);
 			}
 		} catch(Exception ex) {
 			System.err.println("KenyaEMR IL: ERROR visualization data : OPD Visits By Service Type : " + ex.getMessage());
@@ -162,13 +162,13 @@ public class VisualizationDataExchange {
 			if(!immunizationsMap.isEmpty()) {
 				for (Map.Entry<String, Integer> immunizationEntry : immunizationsMap.entrySet()) {
 					SimpleObject immunizationsObject = new SimpleObject();
-					immunizationsObject.put("Vaccine", immunizationEntry.getKey());
+					immunizationsObject.put("vaccine", immunizationEntry.getKey());
 					immunizationsObject.put("total", immunizationEntry.getValue().toString());
 					immunizations.add(immunizationsObject);
 				}
-				payloadObj.put("Immunization", immunizations);
+				payloadObj.put("immunization", immunizations);
 			} else {
-				payloadObj.put("Immunization", immunizations);
+				payloadObj.put("immunization", immunizations);
 			}
 		} catch(Exception ex) {
 			System.err.println("KenyaEMR IL: ERROR visualization data : immunization : " + ex.getMessage());
@@ -213,10 +213,10 @@ public class VisualizationDataExchange {
 
 		try {
 			billingItems = getBillingItems(fetchDate);
-			if (billingItems.size() > 0) {		
+			if (billingItems.size() > 0) {
 				for (int i = 0; i < billingItems.size(); i++) {
 					SimpleObject bill = billingItems.get(i);
-					SimpleObject billingObject = new SimpleObject();				
+					SimpleObject billingObject = new SimpleObject();
 					billingObject.put("service_type", bill.get("service_type"));
 					billingObject.put("invoices", bill.get("invoices"));
 					billingObject.put("amount_due", bill.get("amount_due"));
@@ -235,7 +235,7 @@ public class VisualizationDataExchange {
 
 		try {
 			paymentItems = getPayments(fetchDate);
-			if (paymentItems.size() > 0) {		
+			if (paymentItems.size() > 0) {
 				for (int i = 0; i < paymentItems.size(); i++) {
 					SimpleObject paymentsList= paymentItems.get(i);
 					SimpleObject paymentsObject = new SimpleObject();
@@ -255,7 +255,7 @@ public class VisualizationDataExchange {
 
 		try {
 			inventoryItems = getInventory(fetchDate);
-			if (inventoryItems.size() > 0) {			
+			if (inventoryItems.size() > 0) {
 				for (int i = 0; i < inventoryItems.size(); i++) {
 					SimpleObject inventoryList= inventoryItems.get(i);
 					SimpleObject inventoryObject = new SimpleObject();
@@ -345,7 +345,7 @@ public class VisualizationDataExchange {
 		}
 
 		Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
-		//System.out.println("Payload generated: " + payloadObj);
+		System.out.println("Payload generated: " + payloadObj);
 		return payloadObj;
 	}
 
@@ -373,12 +373,10 @@ public class VisualizationDataExchange {
 				Patient patient = visit.getPatient();
 
 				if (visitType.equals("Outpatient")) {
-					if(patient != null) {
-						if (patient.getAge() < 5) {
-							outpatientByByAgeMap.put("Outpatient Under 5", outpatientByByAgeMap.getOrDefault("Outpatient Under 5", 0) + 1);
-						} else {
-							outpatientByByAgeMap.put("Outpatient 5 And Above", outpatientByByAgeMap.getOrDefault("Outpatient 5 And Above", 0) + 1);
-						}
+					if (patient.getAge() < 5) {
+						outpatientByByAgeMap.put("outpatient_under_5", outpatientByByAgeMap.getOrDefault("outpatient_under_5", 0) + 1);
+					} else {
+						outpatientByByAgeMap.put("outpatient_5_and_above", outpatientByByAgeMap.getOrDefault("outpatient_5_and_above", 0) + 1);
 					}
 				}
 			}
@@ -760,7 +758,17 @@ public class VisualizationDataExchange {
 		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String effectiveDate = sd.format(fetchDate);
 		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
-		final String sqlSelectQuery = "SELECT tbl.name,ROUND(AVG(tbl.diff),2) FROM (select q.name,qe.started_at,qe.ended_at, TIMESTAMPDIFF(MINUTE, qe.started_at, qe.ended_at) as diff from openmrs.queue_entry qe inner join openmrs.queue q on q.queue_id = qe.queue_id where (date(qe.date_created) >= '" + effectiveDate + "'or date(qe.date_created) >= '" + effectiveDate + "' ) and qe.ended_at is not null) tbl GROUP BY tbl.name;";
+		final String sqlSelectQuery = "SELECT tbl.name, ROUND(AVG(tbl.diff), 2)\n" +
+				"FROM (select q.name, qe.started_at, qe.ended_at, (TIMESTAMPDIFF(SECOND, qe.started_at, qe.ended_at) / 60) as diff\n" +
+				"      from openmrs.queue_entry qe\n" +
+				"               inner join openmrs.queue q on q.queue_id = qe.queue_id\n" +
+				"               inner join (select t.name, v.visit_id\n" +
+				"                           from openmrs.visit v\n" +
+				"                                    inner join openmrs.visit_type t on v.visit_type_id = t.visit_type_id where t.name = 'Outpatient') v\n" +
+				"                          on qe.visit_id = v.visit_id\n" +
+				"      where (date(qe.date_created) >= '" + effectiveDate + "' or date(qe.date_created) >= '" + effectiveDate + "')\n" +
+				"        and qe.ended_at is not null) tbl\n" +
+				"GROUP BY tbl.name;";
 		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
 		Transaction tx = null;
 		try {
