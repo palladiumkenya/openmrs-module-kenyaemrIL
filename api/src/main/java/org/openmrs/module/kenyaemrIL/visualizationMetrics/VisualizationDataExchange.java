@@ -740,8 +740,9 @@ public class VisualizationDataExchange {
 		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String effectiveDate = sd.format(fetchDate);
 		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
-		final String sqlSelectQuery = "SELECT role, COUNT(DISTINCT user_id) AS role_count\n" + //
-						"FROM user_role\n" + //
+		final String sqlSelectQuery = "SELECT ur.role as role, COUNT(DISTINCT ur.user_id) AS role_count\n" + //
+						"FROM user_role ur\n" + //
+						"JOIN users u ON ur.user_id = u.user_id\n" + //
 						"WHERE role LIKE '%Clinician' \n" + //
 						"   OR role LIKE '%Data Clerk' \n" + //
 						"   OR role LIKE '%Manager' \n" + //
@@ -750,7 +751,8 @@ public class VisualizationDataExchange {
 						"   OR role LIKE '%Nurse%'\n" + //
 						"   OR role LIKE '%Cashier%'\n" + //
 						"   OR role LIKE '%Dentist%'\n" + //
-						"GROUP BY role;";
+						"and u.date_created >= '" + effectiveDate + "'\n" + //
+						"GROUP BY ur.role;";
 		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
 		Transaction tx = null;
 		try {
@@ -792,6 +794,8 @@ public class VisualizationDataExchange {
 				}
 			});
 		} catch (Exception e) {
+			System.err.println("KenyaEMR IL: Unable to get staff by cadre: " + e.getMessage());
+			e.printStackTrace();
 			throw new IllegalArgumentException("Unable to execute query", e);
 		}
 		return ret;
@@ -806,7 +810,7 @@ public class VisualizationDataExchange {
 		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String effectiveDate = sd.format(fetchDate);
 		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
-		final String sqlSelectQuery = "SELECT sum(amount_tendered) as total FROM openmrs.cashier_bill_payment where payment_mode_id = 7";
+		final String sqlSelectQuery = "SELECT sum(amount_tendered) as total FROM openmrs.cashier_bill_payment where payment_mode_id = 7 and date_created >= '" + effectiveDate + "'";
 		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
 		Transaction tx = null;
 		try {
