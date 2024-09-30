@@ -175,7 +175,7 @@ public class dmiUtils {
 	 * @return the token as a string and null on failure
 	 */
 	private String getClientCredentials() throws IOException, NoSuchAlgorithmException, KeyManagementException{
-		
+
 
 		TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
 			public java.security.cert.X509Certificate[] getAcceptedIssuers() {
@@ -199,28 +199,28 @@ public class dmiUtils {
 		strTokenUrl = globalTokenUrl.getPropertyValue();
 
 		GlobalProperty globalClientSecret = Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_CLIENT_SECRET);
-		strClientSecret = globalClientSecret.getPropertyValue();		
+		strClientSecret = globalClientSecret.getPropertyValue();
 		GlobalProperty globalClientId = Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_CLIENT_ID);
-		strClientId = globalClientId.getPropertyValue();	
-		String auth = strClientId + ":" + strClientSecret;		
+		strClientId = globalClientId.getPropertyValue();
+		String auth = strClientId + ":" + strClientSecret;
 		BufferedReader reader = null;
 		HttpsURLConnection connection = null;
 		String returnValue = "";
-		try {			
+		try {
 			StringBuilder parameters = new StringBuilder();
 			parameters.append("grant_type=" + URLEncoder.encode("client_credentials", "UTF-8"));
 			parameters.append("&");
 			parameters.append("client_id=" + URLEncoder.encode(strClientId, "UTF-8"));
 			parameters.append("&");
 			parameters.append("client_secret=" + URLEncoder.encode(strClientSecret, "UTF-8"));
-			URL url = new URL(strTokenUrl);			
+			URL url = new URL(strTokenUrl);
 			connection = (HttpsURLConnection) url.openConnection();
 			connection.setRequestMethod("POST");
 			connection.setDoOutput(true);
 			connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 			connection.setRequestProperty("Accept", "application/json");
-			connection.setConnectTimeout(10000); // set timeout to 10 seconds			
-			PrintStream os = new PrintStream(connection.getOutputStream());			
+			connection.setConnectTimeout(10000); // set timeout to 10 seconds
+			PrintStream os = new PrintStream(connection.getOutputStream());
 			os.print(parameters);
 			os.close();
 			reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
@@ -229,10 +229,10 @@ public class dmiUtils {
 			while ((line = reader.readLine()) != null) {
 				out.append(line);
 			}
-			String response = out.toString();			
+			String response = out.toString();
 			Matcher matcher = pat.matcher(response);
 			if (matcher.matches() && matcher.groupCount() > 0) {
-				returnValue = matcher.group(1);			
+				returnValue = matcher.group(1);
 			} else {
 				System.out.println("Return token value missing==>");
 				System.err.println("OAUTH Error : Token pattern mismatch");
