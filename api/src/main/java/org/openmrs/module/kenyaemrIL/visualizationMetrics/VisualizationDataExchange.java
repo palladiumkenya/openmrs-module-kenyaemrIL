@@ -12,6 +12,8 @@ import org.openmrs.api.PersonService;
 import org.openmrs.api.VisitService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.db.hibernate.DbSessionFactory;
+import org.openmrs.module.Module;
+import org.openmrs.module.ModuleFactory;
 import org.openmrs.module.kenyaemr.Dictionary;
 import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemr.metadata.HivMetadata;
@@ -81,10 +83,12 @@ public class VisualizationDataExchange {
 
 		//Data extraction
 		String facilityMfl = MessageHeaderSingleton.getDefaultLocationMflCode(MessageHeaderSingleton.getDefaultLocation());
+		String version = getKenyaEMRModuleVersion();
 
 		//add to list
 		payloadObj.put("mfl_code", facilityMfl);
 		payloadObj.put("timestamp", timestamp);
+		payloadObj.put("version", version);
 
 		try {
 			if (bedManagement.size() > 0) {
@@ -938,6 +942,21 @@ public class VisualizationDataExchange {
 			throw new IllegalArgumentException("Unable to execute query", e);
 		}
 		return ret;
+	}
+	/**
+	 * Gets KenyaEMR Version running
+	 * @param
+	 * @return KenyaEMR Version
+	 */
+	public static String getKenyaEMRModuleVersion() {
+		// Retrieve the module by its ID
+		Module module = ModuleFactory.getModuleById("kenyaemr");
+		if (module != null) {
+			// Return the version of the module
+			return module.getVersion();
+		}
+
+		return "Module not found!";
 	}
 
 }
