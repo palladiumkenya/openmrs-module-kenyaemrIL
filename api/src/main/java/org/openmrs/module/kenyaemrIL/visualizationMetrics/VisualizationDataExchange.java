@@ -956,7 +956,7 @@ public class VisualizationDataExchange {
 			return module.getVersion();
 		}
 
-		return "Module not found!";
+		return "Unknown version";
 	}
 
 }
