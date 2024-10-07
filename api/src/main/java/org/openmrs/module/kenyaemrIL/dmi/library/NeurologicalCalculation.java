@@ -11,6 +11,8 @@ package org.openmrs.module.kenyaemrIL.dmi.library;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.joda.time.DateTime;
+import org.joda.time.Days;
 import org.openmrs.*;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.PatientService;
@@ -82,22 +84,20 @@ public class NeurologicalCalculation extends AbstractPatientCalculation {
 			boolean patientConvulsionsClinicalEncResult = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, convulsionsResults) : false;
 			boolean patientRefusedToFeedGreenCardResult = lastGreenCardEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastGreenCardEnc, screeningQuestion, refusedToFeedResult) : false;
 			boolean patientConvulsionsGreenCardResult = lastGreenCardEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastGreenCardEnc, screeningQuestion, convulsionsResults) : false;
-			if (patient.getAge() > 2) {
+			DateTime birthDate = new DateTime(patient.getBirthdate());
+			int ageInDays = Days.daysBetween(birthDate, new DateTime()).getDays();
+			if (ageInDays >= 2 && ageInDays <= 28) {
 				if (lastClinicalEncounter != null) {
 					for (Obs obs : lastClinicalEncounter.getObs()) {
 						if (patientRefusedToFeedClinicalEncResult && patientConvulsionsClinicalEncResult) {
 							dateCreated = obs.getDateCreated();
-							if (obs.getConcept().getConceptId().equals(DURATION)) {
-								duration = obs.getValueNumeric();
-							}
 							if (dateCreated != null) {
 								String createdDate = dateFormat.format(dateCreated);
-								if ((duration > 2 && duration < 28)) {
 									if (createdDate.equals(todayDate)) {
 										result = true;
 										break;
 									}
-								}
+
 							}
 						}
 					}
@@ -106,17 +106,13 @@ public class NeurologicalCalculation extends AbstractPatientCalculation {
 					for (Obs obs : lastGreenCardEnc.getObs()) {
 						if (patientRefusedToFeedGreenCardResult && patientConvulsionsGreenCardResult) {
 							dateCreated = obs.getDateCreated();
-							if (obs.getConcept().getConceptId().equals(DURATION)) {
-								duration = obs.getValueNumeric();
-							}
+
 							if (dateCreated != null) {
 								String createdDate = dateFormat.format(dateCreated);
-								if ((duration > 2 && duration < 28)) {
 									if (createdDate.equals(todayDate)) {
 										result = true;
 										break;
 									}
-								}
 							}
 						}
 					}
@@ -125,17 +121,13 @@ public class NeurologicalCalculation extends AbstractPatientCalculation {
 					for (Obs obs : lastTriageEnc.getObs()) {
 						if (patientRefusedToFeedTriageEncResult && patientConvulsionsTriageEncResult) {
 							dateCreated = obs.getDateCreated();
-							if (obs.getConcept().getConceptId().equals(DURATION)) {
-								duration = obs.getValueNumeric();
-							}
 							if (dateCreated != null) {
 								String createdDate = dateFormat.format(dateCreated);
-								if ((duration > 2 && duration < 28)) {
+
 									if (createdDate.equals(todayDate)) {
 										result = true;
 										break;
 									}
-								}
 							}
 						}
 					}
