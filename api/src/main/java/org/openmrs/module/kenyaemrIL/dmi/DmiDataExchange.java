@@ -85,7 +85,7 @@ public class DmiDataExchange {
 		// 6. suspected viral haemorrhagic fever case
 		CalculationResult vhfFlaggedResults = EmrCalculationUtils.evaluateForPatient(ViralHaemorrhagicFeverCalculation.class, null, patient);
 		if (!vhfFlaggedResults.isEmpty()) {
-			conditionName = "VIRAL HAEMORRHAGIC FEVER";
+			conditionName = "ACUTE HAEMORRHAGIC FEVER";
 			conditionId = 6;
 			conditionMap.put(conditionId, conditionName);
 		}
@@ -106,7 +106,7 @@ public class DmiDataExchange {
 		// 9. suspected polio case
 		CalculationResult polioFlaggedResults = EmrCalculationUtils.evaluateForPatient(PoliomyelitisCalculation.class, null, patient);
 		if (!polioFlaggedResults.isEmpty()) {
-			conditionName = "POLIOMYELITIS";
+			conditionName = "ACUTE FLACCID PARALYSIS";
 			conditionId = 9;
 			conditionMap.put(conditionId, conditionName);
 		}
@@ -117,6 +117,71 @@ public class DmiDataExchange {
 			conditionId = 10;
 			conditionMap.put(conditionId, conditionName);
 		}
+		// 11. suspeepected Jaundice case
+		CalculationResult jaundiceFlaggedResults = EmrCalculationUtils.evaluateForPatient(JaundiceCalculation.class, null, patient);
+		if (!jaundiceFlaggedResults.isEmpty()) {
+			conditionName = "ACUTE JAUNDICE SYNDROME";
+			conditionId = 11;
+			conditionMap.put(conditionId, conditionName);
+		}
+		// 12. suspected Meningitis case
+		CalculationResult meningitisFlaggedResults = EmrCalculationUtils.evaluateForPatient(MeningitisCalculation.class, null, patient);
+		if (!meningitisFlaggedResults.isEmpty()) {
+			conditionName = "MENINGITIS AND ENCEPHALITIS";
+			conditionId = 12;
+			conditionMap.put(conditionId, conditionName);
+		}
+		// 13. Neurological Syndrome
+		CalculationResult wateryDiarrhoeaFlaggedResults = EmrCalculationUtils.evaluateForPatient(NeurologicalCalculation.class, null, patient);
+		if (!wateryDiarrhoeaFlaggedResults.isEmpty()) {
+			conditionName = "NEUROLOGICAL SYNDROME";
+			conditionId = 13;
+			conditionMap.put(conditionId, conditionName);
+		}
+		// 14. Acute Febrile Rash infections
+		CalculationResult acuteFebrileRashInfectionsFlaggedResults = EmrCalculationUtils.evaluateForPatient(AcuteFebrileRashInfectionsCalculation.class, null, patient);
+		if (!acuteFebrileRashInfectionsFlaggedResults.isEmpty()) {
+			conditionName = "ACUTE FEBRILE RASH INFECTIONS";
+			conditionId = 14;
+			conditionMap.put(conditionId, conditionName);
+		}
+
+       // 15. Acute Febrile Illness
+		CalculationResult acuteFebrileIllnessFlaggedResults = EmrCalculationUtils.evaluateForPatient(AcuteFebrileIllnessCalculation.class, null, patient);
+		if (!acuteFebrileIllnessFlaggedResults.isEmpty()) {
+			conditionName = "ACUTE FEBRILE ILLNESS";
+			conditionId = 15;
+			conditionMap.put(conditionId, conditionName);
+		}
+		// 16. Acute Flaccid Paralysis
+		CalculationResult acuteFlaccidParalysisFlaggedResults = EmrCalculationUtils.evaluateForPatient(AcuteFlaccidParalysisCalculation.class, null, patient);
+		if (!acuteFlaccidParalysisFlaggedResults.isEmpty()) {
+			conditionName = "ACUTE FLACCID PARALYSIS";
+			conditionId = 16;
+			conditionMap.put(conditionId, conditionName);
+		}
+		// 17. Acute Haemorrhagic Fever
+		CalculationResult acuteHaemorrhagicFeverFlaggedResults = EmrCalculationUtils.evaluateForPatient(AcuteHaemorrhagicFeverCalculation.class, null, patient);
+		if (!acuteHaemorrhagicFeverFlaggedResults.isEmpty()) {
+			conditionName = "ACUTE HAEMORRHAGIC FEVER";
+			conditionId = 17;
+			conditionMap.put(conditionId, conditionName);
+		}
+		// 18. Acute Watery Diarrhoeal
+		CalculationResult acuteWateryDiarrhoealFlaggedResults = EmrCalculationUtils.evaluateForPatient(AcuteWateryDiarrhoealCalculation.class, null, patient);
+		if (!acuteWateryDiarrhoealFlaggedResults.isEmpty()) {
+			conditionName = "ACUTE WATERY DIARRHOEAL";
+			conditionId = 18;
+			conditionMap.put(conditionId, conditionName);
+		}
+		// 19. Mpox
+		CalculationResult mpoxFlaggedResults = EmrCalculationUtils.evaluateForPatient(MpoxScreeningCalculation.class, null, patient);
+		if (!mpoxFlaggedResults.isEmpty()) {
+			conditionName = "MPOX";
+			conditionId = 19;
+			conditionMap.put(conditionId, conditionName);
+		}
+
 
 		if (!conditionMap.isEmpty()) {
 			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
