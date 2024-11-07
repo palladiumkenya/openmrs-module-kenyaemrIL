@@ -28,7 +28,7 @@ public class DmiDirectPushTask extends AbstractTask {
 	private static final Logger log = LoggerFactory.getLogger(DmiDirectPushTask.class);
 	private String url = "http://www.google.com:80/index.html";
 
-	/**
+    /**
 	 * @see AbstractTask#execute()
 	 */
 	public void execute() {
@@ -53,7 +53,8 @@ public class DmiDirectPushTask extends AbstractTask {
 			connection.connect();
 
 			List<Visit> visits = getComplaintsAndDiagnosis(fetchDate);
-			if (visits.size() > 1) {
+            int numberOfVisits = 0;
+            if (visits.size() > numberOfVisits) {
 				for (Visit visit : visits) {
 					if (visit != null) {
 						DmiDataExchange dmiDataExchange = new DmiDataExchange();
