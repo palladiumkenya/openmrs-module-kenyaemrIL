@@ -42,7 +42,8 @@
         <htmlformentryVersion>3.9.2</htmlformentryVersion>
         <htmlwidgetsVersion>1.10.0</htmlwidgetsVersion>
         <idgenVersion>4.5.0</idgenVersion>
-        <kenyaemrVersion>19.1.0</kenyaemrVersion>
+        <kenyaemrVersion>19.1.2</kenyaemrVersion>
+        <bedmanagementVersion>5.14.0-SNAPSHOT</bedmanagementVersion>
         <kenyacoreVersion>3.0.1</kenyacoreVersion>
         <kenyauiVersion>3.0.0</kenyauiVersion>
         <idgenVersion>4.5.0</idgenVersion>
@@ -348,8 +349,12 @@
                 <version>${idgenVersion}</version>
                 <scope>provided</scope>
             </dependency>
-
-
+            <dependency>
+                <groupId>org.openmrs.module</groupId>
+                <artifactId>bedmanagement-api</artifactId>
+                <version>${bedmanagementVersion}</version>
+                <scope>provided</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
