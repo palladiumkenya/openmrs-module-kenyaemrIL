@@ -48,59 +48,62 @@ public class ShrSummariesFragmentController {
         String patientUniqueNumber = upi.get(0).getIdentifier();
 
         Bundle diagnosisBundle = fhirConfig.fetchConditions(patientUniqueNumber,
-                "http://terminology.hl7.org/CodeSystem/condition-category|encounter-diagnosis");
+                "encounter-diagnosis");
 
         Bundle conditionsBundle = fhirConfig.fetchConditions(patientUniqueNumber,
-                "http://terminology.hl7.org/CodeSystem/condition-category|conditions");
+                "problem-list-item");
 
 
         Bundle allergyBundle = fhirConfig.fetchPatientAllergies(patientUniqueNumber);
 
         Bundle referralsBundle = fhirConfig.fetchPatientReferrals(patientUniqueNumber);
 
-        Bundle allObs = fhirConfig.fetchObservationResource(patientUniqueNumber);
+        Bundle vitalsObs = fhirConfig.fetchObservationResource(patientUniqueNumber, "vital-signs");
 
-        if (allObs != null && allObs.getEntry() != null && !allObs.getEntry().isEmpty()) {
-            for (Bundle.BundleEntryComponent resource : allObs.getEntry()) {
-                Observation observation = (Observation) resource.getResource();
+        Bundle labResultsObs = fhirConfig.fetchObservationResource(patientUniqueNumber, "laboratory");
 
-                if (observation.hasCode() && observation.getCode().hasCoding() && observation.hasCategory() &&
-                        observation.getCategoryFirstRep().hasCoding() &&
-                        observation.getCategoryFirstRep().getCodingFirstRep().getCode().equals("vital-signs")) {
-                    SimpleObject local = new SimpleObject();
-                    local.put("uuid", observation.getId().split("/")[4]);
-                    local.put("name", observation.getCode().getCodingFirstRep().getDisplay());
-                    local.put("dateRecorded", observation.getIssued() != null ?
-                            new SimpleDateFormat("yyyy-MM-dd").format(observation.getIssued()) : "");
-                    local.put("value", fhirValueProcessor(observation.getValue()));
-                    vitals.add(local);
-                }
+        Bundle examObs = fhirConfig.fetchObservationResource(patientUniqueNumber, "exam");
 
-                if (observation.hasCode() && observation.getCode().hasCoding() && observation.hasCategory()
-                        && observation.getCategoryFirstRep().hasCoding() &&
-                        observation.getCategoryFirstRep().getCodingFirstRep().getCode().equals("laboratory")) {
-                    SimpleObject local = new SimpleObject();
-                    local.put("uuid", observation.getId().split("/")[4]);
-                    local.put("name", observation.getCode().getCodingFirstRep().getDisplay());
-                    local.put("dateRecorded", observation.getIssued() != null ?
-                            new SimpleDateFormat("yyyy-MM-dd").format(observation.getIssued()) : "");
-                    local.put("value", fhirValueProcessor(observation.getValue()));
-                    labResults.add(local);
-                }
 
-                if (observation.hasCode() && observation.getCode().hasCoding() && observation.hasCategory() &&
-                        observation.getCategoryFirstRep().hasCoding() &&
-                        observation.getCategoryFirstRep().getCodingFirstRep().getCode().equals("exam")) {
-                    SimpleObject local = new SimpleObject();
-                    local.put("uuid", observation.getId().split("/")[4]);
-                    local.put("name", observation.getCode().getCodingFirstRep().getDisplay());
-                    local.put("dateRecorded", observation.getIssued() != null ?
-                            new SimpleDateFormat("yyyy-MM-dd").format(observation.getIssued()) : "");
-                    local.put("onsetDate", "");
-                    local.put("value", fhirValueProcessor(observation.getValue()));
-                    complaints.add(local);
-                }
+        for (Bundle.BundleEntryComponent resource : vitalsObs.getEntry()) {
+            Observation observation = (Observation) resource.getResource();
 
+            if (observation.hasCode() && observation.getCode().hasCoding()) {
+                SimpleObject local = new SimpleObject();
+                local.put("uuid", observation.getId().split("/")[4]);
+                local.put("name", observation.getCode().getCodingFirstRep().getDisplay());
+                local.put("dateRecorded", observation.getIssued() != null ?
+                        new SimpleDateFormat("yyyy-MM-dd").format(observation.getIssued()) : "");
+                local.put("value", fhirValueProcessor(observation.getValue()));
+                vitals.add(local);
+            }
+        }
+
+        for (Bundle.BundleEntryComponent resource : labResultsObs.getEntry()) {
+            Observation observation = (Observation) resource.getResource();
+            
+            if (observation.hasCode() && observation.getCode().hasCoding()) {
+                SimpleObject local = new SimpleObject();
+                local.put("uuid", observation.getId().split("/")[4]);
+                local.put("name", observation.getCode().getCodingFirstRep().getDisplay());
+                local.put("dateRecorded", observation.getIssued() != null ?
+                        new SimpleDateFormat("yyyy-MM-dd").format(observation.getIssued()) : "");
+                local.put("value", fhirValueProcessor(observation.getValue()));
+                labResults.add(local);
+            }
+        }
+
+        for (Bundle.BundleEntryComponent resource : examObs.getEntry()) {
+            Observation observation = (Observation) resource.getResource();
+            
+            if (observation.hasCode() && observation.getCode().hasCoding()) {
+                SimpleObject local = new SimpleObject();
+                local.put("uuid", observation.getId().split("/")[4]);
+                local.put("name", observation.getCode().getCodingFirstRep().getDisplay());
+                local.put("dateRecorded", observation.getIssued() != null ?
+                        new SimpleDateFormat("yyyy-MM-dd").format(observation.getIssued()) : "");
+                local.put("value", fhirValueProcessor(observation.getValue()));
+                complaints.add(local);
             }
         }
 
