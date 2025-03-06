@@ -396,7 +396,20 @@
                     <target>8</target>
                 </configuration>
             </plugin>
-
         </plugins>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>mks-repo-releases</id>
+            <name>Mekom Solutions Repository</name>
+            <url>https://nexus.mekomsolutions.net/repository/maven-releases</url>
+        </repository>
+        <snapshotRepository>
+            <id>mks-repo-snapshots</id>
+            <name>Mekom Solutions Snapshots Repository</name>
+            <url>https://nexus.mekomsolutions.net/repository/maven-snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+
 </project>
