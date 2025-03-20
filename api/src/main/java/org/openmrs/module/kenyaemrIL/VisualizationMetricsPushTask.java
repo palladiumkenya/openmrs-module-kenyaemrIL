@@ -3,6 +3,7 @@ package org.openmrs.module.kenyaemrIL;
 import org.json.simple.JSONObject;
 import org.openmrs.GlobalProperty;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.kenyaemrIL.visualizationMetrics.CaseSurveillance;
 import org.openmrs.module.kenyaemrIL.visualizationMetrics.VisualizationDataExchange;
 import org.openmrs.module.kenyaemrIL.visualizationMetrics.VisualizationUtils;
 import org.openmrs.scheduler.tasks.AbstractTask;
@@ -48,13 +49,17 @@ public class VisualizationMetricsPushTask extends AbstractTask {
 
 			// check first if there is internet connectivity before pushing
 			URLConnection connection = new URL(url).openConnection();
-			connection.connect();		
-			
+			connection.connect();
+			CaseSurveillance cs = new CaseSurveillance();
+			JSONObject csData = cs.generateCaseSurveillancePayload(fetchDate);
+			System.out.println("Case Surveillance data: " + csData.toJSONString());
 			VisualizationDataExchange vDataExchange = new VisualizationDataExchange();
 			JSONObject params = vDataExchange.generateVisualizationPayload(fetchDate);		
 
 			try {
 				System.err.println("KenyaEMR IL: sending visualization data: " + params.toJSONString());
+				Boolean csDataSendResults = VisualizationUtils.sendPOST(csData.toJSONString());
+				System.out.println("Send status for CS data ==>" + csDataSendResults);
 				Boolean results = VisualizationUtils.sendPOST(params.toJSONString());
 				System.out.println("Send status ==>" + results);
 			} catch (Exception e) {
