@@ -158,7 +158,7 @@ public class CaseSurveillance {
                 log.warn("Encounter is null, skipping...");
                 continue;
             }
-            System.out.println("::::::::::::Fetch date: "+fetchDate);
+            System.out.println("::::::::::::Fetch date: " + fetchDate);
             System.out.println("---Hiv+ encounters: " + encounters.size() + ":  Encounters-> " + encounters);
             Patient patient = encounter.getPatient();
             if (patient == null) {
@@ -169,7 +169,7 @@ public class CaseSurveillance {
                 result.add(mapToTestedPositiveObject(encounter, patient, fetchDate));
             }
         }
-System.out.println(":::::::result size at HIV+::::::: "+result.size());
+        System.out.println(":::::::result size at HIV+::::::: " + result.size());
         return result;
     }
 
@@ -301,11 +301,11 @@ System.out.println(":::::::result size at HIV+::::::: "+result.size());
                 List<Encounter> htsTestEncounters = encounterService.getEncounters(htsTestSearchCriteria);
                 for (Encounter htsTestEncounter : htsTestEncounters) {
                     if (htsTestEncounter != null && htsTestEncounter.getPatient().equals(patient)) {
-                        System.out.println("--screened and has test"+patient.getPatientId());
+                        System.out.println("--screened and has test" + patient.getPatientId());
                         if (EmrUtils.encounterThatPassCodedAnswer(htsTestEncounter, htsFinalTestQuestion, htsNegativeResult) && (EmrUtils.encounterThatPassCodedAnswer(htsTestEncounter, htsEntryPointQstn, htsEntryPointANC) || EmrUtils.encounterThatPassCodedAnswer(htsTestEncounter, htsEntryPointQstn, htsEntryPointMAT) || EmrUtils.encounterThatPassCodedAnswer(htsTestEncounter, htsEntryPointQstn, htsEntryPointPNC))) {
                             System.out.println("---Pregnant and postpartum High risk encounters: " + htsTestEncounters.size() + ":  Encounters-> " + htsTestEncounters);
                             result.add(mapToPregnantAndPostpartumAtHighRiskObject(htsScreeningEncounter, patient, fetchDate));
-                          //  break;
+                            break;
                         }
                     }
                 }
@@ -319,8 +319,31 @@ System.out.println(":::::::result size at HIV+::::::: "+result.size());
     /**
      * Generates the case surveillance payload for visualization metrics.
      */
-    public static JSONObject generateCaseSurveillancePayload(Date fetchDate) {
-        JSONObject payload = new JSONObject();
+    public static List<Map<String, Object>> generateCaseSurveillancePayload(Date fetchDate) {
+        List<Map<String, Object>> payload = new ArrayList<>();
+
+        // Tested HIV-positive data as "new_case"
+        List<SimpleObject> testedPositive = testedHIVPositive(fetchDate);
+        for (SimpleObject tested : testedPositive) {
+            payload.add(mapToNewStructure(tested, "new_case"));
+        }
+
+        // Linked to HIV care data as "linked_case"
+        List<SimpleObject> linkedToHIVCare = getLinkageToHIVCare(fetchDate);
+        for (SimpleObject linked : linkedToHIVCare) {
+            payload.add(mapToNewStructure(linked, "linked_case"));
+        }
+
+        // Pregnant and postpartum at high risk as "high_risk_case"
+        List<SimpleObject> pregnantAndPostpartumAtHighRisk = pregnantAndPostpartumAtHighRisk(fetchDate);
+        for (SimpleObject highRisk : pregnantAndPostpartumAtHighRisk) {
+            payload.add(mapToNewStructure(highRisk, "high_risk_case"));
+        }
+
+        System.out.println("Case Surveillance Payload: " + payload);
+        return payload;
+
+   /*     JSONObject payload = new JSONObject();
 
         // Add tested HIV-positive data
         List<SimpleObject> testedPositive = testedHIVPositive(fetchDate);
@@ -334,6 +357,40 @@ System.out.println(":::::::result size at HIV+::::::: "+result.size());
         payload.put("pregnantAndPostpartumAtHighRisk", pregnantAndPostpartumAtHighRisk);
 
         System.out.println("Case Surveillance Payload:=====================" + payload);
-        return payload;
+        return payload;*/
+    }
+    private static Map<String, Object> mapToNewStructure(SimpleObject source, String eventType) {
+        Map<String, Object> client = new HashMap<>();
+        Map<String, Object> event = new HashMap<>();
+
+        // Creating client object
+        client.put("county", source.get("county"));
+        client.put("subCounty", source.get("subCounty"));
+        client.put("ward", source.get("ward"));
+        client.put("patientPk", source.get("patientId")); // patientPk = patientId
+        client.put("sex", source.get("sex"));
+        client.put("dob", source.get("dob"));
+
+        // Creating event object
+        event.put("mflCode", source.get("mflCode"));
+        event.put("createdAt", source.get("createdAt"));
+        event.put("updatedAt", source.get("updatedAt"));
+
+        // Conditional fields for specific events
+        if (eventType.equals("new_case")) {
+            event.put("positiveHivTestDate", source.get("dateTestedHIV"));
+        } else if (eventType.equals("linked_case")) {
+            event.put("artStartDate", source.get("artStartDate"));
+        } else if (eventType.equals("high_risk_case")) {
+            event.put("htsDate", source.get("htsDate"));
+        }
+
+        // Combine client and event with eventType
+        Map<String, Object> result = new HashMap<>();
+        result.put("client", client);
+        result.put("eventType", eventType);
+        result.put("event", event);
+
+        return result;
     }
 }
