@@ -34,6 +34,11 @@ public class ILMetadata extends AbstractMetadataBundle {
 	public static final String GP_DMI_SERVER_CLIENT_SECRET = "dmi.surveillance.client.secret";
 	public static final String GP_VISUALIZATION_SERVER_POST_END_POINT = "visualization.metrics.post.api";
 
+	public static final String GP_CS_SERVER_BASE_URL = "case.surveillance.base.url.api";
+	public static final String GP_CS_SERVER_TOKEN_URL = "case.surveillance.token.url";
+	public static final String GP_CS_SERVER_CLIENT_ID = "case.surveillance.client.id";
+	public static final String GP_CS_SERVER_CLIENT_SECRET = "case.surveillance.client.secret";
+
 	public static final class _PersonAttributeType {
 
 		public static final String IL_PATIENT_SOURCE= "ac9a19f2-88af-4f3b-b4c2-f6e57c0d89af";
@@ -67,8 +72,24 @@ public class ILMetadata extends AbstractMetadataBundle {
 		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_DMI_SERVER_CLIENT_SECRET) == null) {
 			install(globalProperty(GP_DMI_SERVER_CLIENT_SECRET, "Dmi server client secret", "HoWsbHH53zxO0jTSyV52tW5FZaE9wb1J"));
 		}
+
 		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_VISUALIZATION_SERVER_POST_END_POINT) == null) {
-			install(globalProperty(GP_VISUALIZATION_SERVER_POST_END_POINT, "A POST API for posting visualization metrics data", "https://openhimapi.kenyahmis.org/rest/api/IL/superset"));
+			install(globalProperty(GP_VISUALIZATION_SERVER_POST_END_POINT, "A POST API for posting visualization metrics data", ""));
+		}
+		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_CS_SERVER_BASE_URL) == null) {
+			install(globalProperty(GP_CS_SERVER_BASE_URL, "A PUT API for posting case surveillance data", ""));
+		}
+
+		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_CS_SERVER_TOKEN_URL) == null) {
+			install(globalProperty(GP_CS_SERVER_TOKEN_URL, "A POST end point for getting Surveillance server auth token", ""));
+		}
+
+		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_CS_SERVER_CLIENT_ID) == null) {
+			install(globalProperty(GP_CS_SERVER_CLIENT_ID, "Case surveillance server client id", ""));
+		}
+
+		if(Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_CS_SERVER_CLIENT_SECRET) == null) {
+			install(globalProperty(GP_CS_SERVER_CLIENT_SECRET, "Case surveillance server client id", ""));
 		}
 	}
 }
