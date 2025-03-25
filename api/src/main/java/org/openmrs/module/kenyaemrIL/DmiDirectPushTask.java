@@ -7,6 +7,7 @@ import org.openmrs.api.VisitService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.dmi.DmiDataExchange;
 import org.openmrs.module.kenyaemrIL.dmi.dmiUtils;
+import org.openmrs.module.kenyaemrIL.visualizationMetrics.CaseSurveillanceDataExchange;
 import org.openmrs.scheduler.tasks.AbstractTask;
 import org.openmrs.ui.framework.SimpleObject;
 import org.slf4j.Logger;
@@ -58,7 +59,7 @@ public class DmiDirectPushTask extends AbstractTask {
 				for (Visit visit : visits) {
 					if (visit != null) {
 						DmiDataExchange dmiDataExchange = new DmiDataExchange();
-						JSONArray params = dmiDataExchange.generateDMIpostPayload(visit, fetchDate);						
+						JSONArray params = dmiDataExchange.generateDMIpostPayload(visit, fetchDate);
 						if (!params.isEmpty()) {
 							try {
 								SimpleObject results = dmiUtils.sendPOST(params.toJSONString());
@@ -86,6 +87,32 @@ public class DmiDirectPushTask extends AbstractTask {
 			Context.closeSession();
 
 		}
+        try {
+			System.out.println("Now sending case surveillance data: -------");
+            Context.openSession();
+            URLConnection connection = new URL(url).openConnection();
+            connection.connect();
+
+            boolean processSuccess = false;
+            try {
+                CaseSurveillanceDataExchange caseSurveillance = new CaseSurveillanceDataExchange();
+                caseSurveillance.processAndSendCaseSurveillancePayload(fetchDate);
+                processSuccess = true;
+            } catch (Exception e) {
+                log.error("Error during case surveillance process", e);
+            }
+
+            if (processSuccess) {
+                globalPropertyObject.setPropertyValue(formatter.format(new Date()));
+                Context.getAdministrationService().saveGlobalProperty(globalPropertyObject);
+            }
+
+            Context.flushSession();
+        } catch (IOException ioe) {
+            log.warn("Connectivity error during Case surveillance direct push.", ioe);
+        } finally {
+            Context.closeSession();
+        }
 	}
 
 	/**
