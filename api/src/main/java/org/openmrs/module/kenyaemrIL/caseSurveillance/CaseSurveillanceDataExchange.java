@@ -1,4 +1,4 @@
-package org.openmrs.module.kenyaemrIL.visualizationMetrics;
+package org.openmrs.module.kenyaemrIL.caseSurveillance;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -64,8 +64,8 @@ public class CaseSurveillanceDataExchange {
 
     // Utility method for creating structured SimpleObject for tested HIV-positive patients
     private static SimpleObject mapToTestedPositiveObject(Encounter encounter, Patient patient) {
-        PersonAddress address = patient.getPersonAddress();
-        String sex = patient.getGender();
+        PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
+        String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
         return SimpleObject.create(
                 "createdAt", formatDateTime(encounter.getDateCreated()),
                 "updatedAt", formatDateTime(encounter.getDateChanged()),
@@ -82,8 +82,8 @@ public class CaseSurveillanceDataExchange {
 
     // Utility method for creating structured SimpleObject for patients linked to care
     private SimpleObject mapToLinkageObject(Encounter encounter, Patient patient, String artStartDate) {
-        PersonAddress address = patient.getPersonAddress();
-        String sex = patient.getGender();
+        PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
+        String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
         return SimpleObject.create(
                 "createdAt", formatDateTime(encounter.getDateCreated()),
                 "updatedAt", formatDateTime(encounter.getDateChanged()),
@@ -101,8 +101,8 @@ public class CaseSurveillanceDataExchange {
 
     // Utility method for creating structured SimpleObject for tested HIV-positive patients
     private SimpleObject mapToPregnantAndPostpartumAtHighRiskObject(Encounter encounter, Patient patient) {
-        PersonAddress address = patient.getPersonAddress();
-        String sex = patient.getGender();
+        PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
+        String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
         return SimpleObject.create(
                 "createdAt", formatDateTime(encounter.getDateCreated()),
                 "updatedAt", formatDateTime(encounter.getDateChanged()),
@@ -118,8 +118,8 @@ public class CaseSurveillanceDataExchange {
 
     // Utility method for creating structured SimpleObject for tested HIV-positive patients
     private SimpleObject mapToPregnantAndPostpartumAtHighRiskOnPrEPObject(Encounter encounter, Patient patient, String prepNumber, String prepRegimen) {
-        PersonAddress address = patient.getPersonAddress();
-        String sex = patient.getGender();
+        PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
+        String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
         return SimpleObject.create(
                 "createdAt", formatDateTime(encounter.getDateCreated()),
                 "updatedAt", formatDateTime(encounter.getDateChanged()),

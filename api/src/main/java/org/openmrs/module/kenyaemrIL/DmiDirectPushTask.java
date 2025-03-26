@@ -7,7 +7,7 @@ import org.openmrs.api.VisitService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.dmi.DmiDataExchange;
 import org.openmrs.module.kenyaemrIL.dmi.dmiUtils;
-import org.openmrs.module.kenyaemrIL.visualizationMetrics.CaseSurveillanceDataExchange;
+import org.openmrs.module.kenyaemrIL.caseSurveillance.CaseSurveillanceDataExchange;
 import org.openmrs.scheduler.tasks.AbstractTask;
 import org.openmrs.ui.framework.SimpleObject;
 import org.slf4j.Logger;
@@ -33,7 +33,6 @@ public class DmiDirectPushTask extends AbstractTask {
 	 * @see AbstractTask#execute()
 	 */
 	public void execute() {
-		System.out.println("DMI DIRECT PUSH: Scheduler started....");
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
 		// Fetch the last date of fetch
 		Date fetchDate = null;
@@ -47,6 +46,7 @@ public class DmiDirectPushTask extends AbstractTask {
 		}
 
 		try {
+			System.out.println("DMI DIRECT PUSH: Scheduler started....");
 			Context.openSession();
 
 			// check first if there is internet connectivity before pushing
@@ -88,7 +88,7 @@ public class DmiDirectPushTask extends AbstractTask {
 
 		}
         try {
-			System.out.println("Now sending case surveillance data: -------");
+			System.out.println("Case Surveillance data transmission started...");
             Context.openSession();
             URLConnection connection = new URL(url).openConnection();
             connection.connect();
