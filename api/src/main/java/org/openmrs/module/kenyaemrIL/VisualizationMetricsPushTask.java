@@ -1,8 +1,10 @@
 package org.openmrs.module.kenyaemrIL;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.openmrs.GlobalProperty;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.kenyaemrIL.visualizationMetrics.CaseSurveillance;
 import org.openmrs.module.kenyaemrIL.visualizationMetrics.VisualizationDataExchange;
 import org.openmrs.module.kenyaemrIL.visualizationMetrics.VisualizationUtils;
 import org.openmrs.scheduler.tasks.AbstractTask;
@@ -15,6 +17,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Directly push visualization metrics to Visualization server
@@ -48,13 +52,20 @@ public class VisualizationMetricsPushTask extends AbstractTask {
 
 			// check first if there is internet connectivity before pushing
 			URLConnection connection = new URL(url).openConnection();
-			connection.connect();		
-			
+			connection.connect();
+			CaseSurveillance cs = new CaseSurveillance();
+			List<Map<String, Object>> payload = cs.generateCaseSurveillancePayload(fetchDate);
+			JSONArray csData = new JSONArray();
+			csData.addAll(payload);
+			System.out.println("Case Surveillance data: " + csData);
+			System.out.println("Case Surveillance data toJSONString : " + csData.toJSONString());
 			VisualizationDataExchange vDataExchange = new VisualizationDataExchange();
 			JSONObject params = vDataExchange.generateVisualizationPayload(fetchDate);		
 
 			try {
 				System.err.println("KenyaEMR IL: sending visualization data: " + params.toJSONString());
+				//Boolean csDataSendResults = VisualizationUtils.sendPOST(csData);
+				//System.out.println("Send status for CS data ==>" + csDataSendResults);
 				Boolean results = VisualizationUtils.sendPOST(params.toJSONString());
 				System.out.println("Send status ==>" + results);
 			} catch (Exception e) {
