@@ -33,33 +33,43 @@ public class DmiDirectPushTask extends AbstractTask {
 	 * @see AbstractTask#execute()
 	 */
 	public void execute() {
+		System.out.println("DMI DIRECT PUSH: Scheduler started....");
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
 		// Fetch the last date of fetch
-		Date fetchDate = null;
-		GlobalProperty globalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("dmiTask.lastFetchDateAndTime");
+		Date dmiFetchDate = null;
+		GlobalProperty dmiGlobalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("dmiTask.lastFetchDateAndTime");
 
 		try {
-			String ts = globalPropertyObject.getValue().toString();
-			fetchDate = formatter.parse(ts);
+			String ts = dmiGlobalPropertyObject.getValue().toString();
+			dmiFetchDate = formatter.parse(ts);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		Date csFetchDate = null;
+		GlobalProperty csGlobalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("caseSurveillance.lastFetchDateAndTime");
+
+		try {
+			String ts = csGlobalPropertyObject.getValue().toString();
+			csFetchDate = formatter.parse(ts);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 		try {
-			System.out.println("DMI DIRECT PUSH: Scheduler started....");
 			Context.openSession();
 
 			// check first if there is internet connectivity before pushing
 			URLConnection connection = new URL(url).openConnection();
 			connection.connect();
 
-			List<Visit> visits = getComplaintsAndDiagnosis(fetchDate);
+			List<Visit> visits = getComplaintsAndDiagnosis(dmiFetchDate);
             int numberOfVisits = 0;
             if (visits.size() > numberOfVisits) {
 				for (Visit visit : visits) {
 					if (visit != null) {
 						DmiDataExchange dmiDataExchange = new DmiDataExchange();
-						JSONArray params = dmiDataExchange.generateDMIpostPayload(visit, fetchDate);
+						JSONArray params = dmiDataExchange.generateDMIpostPayload(visit, dmiFetchDate);
 						if (!params.isEmpty()) {
 							try {
 								SimpleObject results = dmiUtils.sendPOST(params.toJSONString());
@@ -72,8 +82,8 @@ public class DmiDirectPushTask extends AbstractTask {
 				}
 			}
 
-			globalPropertyObject.setPropertyValue(formatter.format(new Date()));
-			Context.getAdministrationService().saveGlobalProperty(globalPropertyObject);
+			dmiGlobalPropertyObject.setPropertyValue(formatter.format(new Date()));
+			Context.getAdministrationService().saveGlobalProperty(dmiGlobalPropertyObject);
 			Context.flushSession();
 		} catch (IOException ioe) {
 
@@ -88,7 +98,9 @@ public class DmiDirectPushTask extends AbstractTask {
 
 		}
         try {
+
 			System.out.println("Case Surveillance data transmission started...");
+
             Context.openSession();
             URLConnection connection = new URL(url).openConnection();
             connection.connect();
@@ -96,15 +108,15 @@ public class DmiDirectPushTask extends AbstractTask {
             boolean processSuccess = false;
             try {
                 CaseSurveillanceDataExchange caseSurveillance = new CaseSurveillanceDataExchange();
-                caseSurveillance.processAndSendCaseSurveillancePayload(fetchDate);
+                caseSurveillance.processAndSendCaseSurveillancePayload(csFetchDate);
                 processSuccess = true;
             } catch (Exception e) {
                 log.error("Error during case surveillance process", e);
             }
 
             if (processSuccess) {
-                globalPropertyObject.setPropertyValue(formatter.format(new Date()));
-                Context.getAdministrationService().saveGlobalProperty(globalPropertyObject);
+                csGlobalPropertyObject.setPropertyValue(formatter.format(new Date()));
+                Context.getAdministrationService().saveGlobalProperty(csGlobalPropertyObject);
             }
 
             Context.flushSession();
