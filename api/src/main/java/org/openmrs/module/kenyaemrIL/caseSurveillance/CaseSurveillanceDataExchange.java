@@ -13,10 +13,19 @@ import org.apache.http.util.EntityUtils;
 import org.openmrs.*;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.EncounterService;
+import org.openmrs.api.PatientService;
+import org.openmrs.api.ProgramWorkflowService;
 import org.openmrs.api.context.Context;
+import org.openmrs.api.impl.ProgramWorkflowServiceImpl;
+import org.openmrs.calculation.patient.PatientCalculationContext;
 import org.openmrs.calculation.result.CalculationResult;
+import org.openmrs.calculation.result.CalculationResultMap;
+import org.openmrs.module.kenyacore.calculation.AbstractPatientCalculation;
+import org.openmrs.module.kenyacore.calculation.BooleanResult;
+import org.openmrs.module.kenyacore.calculation.Filters;
 import org.openmrs.module.kenyaemr.Metadata;
 import org.openmrs.module.kenyaemr.calculation.EmrCalculationUtils;
+import org.openmrs.module.kenyaemr.calculation.library.ActiveInMCHProgramCalculation;
 import org.openmrs.module.kenyaemr.calculation.library.hiv.art.InitialArtStartDateCalculation;
 import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemr.metadata.HivMetadata;
@@ -26,6 +35,8 @@ import org.openmrs.module.kenyaemr.util.HtsConstants;
 import org.openmrs.module.kenyaemr.wrapper.PatientWrapper;
 import org.openmrs.module.kenyaemrIL.dmi.dmiUtils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
+import org.openmrs.module.reporting.common.TimeQualifier;
+import org.openmrs.module.reporting.data.patient.definition.ProgramEnrollmentsForPatientDataDefinition;
 import org.openmrs.parameter.EncounterSearchCriteria;
 import org.openmrs.ui.framework.SimpleObject;
 import org.slf4j.Logger;
@@ -34,6 +45,8 @@ import org.slf4j.LoggerFactory;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -188,6 +201,22 @@ public class CaseSurveillanceDataExchange {
                 "artStartDate", null,
                 "lastVlOrderDate", null,
                 "lastVlResultsDate", null
+        );
+    }
+    // Utility method for creating structured SimpleObject for HEI
+    private SimpleObject mapToHEIObject(Encounter encounter, Patient patient, String heiNumber) {
+        PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
+        String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
+        return SimpleObject.create(
+                "createdAt", formatDateTime(encounter.getDateCreated()),
+                "updatedAt", formatDateTime(encounter.getDateChanged()),
+                "patientId", patient.getPatientId().toString(),
+                "county", safeGetField(address, PersonAddress::getCountyDistrict),
+                "subCounty", safeGetField(address, PersonAddress::getStateProvince),
+                "ward", safeGetField(address, PersonAddress::getAddress6),
+                "mflCode", EmrUtils.getMFLCode(),
+                "dob", formatDate(patient.getBirthdate()),
+                "sex", sex != null ? dmiUtils.formatGender(sex) : null
         );
     }
 
@@ -602,6 +631,45 @@ public class CaseSurveillanceDataExchange {
         }
         return result;
     }
+    /**
+     * Patients with enhanced adherence
+     *
+     * @param fetchDate
+     * @return
+     */
+    public List<SimpleObject> allHEI(Date fetchDate) {
+        if (fetchDate == null) {
+            throw new IllegalArgumentException("Fetch date cannot be null");
+        }
+        Date effectiveDate = Date.from(LocalDate.now().minusMonths(24).atStartOfDay(ZoneId.systemDefault()).toInstant());
+System.out.println("effectiveDate:------- " + effectiveDate);
+        List<SimpleObject> result = new ArrayList<>();
+        EncounterService encounterService = Context.getEncounterService();
+
+        // Get relevant encounter types
+        List<EncounterType> heiEncounterType = Collections.singletonList(MetadataUtils.existing(EncounterType.class,MchMetadata._EncounterType.MCHCS_ENROLLMENT));
+        List<Form> heiEnrollmentForm = Collections.singletonList(MetadataUtils.existing(Form.class, MchMetadata._Form.MCHCS_ENROLLMENT));
+
+        // Build EAC encounter search criteria
+        EncounterSearchCriteria heiSearchCriteria = new EncounterSearchCriteria(
+                null, null, effectiveDate, null, null, heiEnrollmentForm, heiEncounterType, null, null, null, false
+        );
+
+        List<Encounter> heiEncounters = encounterService.getEncounters(heiSearchCriteria);
+System.out.println("heiEncounters:------- " + heiEncounters.size());
+        if (!heiEncounters.isEmpty()) {
+            for(Encounter heiEncounter : heiEncounters) {
+                Patient patient = heiEncounter.getPatient();
+
+                PatientIdentifierType upnIdentifierType = MetadataUtils.existing(PatientIdentifierType.class, Metadata.IdentifierType.HEI_UNIQUE_NUMBER);
+                PatientIdentifier heiIdentifier = patient.getPatientIdentifier(upnIdentifierType);
+                String heiNumber = heiIdentifier != null ? heiIdentifier.getIdentifier() : null;
+
+                result.add(mapToHEIObject(heiEncounter, patient, heiNumber));
+            }
+        }
+        return result;
+    }
 
     /**
      * Generates the case surveillance payload for visualization metrics.
@@ -641,6 +709,11 @@ public class CaseSurveillanceDataExchange {
         List<SimpleObject> enhancedAdherence = enhancedAdherence(fetchDate);
         for (SimpleObject eac : enhancedAdherence) {
             payload.add(mapToDatasetStructure(eac, "unsuppressed_viral_load"));
+        }
+        // HEI
+        List<SimpleObject> allHEI = allHEI(fetchDate);
+        for (SimpleObject hei : allHEI) {
+            payload.add(mapToDatasetStructure(hei, "hei_at_6_to_8_weeks"));
         }
         return payload;
     }
