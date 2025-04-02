@@ -12,7 +12,14 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
+import org.joda.time.DateTime;
+import org.joda.time.Months;
+import org.openmrs.Patient;
+import org.openmrs.PatientIdentifier;
+import org.openmrs.PatientIdentifierType;
+import org.openmrs.module.kenyaemr.Metadata;
 import org.openmrs.module.kenyaemrIL.metadata.ILMetadata;
+import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +28,7 @@ import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -118,5 +126,28 @@ public class CaseSurveillanceUtils {
         } catch (IOException e) {
             throw new RuntimeException("Error parsing response", e);
         }
+    }
+
+    /**
+     * Utility Method to compute age in months
+     * @param birtDate
+     * @param context
+     * @return
+     */
+    public static Integer getAgeInMonths(Date birtDate, Date context) {
+        DateTime d1 = new DateTime(birtDate.getTime());
+        DateTime d2 = new DateTime(context.getTime());
+        return Months.monthsBetween(d1, d2).getMonths();
+    }
+
+    /**
+     * Utility method to get HEI number
+     * @param patient
+     * @return
+     */
+    public static String getHEINumber(Patient patient){
+        PatientIdentifierType heiIdentifierType = MetadataUtils.existing(PatientIdentifierType.class, Metadata.IdentifierType.HEI_UNIQUE_NUMBER);
+        PatientIdentifier heiIdentifier = patient.getPatientIdentifier(heiIdentifierType);
+        return heiIdentifier != null ? heiIdentifier.getIdentifier() : null;
     }
 }

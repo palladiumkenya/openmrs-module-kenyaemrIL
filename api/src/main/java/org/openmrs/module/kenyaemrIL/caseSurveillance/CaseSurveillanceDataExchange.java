@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import com.sun.xml.bind.v2.TODO;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
@@ -41,8 +42,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.openmrs.module.kenyaemr.util.EmrUtils.getGlobalPropertyValue;
-import static org.openmrs.module.kenyaemrIL.util.CaseSurveillanceUtils.BASE_CS_URL;
-import static org.openmrs.module.kenyaemrIL.util.CaseSurveillanceUtils.getBearerToken;
+import static org.openmrs.module.kenyaemrIL.util.CaseSurveillanceUtils.*;
 
 public class CaseSurveillanceDataExchange {
     private static final Logger log = LoggerFactory.getLogger(CaseSurveillanceDataExchange.class);
@@ -192,6 +192,7 @@ public class CaseSurveillanceDataExchange {
                 "lastVlResultsDate", null
         );
     }
+
     // Utility method for creating structured SimpleObject for HEI
     private SimpleObject mapToHEIObject(Encounter encounter, Patient patient, String heiNumber) {
         PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
@@ -227,6 +228,25 @@ public class CaseSurveillanceDataExchange {
                 "heiId", heiNumber
         );
     }
+
+    // Utility method for creating structured SimpleObject for HEI DNA PCR
+    private SimpleObject mapToHEIWithoutOutcomesObject(Encounter encounter, Patient patient, String heiNumber) {
+        PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
+        String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
+        return SimpleObject.create(
+                "createdAt", formatDateTime(encounter.getDateCreated()),
+                "updatedAt", formatDateTime(encounter.getDateChanged()),
+                "patientId", patient.getPatientId().toString(),
+                "county", safeGetField(address, PersonAddress::getCountyDistrict),
+                "subCounty", safeGetField(address, PersonAddress::getStateProvince),
+                "ward", safeGetField(address, PersonAddress::getAddress6),
+                "mflCode", EmrUtils.getMFLCode(),
+                "dob", formatDate(patient.getBirthdate()),
+                "sex", sex != null ? dmiUtils.formatGender(sex) : null,
+                "heiId", heiNumber
+        );
+    }
+
     /**
      * Retrieves a list of patients tested HIV-positive since the last fetch date
      */
@@ -328,7 +348,7 @@ public class CaseSurveillanceDataExchange {
             }
 
             // **Only add if artStartDate is not null**
-            if (artStartDate != null ) {
+            if (artStartDate != null) {
                 result.add(mapToLinkageObject(encounter, patient, artStartDate));
             }
         }
@@ -637,6 +657,7 @@ public class CaseSurveillanceDataExchange {
         }
         return result;
     }
+
     /**
      * HEI cohort
      *
@@ -648,7 +669,6 @@ public class CaseSurveillanceDataExchange {
             throw new IllegalArgumentException("Fetch date cannot be null");
         }
         Date effectiveDate = Date.from(LocalDate.now().minusMonths(24).atStartOfDay(ZoneId.systemDefault()).toInstant());
-        System.out.println("effectiveDate:------- " + effectiveDate);
         List<SimpleObject> result = new ArrayList<>();
         EncounterService encounterService = Context.getEncounterService();
 
@@ -662,15 +682,12 @@ public class CaseSurveillanceDataExchange {
         );
 
         List<Encounter> heiEncounters = encounterService.getEncounters(heiSearchCriteria);
-        System.out.println("heiEncounters:------- " + heiEncounters.size());
         if (!heiEncounters.isEmpty()) {
             for (Encounter heiEncounter : heiEncounters) {
                 Patient patient = heiEncounter.getPatient();
 
-                PatientIdentifierType heiIdentifierType = MetadataUtils.existing(PatientIdentifierType.class, Metadata.IdentifierType.HEI_UNIQUE_NUMBER);
-                PatientIdentifier heiIdentifier = patient.getPatientIdentifier(heiIdentifierType);
-                String heiNumber = heiIdentifier != null ? heiIdentifier.getIdentifier() : null;
-                if (!patient.getDead() && patient.getBirthdate() != null && patient.getBirthdate().compareTo(effectiveDate) >= 0) {
+                String heiNumber = getHEINumber(patient);
+                if (patient.getBirthdate() != null && patient.getBirthdate().compareTo(effectiveDate) >= 0 && heiNumber != null) {
                     result.add(mapToHEIObject(heiEncounter, patient, heiNumber));
                 }
             }
@@ -678,12 +695,11 @@ public class CaseSurveillanceDataExchange {
         return result;
     }
 
-    public List<SimpleObject> dnaPCRResults(Date fetchDate) {
+    public List<SimpleObject> heiWithoutDnaPCRResults(Date fetchDate) {
         if (fetchDate == null) {
             throw new IllegalArgumentException("Fetch date cannot be null");
         }
         Date effectiveDate = Date.from(LocalDate.now().minusMonths(24).atStartOfDay(ZoneId.systemDefault()).toInstant());
-        System.out.println("effectiveDate:------- " + effectiveDate);
         List<SimpleObject> result = new ArrayList<>();
         EncounterService encounterService = Context.getEncounterService();
 
@@ -697,23 +713,61 @@ public class CaseSurveillanceDataExchange {
         );
 
         List<Encounter> heiEncounters = encounterService.getEncounters(heiSearchCriteria);
-        System.out.println("heiEncounters:------- " + heiEncounters.size());
         if (!heiEncounters.isEmpty()) {
             for (Encounter heiEncounter : heiEncounters) {
                 Patient patient = heiEncounter.getPatient();
 
-                PatientIdentifierType heiIdentifierType = MetadataUtils.existing(PatientIdentifierType.class, Metadata.IdentifierType.HEI_UNIQUE_NUMBER);
-                PatientIdentifier heiIdentifier = patient.getPatientIdentifier(heiIdentifierType);
-                String heiNumber = heiIdentifier != null ? heiIdentifier.getIdentifier() : null;
-                if (!patient.getDead() && patient.getBirthdate() != null && patient.getBirthdate().compareTo(effectiveDate) >= 0) {
+                String heiNumber = getHEINumber(patient);
+                if (patient.getBirthdate() != null && patient.getBirthdate().compareTo(effectiveDate) >= 0 && heiNumber != null) {
 
                     PatientWrapper patientWrapper = new PatientWrapper(patient);
 
                     Obs obs = patientWrapper.lastObs(MetadataUtils.existing(Concept.class, Metadata.Concept.HIV_DNA_POLYMERASE_CHAIN_REACTION_QUALITATIVE));
-                    if (obs != null && obs.getObsDatetime().compareTo(fetchDate) >= 0 && obs.getValueCoded() != null) {
 
+                    if (obs == null) {
                         result.add(mapToHEIDnaPcrObject(heiEncounter, patient, heiNumber));
+                    }
+                }
+            }
+        }
+        return result;
+    }
 
+    /**
+     * HEIs without documented final Outcome
+     *
+     * @param fetchDate
+     * @return
+     */
+    public List<SimpleObject> heiWithoutFinalOutcome(Date fetchDate) {
+        if (fetchDate == null) {
+            throw new IllegalArgumentException("Fetch date cannot be null");
+        }
+        Date effectiveDate = Date.from(LocalDate.now().minusMonths(24).atStartOfDay(ZoneId.systemDefault()).toInstant());
+        List<SimpleObject> result = new ArrayList<>();
+        EncounterService encounterService = Context.getEncounterService();
+
+        // Get relevant encounter types
+        List<EncounterType> heiEncounterType = Collections.singletonList(MetadataUtils.existing(EncounterType.class, MchMetadata._EncounterType.MCHCS_ENROLLMENT));
+        List<Form> heiEnrollmentForm = Collections.singletonList(MetadataUtils.existing(Form.class, MchMetadata._Form.MCHCS_ENROLLMENT));
+
+        // Build HEI encounter search criteria
+        EncounterSearchCriteria heiSearchCriteria = new EncounterSearchCriteria(
+                null, null, effectiveDate, null, null, heiEnrollmentForm, heiEncounterType, null, null, null, false
+        );
+        List<Encounter> heiEncounters = encounterService.getEncounters(heiSearchCriteria);
+        if (!heiEncounters.isEmpty()) {
+            for (Encounter heiEncounter : heiEncounters) {
+                Patient patient = heiEncounter.getPatient();
+                String heiNumber = getHEINumber(patient);
+                Integer ageInMonths = getAgeInMonths(patient.getBirthdate(), fetchDate);
+                if (heiNumber != null && ageInMonths == 24) {
+                    PatientWrapper patientWrapper = new PatientWrapper(patient);
+
+                    Obs obs = patientWrapper.lastObs(MetadataUtils.existing(Concept.class, Metadata.Concept.HEI_OUTCOME));
+
+                    if (obs == null || obs.getValueCoded() == null) {
+                        result.add(mapToHEIWithoutOutcomesObject(heiEncounter, patient, heiNumber));
                     }
                 }
             }
@@ -761,14 +815,21 @@ public class CaseSurveillanceDataExchange {
             payload.add(mapToDatasetStructure(eac, "unsuppressed_viral_load"));
         }
         // HEI
+        //TODO: Update the event_type from hei_at_6_to_8_weeks to all_hei
         List<SimpleObject> allHEI = totalHEI(fetchDate);
         for (SimpleObject hei : allHEI) {
             payload.add(mapToDatasetStructure(hei, "hei_at_6_to_8_weeks"));
         }
-        //HEI With DNA PCR
-        List<SimpleObject> dnaPCRResults = dnaPCRResults(fetchDate);
-        for (SimpleObject heiWithDnaPcr : dnaPCRResults) {
-            payload.add(mapToDatasetStructure(heiWithDnaPcr, "hei_without_pcr"));
+        //HEI Without DNA PCR
+        List<SimpleObject> dnaPCRResults = heiWithoutDnaPCRResults(fetchDate);
+        for (SimpleObject heiWithoutDnaPcr : dnaPCRResults) {
+            payload.add(mapToDatasetStructure(heiWithoutDnaPcr, "hei_without_pcr"));
+        }
+
+        //HEI Without DNA PCR
+        List<SimpleObject> heiWithoutFinalOutcome = heiWithoutFinalOutcome(fetchDate);
+        for (SimpleObject heiMissingFinalOutcome : heiWithoutFinalOutcome) {
+            payload.add(mapToDatasetStructure(heiMissingFinalOutcome, "hei_without_final_outcome"));
         }
         return payload;
     }
@@ -813,13 +874,12 @@ public class CaseSurveillanceDataExchange {
                 event.put(field, getStringValue.apply(field));
             }
         } else if ("unsuppressed_viral_load".equals(eventType)) {
-            event.put("lastEacEncounterDate",getStringValue.apply("lastEacEncounterDate"));
+            event.put("lastEacEncounterDate", getStringValue.apply("lastEacEncounterDate"));
             for (String field : commonFields) {
                 event.put(field, getStringValue.apply(field));
             }
-        }
-        else if ("hei_at_6_to_8_weeks".equals(eventType) || "hei_without_pcr".equals(eventType)) {
-            event.put("heiId",getStringValue.apply("heiId"));
+        } else if ("hei_at_6_to_8_weeks".equals(eventType) || "hei_without_pcr".equals(eventType) || "hei_without_final_outcome".equals(eventType)) {
+            event.put("heiId", getStringValue.apply("heiId"));
         }
         // Combine client and event with eventType
         Map<String, Object> result = new HashMap<>();
@@ -831,10 +891,6 @@ public class CaseSurveillanceDataExchange {
     }
 
     public String sendCaseSurveillancePayload(List<Map<String, Object>> payload) {
-        if (payload.isEmpty()) {
-            log.info("No case surveillance data to transmit");
-            return "";
-        }
         // Retrieve the Bearer Token
         String bearerToken = getBearerToken();
         if (bearerToken.isEmpty()) {
@@ -873,7 +929,7 @@ public class CaseSurveillanceDataExchange {
                 switch (statusCode) {
                     case HttpURLConnection.HTTP_OK:
                     case HttpURLConnection.HTTP_CREATED:
-                        System.out.println("Case surveillance payload sent successfully. Response: "+responseContent);
+                        System.out.println("Case surveillance payload sent successfully. Response: " + responseContent);
                         return "Success: Payload sent. Response: " + responseContent;
                     case HttpURLConnection.HTTP_BAD_REQUEST:
                         log.error("Case surveillance Bad Request. Status Code: {}. Response: {}", statusCode, responseContent);
@@ -896,9 +952,8 @@ public class CaseSurveillanceDataExchange {
         List<Map<String, Object>> payload = generateCaseSurveillancePayload(fetchDate);
         Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
         String jsonPayload = gson.toJson(payload); // Serialize to JSON
-        System.out.println(jsonPayload);
         if (jsonPayload == null || jsonPayload.isEmpty()) {
-            log.warn("No case surveillance data found to send for the given date: {}", fetchDate);
+            return ("No case surveillance data to send at "+ fetchDate);
         }
         return sendCaseSurveillancePayload(payload);
     }
