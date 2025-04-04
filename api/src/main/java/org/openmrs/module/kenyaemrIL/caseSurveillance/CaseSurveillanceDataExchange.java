@@ -601,19 +601,39 @@ public class CaseSurveillanceDataExchange {
             Date vlresultDate = null;
             Date vlOrderDate;
             Obs latestObs;
+
             if (qtyObs == null) {
                 latestObs = obs;
-            } else {
+            } else if (obs != null && obs.getObsDatetime() != null && qtyObs.getObsDatetime() != null) {
                 latestObs = obs.getObsDatetime().after(qtyObs.getObsDatetime()) ? obs : qtyObs;
+            } else {
+                latestObs = qtyObs;
             }
-            if (latestObs.getConcept() != null && latestObs.getConcept().getConceptId() == 1305) {
-                vlResult = latestObs.getValueCoded().getName().getName();
-                vlresultDate = latestObs.getObsDatetime();
-            } else if (latestObs.getConcept() != null && latestObs.getConcept().getConceptId() == 856) {
-                vlResult = latestObs.getValueNumeric().toString();
-                vlresultDate = latestObs.getObsDatetime();
+
+            if (latestObs != null && latestObs.getConcept() != null) {
+                Integer conceptId = latestObs.getConcept().getConceptId();
+
+                if (conceptId != null && conceptId == 1305) {
+                    if (latestObs.getValueCoded() != null &&
+                            latestObs.getValueCoded().getName() != null &&
+                            latestObs.getValueCoded().getName().getName() != null) {
+
+                        vlResult = latestObs.getValueCoded().getName().getName();
+                        vlresultDate = latestObs.getObsDatetime();
+                    }
+                } else if (conceptId != null && conceptId == 856) {
+                    if (latestObs.getValueNumeric() != null) {
+                        vlResult = latestObs.getValueNumeric().toString();
+                        vlresultDate = latestObs.getObsDatetime();
+                    }
+                }
             }
-            vlOrderDate = latestObs.getOrder().getDateActivated();
+
+            vlOrderDate = Optional.ofNullable(latestObs)
+                    .map(Obs::getOrder)
+                    .map(Order::getDateActivated)
+                    .orElse(null);
+
             result.add(mapToVlEligibilityObject(greenCardEncounter, patient, upn, pregnant, breastfeeding, vlResult, vlresultDate, vlOrderDate, artStartDate));
         }
         return result;
@@ -621,6 +641,7 @@ public class CaseSurveillanceDataExchange {
 
     /**
      * Patients with enhanced adherence
+     *
      *
      * @param fetchDate
      * @return
