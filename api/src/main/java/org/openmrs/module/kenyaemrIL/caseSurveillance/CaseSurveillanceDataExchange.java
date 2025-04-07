@@ -16,6 +16,7 @@ import org.openmrs.api.ConceptService;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
 import org.openmrs.calculation.result.CalculationResult;
+import org.openmrs.module.kenyaemr.Dictionary;
 import org.openmrs.module.kenyaemr.Metadata;
 import org.openmrs.module.kenyaemr.calculation.EmrCalculationUtils;
 import org.openmrs.module.kenyaemr.calculation.library.hiv.art.InitialArtStartDateCalculation;
@@ -53,6 +54,7 @@ public class CaseSurveillanceDataExchange {
     private static final String PrEP_INITIAL_FORM = "1bfb09fc-56d7-4108-bd59-b2765fd312b8";
     private static final String PrEP_NUMBER_IDENTIFIER_TYPE_UUID = "ac64e5cb-e3e2-4efa-9060-0dd715a843a1";
     private static final int PrEP_REGIMEN_CONCEPT_ID = 164515;
+    private static final Concept YES = Dictionary.getConcept(Dictionary.YES);
 
     // Utility method for null-safe string extraction
     private static String safeGetField(PersonAddress address, Function<PersonAddress, String> mapper) {
@@ -538,12 +540,13 @@ public class CaseSurveillanceDataExchange {
         if (fetchDate == null) {
             throw new IllegalArgumentException("Fetch date cannot be null");
         }
-
+        Integer qlvViralLoad = Dictionary.getConcept(Dictionary.HIV_VIRAL_LOAD_QUALITATIVE).getConceptId();
+        Integer qtvViralLoad = Dictionary.getConcept(Dictionary.HIV_VIRAL_LOAD).getConceptId();
+        Concept pregnancyStatusQstn = Dictionary.getConcept(Dictionary.PREGNANCY_STATUS);
+        Concept breastfeedingStatusQstn = Dictionary.getConcept(Dictionary.CURRENTLY_BREASTFEEDING);
         List<SimpleObject> result = new ArrayList<>();
         ConceptService conceptService = Context.getConceptService();
         EncounterService encounterService = Context.getEncounterService();
-        Concept pregnancyStatusQstn = conceptService.getConcept(5272);
-        Concept breastfeedingStatusQstn = conceptService.getConcept(5632);
 
 // Get relevant encounter types
         List<EncounterType> hivEncounterType = Collections.singletonList(MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION));
@@ -582,12 +585,12 @@ public class CaseSurveillanceDataExchange {
                 if (Objects.equals(obs.getConcept(), pregnancyStatusQstn)) { // Check concept ID
                     Concept valueCoded = obs.getValueCoded();
                     if (valueCoded != null) {
-                        pregnant = valueCoded.getConceptId().equals(1065);
+                        pregnant = valueCoded.equals(YES);
                     }
                 } else if (Objects.equals(obs.getConcept(), breastfeedingStatusQstn)) {
                     Concept valueCoded = obs.getValueCoded();
                     if (valueCoded != null) {
-                        breastfeeding = valueCoded.getConceptId().equals(1065);
+                        breastfeeding = valueCoded.equals(YES);
                     }
                 }
             }
@@ -613,7 +616,7 @@ public class CaseSurveillanceDataExchange {
             if (latestObs != null && latestObs.getConcept() != null) {
                 Integer conceptId = latestObs.getConcept().getConceptId();
 
-                if (conceptId != null && conceptId == 1305) {
+                if (conceptId != null && conceptId.equals(qlvViralLoad)) {
                     if (latestObs.getValueCoded() != null &&
                             latestObs.getValueCoded().getName() != null &&
                             latestObs.getValueCoded().getName().getName() != null) {
@@ -621,7 +624,7 @@ public class CaseSurveillanceDataExchange {
                         vlResult = latestObs.getValueCoded().getName().getName();
                         vlresultDate = latestObs.getObsDatetime();
                     }
-                } else if (conceptId != null && conceptId == 856) {
+                } else if (conceptId != null && conceptId.equals(qtvViralLoad)) {
                     if (latestObs.getValueNumeric() != null) {
                         vlResult = latestObs.getValueNumeric().toString();
                         vlresultDate = latestObs.getObsDatetime();
