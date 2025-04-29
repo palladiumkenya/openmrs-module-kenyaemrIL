@@ -15,12 +15,10 @@ import org.openmrs.api.db.hibernate.DbSessionFactory;
 import org.openmrs.module.Module;
 import org.openmrs.module.ModuleFactory;
 import org.openmrs.module.kenyaemr.Dictionary;
-import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemr.metadata.HivMetadata;
 import org.openmrs.module.kenyaemr.metadata.MchMetadata;
 import org.openmrs.module.kenyaemr.metadata.OTZMetadata;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
-import org.openmrs.module.kenyaemrIL.util.ServiceDepartments;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.parameter.EncounterSearchCriteria;
 import org.openmrs.ui.framework.SimpleObject;
@@ -29,8 +27,8 @@ import org.openmrs.util.PrivilegeConstants;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.*;
+import java.util.Date;
 import java.util.stream.Collectors;
 
 public class VisualizationDataExchange {
@@ -80,6 +78,7 @@ public class VisualizationDataExchange {
 		List<SimpleObject> waivers = new ArrayList<SimpleObject>();
 		List<SimpleObject> waiversCount = new ArrayList<SimpleObject>();
 		String timestamp = formatter.format(fetchDate);
+		Long shaPatients = 0L;
 
 		//Data extraction
 		String facilityMfl = MessageHeaderSingleton.getDefaultLocationMflCode(MessageHeaderSingleton.getDefaultLocation());
@@ -380,6 +379,19 @@ public class VisualizationDataExchange {
 			}
 		} catch(Exception ex) {
 			System.err.println("KenyaEMR IL: ERROR visualization data : waivers : " + ex.getMessage());
+			ex.printStackTrace();
+		}
+
+		try {
+			 shaPatients = getTotalPatientsOnSHA(fetchDate);
+			if (shaPatients > 0) {
+				payloadObj.put("sha_enrollments", shaPatients);
+
+			} else {
+				payloadObj.put("sha_enrollments", "");
+			}
+		} catch (Exception ex) {
+			System.err.println("KenyaEMR IL: ERROR visualization data : shaPatients : " + ex.getMessage());
 			ex.printStackTrace();
 		}
 
@@ -1226,6 +1238,26 @@ public class VisualizationDataExchange {
 			System.err.println("KenyaEMR IL: Unable to get payment by department: " + e.getMessage());
 			e.printStackTrace();
 			throw new IllegalArgumentException("Unable to execute query", e);
+		}
+		return ret;
+	}
+
+	/**
+	 * Gets details of total patients registered in SHA - Social Health Agency
+	 *
+	 * @param
+	 * @return details of total patients with SHA Number
+	 */
+	public static Long getTotalPatientsOnSHA(Date fetchDate) {
+		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String effectiveDate = sd.format(fetchDate);
+		Long ret = null;
+		String hivTestedPositiveQuery = "Select count(pi.patient_id) from patient_identifier pi inner join patient_identifier_type pt on pi.identifier_type = pt.patient_identifier_type_id and pt.uuid = '24aedd37-b5be-4e08-8311-3721b8d5100d' and pt.date_created >= '" + effectiveDate + "'";
+		try {
+			Context.addProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
+			ret = (Long) Context.getAdministrationService().executeSQL(hivTestedPositiveQuery, true).get(0).get(0);
+		} finally {
+			Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
 		}
 		return ret;
 	}
