@@ -35,6 +35,8 @@ import org.slf4j.LoggerFactory;
 
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -42,6 +44,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static javax.xml.bind.DatatypeConverter.parseDateTime;
 import static org.openmrs.module.kenyaemr.util.EmrUtils.getGlobalPropertyValue;
 import static org.openmrs.module.kenyaemrIL.util.CaseSurveillanceUtils.*;
 
@@ -351,10 +354,18 @@ public class CaseSurveillanceDataExchange {
 
             // **Only add if artStartDate is not null**
             if (artStartDate != null) {
-                result.add(mapToLinkageObject(encounter, patient, artStartDate));
+                try {
+                    DateFormat dateFormat = new SimpleDateFormat(DATE_TIME_FORMAT);
+                    Date artStartDateAsDate = dateFormat.parse(artStartDate);
+                    if (fetchDate.before(artStartDateAsDate)) {
+                        result.add(mapToLinkageObject(encounter, patient, artStartDate));
+                    }
+                } catch (ParseException e) {
+                    log.error("Error parsing artStartDate: " + e.getMessage());
+                }
+
             }
         }
-
         return result;
     }
 
