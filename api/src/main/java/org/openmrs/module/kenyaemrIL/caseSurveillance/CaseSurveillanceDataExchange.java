@@ -4,14 +4,22 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-import com.sun.xml.bind.v2.TODO;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.openmrs.*;
+import org.openmrs.Concept;
+import org.openmrs.Encounter;
+import org.openmrs.EncounterType;
+import org.openmrs.Form;
+import org.openmrs.Obs;
+import org.openmrs.Order;
+import org.openmrs.Patient;
+import org.openmrs.PatientIdentifier;
+import org.openmrs.PatientIdentifierType;
+import org.openmrs.PersonAddress;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
@@ -35,10 +43,22 @@ import org.slf4j.LoggerFactory;
 
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -351,10 +371,18 @@ public class CaseSurveillanceDataExchange {
 
             // **Only add if artStartDate is not null**
             if (artStartDate != null) {
-                result.add(mapToLinkageObject(encounter, patient, artStartDate));
+                try {
+                    DateFormat dateFormat = new SimpleDateFormat(DATE_TIME_FORMAT);
+                    Date artStartDateAsDate = dateFormat.parse(artStartDate);
+                    if (fetchDate.before(artStartDateAsDate)) {
+                        result.add(mapToLinkageObject(encounter, patient, artStartDate));
+                    }
+                } catch (ParseException e) {
+                    log.error("Error parsing artStartDate: " + e.getMessage());
+                }
+
             }
         }
-
         return result;
     }
 
