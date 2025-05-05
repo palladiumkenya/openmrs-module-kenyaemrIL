@@ -52,12 +52,15 @@ public class FhirConfig {
         return fhirContext;
     }
 
+    /**
+     * TODO - Activate sending data througn IL
+     */
     public IGenericClient getFhirClient() throws Exception {
         FhirContext fhirContextNew = FhirContext.forR4();
         fhirContextNew.getRestfulClientFactory().setSocketTimeout(200 * 1000);
-        BearerTokenAuthInterceptor authInterceptor = new BearerTokenAuthInterceptor(ILUtils.getShrToken());
+        // BearerTokenAuthInterceptor authInterceptor = new BearerTokenAuthInterceptor(ILUtils.getShrToken());
         IGenericClient client = fhirContextNew.getRestfulClientFactory().newGenericClient(ILUtils.getShrServerUrl());
-        client.registerInterceptor(authInterceptor);
+        // client.registerInterceptor(authInterceptor);
         return client;
     }
 
@@ -187,12 +190,12 @@ public class FhirConfig {
         }
     }
 
-    public Bundle fetchObservationResource(String patientId) {
+    public Bundle fetchObservationResource(String patientId, String obsCategory) {
         try {
             String encodedParam2 = URLEncoder.encode(patientId, "UTF-8");
 
             String url = ILUtils.getShrServerUrl() + "Observation?subject:Patient=Patient/"
-                    + patientId;
+                    + patientId + "&category="+obsCategory;
             URL localUrl = new URL(url);
 
             IGenericClient client = getFhirClient();
