@@ -45,17 +45,6 @@ public class DmiDirectPushTask extends AbstractTask {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
-		Date csFetchDate = null;
-		GlobalProperty csGlobalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("caseSurveillance.lastFetchDateAndTime");
-
-		try {
-			String ts = csGlobalPropertyObject.getValue().toString();
-			csFetchDate = formatter.parse(ts);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
 		try {
 			Context.openSession();
 
@@ -82,8 +71,6 @@ public class DmiDirectPushTask extends AbstractTask {
 				}
 			}
 
-			dmiGlobalPropertyObject.setPropertyValue(formatter.format(new Date()));
-			Context.getAdministrationService().saveGlobalProperty(dmiGlobalPropertyObject);
 			Context.flushSession();
 		} catch (IOException ioe) {
 
@@ -94,13 +81,30 @@ public class DmiDirectPushTask extends AbstractTask {
 				log.error("IL - DMI PUSH: Failed to check internet connectivity", e);
 			}
 		} finally {
-			Context.closeSession();
+			dmiGlobalPropertyObject.setPropertyValue(formatter.format(new Date()));
+			Context.getAdministrationService().saveGlobalProperty(dmiGlobalPropertyObject);
 
+			Context.closeSession();
 		}
-        try {
+		try {
 
 			System.out.println("Case Surveillance data transmission started...");
 
+			Date csFetchDate = null;
+			GlobalProperty csGlobalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("caseSurveillance.lastFetchDateAndTime");
+			System.out.println("csGlobalPropertyObject: "+csGlobalPropertyObject);
+			try {
+				if (csGlobalPropertyObject != null && csGlobalPropertyObject.getValue() != null) {
+					String ts = csGlobalPropertyObject.getValue().toString();
+					csFetchDate = formatter.parse(ts);
+				} else {
+					// Handle case where global property might be missing or null
+					log.warn("Global property 'caseSurveillance.lastFetchDateAndTime' not found or has a null value.");
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
             Context.openSession();
             URLConnection connection = new URL(url).openConnection();
             connection.connect();
@@ -113,18 +117,24 @@ public class DmiDirectPushTask extends AbstractTask {
             } catch (Exception e) {
                 log.error("Error during case surveillance process", e);
             }
-
             if (processSuccess) {
-                csGlobalPropertyObject.setPropertyValue(formatter.format(new Date()));
-                Context.getAdministrationService().saveGlobalProperty(csGlobalPropertyObject);
-            }
+				System.out.println("We are updating the date now.....");
+				try {
+					String newFetchDate = formatter.format(new Date());
+					csGlobalPropertyObject.setPropertyValue(newFetchDate);
+					Context.getAdministrationService().saveGlobalProperty(csGlobalPropertyObject);
+				} catch (Exception e) {
+					log.error("Error updating global property 'caseSurveillance.lastFetchDateAndTime'", e);
+				}
+			}
+			Context.flushSession();
+		} catch (Exception ex) {
+			log.error("Error during case surveillance data transmission", ex);
+		} finally {
 
-            Context.flushSession();
-        } catch (IOException ioe) {
-            log.warn("Connectivity error during Case surveillance direct push.", ioe);
-        } finally {
-            Context.closeSession();
-        }
+			Context.closeSession();
+
+		}
 	}
 
 	/**
