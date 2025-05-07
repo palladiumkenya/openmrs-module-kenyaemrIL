@@ -27,7 +27,7 @@ import static org.openmrs.module.kenyaemr.metadata.CommonMetadata._PatientIdenti
 
 public class DmiDataExchange {
 
-	private Log log = LogFactory.getLog(DmiDataExchange.class);
+	private static final Log log = LogFactory.getLog(DmiDataExchange.class);
 
 	private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -47,77 +47,105 @@ public class DmiDataExchange {
 		String conditionName = "";
 		Integer conditionId = null;
 
-		// 1. suspected ili case
+// 1. suspected ili case
 		CalculationResult iliFlaggedResults = EmrCalculationUtils.evaluateForPatient(IliScreeningCalculation.class, null, patient);
-		if (!iliFlaggedResults.isEmpty()) {
+		if (iliFlaggedResults != null && !iliFlaggedResults.isEmpty()) {
 			conditionName = "ILI";
 			conditionId = 1;
 			conditionMap.put(conditionId, conditionName);
+		} else {
+			log.error("iliFlaggedResults is null or empty for patient");
 		}
-		// 2. suspected sari case
+
+// 2. suspected sari case
 		CalculationResult sariFlaggedResults = EmrCalculationUtils.evaluateForPatient(SariScreeningCalculation.class, null, patient);
-		if (!sariFlaggedResults.isEmpty()) {
+		if (sariFlaggedResults != null && !sariFlaggedResults.isEmpty()) {
 			conditionName = "SARI";
 			conditionId = 2;
 			conditionMap.put(conditionId, conditionName);
+		} else {
+			log.error("sariFlaggedResults is null or empty for patient");
 		}
-		// 3. suspected cholera case
+
+// 3. suspected cholera case
 		CalculationResult choleraFlaggedResults = EmrCalculationUtils.evaluateForPatient(CholeraCalculation.class, null, patient);
-		if (!choleraFlaggedResults.isEmpty()) {
+		if (choleraFlaggedResults != null && !choleraFlaggedResults.isEmpty()) {
 			conditionName = "CHOLERA";
 			conditionId = 3;
 			conditionMap.put(conditionId, conditionName);
+		} else {
+			log.error("choleraFlaggedResults is null or empty for patient");
 		}
-		// 4. suspected dysentery case
+
+// 4. suspected dysentery case
 		CalculationResult dysenteryFlaggedResults = EmrCalculationUtils.evaluateForPatient(DysenteryCalculation.class, null, patient);
-		if (!dysenteryFlaggedResults.isEmpty()) {
+		if (dysenteryFlaggedResults != null && !dysenteryFlaggedResults.isEmpty()) {
 			conditionName = "DYSENTERY";
 			conditionId = 4;
 			conditionMap.put(conditionId, conditionName);
+		} else {
+			log.error("dysenteryFlaggedResults is null or empty for patient");
 		}
-		// 5. suspected chikungunya case
+
+// 5. suspected chikungunya case
 		CalculationResult chikungunyaFlaggedResults = EmrCalculationUtils.evaluateForPatient(ChikungunyaCalculation.class, null, patient);
-		if (!chikungunyaFlaggedResults.isEmpty()) {
+		if (chikungunyaFlaggedResults != null && !chikungunyaFlaggedResults.isEmpty()) {
 			conditionName = "CHIKUNGUNYA";
 			conditionId = 5;
 			conditionMap.put(conditionId, conditionName);
+		} else {
+			log.error("chikungunyaFlaggedResults is null or empty for patient");
 		}
-		// 6. suspected viral haemorrhagic fever case
+
+// 6. suspected viral haemorrhagic fever case
 		CalculationResult vhfFlaggedResults = EmrCalculationUtils.evaluateForPatient(ViralHaemorrhagicFeverCalculation.class, null, patient);
-		if (!vhfFlaggedResults.isEmpty()) {
+		if (vhfFlaggedResults != null && !vhfFlaggedResults.isEmpty()) {
 			conditionName = "VIRAL HAEMORRHAGIC FEVER";
 			conditionId = 6;
 			conditionMap.put(conditionId, conditionName);
+		} else {
+			log.error("vhfFlaggedResults is null or empty for patient");
 		}
-		// 7. suspected malaria  case
+
+// 7. suspected malaria case
 		CalculationResult malariaFlaggedResults = EmrCalculationUtils.evaluateForPatient(MalariaCalculation.class, null, patient);
-		if (!malariaFlaggedResults.isEmpty()) {
+		if (malariaFlaggedResults != null && !malariaFlaggedResults.isEmpty()) {
 			conditionName = "MALARIA";
 			conditionId = 7;
 			conditionMap.put(conditionId, conditionName);
+		} else {
+			log.error("malariaFlaggedResults is null or empty for patient");
 		}
-		// 8. suspected measles  case
+
+// 8. suspected measles case
 		CalculationResult measlesFlaggedResults = EmrCalculationUtils.evaluateForPatient(MeaslesCalculation.class, null, patient);
-		if (!measlesFlaggedResults.isEmpty()) {
+		if (measlesFlaggedResults != null && !measlesFlaggedResults.isEmpty()) {
 			conditionName = "MEASLES";
 			conditionId = 8;
 			conditionMap.put(conditionId, conditionName);
+		} else {
+			log.error("measlesFlaggedResults is null or empty for patient");
 		}
-		// 9. suspected polio case
+
+// 9. suspected polio case
 		CalculationResult polioFlaggedResults = EmrCalculationUtils.evaluateForPatient(PoliomyelitisCalculation.class, null, patient);
-		if (!polioFlaggedResults.isEmpty()) {
+		if (polioFlaggedResults != null && !polioFlaggedResults.isEmpty()) {
 			conditionName = "POLIOMYELITIS";
 			conditionId = 9;
 			conditionMap.put(conditionId, conditionName);
+		} else {
+			log.error("polioFlaggedResults is null or empty for patient");
 		}
-		// 10. suspected rift valley fever case
+
+// 10. suspected rift valley fever case
 		CalculationResult rvfFlaggedResults = EmrCalculationUtils.evaluateForPatient(RiftValleyFeverCalculation.class, null, patient);
-		if (!rvfFlaggedResults.isEmpty()) {
+		if (rvfFlaggedResults != null && !rvfFlaggedResults.isEmpty()) {
 			conditionName = "RIFT VALLEY FEVER";
 			conditionId = 10;
 			conditionMap.put(conditionId, conditionName);
+		} else {
+			log.error("rvfFlaggedResults is null or empty for patient");
 		}
-
 		if (!conditionMap.isEmpty()) {
 			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 			SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -129,13 +157,11 @@ public class DmiDataExchange {
 			List<SimpleObject> vitalSigns = new ArrayList<SimpleObject>();
 			List<SimpleObject> riskFactors = new ArrayList<SimpleObject>();
 			List<SimpleObject> vaccinations = new ArrayList<SimpleObject>();
-
 			//Unique id
 			PatientIdentifierType openmrsIdType = MetadataUtils.existing(PatientIdentifierType.class, OPENMRS_ID);
 			PatientIdentifier openmrsId = patient.getPatientIdentifier(openmrsIdType);
 			//CaseUniqueId : Use visit ID to link complaints and diagnosis in DMI server, labs do not have visit id
 			String caseUniqueId = visit.getVisitId().toString();
-
 			//Nupi id
 			PatientIdentifierType nupiIdType = MetadataUtils.existing(PatientIdentifierType.class, NATIONAL_UNIQUE_PATIENT_IDENTIFIER);
 			PatientIdentifier nupiId = patient.getPatientIdentifier(nupiIdType);
@@ -143,14 +169,18 @@ public class DmiDataExchange {
 			String county = null;
 			String subcounty = null;
 			String address = null;
+			// Log the patient address details
+
 			Person person = Context.getPersonService().getPerson(patient.getPatientId());
+			String outpatientDate = visit.getStartDatetime() != null ? sd.format(visit.getStartDatetime()) : null;
+
 			if (person.getPersonAddress() != null) {
 				county = person.getPersonAddress().getCountyDistrict() != null ? person.getPersonAddress().getCountyDistrict() : null;
 				subcounty = person.getPersonAddress().getStateProvince() != null ? person.getPersonAddress().getStateProvince() : null;
 				address = person.getPersonAddress().getAddress1() != null ? person.getPersonAddress().getAddress1() : null;
 
 			}
-
+			String facilityName = (visit != null && visit.getLocation() != null) ? visit.getLocation().getName() : null;
 			String facilityMfl = MessageHeaderSingleton.getDefaultLocationMflCode(MessageHeaderSingleton.getDefaultLocation());
 			String dob = patient.getBirthdate() != null ? dmiUtils.getSimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(patient.getBirthdate()) : null;
 			Age age = new Age(patient.getBirthdate());
@@ -181,31 +211,28 @@ public class DmiDataExchange {
 			String status = "preliminary";
 			Integer doses = null;
 
-			//Set<Encounter> encounters = visit.getEncounters();
-			if (!visit.getEncounters().isEmpty()) {				
+			if (!visit.getEncounters().isEmpty()) {
 				for (Encounter encounter : visit.getEncounters()) {
 					if (encounter.getEncounterType().equals(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.CONSULTATION)) ||
-						encounter.getEncounterType().equals(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.TRIAGE)) ||
-						encounter.getEncounterType().equals(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.LAB_RESULTS)) ||
-						encounter.getEncounterType().equals(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.ILI_SURVEILLANCE)) ||
-						encounter.getEncounterType().equals(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.SARI_SURVEILLANCE)) ||
-						encounter.getEncounterType().equals(MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION))) {
-
-						//Diagnosis		
-						//Gets final and preliminary diagnosis
+							encounter.getEncounterType().equals(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.TRIAGE)) ||
+							encounter.getEncounterType().equals(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.LAB_RESULTS)) ||
+							encounter.getEncounterType().equals(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.ILI_SURVEILLANCE)) ||
+							encounter.getEncounterType().equals(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.SARI_SURVEILLANCE)) ||
+							encounter.getEncounterType().equals(MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION))) {
+						//Diagnosis
 						DiagnosisService diagnosisService = Context.getDiagnosisService();
-				
+
 						List<Diagnosis> allDiagnosis = diagnosisService.getDiagnosesByEncounter(encounter, false, false);
 						if (!allDiagnosis.isEmpty()) {
 							for (Diagnosis diagnosisType : allDiagnosis) {
-								if(diagnosisType.getCertainty().equals(ConditionVerificationStatus.CONFIRMED)){							
-								diagnosisName = diagnosisType.getDiagnosis().getCoded().getName().getName();
-								diagnosisId = diagnosisType.getDiagnosis().getCoded().getId().toString();	
-								status = "final";								
-						    	}else {
+								if(diagnosisType.getCertainty().equals(ConditionVerificationStatus.CONFIRMED)){
 									diagnosisName = diagnosisType.getDiagnosis().getCoded().getName().getName();
 									diagnosisId = diagnosisType.getDiagnosis().getCoded().getId().toString();
-									status = "preliminary";									
+									status = "final";
+								}else {
+									diagnosisName = diagnosisType.getDiagnosis().getCoded().getName().getName();
+									diagnosisId = diagnosisType.getDiagnosis().getCoded().getId().toString();
+									status = "preliminary";
 								}
 							}
 						}
@@ -394,11 +421,49 @@ public class DmiDataExchange {
 					} else {
 						payloadObj.put("flaggedConditions", conditionFlagged);
 					}
-					
+
 					payload.add(payloadObj);
 				}
 			}
+			payloadObj.put("status", "preliminary");
+			JSONArray flaggedConditions = new JSONArray();
+			for (Map.Entry<Integer, String> entry : conditionMap.entrySet()) {
+				JSONObject condition = new JSONObject();
+				condition.put("conditionId", entry.getKey());
+				condition.put("conditionName", entry.getValue());
+				flaggedConditions.add(condition);
+			}
+			payloadObj.put("flaggedConditions", flaggedConditions);
+			String conditionCategory = null;
+			if (!flaggedConditions.isEmpty()) {
+				JSONObject firstCondition = (JSONObject) flaggedConditions.get(0);
+				conditionCategory = (String) firstCondition.get("conditionName");
+			}
+			subject.put("openmrsId", openmrsId != null ? openmrsId.getIdentifier() : "");
+			subject.put("nupiId", nupiId != null ? nupiId.getIdentifier() : "");
+			subject.put("county", county);
+			subject.put("subcounty", subcounty);
+			subject.put("address", address);
+			subject.put("facilityMfl", facilityMfl);
+			subject.put("dob", dob);
+			subject.put("age", age.getFullYears());
+			subject.put("gender", gender);
+			subject.put("patientUniqueId", openmrsId != null ? openmrsId.getIdentifier() : "");
+			String sex = "OTHER"; // Default value
+			if ("M".equalsIgnoreCase(gender)) {
+				sex = "MALE";
+			} else if ("F".equalsIgnoreCase(gender)) {
+				sex = "FEMALE";
+			}
+			subject.put("sex", sex);
+			subject.put("facility_name", facilityName);
+			subject.put("outpatient_date", outpatientDate);
+			subject.put("condition_category", conditionCategory);
 
+			payloadObj.put("subject", subject);
+			payloadObj.put("caseUniqueId", caseUniqueId);
+			payloadObj.put("hospitalIdNumber", openmrsId != null ? openmrsId.getIdentifier() : "");
+			payload.add(payloadObj);
 		}
 		return payload;
 	}
