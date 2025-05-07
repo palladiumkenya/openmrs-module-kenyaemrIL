@@ -345,7 +345,6 @@ public class CaseSurveillanceDataExchange {
                 null, null, fetchDate, null, null, linkageForm, linkageEncounterType,
                 null, null, null, false
         ));
-
         // Process each encounter for linkage
         for (Encounter encounter : linkageToCareEncounters) {
             if (encounter == null) {
@@ -374,7 +373,7 @@ public class CaseSurveillanceDataExchange {
                 try {
                     DateFormat dateFormat = new SimpleDateFormat(DATE_TIME_FORMAT);
                     Date artStartDateAsDate = dateFormat.parse(artStartDate);
-                    if (fetchDate.before(artStartDateAsDate)) {
+                    if (fetchDate.compareTo(artStartDateAsDate) <= 0) {
                         result.add(mapToLinkageObject(encounter, patient, artStartDate));
                     }
                 } catch (ParseException e) {
