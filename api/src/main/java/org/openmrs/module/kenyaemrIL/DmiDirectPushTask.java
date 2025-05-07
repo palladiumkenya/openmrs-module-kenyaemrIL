@@ -92,7 +92,6 @@ public class DmiDirectPushTask extends AbstractTask {
 
 			Date csFetchDate = null;
 			GlobalProperty csGlobalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("caseSurveillance.lastFetchDateAndTime");
-			System.out.println("csGlobalPropertyObject: "+csGlobalPropertyObject);
 			try {
 				if (csGlobalPropertyObject != null && csGlobalPropertyObject.getValue() != null) {
 					String ts = csGlobalPropertyObject.getValue().toString();
@@ -118,7 +117,6 @@ public class DmiDirectPushTask extends AbstractTask {
                 log.error("Error during case surveillance process", e);
             }
             if (processSuccess) {
-				System.out.println("We are updating the date now.....");
 				try {
 					String newFetchDate = formatter.format(new Date());
 					csGlobalPropertyObject.setPropertyValue(newFetchDate);

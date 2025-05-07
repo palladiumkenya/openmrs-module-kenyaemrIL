@@ -345,7 +345,6 @@ public class CaseSurveillanceDataExchange {
                 null, null, fetchDate, null, null, linkageForm, linkageEncounterType,
                 null, null, null, false
         ));
-
         // Process each encounter for linkage
         for (Encounter encounter : linkageToCareEncounters) {
             if (encounter == null) {
@@ -382,7 +381,7 @@ public class CaseSurveillanceDataExchange {
                 }
 
             }
-        }
+        }System.out.println("result: "+result );
         return result;
     }
 
