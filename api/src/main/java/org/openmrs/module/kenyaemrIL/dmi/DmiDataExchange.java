@@ -50,74 +50,74 @@ public class DmiDataExchange {
 		// 1. suspected ili case
 		CalculationResult iliFlaggedResults = EmrCalculationUtils.evaluateForPatient(IliScreeningCalculation.class, null, patient);
 		if (!iliFlaggedResults.isEmpty()) {
-			conditionName = "ILI";
+			conditionName = "Influenza Like Illness";
 			conditionId = 1;
 			conditionMap.put(conditionId, conditionName);
 		}
 		// 2. suspected sari case
 		CalculationResult sariFlaggedResults = EmrCalculationUtils.evaluateForPatient(SariScreeningCalculation.class, null, patient);
 		if (!sariFlaggedResults.isEmpty()) {
-			conditionName = "SARI";
+			conditionName = "Severe Acute Respiratory Infection";
 			conditionId = 2;
 			conditionMap.put(conditionId, conditionName);
 		}
-		// 3. suspected cholera case
-		CalculationResult choleraFlaggedResults = EmrCalculationUtils.evaluateForPatient(CholeraCalculation.class, null, patient);
-		if (!choleraFlaggedResults.isEmpty()) {
-			conditionName = "CHOLERA";
+		// 3. suspected jaundice case
+		CalculationResult jaundiceFlaggedResults = EmrCalculationUtils.evaluateForPatient(AcuteJaundiceScreeningCalculation.class, null, patient);
+		if (!jaundiceFlaggedResults.isEmpty()) {
+			conditionName = "JAUNDICE";
 			conditionId = 3;
 			conditionMap.put(conditionId, conditionName);
 		}
-		// 4. suspected dysentery case
-		CalculationResult dysenteryFlaggedResults = EmrCalculationUtils.evaluateForPatient(DysenteryCalculation.class, null, patient);
-		if (!dysenteryFlaggedResults.isEmpty()) {
-			conditionName = "DYSENTERY";
-			conditionId = 4;
-			conditionMap.put(conditionId, conditionName);
-		}
-		// 5. suspected chikungunya case
-		CalculationResult chikungunyaFlaggedResults = EmrCalculationUtils.evaluateForPatient(ChikungunyaCalculation.class, null, patient);
-		if (!chikungunyaFlaggedResults.isEmpty()) {
-			conditionName = "CHIKUNGUNYA";
-			conditionId = 5;
-			conditionMap.put(conditionId, conditionName);
-		}
-		// 6. suspected viral haemorrhagic fever case
+		// 4. suspected viral haemorrhagic fever case
 		CalculationResult vhfFlaggedResults = EmrCalculationUtils.evaluateForPatient(ViralHaemorrhagicFeverCalculation.class, null, patient);
 		if (!vhfFlaggedResults.isEmpty()) {
 			conditionName = "VIRAL HAEMORRHAGIC FEVER";
+			conditionId = 4;
+			conditionMap.put(conditionId, conditionName);
+		}
+		// 5. suspected meningitis
+		CalculationResult meningitisFlaggedResults = EmrCalculationUtils.evaluateForPatient(AcuteMeningitisScreeningCalculation.class, null, patient);
+		if (!meningitisFlaggedResults.isEmpty()) {
+			conditionName = "ACUTE MENINGITIS AND ENCEPHALITIS";
+			conditionId = 5;
+			conditionMap.put(conditionId, conditionName);
+		}
+		// 6. Acute Febrile Rash Infection case
+		CalculationResult acuteFebrileRash = EmrCalculationUtils.evaluateForPatient(AcuteFebrileRashInfectionScreeningCalculation.class, null, patient);
+		if (!acuteFebrileRash.isEmpty()) {
+			conditionName = "Acute Febrile Rash Infections";
 			conditionId = 6;
 			conditionMap.put(conditionId, conditionName);
 		}
-		// 7. suspected malaria  case
-		CalculationResult malariaFlaggedResults = EmrCalculationUtils.evaluateForPatient(MalariaCalculation.class, null, patient);
-		if (!malariaFlaggedResults.isEmpty()) {
-			conditionName = "MALARIA";
+
+		// 7. suspected Neurological Syndrome Screening Calculation
+		CalculationResult neurologicalFlaggedResults = EmrCalculationUtils.evaluateForPatient(NeurologicalSyndromeScreeningCalculation.class, null, patient);
+		if (!neurologicalFlaggedResults.isEmpty()) {
+			conditionName = "Neurological Syndrome";
 			conditionId = 7;
 			conditionMap.put(conditionId, conditionName);
 		}
-		// 8. suspected measles  case
-		CalculationResult measlesFlaggedResults = EmrCalculationUtils.evaluateForPatient(MeaslesCalculation.class, null, patient);
+		// 8. Acute Watery Diarrhoeal Disease Screening Calculation
+		CalculationResult measlesFlaggedResults = EmrCalculationUtils.evaluateForPatient(AcuteWateryDiarrhoealDiseaseScreeningCalculation.class, null, patient);
 		if (!measlesFlaggedResults.isEmpty()) {
-			conditionName = "MEASLES";
+			conditionName = "Acute Watery Diarrhoea";
 			conditionId = 8;
 			conditionMap.put(conditionId, conditionName);
 		}
-		// 9. suspected polio case
+		// 9. Acute Flaccid Paralysis
 		CalculationResult polioFlaggedResults = EmrCalculationUtils.evaluateForPatient(PoliomyelitisCalculation.class, null, patient);
 		if (!polioFlaggedResults.isEmpty()) {
-			conditionName = "POLIOMYELITIS";
+			conditionName = "Acute Flaccid Paralysis";
 			conditionId = 9;
 			conditionMap.put(conditionId, conditionName);
 		}
-		// 10. suspected rift valley fever case
-		CalculationResult rvfFlaggedResults = EmrCalculationUtils.evaluateForPatient(RiftValleyFeverCalculation.class, null, patient);
-		if (!rvfFlaggedResults.isEmpty()) {
-			conditionName = "RIFT VALLEY FEVER";
+		// 10. Mpox
+		CalculationResult mpoxFlaggedResults = EmrCalculationUtils.evaluateForPatient(MpoxScreeningCalculation.class, null, patient);
+		if (!mpoxFlaggedResults.isEmpty()) {
+			conditionName = "Mpox";
 			conditionId = 10;
 			conditionMap.put(conditionId, conditionName);
 		}
-
 		if (!conditionMap.isEmpty()) {
 			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 			SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

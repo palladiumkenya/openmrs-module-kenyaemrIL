@@ -11,6 +11,8 @@ package org.openmrs.module.kenyaemrIL.dmi.library;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.joda.time.DateTime;
+import org.joda.time.Days;
 import org.openmrs.*;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.PatientService;
@@ -32,90 +34,70 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Calculates the eligibility for Cholera screening flag for  patients
- *
- * @should calculate person over 2 years Old
- * @should calculate  diarrhoea
- * @should calculate Vomiting
- * @should calculate no duration
+ * Calculates the eligibility for Acute Febrile Rash Infection Screening Calculation screening flag for  patients
  */
-public class CholeraCalculation extends AbstractPatientCalculation {
-	protected static final Log log = LogFactory.getLog(CholeraCalculation.class);
-
+public class NeurologicalSyndromeScreeningCalculation extends AbstractPatientCalculation {
+	protected static final Log log = LogFactory.getLog(NeurologicalSyndromeScreeningCalculation.class);
 	public static final EncounterType triageEncType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.TRIAGE);
 	public static final Form triageScreeningForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.TRIAGE);
 	public static final EncounterType consultationEncType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.CONSULTATION);
 	public static final Form clinicalEncounterForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.CLINICAL_ENCOUNTER);
 	public static final EncounterType greenCardEncType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION);
 	public static final Form greenCardForm = MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD);
-	Integer VOMITING = 122983;
-	Integer WATERY_DIARRHEA = 161887;
+	Integer DURATION = 159368;
 	Integer SCREENING_QUESTION = 5219;
+	Integer CONVULSIONS = 113054;
+	Integer REFUSAL_TO_FEED = 6017;
+
+	/**
+	 * Evaluates the calculation
+	 */
 
 	@Override
 	public CalculationResultMap evaluate(Collection<Integer> cohort, Map<String, Object> parameterValues, PatientCalculationContext context) {
+
 		Set<Integer> alive = Filters.alive(cohort, context);
 		PatientService patientService = Context.getPatientService();
 		CalculationResultMap ret = new CalculationResultMap();
-		for (Integer ptId : alive) {
-			boolean result = false;
-			Date dateCreated = null;
+
+		for (Integer ptId : alive) {			
+			boolean eligible = false;
 			Date currentDate = new Date();
+			Double duration = 0.0;
+			Date dateCreated = null;
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 			String todayDate = dateFormat.format(currentDate);
 			Patient patient = patientService.getPatient(ptId);
 
 			Encounter lastTriageEnc = EmrUtils.lastEncounter(patient, triageEncType, triageScreeningForm);
-			Encounter lastClinicalEncounter = EmrUtils.lastEncounter(patient, consultationEncType, clinicalEncounterForm); //last clinical encounter form
-			Encounter lastGreenCardEnc = EmrUtils.lastEncounter(patient, greenCardEncType, greenCardForm);   //last greencard followup form
+			Encounter lastFollowUpEncounter = EmrUtils.lastEncounter(patient, greenCardEncType, greenCardForm);   //last greencard followup form
+			Encounter lastClinicalEncounter = EmrUtils.lastEncounter(patient, consultationEncType, clinicalEncounterForm);   //last clinical encounter form
+
 			ConceptService cs = Context.getConceptService();
-			Concept vomitingResult = cs.getConcept(VOMITING);
-			Concept diarrheaResult = cs.getConcept(WATERY_DIARRHEA);
+			Concept convulsionResult = cs.getConcept(CONVULSIONS);
+			Concept refusalToFeedResult = cs.getConcept(REFUSAL_TO_FEED);
 			Concept screeningQuestion = cs.getConcept(SCREENING_QUESTION);
 
-			boolean patientVomitTriageEncResult = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, vomitingResult) : false;
-			boolean patientDiarrheaTriageEncResult = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, diarrheaResult) : false;
-			boolean patientVomitClinicalEncResult = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, vomitingResult) : false;
-			boolean patientDiarrheaClinicalEncResult = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, diarrheaResult) : false;
-			boolean patientVomitGreenCardResult = lastGreenCardEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastGreenCardEnc, screeningQuestion, vomitingResult) : false;
-			boolean patientDiarrheaGreenCardResult = lastGreenCardEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastGreenCardEnc, screeningQuestion, diarrheaResult) : false;
-			if (patient.getAge() > 2) {
-				if (lastClinicalEncounter != null) {
-					for (Obs obs : lastClinicalEncounter.getObs()) {
-						if (patientVomitClinicalEncResult && patientDiarrheaClinicalEncResult) {
+			//Convulsion
+			boolean triageEncounterConvulsion = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, convulsionResult) : false;
+			boolean hivFollowupEncounterConvulsion = lastFollowUpEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastFollowUpEncounter, screeningQuestion, convulsionResult) : false;
+			boolean clinicalEncounterConvulsion = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, convulsionResult) : false;
+			//refusal to feed result
+			boolean patientRefusalToFeedResult = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, refusalToFeedResult) : false;
+			boolean patientRefusalToFeedResultGreenCard = lastFollowUpEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastFollowUpEncounter, screeningQuestion, refusalToFeedResult) : false;
+			boolean patientRefusalToFeedResultClinical = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, refusalToFeedResult) : false;
+
+			if (lastTriageEnc != null) {
+				if (triageEncounterConvulsion && patientRefusalToFeedResult) {
+					DateTime birthDate = new DateTime(patient.getBirthdate());
+					int ageInDays = Days.daysBetween(birthDate, new DateTime()).getDays();
+					if (ageInDays >= 2 && ageInDays <= 28) {
+						for (Obs obs : lastTriageEnc.getObs()) {
 							dateCreated = obs.getDateCreated();
 							if (dateCreated != null) {
 								String createdDate = dateFormat.format(dateCreated);
 								if (createdDate.equals(todayDate)) {
-									result = true;
-									break;
-								}
-							}
-						}
-					}
-				}
-				if (lastGreenCardEnc != null) {
-					for (Obs obs : lastGreenCardEnc.getObs()) {
-						if (patientVomitGreenCardResult && patientDiarrheaGreenCardResult) {
-							dateCreated = obs.getDateCreated();
-							if (dateCreated != null) {
-								String createdDate = dateFormat.format(dateCreated);
-								if (createdDate.equals(todayDate)) {
-									result = true;
-									break;
-								}
-							}
-						}
-					}
-				}
-				if (lastTriageEnc != null) {
-					for (Obs obs : lastTriageEnc.getObs()) {
-						if (patientVomitTriageEncResult && patientDiarrheaTriageEncResult) {
-							dateCreated = obs.getDateCreated();
-							if (dateCreated != null) {
-								String createdDate = dateFormat.format(dateCreated);
-								if (createdDate.equals(todayDate)) {
-									result = true;
+									eligible = true;
 									break;
 								}
 							}
@@ -124,8 +106,46 @@ public class CholeraCalculation extends AbstractPatientCalculation {
 				}
 			}
 
-			ret.put(ptId, new BooleanResult(result, this));
-		} 
+			if (lastFollowUpEncounter != null) {
+				if (patientRefusalToFeedResultGreenCard && hivFollowupEncounterConvulsion) {
+					DateTime birthDate = new DateTime(patient.getBirthdate());
+					int ageInDays = Days.daysBetween(birthDate, new DateTime()).getDays();
+					if (ageInDays >= 2 && ageInDays <= 28) {
+						for (Obs obs : lastFollowUpEncounter.getObs()) {
+							dateCreated = obs.getDateCreated();
+							if (dateCreated != null) {
+								String createdDate = dateFormat.format(dateCreated);
+								if (createdDate.equals(todayDate)) {
+									eligible = true;
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+			if (lastClinicalEncounter != null) {
+				if (clinicalEncounterConvulsion && patientRefusalToFeedResultClinical) {
+					DateTime birthDate = new DateTime(patient.getBirthdate());
+					int ageInDays = Days.daysBetween(birthDate, new DateTime()).getDays();
+					if (ageInDays >= 2 && ageInDays <= 28) {
+						for (Obs obs : lastClinicalEncounter.getObs()) {
+							dateCreated = obs.getDateCreated();
+							if (dateCreated != null) {
+								String createdDate = dateFormat.format(dateCreated);
+								if (createdDate.equals(todayDate)) {
+									eligible = true;
+									break;
+								}
+							}
+						}
+					}
+				}
+			}		
+			ret.put(ptId, new BooleanResult(eligible, this));
+          
+		}
+
 		return ret;
 	}
 }

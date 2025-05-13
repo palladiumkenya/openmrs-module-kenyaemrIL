@@ -48,6 +48,7 @@ public class ViralHaemorrhagicFeverCalculation extends AbstractPatientCalculatio
     Integer FEVER = 140238;
     Integer BLEEDING_TENDENCIES = 162628;  
     Integer SCREENING_QUESTION = 5219;
+    Integer DURATION = 159368;
 
     @Override
     public CalculationResultMap evaluate(Collection<Integer> cohort, Map<String, Object> parameterValues, PatientCalculationContext context) {
@@ -60,6 +61,8 @@ public class ViralHaemorrhagicFeverCalculation extends AbstractPatientCalculatio
             boolean eligible = false;
                 Date currentDate = new Date();              
                 Date dateCreated = null;
+                Double tempValue = 0.0;
+                Double duration = 0.0;
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
                 String todayDate = dateFormat.format(currentDate);
                 Patient patient = patientService.getPatient(ptId);
@@ -84,12 +87,16 @@ public class ViralHaemorrhagicFeverCalculation extends AbstractPatientCalculatio
                     if (patientFeverResultGreenCard && patientBleedingResultGreenCard) {
                         for (Obs obs : lastHivFollowUpEncounter.getObs()) {
                             dateCreated = obs.getDateCreated();
-                          
+                            if (obs.getConcept().getConceptId().equals(DURATION)) {
+                                duration = obs.getValueNumeric();
+                            }
                             if (dateCreated != null) {
-                                String createdDate = dateFormat.format(dateCreated);                              
+                                String createdDate = dateFormat.format(dateCreated);
+                                if (duration > 0.0 && duration < 14) {
                                     if (createdDate.equals(todayDate)) {
                                         eligible = true;
-                                        break;                                    
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -98,31 +105,42 @@ public class ViralHaemorrhagicFeverCalculation extends AbstractPatientCalculatio
                 if (lastClinicalEncounter != null) {
                     if (patientFeverResultClinical && patientBleedingResultClinical) {
                         for (Obs obs : lastClinicalEncounter.getObs()) {
-                            dateCreated = obs.getDateCreated();                         
+                            dateCreated = obs.getDateCreated();
+                            if (obs.getConcept().getConceptId().equals(DURATION)) {
+                                duration = obs.getValueNumeric();
+                            }
                             if (dateCreated != null) {
-                                String createdDate = dateFormat.format(dateCreated);                              
+                                String createdDate = dateFormat.format(dateCreated);
+                                if (duration > 0.0 && duration < 14) {
                                     if (createdDate.equals(todayDate)) {
                                         eligible = true;
-                                        break;                                  
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
                 }
-			if (lastTriageEnc != null) {
-				if (patientFeverResultTriage && patientBleedingResultTriage) {
-					for (Obs obs : lastTriageEnc.getObs()) {
-						dateCreated = obs.getDateCreated();
-						if (dateCreated != null) {
-							String createdDate = dateFormat.format(dateCreated);
-							if (createdDate.equals(todayDate)) {
-								eligible = true;
-								break;
-							}
-						}
-					}
-				}
-			}
+                if (lastTriageEnc != null) {
+                    if (patientFeverResultTriage && patientBleedingResultTriage) {
+                        for (Obs obs : lastTriageEnc.getObs()) {
+                            dateCreated = obs.getDateCreated();
+                            if (obs.getConcept().getConceptId().equals(DURATION)) {
+                                duration = obs.getValueNumeric();
+                            }
+                            if (dateCreated != null) {
+                                String createdDate = dateFormat.format(dateCreated);
+                                if (duration > 0.0 && duration < 14) {
+                                    if (createdDate.equals(todayDate)) {
+                                            eligible = true;
+                                            break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 ret.put(ptId, new BooleanResult(eligible, this));
              }
         return ret;
