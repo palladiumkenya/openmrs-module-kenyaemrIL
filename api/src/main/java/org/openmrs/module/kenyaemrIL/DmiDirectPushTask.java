@@ -53,12 +53,10 @@ public class DmiDirectPushTask extends AbstractTask {
 			connection.connect();
 
 			List<Visit> visits = getComplaintsAndDiagnosis(dmiFetchDate);
-			System.out.println("Number of visits: " + visits.size());
             int numberOfVisits = 0;
             if (visits.size() > numberOfVisits) {
 				for (Visit visit : visits) {
 					if (visit != null) {
-						System.out.println("Visit: start sending dmi data");
 						DmiDataExchange dmiDataExchange = new DmiDataExchange();
 						JSONArray params = dmiDataExchange.generateDMIpostPayload(visit, dmiFetchDate);
 						if (!params.isEmpty()) {
