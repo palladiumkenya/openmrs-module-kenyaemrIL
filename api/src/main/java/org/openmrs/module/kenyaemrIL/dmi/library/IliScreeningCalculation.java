@@ -89,7 +89,7 @@ public class IliScreeningCalculation extends AbstractPatientCalculation {
 			boolean patientCoughResultGreenCard = lastFollowUpEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastFollowUpEncounter, screeningQuestion, coughPresenceResult) : false;
 			boolean patientCoughResultClinical = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, coughPresenceResult) : false;
 			boolean patientAdmissionStatus = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, adminQuestion, admissionAnswer) : false;
-			Visit currentVisit = activeVisits.get(0);
+
 			Obs lastTempObs = EmrCalculationUtils.obsResultForPatient(tempMap, ptId);
 			if (lastTempObs != null) {
 				tempValue = lastTempObs.getValueNumeric();
@@ -106,7 +106,7 @@ public class IliScreeningCalculation extends AbstractPatientCalculation {
 							String createdDate = dateFormat.format(dateCreated);
 							if ((duration > 0.0 && duration < 10) && tempValue != null && tempValue >= 38.0) {
 								if (createdDate.equals(todayDate)) {
-									if (!patientAdmissionStatus && currentVisit.getVisitType().getUuid().equals(CommonMetadata._VisitType.OUTPATIENT)) {
+									if (!patientAdmissionStatus) {
 										eligible = true;
 										break;
 									}
@@ -128,7 +128,7 @@ public class IliScreeningCalculation extends AbstractPatientCalculation {
 							String createdDate = dateFormat.format(dateCreated);
 							if ((duration > 0.0 && duration < 10) && tempValue != null && tempValue >= 38.0) {
 								if (createdDate.equals(todayDate)) {
-									if (!patientAdmissionStatus && currentVisit.getVisitType().getUuid().equals(CommonMetadata._VisitType.OUTPATIENT)) {
+									if (!patientAdmissionStatus) {
 										eligible = true;
 										break;
 									}
@@ -149,7 +149,7 @@ public class IliScreeningCalculation extends AbstractPatientCalculation {
 							String createdDate = dateFormat.format(dateCreated);
 							if ((duration > 0.0 && duration < 10) && tempValue != null && tempValue >= 38.0) {
 								if (createdDate.equals(todayDate)) {
-									if (!patientAdmissionStatus && currentVisit.getVisitType().getUuid().equals(CommonMetadata._VisitType.OUTPATIENT)) {
+									if (!patientAdmissionStatus) {
 										eligible = true;
 										break;
 									}
