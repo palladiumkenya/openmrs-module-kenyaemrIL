@@ -32,10 +32,14 @@ import java.util.*;
 
 /**
  * Calculates the eligibility for ILI screening flag for  patients
- * @should calculate cough for Jaundice
+ * @should calculate cough for <= 10 days
+ * @should calculate fever for <= 10 days
+ * @should calculate temperature  for >= 38.0 same day
+ * @should calculate not admitted
+ * @should calculate duration < 10 days
  */
-public class AcuteJaundiceScreeningCalculation extends AbstractPatientCalculation {
-	protected static final Log log = LogFactory.getLog(AcuteJaundiceScreeningCalculation.class);
+public class AcuteFebrileIllnessCalculation extends AbstractPatientCalculation {
+	protected static final Log log = LogFactory.getLog(AcuteFebrileIllnessCalculation.class);
 	public static final EncounterType triageEncType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.TRIAGE);
 	public static final Form triageScreeningForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.TRIAGE);
 	public static final EncounterType consultationEncType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.CONSULTATION);
@@ -44,8 +48,11 @@ public class AcuteJaundiceScreeningCalculation extends AbstractPatientCalculatio
 	public static final EncounterType greenCardEncType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION);
 	public static final Form greenCardForm = MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD);
 
-	Integer JAUNDICE = 136443;
-	Integer SCREENING_QUESTION = 162737;
+	Integer MEASURE_FEVER = 140238;
+	Integer DURATION = 159368;
+	Integer SCREENING_QUESTION = 5219;
+	Integer TEMPERATURE = 5088;
+
 	/**
 	 * Evaluates the calculation
 	 */
@@ -59,7 +66,10 @@ public class AcuteJaundiceScreeningCalculation extends AbstractPatientCalculatio
 
 		for (Integer ptId : alive) {			
 			boolean eligible = false;
+			List<Visit> activeVisits = Context.getVisitService().getActiveVisitsByPatient(patientService.getPatient(ptId));
 			Date currentDate = new Date();
+			Double tempValue = 0.0;
+			Double duration = 0.0;
 			Date dateCreated = null;
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 			String todayDate = dateFormat.format(currentDate);
@@ -70,51 +80,75 @@ public class AcuteJaundiceScreeningCalculation extends AbstractPatientCalculatio
 			Encounter lastClinicalEncounter = EmrUtils.lastEncounter(patient, consultationEncType, clinicalEncounterForm);   //last clinical encounter form
 
 			ConceptService cs = Context.getConceptService();
-			Concept jaundicePresenceResult = cs.getConcept(JAUNDICE);
+			Concept feverPresenceResult = cs.getConcept(MEASURE_FEVER);
 			Concept screeningQuestion = cs.getConcept(SCREENING_QUESTION);
 
-			//Jaundice
-			boolean triageEncounterHasJaundice = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, jaundicePresenceResult) : false;
-			boolean hivFollowupEncounterHasJaundice = lastFollowUpEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastFollowUpEncounter, screeningQuestion, jaundicePresenceResult) : false;
-			boolean clinicalEncounterHasJaundice = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, jaundicePresenceResult) : false;
+			CalculationResultMap tempMap = Calculations.lastObs(cs.getConcept(TEMPERATURE), cohort, context);
+			boolean patientFeverResult = lastTriageEnc != null ? EmrUtils.encounterThatPassCodedAnswer(lastTriageEnc, screeningQuestion, feverPresenceResult) : false;
+			boolean patientFeverResultGreenCard = lastFollowUpEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastFollowUpEncounter, screeningQuestion, feverPresenceResult) : false;
+			boolean patientFeverResultClinical = lastClinicalEncounter != null ? EmrUtils.encounterThatPassCodedAnswer(lastClinicalEncounter, screeningQuestion, feverPresenceResult) : false;
+
+
+			Obs lastTempObs = EmrCalculationUtils.obsResultForPatient(tempMap, ptId);
+			if (lastTempObs != null) {
+				tempValue = lastTempObs.getValueNumeric();
+			}
 
 			if (lastTriageEnc != null) {
-				if (triageEncounterHasJaundice) {
+				if (patientFeverResult) {
 					for (Obs obs : lastTriageEnc.getObs()) {
 						dateCreated = obs.getDateCreated();
+						if (obs.getConcept().getConceptId().equals(DURATION)) {
+							duration = obs.getValueNumeric();
+						}
 						if (dateCreated != null) {
 							String createdDate = dateFormat.format(dateCreated);
-							if (createdDate.equals(todayDate)) {
-								eligible = true;
-								break;
+							if ((duration > 0.0 && duration < 14) && tempValue != null && tempValue >= 38.0) {
+								if (createdDate.equals(todayDate)) {
+										eligible = true;
+										break;
+
+								}
 							}
 						}
 					}
 				}
 			}
+
 			if (lastFollowUpEncounter != null) {
-				if (hivFollowupEncounterHasJaundice) {
+				if (patientFeverResultGreenCard) {
 					for (Obs obs : lastFollowUpEncounter.getObs()) {
 						dateCreated = obs.getDateCreated();
+						if (obs.getConcept().getConceptId().equals(DURATION)) {
+							duration = obs.getValueNumeric();
+						}
 						if (dateCreated != null) {
 							String createdDate = dateFormat.format(dateCreated);
-							if (createdDate.equals(todayDate)) {
-								eligible = true;
-								break;
+							if ((duration > 0.0 && duration < 14) && tempValue != null && tempValue >= 38.0) {
+								if (createdDate.equals(todayDate)) {
+										eligible = true;
+										break;
+
+								}
 							}
 						}
 					}
 				}
 			}
 			if (lastClinicalEncounter != null) {
-				if (clinicalEncounterHasJaundice) {
+				if (patientFeverResultClinical) {
 					for (Obs obs : lastClinicalEncounter.getObs()) {
 						dateCreated = obs.getDateCreated();
+						if (obs.getConcept().getConceptId().equals(DURATION)) {
+							duration = obs.getValueNumeric();
+						}
 						if (dateCreated != null) {
 							String createdDate = dateFormat.format(dateCreated);
-							if (createdDate.equals(todayDate)) {
-								eligible = true;
-								break;
+							if ((duration > 0.0 && duration < 14) && tempValue != null && tempValue >= 38.0) {
+								if (createdDate.equals(todayDate)) {
+										eligible = true;
+										break;
+								}
 							}
 						}
 					}
