@@ -98,8 +98,8 @@ public class DmiDataExchange {
 			conditionMap.put(conditionId, conditionName);
 		}
 		// 8. Acute Watery Diarrhoeal Disease Screening Calculation
-		CalculationResult measlesFlaggedResults = EmrCalculationUtils.evaluateForPatient(AcuteWateryDiarrhoealDiseaseScreeningCalculation.class, null, patient);
-		if (!measlesFlaggedResults.isEmpty()) {
+		CalculationResult acuteWateryDiarrhoea = EmrCalculationUtils.evaluateForPatient(AcuteWateryDiarrhoealDiseaseScreeningCalculation.class, null, patient);
+		if (!acuteWateryDiarrhoea.isEmpty()) {
 			conditionName = "Acute Watery Diarrhoea";
 			conditionId = 8;
 			conditionMap.put(conditionId, conditionName);
