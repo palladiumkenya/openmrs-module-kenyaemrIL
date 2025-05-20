@@ -406,8 +406,7 @@ public class DmiDataExchange {
 				}
 			}
 
-		}
-		System.out.println("DMI Paylod  == >"+payload.toString());
+		}	
 		return payload;
 	}
 }
