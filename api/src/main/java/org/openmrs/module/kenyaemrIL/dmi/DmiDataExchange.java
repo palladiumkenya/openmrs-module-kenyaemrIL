@@ -64,21 +64,21 @@ public class DmiDataExchange {
 		// 3. suspected jaundice case
 		CalculationResult jaundiceFlaggedResults = EmrCalculationUtils.evaluateForPatient(AcuteJaundiceScreeningCalculation.class, null, patient);
 		if (!jaundiceFlaggedResults.isEmpty()) {
-			conditionName = "JAUNDICE";
+			conditionName = "Acute Jaundice";
 			conditionId = 3;
 			conditionMap.put(conditionId, conditionName);
 		}
 		// 4. suspected viral haemorrhagic fever case
 		CalculationResult vhfFlaggedResults = EmrCalculationUtils.evaluateForPatient(ViralHaemorrhagicFeverCalculation.class, null, patient);
 		if (!vhfFlaggedResults.isEmpty()) {
-			conditionName = "VIRAL HAEMORRHAGIC FEVER";
+			conditionName = "Acute Haemorrhagic Fever";
 			conditionId = 4;
 			conditionMap.put(conditionId, conditionName);
 		}
 		// 5. suspected meningitis
 		CalculationResult meningitisFlaggedResults = EmrCalculationUtils.evaluateForPatient(AcuteMeningitisScreeningCalculation.class, null, patient);
 		if (!meningitisFlaggedResults.isEmpty()) {
-			conditionName = "ACUTE MENINGITIS AND ENCEPHALITIS";
+			conditionName = "Acute Meningitis and Encephalitis";
 			conditionId = 5;
 			conditionMap.put(conditionId, conditionName);
 		}
@@ -93,7 +93,7 @@ public class DmiDataExchange {
 		// 7. suspected Neurological Syndrome Screening Calculation
 		CalculationResult neurologicalFlaggedResults = EmrCalculationUtils.evaluateForPatient(NeurologicalSyndromeScreeningCalculation.class, null, patient);
 		if (!neurologicalFlaggedResults.isEmpty()) {
-			conditionName = "Neurological Syndrome";
+			conditionName = "Neurological  Syndrome";
 			conditionId = 7;
 			conditionMap.put(conditionId, conditionName);
 		}
@@ -407,6 +407,7 @@ public class DmiDataExchange {
 			}
 
 		}
+		System.out.println("DMI Paylod  == >"+payload.toString());
 		return payload;
 	}
 }
