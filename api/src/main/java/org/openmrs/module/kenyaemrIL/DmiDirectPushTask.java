@@ -38,7 +38,6 @@ public class DmiDirectPushTask extends AbstractTask {
 		// Fetch the last date of fetch
 		Date dmiFetchDate = null;
 		GlobalProperty dmiGlobalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("dmiTask.lastFetchDateAndTime");
-
 		try {
 			String ts = dmiGlobalPropertyObject.getValue().toString();
 			dmiFetchDate = formatter.parse(ts);
@@ -51,9 +50,7 @@ public class DmiDirectPushTask extends AbstractTask {
 			// check first if there is internet connectivity before pushing
 			URLConnection connection = new URL(url).openConnection();
 			connection.connect();
-
 			List<Visit> visits = getComplaintsAndDiagnosis(dmiFetchDate);
-			System.out.println("Number of visits: " + visits.size());
             int numberOfVisits = 0;
             if (visits.size() > numberOfVisits) {
 				for (Visit visit : visits) {

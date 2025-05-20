@@ -44,10 +44,8 @@ public class AcuteWateryDiarrhoealDiseaseScreeningCalculation extends AbstractPa
 	public static final Form greenCardForm = MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD);
 	Integer DURATION = 159368;
 	Integer SCREENING_QUESTION = 5219;
-	Integer RASH = 512;
-	Integer MEASURE_FEVER = 140238;
 	Integer WATERY_DIARRHEA = 161887;
-	String NUMBER_OF_MOTIONS = "164456AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+	Integer NUMBER_OF_MOTIONS = 164456;
 	/**
 	 * Evaluates the calculation
 	 */
@@ -85,10 +83,10 @@ public class AcuteWateryDiarrhoealDiseaseScreeningCalculation extends AbstractPa
 				if (triageEncounterHasWateryDiarrhea) {
 					for (Obs obs : lastTriageEnc.getObs()) {
 						dateCreated = obs.getDateCreated();
-						if (obs.getConcept().getUuid().equals(NUMBER_OF_MOTIONS)) {
+						if (obs.getConcept().getConceptId().equals(NUMBER_OF_MOTIONS)) {
 							motions = obs.getValueNumeric();
 						}
-						if (obs.getConcept().getUuid().equals(DURATION)) {
+						if (obs.getConcept().getConceptId().equals(DURATION)) {
 							duration = obs.getValueNumeric();
 						}
 						if (dateCreated != null) {
@@ -110,10 +108,10 @@ public class AcuteWateryDiarrhoealDiseaseScreeningCalculation extends AbstractPa
 				if (hivFollowupEncounterHasWateryDiarrhea) {
 					for (Obs obs : lastFollowUpEncounter.getObs()) {
 						dateCreated = obs.getDateCreated();
-						if (obs.getConcept().getUuid().equals(NUMBER_OF_MOTIONS)) {
+						if (obs.getConcept().getConceptId().equals(NUMBER_OF_MOTIONS)) {
 							motions = obs.getValueNumeric();
 						}
-						if (obs.getConcept().getUuid().equals(DURATION)) {
+						if (obs.getConcept().getConceptId().equals(DURATION)) {
 							duration = obs.getValueNumeric();
 						}
 						if (dateCreated != null) {
@@ -134,10 +132,10 @@ public class AcuteWateryDiarrhoealDiseaseScreeningCalculation extends AbstractPa
 				if (clinicalEncounterHasWateryDiarrhea) {
 					for (Obs obs : lastClinicalEncounter.getObs()) {
 						dateCreated = obs.getDateCreated();
-						if (obs.getConcept().getUuid().equals(NUMBER_OF_MOTIONS)) {
+						if (obs.getConcept().getConceptId().equals(NUMBER_OF_MOTIONS)) {
 							motions = obs.getValueNumeric();
 						}
-						if (obs.getConcept().getUuid().equals(DURATION)) {
+						if (obs.getConcept().getConceptId().equals(DURATION)) {
 							duration = obs.getValueNumeric();
 						}
 						if (dateCreated != null) {

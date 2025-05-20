@@ -118,6 +118,13 @@ public class DmiDataExchange {
 			conditionId = 10;
 			conditionMap.put(conditionId, conditionName);
 		}
+		// 11. suspected measles case
+		CalculationResult acuteFebrileIllnessScreeningCalculation = EmrCalculationUtils.evaluateForPatient(AcuteFebrileIllnessCalculation.class, null, patient);
+		if (!acuteFebrileIllnessScreeningCalculation.isEmpty()) {
+			conditionName = "Acute Febrile Illness";
+			conditionId = 11;
+			conditionMap.put(conditionId, conditionName);
+		}
 		if (!conditionMap.isEmpty()) {
 			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 			SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
