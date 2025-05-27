@@ -101,7 +101,7 @@ public class SariScreeningCalculation extends AbstractPatientCalculation {
 			}
 
 			if (lastTriageEnc != null) {
-				if (patientFeverResult && patientCoughResult) {
+				if (patientCoughResult) {
 					for (Obs obs : lastTriageEnc.getObs()) {
 						dateCreated = obs.getDateCreated();
 						if (obs.getConcept().getConceptId().equals(DURATION)) {
@@ -109,7 +109,7 @@ public class SariScreeningCalculation extends AbstractPatientCalculation {
 						}
 						if (dateCreated != null) {
 							String createdDate = dateFormat.format(dateCreated);
-							if ((duration > 0.0 && duration < 10) && tempValue != null && tempValue >= 38.0) {
+							if ((duration > 0.0 && duration < 10 && tempValue != null && tempValue >= 38.0) || patientFeverResult ) {
 								if (createdDate.equals(todayDate)) {
 									if (patientAdmissionStatus || (lastVisit != null && lastVisit.getVisitType().equals("Inpatient"))) {
 										eligible = true;
@@ -123,7 +123,7 @@ public class SariScreeningCalculation extends AbstractPatientCalculation {
 			}
 
 			if (lastFollowUpEncounter != null) {
-				if (patientFeverResultGreenCard && patientCoughResultGreenCard) {
+				if (patientCoughResultGreenCard) {
 					for (Obs obs : lastFollowUpEncounter.getObs()) {
 						dateCreated = obs.getDateCreated();
 						if (obs.getConcept().getConceptId().equals(DURATION)) {
@@ -131,7 +131,7 @@ public class SariScreeningCalculation extends AbstractPatientCalculation {
 						}
 						if (dateCreated != null) {
 							String createdDate = dateFormat.format(dateCreated);
-							if ((duration > 0.0 && duration < 10) && tempValue != null && tempValue >= 38.0) {
+							if ((duration > 0.0 && duration < 10 && tempValue != null && tempValue >= 38.0) || patientFeverResultGreenCard) {
 								if (createdDate.equals(todayDate)) {
 									if (patientAdmissionStatus || (lastVisit != null && lastVisit.getVisitType().equals("Inpatient"))) {
 										eligible = true;
@@ -144,7 +144,7 @@ public class SariScreeningCalculation extends AbstractPatientCalculation {
 				}
 			}
 			if (lastClinicalEncounter != null) {
-				if (patientFeverResultClinical && patientCoughResultClinical) {
+				if (patientCoughResultClinical) {
 					for (Obs obs : lastClinicalEncounter.getObs()) {
 						dateCreated = obs.getDateCreated();
 						if (obs.getConcept().getConceptId().equals(DURATION)) {
@@ -152,7 +152,7 @@ public class SariScreeningCalculation extends AbstractPatientCalculation {
 						}
 						if (dateCreated != null) {
 							String createdDate = dateFormat.format(dateCreated);
-							if ((duration > 0.0 && duration < 10) && tempValue != null && tempValue >= 38.0) {
+							if ((duration > 0.0 && duration < 10 && tempValue != null && tempValue >= 38.0) || patientFeverResultClinical) {
 								if (createdDate.equals(todayDate)) {
 									if (patientAdmissionStatus || (lastVisit != null && lastVisit.getVisitType().equals("Inpatient"))) {
 										eligible = true;

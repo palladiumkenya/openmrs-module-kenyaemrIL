@@ -5,6 +5,7 @@ import org.apache.commons.logging.LogFactory;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.openmrs.*;
+import org.openmrs.api.ConditionService;
 import org.openmrs.api.DiagnosisService;
 import org.openmrs.api.context.Context;
 import org.openmrs.calculation.result.CalculationResult;
@@ -189,7 +190,7 @@ public class DmiDataExchange {
 			Integer doses = null;
 
 			//Set<Encounter> encounters = visit.getEncounters();
-			if (!visit.getEncounters().isEmpty()) {				
+			if (!visit.getEncounters().isEmpty()) {
 				for (Encounter encounter : visit.getEncounters()) {
 					if (encounter.getEncounterType().equals(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.CONSULTATION)) ||
 						encounter.getEncounterType().equals(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.TRIAGE)) ||
@@ -201,19 +202,31 @@ public class DmiDataExchange {
 						//Diagnosis		
 						//Gets final and preliminary diagnosis
 						DiagnosisService diagnosisService = Context.getDiagnosisService();
-				
+
 						List<Diagnosis> allDiagnosis = diagnosisService.getDiagnosesByEncounter(encounter, false, false);
 						if (!allDiagnosis.isEmpty()) {
 							for (Diagnosis diagnosisType : allDiagnosis) {
-								if(diagnosisType.getCertainty().equals(ConditionVerificationStatus.CONFIRMED)){							
-								diagnosisName = diagnosisType.getDiagnosis().getCoded().getName().getName();
-								diagnosisId = diagnosisType.getDiagnosis().getCoded().getId().toString();	
-								status = "final";								
-						    	}else {
+								if (diagnosisType.getCertainty().equals(ConditionVerificationStatus.CONFIRMED)) {
 									diagnosisName = diagnosisType.getDiagnosis().getCoded().getName().getName();
 									diagnosisId = diagnosisType.getDiagnosis().getCoded().getId().toString();
-									status = "preliminary";									
+									status = "final";
+								} else {
+									diagnosisName = diagnosisType.getDiagnosis().getCoded().getName().getName();
+									diagnosisId = diagnosisType.getDiagnosis().getCoded().getId().toString();
+									status = "preliminary";
 								}
+							}
+						}
+						//Conditions		
+						//Gets conditions
+						ConditionService conditionService = Context.getConditionService();
+						List<Condition> allConditions = conditionService.getAllConditions(encounter.getPatient());
+						if (!allConditions.isEmpty()) {
+							for (Condition conditionType : allConditions) {
+								//Risk factors
+								riskFactor = conditionType.getCondition().getCoded().getName().getName();
+								riskFactorId = conditionType.getCondition().getCoded().getId().toString();
+
 							}
 						}
 
@@ -256,11 +269,6 @@ public class DmiDataExchange {
 									finalOutcome = "Death";
 									finalOutcomeDate = sd.format(obs.getObsDatetime());
 								}
-							}
-							//Risk factors
-							if (obs.getConcept().getConceptId().equals(1284)) {
-								riskFactor = obs.getValueCoded().getName().getName();
-								riskFactorId = obs.getValueCoded().getConceptId().toString();
 							}
 							//Vaccinations
 							if (obs.getConcept().getConceptId().equals(1198)) {
@@ -401,12 +409,13 @@ public class DmiDataExchange {
 					} else {
 						payloadObj.put("flaggedConditions", conditionFlagged);
 					}
-					
+
 					payload.add(payloadObj);
 				}
 			}
 
-		}	
+		}
+		System.out.println("DMI Paylod  == >"+payload.toString());
 		return payload;
 	}
 }
