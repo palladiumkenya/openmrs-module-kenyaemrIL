@@ -16,12 +16,14 @@ import org.openmrs.EncounterType;
 import org.openmrs.Form;
 import org.openmrs.Obs;
 import org.openmrs.Order;
+import org.openmrs.OrderType;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PatientIdentifierType;
 import org.openmrs.PersonAddress;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.EncounterService;
+import org.openmrs.api.OrderService;
 import org.openmrs.api.context.Context;
 import org.openmrs.calculation.result.CalculationResult;
 import org.openmrs.module.kenyaemr.Dictionary;
@@ -37,6 +39,8 @@ import org.openmrs.module.kenyaemr.wrapper.PatientWrapper;
 import org.openmrs.module.kenyaemrIL.dmi.dmiUtils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.parameter.EncounterSearchCriteria;
+import org.openmrs.parameter.EncounterSearchCriteriaBuilder;
+import org.openmrs.parameter.OrderSearchCriteriaBuilder;
 import org.openmrs.ui.framework.SimpleObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +54,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -74,7 +79,23 @@ public class CaseSurveillanceDataExchange {
     private static final String PrEP_INITIAL_FORM = "1bfb09fc-56d7-4108-bd59-b2765fd312b8";
     private static final String PrEP_NUMBER_IDENTIFIER_TYPE_UUID = "ac64e5cb-e3e2-4efa-9060-0dd715a843a1";
     private static final int PrEP_REGIMEN_CONCEPT_ID = 164515;
+    EncounterService encounterService = Context.getEncounterService();
+    OrderService orderService = Context.getOrderService();
+
+    Concept vlUndetectableConcept = MetadataUtils.existing(Concept.class, Metadata.Concept.HIV_VIRAL_LOAD_QUALITATIVE);
+    Concept vlQuatitativeConcept = MetadataUtils.existing(Concept.class, Metadata.Concept.HIV_VIRAL_LOAD);
+
+    EncounterType hivConsultationEncounterType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION);
+    EncounterType mchMotherEncounterType = MetadataUtils.existing(EncounterType.class, MchMetadata._EncounterType.MCHMS_CONSULTATION);
+    EncounterType labResultsEncounterType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.LAB_RESULTS);
+    EncounterType labOrderEncounterType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.DRUG_ORDER);
+
+    Form ancForm = MetadataUtils.existing(Form.class, MchMetadata._Form.MCHMS_ANTENATAL_VISIT);
+    Form pncForm = MetadataUtils.existing(Form.class, MchMetadata._Form.MCHMS_POSTNATAL_VISIT);
+
     private static final Concept YES = Dictionary.getConcept(Dictionary.YES);
+    private static final Concept MIXED_FEEDING = Dictionary.getConcept(Dictionary.MIXED_FEEDING);
+    private static final Concept EXCLUSIVE_BREASTFEEDING = Dictionary.getConcept(Dictionary.BREASTFED_EXCLUSIVELY);
 
     // Utility method for null-safe string extraction
     private static String safeGetField(PersonAddress address, Function<PersonAddress, String> mapper) {
@@ -165,7 +186,8 @@ public class CaseSurveillanceDataExchange {
     }
 
     // Utility method for creating structured SimpleObject for VL Eligibility variables
-    private SimpleObject mapToVlEligibilityObject(Encounter encounter, Patient patient, String upn, boolean pregnant, boolean breastfeeding, String vlResult, Date vlresultDate, Date vlOrderDate, String artStartDate) {
+    private SimpleObject mapToVlEligibilityObject(Encounter encounter, String upn, boolean pregnant, boolean breastfeeding, String vlResult, Date vlresultDate, Date vlOrderDate, String artStartDate) {
+        Patient patient = encounter.getPatient();
         PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
         String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
         return SimpleObject.create(
@@ -357,29 +379,20 @@ public class CaseSurveillanceDataExchange {
                 continue;
             }
 
-            String artStartDate = null;
-
-            CalculationResult artStartDateResults = EmrCalculationUtils
-                    .evaluateForPatient(InitialArtStartDateCalculation.class, null, patient);
-
-            if (artStartDateResults != null && artStartDateResults.getValue() != null) {
-                artStartDate = formatDateTime((Date) artStartDateResults.getValue());
-            } else {
-                log.warn("ART Start Date Calculation returned null for patient: " + patient.getPatientId());
+            String artStartDate = getArtStartDate(patient);
+            if (artStartDate == null) {
+                log.warn("Encounter has no ART start date, skipping..."); //todo review
+                continue;
             }
 
-            // **Only add if artStartDate is not null**
-            if (artStartDate != null) {
-                try {
-                    DateFormat dateFormat = new SimpleDateFormat(DATE_TIME_FORMAT);
-                    Date artStartDateAsDate = dateFormat.parse(artStartDate);
-                    if (fetchDate.compareTo(artStartDateAsDate) <= 0) {
-                        result.add(mapToLinkageObject(encounter, patient, artStartDate));
-                    }
-                } catch (ParseException e) {
-                    log.error("Error parsing artStartDate: " + e.getMessage());
+            try {
+                DateFormat dateFormat = new SimpleDateFormat(DATE_TIME_FORMAT);
+                Date artStartDateAsDate = dateFormat.parse(artStartDate);
+                if (fetchDate.compareTo(artStartDateAsDate) <= 0) {
+                    result.add(mapToLinkageObject(encounter, patient, artStartDate));
                 }
-
+            } catch (ParseException e) {
+                log.error("Error parsing artStartDate: " + e.getMessage());
             }
         }
         return result;
@@ -559,116 +572,107 @@ public class CaseSurveillanceDataExchange {
 
     /**
      * VL eligibility variables
-     *
      * @param fetchDate
      * @return
      */
     public List<SimpleObject> eligibleForVl(Date fetchDate) {
+
         if (fetchDate == null) {
             throw new IllegalArgumentException("Fetch date cannot be null");
         }
-        Integer qlvViralLoad = Dictionary.getConcept(Dictionary.HIV_VIRAL_LOAD_QUALITATIVE).getConceptId();
-        Integer qtvViralLoad = Dictionary.getConcept(Dictionary.HIV_VIRAL_LOAD).getConceptId();
-        Concept pregnancyStatusQstn = Dictionary.getConcept(Dictionary.PREGNANCY_STATUS);
-        Concept breastfeedingStatusQstn = Dictionary.getConcept(Dictionary.CURRENTLY_BREASTFEEDING);
+
         List<SimpleObject> result = new ArrayList<>();
-        ConceptService conceptService = Context.getConceptService();
-        EncounterService encounterService = Context.getEncounterService();
 
-// Get relevant encounter types
-        List<EncounterType> hivEncounterType = Collections.singletonList(MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION));
-        List<Form> hivGreenCard = Collections.singletonList(MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD));
+        List<Encounter> latestEncounters = new ArrayList<>(getLatestEncounters(fetchDate));
 
-// Build HIV visit encounter search criteria
-        EncounterSearchCriteria hivVisitSearchCriteria = new EncounterSearchCriteria(
-                null, null, fetchDate, null, null, hivGreenCard, hivEncounterType, null, null, null, false
-        );
+        System.out.println("latestEncounters: " + latestEncounters.size());
 
-        List<Encounter> hivConsultationEncounters = encounterService.getEncounters(hivVisitSearchCriteria);
+        if (latestEncounters.isEmpty()) {
+            log.warn("No eligible encounters found for VL eligibility, skipping...");
+            return result;
+        }
 
-        if (!hivConsultationEncounters.isEmpty()) {
-            hivConsultationEncounters.sort(Comparator.comparing(Encounter::getEncounterDatetime));
-            Encounter greenCardEncounter = hivConsultationEncounters.get(hivConsultationEncounters.size() - 1);
-            Patient patient = greenCardEncounter.getPatient();
-            String artStartDate;
+        String artStartDate;
+        String upn;
 
-            CalculationResult artStartDateResults = EmrCalculationUtils
-                    .evaluateForPatient(InitialArtStartDateCalculation.class, null, patient);
-
-            if (artStartDateResults != null && artStartDateResults.getValue() != null) {
-                artStartDate = formatDateTime((Date) artStartDateResults.getValue());
-            } else {
-                log.warn("ART Start Date Calculation returned null for patient: " + patient.getPatientId());
-                artStartDate = null;
-            }
-
-            PatientIdentifierType upnIdentifierType = MetadataUtils.existing(PatientIdentifierType.class, Metadata.IdentifierType.UNIQUE_PATIENT_NUMBER);
-            PatientIdentifier upnIdentifier = patient.getPatientIdentifier(upnIdentifierType);
-            String upn = upnIdentifier != null ? upnIdentifier.getIdentifier() : null;
-
-            Set<Obs> obsSet = greenCardEncounter.getObs();
-            boolean pregnant = false, breastfeeding = false;
-            for (Obs obs : obsSet) {
-                if (Objects.equals(obs.getConcept(), pregnancyStatusQstn)) { // Check concept ID
-                    Concept valueCoded = obs.getValueCoded();
-                    if (valueCoded != null) {
-                        pregnant = valueCoded.equals(YES);
-                    }
-                } else if (Objects.equals(obs.getConcept(), breastfeedingStatusQstn)) {
-                    Concept valueCoded = obs.getValueCoded();
-                    if (valueCoded != null) {
-                        breastfeeding = valueCoded.equals(YES);
-                    }
-                }
-            }
-            PatientWrapper patientWrapper = new PatientWrapper(patient);
-
-            Obs obs = patientWrapper.lastObs(MetadataUtils.existing(Concept.class, Metadata.Concept.HIV_VIRAL_LOAD_QUALITATIVE));
-
-            Obs qtyObs = patientWrapper.lastObs(MetadataUtils.existing(Concept.class, Metadata.Concept.HIV_VIRAL_LOAD));
-
+        for (Encounter encounter : latestEncounters) {
             String vlResult = "";
             Date vlresultDate = null;
-            Date vlOrderDate;
-            Obs latestObs;
+            Date vlOrderDate = null;
+            boolean isPregnant = false;
+            boolean isBreastFeeding = false;
 
-            if (qtyObs == null) {
-                latestObs = obs;
-            } else if (obs != null && obs.getObsDatetime() != null && qtyObs.getObsDatetime() != null) {
-                latestObs = obs.getObsDatetime().after(qtyObs.getObsDatetime()) ? obs : qtyObs;
-            } else {
-                latestObs = qtyObs;
+            Patient patient = encounter.getPatient();
+
+            if (patient == null) {
+                log.warn("Encounter has no patient, skipping...");
+                continue;
+            }
+            PatientWrapper patientWrapper = new PatientWrapper(patient);
+            upn = patientWrapper.getUniquePatientNumber();
+
+            if( upn == null || upn.isEmpty()) {
+                log.warn("Not a CCC client, skipping...");
+                continue;
             }
 
-            if (latestObs != null && latestObs.getConcept() != null) {
-                Integer conceptId = latestObs.getConcept().getConceptId();
+            artStartDate = getArtStartDate(patient);
 
-                if (conceptId != null && conceptId.equals(qlvViralLoad)) {
-                    if (latestObs.getValueCoded() != null &&
-                            latestObs.getValueCoded().getName() != null &&
-                            latestObs.getValueCoded().getName().getName() != null) {
+            Encounter latestMCHEnc = patientWrapper.lastEncounter(mchMotherEncounterType);
+            Encounter latestHIVConsultationEnc = patientWrapper.lastEncounter(hivConsultationEncounterType);
 
-                        vlResult = latestObs.getValueCoded().getName().getName();
-                        vlresultDate = latestObs.getObsDatetime();
-                    }
-                } else if (conceptId != null && conceptId.equals(qtvViralLoad)) {
-                    if (latestObs.getValueNumeric() != null) {
-                        vlResult = latestObs.getValueNumeric().toString();
-                        vlresultDate = latestObs.getObsDatetime();
-                    }
+            Order latestVlOrder = getLatestVlOrderForPatient(patient);
+
+            Encounter latestVlResultsEnc = null;
+            Encounter latestVlOrderEncounter = null;
+            Obs latestVlOrderResultObs = null;
+
+            if(latestVlOrder != null){
+                vlOrderDate = latestVlOrder.getDateActivated();
+                latestVlOrderEncounter = latestVlOrder.getEncounter();
+                latestVlOrderResultObs = getLatestVlResultObs(patient, latestVlOrder);
+                latestVlResultsEnc = latestVlOrderResultObs != null ? latestVlOrderResultObs.getEncounter(): null;
+            }
+
+         if(latestMCHEnc == null && latestHIVConsultationEnc == null && (latestVlOrderEncounter == null || latestVlOrderEncounter.getEncounterDatetime().compareTo(fetchDate) < 0)
+                 && (latestVlResultsEnc == null || latestVlResultsEnc.getEncounterDatetime().compareTo(fetchDate) < 0)) {
+             log.warn("No MCH, HIV consultation or viral load encounters found for patient: " + patient.getPatientId());
+             continue;
+         }
+            Obs undetectableObs = patientWrapper.lastObs(vlUndetectableConcept);
+            Obs qtyObs = patientWrapper.lastObs(vlQuatitativeConcept);
+            if (latestVlOrderResultObs != null) {
+                if (vlUndetectableConcept.equals(latestVlOrderResultObs.getConcept())) {
+                    vlResult = undetectableObs.getValueCoded() != null ? undetectableObs.getValueCoded().getName().getName() : "";
+                    vlresultDate = undetectableObs.getObsDatetime();
+                } else if (vlQuatitativeConcept.equals(latestVlOrderResultObs.getConcept())) {
+                    vlResult = qtyObs.getValueNumeric() != null ? qtyObs.getValueNumeric().toString() : "";
+                    vlresultDate = qtyObs.getObsDatetime();
                 }
             }
 
-            vlOrderDate = Optional.ofNullable(latestObs)
-                    .map(Obs::getOrder)
-                    .map(Order::getDateActivated)
-                    .orElse(null);
+            if (latestHIVConsultationEnc != null && latestHIVConsultationEnc.equals(encounter)) {
+                isPregnant = isPregnant(encounter);
+                isBreastFeeding = isBreastFeeding(encounter);
+            } else if (latestMCHEnc != null && latestMCHEnc.equals(encounter) && encounter.getForm() != null && ancForm.equals(encounter.getForm()) ){
+                isPregnant = true;
 
-            result.add(mapToVlEligibilityObject(greenCardEncounter, patient, upn, pregnant, breastfeeding, vlResult, vlresultDate, vlOrderDate, artStartDate));
+            } else if (latestMCHEnc != null && latestMCHEnc.equals(encounter) && encounter.getForm() != null && pncForm.equals(encounter.getForm()) ){
+
+                Obs infantFeedingObs = encounter.getObs().stream()
+                        .filter(obs -> obs.getConcept().equals(Dictionary.getConcept(Dictionary.INFANT_FEEDING_METHOD)))
+                        .findFirst()
+                        .orElse(null);
+                isBreastFeeding = infantFeedingObs != null && infantFeedingObs.getValueCoded() != null && (EXCLUSIVE_BREASTFEEDING.equals(infantFeedingObs.getValueCoded()) || MIXED_FEEDING.equals(infantFeedingObs.getValueCoded()));
+            }
+
+            result.add(mapToVlEligibilityObject(encounter, upn, isPregnant, isBreastFeeding, vlResult, vlresultDate, vlOrderDate, artStartDate));
         }
+
+        System.out.println("result: " + result);//todo: remove when ready to ship
+
         return result;
     }
-
     /**
      * Patients with enhanced adherence
      *
@@ -784,7 +788,9 @@ public class CaseSurveillanceDataExchange {
         return result;
     }
 
-    /**
+    /**public Encounter getLatestHIVConsultationEncounter() {
+    return getLatestHIVConsultationEncounter(null);
+}
      * HEIs without documented final Outcome
      *
      * @param fetchDate
@@ -882,6 +888,7 @@ public class CaseSurveillanceDataExchange {
         for (SimpleObject heiMissingFinalOutcome : heiWithoutFinalOutcome) {
             payload.add(mapToDatasetStructure(heiMissingFinalOutcome, "hei_without_final_outcome"));
         }
+        System.out.println("payload : " + payload);
         return payload;
     }
 
@@ -1006,7 +1013,151 @@ public class CaseSurveillanceDataExchange {
         if (jsonPayload == null || jsonPayload.isEmpty()) {
             return ("No case surveillance data to send at "+ fetchDate);
         }
+        System.out.println("Case surveillance payload: " + jsonPayload);
         return sendCaseSurveillancePayload(payload);
     }
 
+    public String getArtStartDate(Patient patient) {
+        CalculationResult artStartDateResults = EmrCalculationUtils
+                .evaluateForPatient(InitialArtStartDateCalculation.class, null, patient);
+
+        if (artStartDateResults != null && artStartDateResults.getValue() != null) {
+            return formatDateTime((Date) artStartDateResults.getValue());
+        } else {
+            log.warn("ART Start Date Calculation returned null for patient: " + patient.getPatientId());
+            return null;
+        }
+    }
+
+    public Order getLatestVlOrderForPatient(Patient patient) {
+        OrderService orderService = Context.getOrderService();
+        OrderSearchCriteriaBuilder orderSearchCriteriaBuilder = new OrderSearchCriteriaBuilder()
+                .setPatient(patient)
+                .setConcepts(Arrays.asList(vlQuatitativeConcept, vlUndetectableConcept))
+                .setOrderTypes(Collections.singleton(orderService.getOrderTypeByUuid(OrderType.TEST_ORDER_TYPE_UUID)))
+                .setAction(Order.Action.NEW);
+
+        List<Order> orders = orderService.getOrders(orderSearchCriteriaBuilder.build());
+        if (orders != null && !orders.isEmpty()) {
+            return orders.get(0);
+        }
+        return null;
+    }
+
+    public List<Encounter> getLatestVlResultEncounters(Date fetchDate) {
+        List<Encounter> vlResultsEncounters = new ArrayList<>();
+        OrderSearchCriteriaBuilder orderSearchCriteria = new OrderSearchCriteriaBuilder().
+                setConcepts(Arrays.asList(vlQuatitativeConcept, vlUndetectableConcept))
+                .setOrderTypes(Collections.singleton(orderService.getOrderTypeByUuid(OrderType.TEST_ORDER_TYPE_UUID)))
+                .setFulfillerStatus(Order.FulfillerStatus.COMPLETED)
+                .setAction(Order.Action.NEW)
+                .setIsStopped(true);
+
+       List<Order> orders = orderService.getOrders(orderSearchCriteria.build());
+        if (orders.isEmpty()) {
+            return vlResultsEncounters;
+        }
+
+        for (Order order : orders) {
+            if(!Order.FulfillerStatus.COMPLETED.equals(order.getFulfillerStatus()) && (!vlQuatitativeConcept.equals(order.getConcept()) || !vlUndetectableConcept.equals(order.getConcept()))) {
+                continue;
+            }
+            Encounter e = order.getEncounter();
+            if (e != null) {
+                Set<Obs> obs = e.getObs();
+                for (Obs obsItem : obs) {
+                    if (obsItem.getDateCreated().compareTo(fetchDate) >= 0) {
+                        vlResultsEncounters.add(obsItem.getEncounter());
+                    }
+                }
+
+            }
+        }
+        return vlResultsEncounters;
+    }
+
+    public Obs getLatestVlResultObs(Patient patient, Order vlOrder) {
+        Obs latestObs;
+        PatientWrapper patientWrapper = new PatientWrapper(patient);
+
+        Obs undetectableVLObs = patientWrapper.lastObs(vlUndetectableConcept);
+        Obs qtyObs = patientWrapper.lastObs(vlQuatitativeConcept);
+
+        if (qtyObs == null) {
+            latestObs = undetectableVLObs;
+        } else if (undetectableVLObs != null) {
+            latestObs = undetectableVLObs.getDateCreated().after(qtyObs.getDateCreated()) ? undetectableVLObs : qtyObs;
+        } else {
+            latestObs = qtyObs;
+        }
+        if (latestObs == null) {
+            return null;
+        }
+
+        return vlOrder.equals(latestObs.getOrder()) ? latestObs : null;
+   }
+
+    public Collection<Encounter> getLatestEncounters(Date fetchDate) {
+
+        List<Encounter> vlResultsEncounters = getLatestVlResultEncounters(fetchDate);
+
+        EncounterSearchCriteriaBuilder encounterSearchCriteriaBuilder = new EncounterSearchCriteriaBuilder()
+                .setFromDate(fetchDate)
+                .setEncounterTypes(Arrays.asList(hivConsultationEncounterType, labOrderEncounterType, labResultsEncounterType, mchMotherEncounterType))
+                .setIncludeVoided(false);
+
+        // Fetch all matching encounters
+        List<Encounter> encounterList = encounterService.getEncounters(encounterSearchCriteriaBuilder.createEncounterSearchCriteria());
+        encounterList.addAll(vlResultsEncounters);
+
+        // Map to remember latest encounter for each patient
+        Map<Patient, Encounter> latestEncounterMap = new HashMap<>();
+        for (Encounter encounter : encounterList) {
+            Patient patient = encounter.getPatient();
+            Encounter existingLatest = latestEncounterMap.get(patient);
+
+            if (existingLatest == null
+                    || (encounter.getEncounterDatetime() != null
+                    && encounter.getEncounterDatetime().after(existingLatest.getEncounterDatetime()))) {
+                latestEncounterMap.put(patient, encounter);
+            }
+        }
+        // Return the latest encounter for each patient
+        return latestEncounterMap.values();
+
+    }
+    public boolean isBreastFeeding(Encounter encounter) {
+        boolean  breastfeeding = false;
+        Concept breastfeedingStatusQstn = Dictionary.getConcept(Dictionary.CURRENTLY_BREASTFEEDING);
+        Set<Obs> obsSet = encounter.getObs();
+
+        for (Obs obs : obsSet) {
+            if (Objects.equals(obs.getConcept(), breastfeedingStatusQstn)) {
+                Concept valueCoded = obs.getValueCoded();
+                if (valueCoded != null) {
+
+                    breastfeeding = valueCoded.equals(YES);
+                }
+            }
+        }
+        return breastfeeding;
+    }
+
+    public boolean isPregnant(Encounter encounter){
+        boolean pregnant = false;
+        Concept pregnancyStatusQstn = Dictionary.getConcept(Dictionary.PREGNANCY_STATUS);
+        Set<Obs> obsSet = encounter.getObs();
+
+        for (Obs obs : obsSet) {
+
+            if (Objects.equals(obs.getConcept(), pregnancyStatusQstn)) {
+                Concept valueCoded = obs.getValueCoded();
+                if (valueCoded != null) {
+                    pregnant = valueCoded.equals(YES);
+                }
+            }
+        }
+        return pregnant;
+    }
 }
+
