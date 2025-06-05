@@ -21,10 +21,8 @@ import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PatientIdentifierType;
 import org.openmrs.PersonAddress;
-import org.openmrs.TestOrder;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.EncounterService;
-import org.openmrs.api.ObsService;
 import org.openmrs.api.OrderService;
 import org.openmrs.api.context.Context;
 import org.openmrs.calculation.result.CalculationResult;
@@ -41,7 +39,7 @@ import org.openmrs.module.kenyaemr.wrapper.PatientWrapper;
 import org.openmrs.module.kenyaemrIL.dmi.dmiUtils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.parameter.EncounterSearchCriteria;
-import org.openmrs.parameter.OrderSearchCriteria;
+import org.openmrs.parameter.EncounterSearchCriteriaBuilder;
 import org.openmrs.parameter.OrderSearchCriteriaBuilder;
 import org.openmrs.ui.framework.SimpleObject;
 import org.slf4j.Logger;
@@ -81,19 +79,17 @@ public class CaseSurveillanceDataExchange {
     private static final String PrEP_INITIAL_FORM = "1bfb09fc-56d7-4108-bd59-b2765fd312b8";
     private static final String PrEP_NUMBER_IDENTIFIER_TYPE_UUID = "ac64e5cb-e3e2-4efa-9060-0dd715a843a1";
     private static final int PrEP_REGIMEN_CONCEPT_ID = 164515;
-    SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
     EncounterService encounterService = Context.getEncounterService();
+    OrderService orderService = Context.getOrderService();
 
     Concept vlUndetectableConcept = MetadataUtils.existing(Concept.class, Metadata.Concept.HIV_VIRAL_LOAD_QUALITATIVE);
-
     Concept vlQuatitativeConcept = MetadataUtils.existing(Concept.class, Metadata.Concept.HIV_VIRAL_LOAD);
 
     EncounterType hivConsultationEncounterType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION);
     EncounterType mchMotherEncounterType = MetadataUtils.existing(EncounterType.class, MchMetadata._EncounterType.MCHMS_CONSULTATION);
     EncounterType labResultsEncounterType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.LAB_RESULTS);
-    EncounterType labOrderEncounterType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.LAB_ORDER);
+    EncounterType labOrderEncounterType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.DRUG_ORDER);
 
-    Form greencardForm = MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_GREEN_CARD);
     Form ancForm = MetadataUtils.existing(Form.class, MchMetadata._Form.MCHMS_ANTENATAL_VISIT);
     Form pncForm = MetadataUtils.existing(Form.class, MchMetadata._Form.MCHMS_POSTNATAL_VISIT);
 
@@ -625,9 +621,7 @@ public class CaseSurveillanceDataExchange {
             Encounter latestMCHEnc = patientWrapper.lastEncounter(mchMotherEncounterType);
             Encounter latestHIVConsultationEnc = patientWrapper.lastEncounter(hivConsultationEncounterType);
 
-           // Encounter latestLabResultsEnc = patientWrapper.lastEncounter(labResultsEncounterType);
-            Order latestVlOrder = getLatestVlOrderForPatient(patient); // todo check the impact of fetch date
-            System.out.println("latestVlOrder for patient: "+patient.getPatientId() +": "+  latestVlOrder);
+            Order latestVlOrder = getLatestVlOrderForPatient(patient);
 
             Encounter latestVlResultsEnc = null;
             Encounter latestVlOrderEncounter = null;
@@ -638,12 +632,8 @@ public class CaseSurveillanceDataExchange {
                 latestVlOrderEncounter = latestVlOrder.getEncounter();
                 latestVlOrderResultObs = getLatestVlResultObs(patient, latestVlOrder);
                 latestVlResultsEnc = latestVlOrderResultObs != null ? latestVlOrderResultObs.getEncounter(): null;
-                System.out.println("latestVlOrderEncounter for patient: "+patient.getPatientId() +": "+  latestVlOrderEncounter);
-                System.out.println("latestVlResultsEnc for patient: "+patient.getPatientId() +": "+  latestVlResultsEnc);
-                System.out.println("latestVlOrderResultObs for patient: "+patient.getPatientId() +": "+  latestVlOrderResultObs);
             }
 
-            //TODO Check whether we really need this check
          if(latestMCHEnc == null && latestHIVConsultationEnc == null && (latestVlOrderEncounter == null || latestVlOrderEncounter.getEncounterDatetime().compareTo(fetchDate) < 0)
                  && (latestVlResultsEnc == null || latestVlResultsEnc.getEncounterDatetime().compareTo(fetchDate) < 0)) {
              log.warn("No MCH, HIV consultation or viral load encounters found for patient: " + patient.getPatientId());
@@ -679,7 +669,7 @@ public class CaseSurveillanceDataExchange {
             result.add(mapToVlEligibilityObject(encounter, upn, isPregnant, isBreastFeeding, vlResult, vlresultDate, vlOrderDate, artStartDate));
         }
 
-        System.out.println("result: " + result);
+        System.out.println("result: " + result);//todo: remove when ready to ship
 
         return result;
     }
@@ -1041,65 +1031,39 @@ public class CaseSurveillanceDataExchange {
 
     public Order getLatestVlOrderForPatient(Patient patient) {
         OrderService orderService = Context.getOrderService();
-        OrderSearchCriteria orderSearchCriteria = new OrderSearchCriteria(
-                patient,
-                null,
-                Arrays.asList(vlQuatitativeConcept, vlUndetectableConcept),
-                null, null, null, new Date(),
-                null,
-                false, null, null, null, null,
-                true, true, false, false
-        );
-        List<Order> orders = orderService.getOrders(orderSearchCriteria);
+        OrderSearchCriteriaBuilder orderSearchCriteriaBuilder = new OrderSearchCriteriaBuilder()
+                .setPatient(patient)
+                .setConcepts(Arrays.asList(vlQuatitativeConcept, vlUndetectableConcept))
+                .setOrderTypes(Collections.singleton(orderService.getOrderTypeByUuid(OrderType.TEST_ORDER_TYPE_UUID)))
+                .setAction(Order.Action.NEW);
+
+        List<Order> orders = orderService.getOrders(orderSearchCriteriaBuilder.build());
         if (orders != null && !orders.isEmpty()) {
-            orders.sort((o1, o2) -> o2.getDateActivated().compareTo(o1.getDateActivated()));
             return orders.get(0);
         }
         return null;
     }
 
     public List<Encounter> getLatestVlResultEncounters(Date fetchDate) {
-        OrderService orderService = Context.getOrderService();
         List<Encounter> vlResultsEncounters = new ArrayList<>();
         OrderSearchCriteriaBuilder orderSearchCriteria = new OrderSearchCriteriaBuilder().
                 setConcepts(Arrays.asList(vlQuatitativeConcept, vlUndetectableConcept))
                 .setOrderTypes(Collections.singleton(orderService.getOrderTypeByUuid(OrderType.TEST_ORDER_TYPE_UUID)))
                 .setFulfillerStatus(Order.FulfillerStatus.COMPLETED)
                 .setAction(Order.Action.NEW)
-                .setIsStopped(true)
-                .setExcludeCanceledAndExpired(true);
-       /* OrderSearchCriteria orderSearchCriteria = new OrderSearchCriteria(null,
-                null,
-                Arrays.asList(vlQuatitativeConcept, vlUndetectableConcept), Collections.singleton(orderService.getOrderTypeByUuid(OrderType.TEST_ORDER_TYPE_UUID))
-                , null, null,null,
-                null,
-                true, null, null, Order.Action.NEW, Order.FulfillerStatus.COMPLETED,
-                false, true, false, false);*/
-
-      System.out.println("Concepts: "+orderSearchCriteria.build().getConcepts());
-      System.out.println("Order types: "+orderSearchCriteria.build().getOrderTypes());
-      System.out.println("Fullfiller status: "+orderSearchCriteria.build().getFulfillerStatus());
-      System.out.println("Action: "+orderSearchCriteria.build().getAction());
-      System.out.println("is stopped: "+orderSearchCriteria.build().isStopped());
-      System.out.println("Exclude cancelled and expired: "+orderSearchCriteria.build().getExcludeCanceledAndExpired());
-System.out.println("orderSearchCriteria : "+orderSearchCriteria.toString());
+                .setIsStopped(true);
 
        List<Order> orders = orderService.getOrders(orderSearchCriteria.build());
-
-System.out.println("Orders results size: " + orders.size());
-System.out.println("Orders results: " + orders);
         if (orders.isEmpty()) {
             return vlResultsEncounters;
         }
-        System.out.println("Orders found: " + orders.size());
-        System.out.println("Orders from getLatestVlResultEncounters: " + orders);
+
         for (Order order : orders) {
             if(!Order.FulfillerStatus.COMPLETED.equals(order.getFulfillerStatus()) && (!vlQuatitativeConcept.equals(order.getConcept()) || !vlUndetectableConcept.equals(order.getConcept()))) {
                 continue;
             }
             Encounter e = order.getEncounter();
             if (e != null) {
-                System.out.println("Encounter ID: " + e.getEncounterId() + ", Date: " + e.getEncounterDatetime());
                 Set<Obs> obs = e.getObs();
                 for (Obs obsItem : obs) {
                     if (obsItem.getDateCreated().compareTo(fetchDate) >= 0) {
@@ -1113,7 +1077,6 @@ System.out.println("Orders results: " + orders);
     }
 
     public Obs getLatestVlResultObs(Patient patient, Order vlOrder) {
-
         Obs latestObs;
         PatientWrapper patientWrapper = new PatientWrapper(patient);
 
@@ -1130,25 +1093,22 @@ System.out.println("Orders results: " + orders);
         if (latestObs == null) {
             return null;
         }
+
         return vlOrder.equals(latestObs.getOrder()) ? latestObs : null;
    }
 
     public Collection<Encounter> getLatestEncounters(Date fetchDate) {
-        System.out.println("Fetch date after processing: " + fetchDate);
+
         List<Encounter> vlResultsEncounters = getLatestVlResultEncounters(fetchDate);
 
-        EncounterSearchCriteria encounterSearchCriteria = new EncounterSearchCriteria(
-                null, null, fetchDate, new Date(), null,null, Arrays.asList(hivConsultationEncounterType, labOrderEncounterType, labResultsEncounterType, mchMotherEncounterType), null, null, null, false
-        );
+        EncounterSearchCriteriaBuilder encounterSearchCriteriaBuilder = new EncounterSearchCriteriaBuilder()
+                .setFromDate(fetchDate)
+                .setEncounterTypes(Arrays.asList(hivConsultationEncounterType, labOrderEncounterType, labResultsEncounterType, mchMotherEncounterType))
+                .setIncludeVoided(false);
 
         // Fetch all matching encounters
-        List<Encounter> encounterList = encounterService.getEncounters(encounterSearchCriteria);
-        System.out.println("Encounters size before adding results enc: " + encounterList.size());
-        System.out.println("Encounters found before adding results enc: " + encounterList);
+        List<Encounter> encounterList = encounterService.getEncounters(encounterSearchCriteriaBuilder.createEncounterSearchCriteria());
         encounterList.addAll(vlResultsEncounters);
-        System.out.println("Encounters size after adding results enc: " + encounterList.size());
-        System.out.println("Encounters found after adding results enc: " + encounterList);
-        System.out.println("Total encounters found: " + encounterList.size());
 
         // Map to remember latest encounter for each patient
         Map<Patient, Encounter> latestEncounterMap = new HashMap<>();
