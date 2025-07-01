@@ -22,11 +22,11 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Directly push messages to DMI server
+ * Directly push messages to DMI server & Case surveillance servers
  */
-public class DmiDirectPushTask extends AbstractTask {
+public class ProgramMonitorPushTask extends AbstractTask {
 
-	private static final Logger log = LoggerFactory.getLogger(DmiDirectPushTask.class);
+	private static final Logger log = LoggerFactory.getLogger(ProgramMonitorPushTask.class);
 	private String url = "http://www.google.com:80/index.html";
 
     /**
