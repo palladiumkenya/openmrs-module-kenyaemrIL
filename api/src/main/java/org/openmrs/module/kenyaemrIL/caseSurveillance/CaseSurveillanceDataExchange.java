@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import javassist.compiler.SymbolTable;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
@@ -59,6 +60,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -294,11 +296,17 @@ public class CaseSurveillanceDataExchange {
     /**
      * Retrieves a list of patients tested HIV-positive since the last fetch date
      */
-    public List<SimpleObject> testedHIVPositive(Date fetchDate) {
+    public Set<SimpleObject> testedHIVPositive(Date fetchDate) {
+        Concept PCR_6_WEEKS = Dictionary.getConcept(Dictionary.HIV_RAPID_TEST_1_QUALITATIVE);
+        Concept PCR_6_MONTHS = Dictionary.getConcept(Dictionary.HIV_RAPID_TEST_2_QUALITATIVE);
+        Concept PCR_12_MONTHS = Dictionary.getConcept(Dictionary.HIV_DNA_POLYMERASE_CHAIN_REACTION);
+        Concept AB_TEST_6_WEEKS_AFTER_CESSATION_OF_BREASTFEEDING = Dictionary.getConcept(Dictionary.AB_TEST_6_WEEKS_AFTER_CESSATION_OF_BREASTFEEDING);
+        Concept RAPID_HIV_ANTIBODY_TEST_AT_18_MONTHS = Dictionary.getConcept(Dictionary.RAPID_HIV_ANTIBODY_TEST_AT_18_MONTHS);
+        Concept HIV_DNA_POLYMERASE_CHAIN_REACTION_QUALITATIVE = Dictionary.getConcept(Dictionary.HIV_DNA_POLYMERASE_CHAIN_REACTION_QUALITATIVE);
         if (fetchDate == null) {
             throw new IllegalArgumentException("Fetch date cannot be null");
         }
-        List<SimpleObject> result = new ArrayList<>();
+        Set<SimpleObject> result = new HashSet<>();
         ConceptService conceptService = Context.getConceptService();
         EncounterService encounterService = Context.getEncounterService();
 
@@ -330,7 +338,8 @@ public class CaseSurveillanceDataExchange {
         );
 
         List<Encounter> encounters = encounterService.getEncounters(searchCriteria);
-
+        encounters.sort(Comparator.comparing(Encounter::getEncounterDatetime));
+        Set<Integer> processedPatientIds = new HashSet<>();
         for (Encounter encounter : encounters) {
             if (encounter == null) {
                 log.warn("Encounter is null, skipping...");
@@ -338,14 +347,21 @@ public class CaseSurveillanceDataExchange {
             }
 
             Patient patient = encounter.getPatient();
+
             if (patient == null) {
                 log.warn("Encounter has no HIV+ patient, skipping...");
                 continue;
             }
+            if (processedPatientIds.contains(patient.getId())) {
+                // This patient's first encounter has already been added, skip this one
+                continue;
+            }
             if (EmrUtils.encounterThatPassCodedAnswer(encounter, htsFinalTestQuestion, htsPositiveResult)) {
                 result.add(mapToTestedPositiveObject(encounter, patient));
+                processedPatientIds.add(patient.getId());
             }
         }
+        System.out.println("HIV+: " + result);
         return result;
     }
 
@@ -361,10 +377,14 @@ public class CaseSurveillanceDataExchange {
 
         List<EncounterType> linkageEncounterType = Collections.singletonList(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.DRUG_REGIMEN_EDITOR));
         List<Form> linkageForm = Collections.singletonList(MetadataUtils.existing(Form.class, CommonMetadata._Form.DRUG_REGIMEN_EDITOR));
+        List<EncounterType> linkageEncounterTypes =  Arrays.asList(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.DRUG_REGIMEN_EDITOR),
+                MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.HTS));
+        List<Form> linkageForms =  Arrays.asList(MetadataUtils.existing(Form.class, CommonMetadata._Form.DRUG_REGIMEN_EDITOR), MetadataUtils.existing(Form.class, CommonMetadata._Form.DRUG_REGIMEN_EDITOR));
+
 
         // Fetch all encounters within the date
         List<Encounter> linkageToCareEncounters = encounterService.getEncounters(new EncounterSearchCriteria(
-                null, null, fetchDate, null, null, linkageForm, linkageEncounterType,
+                null, null, fetchDate, null, null, linkageForms, linkageEncounterTypes,
                 null, null, null, false
         ));
         // Process each encounter for linkage
@@ -378,23 +398,26 @@ public class CaseSurveillanceDataExchange {
                 log.warn("Encounter has no linked patient, skipping...");
                 continue;
             }
-
             String artStartDate = getArtStartDate(patient);
+
             if (artStartDate == null) {
                 log.warn("Encounter has no ART start date, skipping..."); //todo review
                 continue;
             }
 
             try {
+
                 DateFormat dateFormat = new SimpleDateFormat(DATE_TIME_FORMAT);
                 Date artStartDateAsDate = dateFormat.parse(artStartDate);
                 if (fetchDate.compareTo(artStartDateAsDate) <= 0) {
+                    System.out.println("---Linkage encounters for patient: "+ patient.getPatientId() +" Art start date: " + artStartDateAsDate);
                     result.add(mapToLinkageObject(encounter, patient, artStartDate));
                 }
             } catch (ParseException e) {
                 log.error("Error parsing artStartDate: " + e.getMessage());
             }
         }
+        System.out.println("-----Linkage to care: " + result);
         return result;
     }
 
@@ -459,16 +482,18 @@ public class CaseSurveillanceDataExchange {
                 );
                 List<Encounter> htsTestEncounters = encounterService.getEncounters(htsTestSearchCriteria);
                 for (Encounter htsTestEncounter : htsTestEncounters) {
-                    if (htsTestEncounter != null && htsTestEncounter.getPatient().equals(patient)) {
+                    if (htsTestEncounter != null && htsTestEncounter.getPatient().equals(patient) && "F".equals(patient.getGender())) {
                         if (EmrUtils.encounterThatPassCodedAnswer(htsTestEncounter, htsFinalTestQuestion, htsNegativeResult) && (EmrUtils.encounterThatPassCodedAnswer(htsTestEncounter, htsEntryPointQstn, htsEntryPointANC) || EmrUtils.encounterThatPassCodedAnswer(htsTestEncounter, htsEntryPointQstn, htsEntryPointMAT) || EmrUtils.encounterThatPassCodedAnswer(htsTestEncounter, htsEntryPointQstn, htsEntryPointPNC))) {
+                            System.out.println("Pregnant & post partum at high risk payload: " + patient.getPatientId()+ " HTS screening Date "+ htsScreeningEncounter.getEncounterDatetime());
                             result.add(mapToPregnantAndPostpartumAtHighRiskObject(htsScreeningEncounter, patient));
                             break;
                         }
                     }
                 }
             }
-        }
 
+        }
+System.out.println("Pregnant and Post partum at high risk: " + result);
         return result;
     }
 
@@ -562,11 +587,13 @@ public class CaseSurveillanceDataExchange {
                             if (prepRegimen != null) break; // Stop checking other encounters if we found a regimen
                         }
                         // Add patient to the result
+                        System.out.println("Pregnant & post partum at high risk on PrEP : " + patient.getPatientId() + " HTS screening Date " + htsScreeningEncounter.getEncounterDatetime());
                         result.add(mapToPregnantAndPostpartumAtHighRiskOnPrEPObject(htsEncounter, patient, prepNumber, prepRegimen));
                     }
                 }
             }
         }
+        System.out.println("Pregnant & post partum at high risk on PrEP payload: " + result);
         return result;
     }
 
@@ -665,11 +692,11 @@ public class CaseSurveillanceDataExchange {
                         .orElse(null);
                 isBreastFeeding = infantFeedingObs != null && infantFeedingObs.getValueCoded() != null && (EXCLUSIVE_BREASTFEEDING.equals(infantFeedingObs.getValueCoded()) || MIXED_FEEDING.equals(infantFeedingObs.getValueCoded()));
             }
-
+System.out.println("VL Eligibility patient: " + patient.getPatientId() + " VL Result: " + vlResult + " VL Result Date: " + vlresultDate + " VL Order Date: " + vlOrderDate + " ART Start Date: " + artStartDate);
             result.add(mapToVlEligibilityObject(encounter, upn, isPregnant, isBreastFeeding, vlResult, vlresultDate, vlOrderDate, artStartDate));
         }
 
-        System.out.println("result: " + result);//todo: remove when ready to ship
+        System.out.println("Vl eligibility Variables: " + result);//todo: remove when ready to ship
 
         return result;
     }
@@ -707,9 +734,10 @@ public class CaseSurveillanceDataExchange {
             PatientIdentifierType upnIdentifierType = MetadataUtils.existing(PatientIdentifierType.class, Metadata.IdentifierType.UNIQUE_PATIENT_NUMBER);
             PatientIdentifier upnIdentifier = patient.getPatientIdentifier(upnIdentifierType);
             String upn = upnIdentifier != null ? upnIdentifier.getIdentifier() : null;
-
+System.out.println("EAC patient: " + patient.getPatientId() + " UPN: " + upn + " Encounter Date: " + eacEncounter.getEncounterDatetime());
             result.add(mapToEacObject(eacEncounter, patient, upn));
         }
+        System.out.println("EAC encounters: " + result);//todo: remove when ready to ship
         return result;
     }
 
@@ -743,10 +771,13 @@ public class CaseSurveillanceDataExchange {
 
                 String heiNumber = getHEINumber(patient);
                 if (patient.getBirthdate() != null && patient.getBirthdate().compareTo(effectiveDate) >= 0 && heiNumber != null) {
+                    System.out.println("HEI patient: " + patient.getPatientId() + " HEI Number: " + heiNumber + " Encounter Date: " + heiEncounter.getEncounterDatetime());
                     result.add(mapToHEIObject(heiEncounter, patient, heiNumber));
                 }
             }
         }
+        System.out.println("Total HEI patients: " + result);//todo: remove when ready to ship
+
         return result;
     }
 
@@ -780,11 +811,13 @@ public class CaseSurveillanceDataExchange {
                     Obs obs = patientWrapper.lastObs(MetadataUtils.existing(Concept.class, Metadata.Concept.HIV_DNA_POLYMERASE_CHAIN_REACTION_QUALITATIVE));
 
                     if (obs == null) {
+                        System.out.println("HEI patient: " + patient.getPatientId() + " HEI Encounter date: " + heiEncounter.getEncounterDatetime());
                         result.add(mapToHEIDnaPcrObject(heiEncounter, patient, heiNumber));
                     }
                 }
             }
         }
+        System.out.println("Total HEI patients without DNA PCR: " + result);
         return result;
     }
 
@@ -824,11 +857,13 @@ public class CaseSurveillanceDataExchange {
                     Obs obs = patientWrapper.lastObs(MetadataUtils.existing(Concept.class, Metadata.Concept.HEI_OUTCOME));
 
                     if (obs == null || obs.getValueCoded() == null) {
+                        System.out.println("HEI patient without documented final Outcome: " + patient.getPatientId() + " HEI Encounter date: " + heiEncounter.getEncounterDatetime());
                         result.add(mapToHEIWithoutOutcomesObject(heiEncounter, patient, heiNumber));
                     }
                 }
             }
         }
+        System.out.println("Total HEI patients without Final Outcome: " + result);
         return result;
     }
 
@@ -839,7 +874,7 @@ public class CaseSurveillanceDataExchange {
         List<Map<String, Object>> payload = new ArrayList<>();
 
         // Tested HIV-positive data as "new_case"
-        List<SimpleObject> testedPositive = testedHIVPositive(fetchDate);
+        Set<SimpleObject> testedPositive = testedHIVPositive(fetchDate);
         for (SimpleObject tested : testedPositive) {
             payload.add(mapToDatasetStructure(tested, "new_case"));
         }
@@ -862,10 +897,10 @@ public class CaseSurveillanceDataExchange {
             payload.add(mapToDatasetStructure(highRiskLinkedToPrep, "prep_linked_at_risk_pbfw"));
         }
         // Eligible for VL
-        List<SimpleObject> eligibleForVl = eligibleForVl(fetchDate);
+    /*    List<SimpleObject> eligibleForVl = eligibleForVl(fetchDate);
         for (SimpleObject eligibleForVlVariables : eligibleForVl) {
             payload.add(mapToDatasetStructure(eligibleForVlVariables, "eligible_for_vl"));
-        }
+        }*/
         // Enhanced adherence
         List<SimpleObject> enhancedAdherence = enhancedAdherence(fetchDate);
         for (SimpleObject eac : enhancedAdherence) {
