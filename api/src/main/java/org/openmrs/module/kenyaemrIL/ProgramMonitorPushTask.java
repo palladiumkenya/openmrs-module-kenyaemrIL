@@ -38,7 +38,7 @@ public class ProgramMonitorPushTask extends AbstractTask {
 		// Fetch the last date of fetch
 		Date dmiFetchDate = null;
 		GlobalProperty dmiGlobalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("dmiTask.lastFetchDateAndTime");
-/*		try {
+		try {
 			if(dmiGlobalPropertyObject != null && dmiGlobalPropertyObject.getValue() != null){
 			String ts = dmiGlobalPropertyObject.getValue().toString();
 			dmiFetchDate = formatter.parse(ts);
@@ -88,7 +88,7 @@ public class ProgramMonitorPushTask extends AbstractTask {
 				Context.getAdministrationService().saveGlobalProperty(dmiGlobalPropertyObject);
 			}
 			Context.closeSession();
-		}*/
+		}
 		System.out.println("Case Surveillance data transmission started...");
 		try {
 			Date csFetchDate = null;

@@ -173,7 +173,7 @@ public class CaseSurveillanceUtils {
         Concept prepRegimenConcept = conceptService.getConcept(PrEP_REGIMEN_CONCEPT_ID);
         PatientWrapper patientWrapper = new PatientWrapper(patient);
         Obs obs = patientWrapper.lastObs(prepRegimenConcept);
-        if (obs.getConcept().equals(prepRegimenConcept) && obs.getValueCoded() != null) {
+        if (obs != null && obs.getConcept().equals(prepRegimenConcept) && obs.getValueCoded() != null) {
             return obs.getValueCoded().getName().getName();
         }
         return null;

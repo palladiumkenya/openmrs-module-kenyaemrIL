@@ -617,7 +617,7 @@ public class CaseSurveillanceDataExchange {
 
         List<Encounter> latestEncounters = new ArrayList<>(getLatestEncounters(fetchDate));
 
-        System.out.println("latestEncounters: " + latestEncounters.size());
+      //  System.out.println("latestEncounters: " + latestEncounters.size());
 
         if (latestEncounters.isEmpty()) {
             log.warn("No eligible encounters found for VL eligibility, skipping...");
@@ -697,11 +697,11 @@ public class CaseSurveillanceDataExchange {
                         .orElse(null);
                 isBreastFeeding = infantFeedingObs != null && infantFeedingObs.getValueCoded() != null && (EXCLUSIVE_BREASTFEEDING.equals(infantFeedingObs.getValueCoded()) || MIXED_FEEDING.equals(infantFeedingObs.getValueCoded()));
             }
-        System.out.println("VL Eligibility patient: " + patient.getPatientId() + " VL Result: " + vlResult + " VL Result Date: " + vlresultDate + " VL Order Date: " + vlOrderDate + " ART Start Date: " + artStartDate);
+      //  System.out.println("VL Eligibility patient: " + patient.getPatientId() + " VL Result: " + vlResult + " VL Result Date: " + vlresultDate + " VL Order Date: " + vlOrderDate + " ART Start Date: " + artStartDate);
             result.add(mapToVlEligibilityObject(encounter, upn, isPregnant, isBreastFeeding, vlResult, vlresultDate, vlOrderDate, artStartDate));
         }
 
-        System.out.println("Vl eligibility Variables: " + result);//todo: remove when ready to ship
+      //  System.out.println("Vl eligibility Variables: " + result);//todo: remove when ready to ship
 
         return result;
     }
@@ -756,12 +756,12 @@ public class CaseSurveillanceDataExchange {
                     // This patient's first encounter has already been added, skip this one
                     continue;
                 }
-                System.out.println("EAC patient: " + patient.getPatientId());
+              //  System.out.println("EAC patient: " + patient.getPatientId());
                 result.add(mapToEacObject(encounter, patient, upn));
                 processedPatientIds.add(patient.getId());
             }
         }
-        System.out.println("EAC encounters: " + result);//todo: remove when ready to ship
+      //  System.out.println("EAC encounters: " + result);//todo: remove when ready to ship
         return result;
     }
 
@@ -876,6 +876,7 @@ public class CaseSurveillanceDataExchange {
                 }
             }
         }
+      //  System.out.println("HEI Without Final Outcome: " + result);//todo: remove when ready to ship
         return result;
     }
 
@@ -908,16 +909,6 @@ public class CaseSurveillanceDataExchange {
         for (SimpleObject highRiskLinkedToPrep : pregnantAndPostpartumAtHighRiskLinkedToPrEP) {
             payload.add(mapToDatasetStructure(highRiskLinkedToPrep, "prep_linked_at_risk_pbfw"));
         }
-        // Eligible for VL
-        List<SimpleObject> eligibleForVl = eligibleForVl(fetchDate);
-        for (SimpleObject eligibleForVlVariables : eligibleForVl) {
-            payload.add(mapToDatasetStructure(eligibleForVlVariables, "eligible_for_vl"));
-        }
-        // Enhanced adherence
-        List<SimpleObject> enhancedAdherence = enhancedAdherence(fetchDate);
-        for (SimpleObject eac : enhancedAdherence) {
-            payload.add(mapToDatasetStructure(eac, "unsuppressed_viral_load"));
-        }
         // HEI
         //TODO: Update the event_type from hei_at_6_to_8_weeks to all_hei
         List<SimpleObject> allHEI = totalHEI();
@@ -929,12 +920,22 @@ public class CaseSurveillanceDataExchange {
         for (SimpleObject heiWithoutDnaPcr : dnaPCRResults) {
             payload.add(mapToDatasetStructure(heiWithoutDnaPcr, "hei_without_pcr"));
         }
-
         //HEI Without DNA PCR
         List<SimpleObject> heiWithoutFinalOutcome = heiWithoutFinalOutcome(fetchDate);
         for (SimpleObject heiMissingFinalOutcome : heiWithoutFinalOutcome) {
             payload.add(mapToDatasetStructure(heiMissingFinalOutcome, "hei_without_final_outcome"));
         }
+        // Enhanced adherence
+        List<SimpleObject> enhancedAdherence = enhancedAdherence(fetchDate);
+        for (SimpleObject eac : enhancedAdherence) {
+            payload.add(mapToDatasetStructure(eac, "unsuppressed_viral_load"));
+        }
+        // Eligible for VL
+        List<SimpleObject> eligibleForVl = eligibleForVl(fetchDate);
+        for (SimpleObject eligibleForVlVariables : eligibleForVl) {
+            payload.add(mapToDatasetStructure(eligibleForVlVariables, "eligible_for_vl"));
+        }
+
         System.out.println("Case surveillance payload: "+ payload);
         return payload;
     }
