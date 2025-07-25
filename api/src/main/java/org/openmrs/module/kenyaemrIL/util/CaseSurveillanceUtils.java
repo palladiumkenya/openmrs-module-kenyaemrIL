@@ -14,10 +14,13 @@ import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 import org.joda.time.DateTime;
 import org.joda.time.Months;
+import org.openmrs.Concept;
+import org.openmrs.Obs;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PatientIdentifierType;
 import org.openmrs.module.kenyaemr.Metadata;
+import org.openmrs.module.kenyaemr.wrapper.PatientWrapper;
 import org.openmrs.module.kenyaemrIL.metadata.ILMetadata;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.slf4j.Logger;
@@ -26,6 +29,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
@@ -33,6 +39,7 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.openmrs.module.kenyaemr.util.EmrUtils.getGlobalPropertyValue;
+import static org.openmrs.module.kenyaemrIL.api.ILPatientRegistration.conceptService;
 
 public class CaseSurveillanceUtils {
     private static final Logger log = LoggerFactory.getLogger(CaseSurveillanceUtils.class);
@@ -45,7 +52,8 @@ public class CaseSurveillanceUtils {
     private static final String CS_TOKEN_URL = ILMetadata.GP_CS_SERVER_TOKEN_URL;
     private static final String API_CS_CLIENT_ID = ILMetadata.GP_CS_SERVER_CLIENT_ID;
     private static final String API_CS_CLIENT_SECRET = ILMetadata.GP_CS_SERVER_CLIENT_SECRET;
-
+    private static final String PrEP_NUMBER_IDENTIFIER_TYPE_UUID = "ac64e5cb-e3e2-4efa-9060-0dd715a843a1";
+    private static final int PrEP_REGIMEN_CONCEPT_ID = 164515;
     public static SSLConnectionSocketFactory createSslConnectionFactory() throws Exception {
         return new SSLConnectionSocketFactory(
                 SSLContexts.createDefault(),
@@ -150,4 +158,32 @@ public class CaseSurveillanceUtils {
         PatientIdentifier heiIdentifier = patient.getPatientIdentifier(heiIdentifierType);
         return heiIdentifier != null ? heiIdentifier.getIdentifier() : null;
     }
+
+    /** Fetch PrEP Number for the given patient */
+    public static String getPrepNumber(Patient patient) {
+        PatientIdentifierType prepIdentifierType = MetadataUtils.existing(
+                PatientIdentifierType.class, PrEP_NUMBER_IDENTIFIER_TYPE_UUID
+        );
+        PatientIdentifier prepIdentifier = patient.getPatientIdentifier(prepIdentifierType);
+        return prepIdentifier != null ? prepIdentifier.getIdentifier() : null;
+    }
+
+    /** Fetch PrEP Regimen from the for patient */
+    public static String getPrepRegimen(Patient patient) {
+        Concept prepRegimenConcept = conceptService.getConcept(PrEP_REGIMEN_CONCEPT_ID);
+        PatientWrapper patientWrapper = new PatientWrapper(patient);
+        Obs obs = patientWrapper.lastObs(prepRegimenConcept);
+        if (obs != null && obs.getConcept().equals(prepRegimenConcept) && obs.getValueCoded() != null) {
+            return obs.getValueCoded().getName().getName();
+        }
+        return null;
+    }
+    public static boolean isBetween6And8WeeksOld(Date birthDate, Date referenceDate) {
+        LocalDate birth = birthDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate ref = referenceDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+        long weeks = ChronoUnit.WEEKS.between(birth, ref);
+        return weeks >= 6 && weeks <= 8;
+    }
+
 }
