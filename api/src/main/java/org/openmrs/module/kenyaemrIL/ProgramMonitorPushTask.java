@@ -22,11 +22,11 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Directly push messages to DMI server
+ * Directly push messages to DMI server & Case surveillance servers
  */
-public class DmiDirectPushTask extends AbstractTask {
+public class ProgramMonitorPushTask extends AbstractTask {
 
-	private static final Logger log = LoggerFactory.getLogger(DmiDirectPushTask.class);
+	private static final Logger log = LoggerFactory.getLogger(ProgramMonitorPushTask.class);
 	private String url = "http://www.google.com:80/index.html";
 
     /**
@@ -39,14 +39,17 @@ public class DmiDirectPushTask extends AbstractTask {
 		Date dmiFetchDate = null;
 		GlobalProperty dmiGlobalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("dmiTask.lastFetchDateAndTime");
 		try {
+			if(dmiGlobalPropertyObject != null && dmiGlobalPropertyObject.getValue() != null){
 			String ts = dmiGlobalPropertyObject.getValue().toString();
 			dmiFetchDate = formatter.parse(ts);
+			} else {
+				System.out.println("Global property 'dmiTask.lastFetchDateAndTime' not found or is null.");
+			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			e.printStackTrace(System.out);
 		}
 		try {
 			Context.openSession();
-
 			// check first if there is internet connectivity before pushing
 			URLConnection connection = new URL(url).openConnection();
 			connection.connect();
@@ -69,32 +72,32 @@ public class DmiDirectPushTask extends AbstractTask {
 					}
 				}
 			}
-
 			Context.flushSession();
 		} catch (IOException ioe) {
 
 			try {
 				String text = "IL - DMI PUSH: At " + new Date() + " there was connectivity error. ";
-				log.warn(text);
+				log.warn(text, ioe);
+				ioe.printStackTrace(System.out);
 			} catch (Exception e) {
 				log.error("IL - DMI PUSH: Failed to check internet connectivity", e);
 			}
 		} finally {
-			dmiGlobalPropertyObject.setPropertyValue(formatter.format(new Date()));
-			Context.getAdministrationService().saveGlobalProperty(dmiGlobalPropertyObject);
-
+			if(dmiGlobalPropertyObject != null) {
+				dmiGlobalPropertyObject.setPropertyValue(formatter.format(new Date()));
+				Context.getAdministrationService().saveGlobalProperty(dmiGlobalPropertyObject);
+			}
 			Context.closeSession();
 		}
+		System.out.println("Case Surveillance data transmission started...");
 		try {
-
-			System.out.println("Case Surveillance data transmission started...");
-
 			Date csFetchDate = null;
 			GlobalProperty csGlobalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("caseSurveillance.lastFetchDateAndTime");
 			try {
 				if (csGlobalPropertyObject != null && csGlobalPropertyObject.getValue() != null) {
 					String ts = csGlobalPropertyObject.getValue().toString();
 					csFetchDate = formatter.parse(ts);
+					System.out.println("csFetchDate: "+csFetchDate);
 				} else {
 					// Handle case where global property might be missing or null
 					log.warn("Global property 'caseSurveillance.lastFetchDateAndTime' not found or has a null value.");

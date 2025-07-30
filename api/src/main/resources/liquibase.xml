@@ -824,7 +824,9 @@
 				And name = 'Push messages to DMI server'
 			</sqlCheck>
 		</preConditions>
-		<comment>Update org.openmrs.module.kenyaemrIL.DmiDirectPushTask to started by default and to run after 1 Day </comment>
+		<comment>Update org.openmrs.module.kenyaemrIL.ProgramMonitorPushTask to started by default and to run after 1
+            Day
+        </comment>
 		<sql>
 			UPDATE openmrs.scheduler_task_config 
 			SET repeat_interval = 86400, started = 1
@@ -832,5 +834,19 @@
 			AND name = 'Push messages to DMI server';
 		</sql>
 	</changeSet>
-
+    <changeSet id="${project.parent.artifactId}-20250630-1545" author="schege">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="scheduler_task_config"/>
+            <columnExists columnName="name" tableName="scheduler_task_config"/>
+            <columnExists columnName="schedulable_class" tableName="scheduler_task_config"/>
+            <columnExists columnName="description" tableName="scheduler_task_config"/>
+        </preConditions>
+        <comment>Rename "Push messages to DMI server" task to "Program Monitoring"</comment>
+        <update tableName="scheduler_task_config">
+            <column name="name" value="Program Monitoring" />
+            <column name="schedulable_class" value="org.openmrs.module.kenyaemrIL.ProgramMonitorPushTask" />
+            <column name="description" value="Periodically monitors programs and pushes messages to Program servers" />
+            <where>uuid = 'a63b35e1-9b4d-4cb9-8a26-4fbf33b353e5'</where>
+        </update>
+    </changeSet>
 </databaseChangeLog>
