@@ -21,17 +21,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-/**
- * Directly push messages to DMI server & Case surveillance servers
- */
 public class ProgramMonitorPushTask extends AbstractTask {
 
 	private static final Logger log = LoggerFactory.getLogger(ProgramMonitorPushTask.class);
-	private String url = "http://www.google.com:80/index.html";
+	private String url = "http://www.google.com";
 
     /**
 	 * @see AbstractTask#execute()
 	 */
+    @Override
 	public void execute() {
 		System.out.println("DMI DIRECT PUSH: Scheduler started....");
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
