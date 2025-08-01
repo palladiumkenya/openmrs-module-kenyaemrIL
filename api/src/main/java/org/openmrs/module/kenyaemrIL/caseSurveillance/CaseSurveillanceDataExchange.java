@@ -10,6 +10,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.openmrs.Concept;
 import org.openmrs.Encounter;
 import org.openmrs.EncounterType;
@@ -40,7 +42,6 @@ import org.openmrs.module.kenyaemrIL.dmi.dmiUtils;
 import org.openmrs.module.kenyaemrIL.util.CaseSurveillanceUtils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.parameter.EncounterSearchCriteria;
-import org.openmrs.parameter.EncounterSearchCriteriaBuilder;
 import org.openmrs.parameter.OrderSearchCriteriaBuilder;
 import org.openmrs.ui.framework.SimpleObject;
 import org.slf4j.Logger;
@@ -52,11 +53,11 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -64,13 +65,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.openmrs.OrderType.TEST_ORDER_TYPE_UUID;
+import static org.openmrs.module.kenyaemr.Metadata.Concept.ANTIRETROVIRAL_TREATMENT_START_DATE;
 import static org.openmrs.module.kenyaemr.util.EmrUtils.getGlobalPropertyValue;
 import static org.openmrs.module.kenyaemrIL.util.CaseSurveillanceUtils.*;
 
@@ -81,24 +81,6 @@ public class CaseSurveillanceDataExchange {
     private static final String PrEP_INITIAl_FUP_ENCOUNTER = "706a8b12-c4ce-40e4-aec3-258b989bf6d3";
     private static final String HTS_ELIGIBILITY_FORM = "04295648-7606-11e8-adc0-fa7ae01bbebc";
     private static final String PrEP_INITIAL_FORM = "1bfb09fc-56d7-4108-bd59-b2765fd312b8";
-
-    EncounterService encounterService = Context.getEncounterService();
-    OrderService orderService = Context.getOrderService();
-
-    Concept vlUndetectableConcept = MetadataUtils.existing(Concept.class, Metadata.Concept.HIV_VIRAL_LOAD_QUALITATIVE);
-    Concept vlQuatitativeConcept = MetadataUtils.existing(Concept.class, Metadata.Concept.HIV_VIRAL_LOAD);
-
-    EncounterType hivConsultationEncounterType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION);
-    EncounterType mchMotherEncounterType = MetadataUtils.existing(EncounterType.class, MchMetadata._EncounterType.MCHMS_CONSULTATION);
-    EncounterType labResultsEncounterType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.LAB_RESULTS);
-    EncounterType labOrderEncounterType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.DRUG_ORDER);
-
-    Form ancForm = MetadataUtils.existing(Form.class, MchMetadata._Form.MCHMS_ANTENATAL_VISIT);
-    Form pncForm = MetadataUtils.existing(Form.class, MchMetadata._Form.MCHMS_POSTNATAL_VISIT);
-
-    private static final Concept YES = Dictionary.getConcept(Dictionary.YES);
-    private static final Concept MIXED_FEEDING = Dictionary.getConcept(Dictionary.MIXED_FEEDING);
-    private static final Concept EXCLUSIVE_BREASTFEEDING = Dictionary.getConcept(Dictionary.BREASTFED_EXCLUSIVELY);
 
     // Utility method for null-safe string extraction
     private static String safeGetField(PersonAddress address, Function<PersonAddress, String> mapper) {
@@ -189,28 +171,30 @@ public class CaseSurveillanceDataExchange {
     }
 
     // Utility method for creating structured SimpleObject for VL Eligibility variables
-    private SimpleObject mapToVlEligibilityObject(Encounter encounter, String upn, boolean pregnant, boolean breastfeeding, String vlResult, Date vlresultDate, Date vlOrderDate, String artStartDate) {
-        Patient patient = encounter.getPatient();
+    private SimpleObject mapToVlEligibilityObject(String createdAt,Integer patientId, String pregnant, String breastfeeding, String vlResult, String vlresultDate,String positiveHivTestDate,
+                                                  String visitDate, String artStartDate,String vlOrderDate, Integer vlOrderReason, String upn) {
+        Patient patient = Context.getPatientService().getPatient(patientId);
         PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
         String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
         return SimpleObject.create(
-                "createdAt", formatDateTime(encounter.getDateCreated()),
-                "updatedAt", formatDateTime(encounter.getDateChanged()),
-                "patientId", patient.getPatientId().toString(),
+                "createdAt", createdAt,
+                "updatedAt", null,
+                "patientId", patientId,
                 "county", safeGetField(address, PersonAddress::getCountyDistrict),
                 "subCounty", safeGetField(address, PersonAddress::getStateProvince),
                 "ward", safeGetField(address, PersonAddress::getAddress6),
                 "mflCode", EmrUtils.getMFLCode(),
                 "dob", formatDate(patient.getBirthdate()),
                 "sex", sex != null ? dmiUtils.formatGender(sex) : null,
-                "pregnancyStatus", pregnant ? "Pregnant" : null,
-                "breastFeedingStatus", breastfeeding ? "Yes" : null,
+                "pregnancyStatus", pregnant,
+                "breastFeedingStatus", breastfeeding,
                 "lastVlResults", vlResult,
-                "positiveHivTestDate", null,
-                "visitDate", formatDateTime(encounter.getEncounterDatetime()),
+                "positiveHivTestDate", positiveHivTestDate,
+                "visitDate", visitDate,
                 "artStartDate", artStartDate,
-                "lastVlOrderDate", formatDateTime(vlOrderDate),
-                "lastVlResultsDate", formatDateTime(vlresultDate)
+                "lastVlOrderDate", vlOrderDate,
+                "lastVlResultsDate", vlresultDate,
+                "vlOrderReason", vlOrderReason != null ? CaseSurveillanceUtils.getConceptByConceptId(vlOrderReason).getName().getName() : null
         );
     }
 
@@ -298,6 +282,7 @@ public class CaseSurveillanceDataExchange {
      * Retrieves a list of patients tested HIV-positive since the last fetch date
      */
     public Set<SimpleObject> testedHIVPositive(Date fetchDate) {
+        System.out.println("INFO - IL: Started generating HIV+ cases dataset... ");
         if (fetchDate == null) {
             throw new IllegalArgumentException("Fetch date cannot be null");
         }
@@ -360,7 +345,6 @@ public class CaseSurveillanceDataExchange {
         OrderSearchCriteriaBuilder orderSearchCriteriaBuilder = new OrderSearchCriteriaBuilder().setOrderTypes(Collections.singletonList(orderService.getOrderTypeByUuid(OrderType.TEST_ORDER_TYPE_UUID))).setActivatedOnOrAfterDate(fetchDate).setConcepts(Collections.singletonList(Dictionary.getConcept(Dictionary.HIV_DNA_POLYMERASE_CHAIN_REACTION_QUALITATIVE)));
 
         List<Order> dnaPCROrders = orderService.getOrders(orderSearchCriteriaBuilder.build());
-
         if (!dnaPCROrders.isEmpty()) {
             for (Order order : dnaPCROrders) {
                 Patient patient = order.getPatient();
@@ -378,22 +362,24 @@ public class CaseSurveillanceDataExchange {
                 }
             }
         }
+        System.out.println("Tested HIV Positive: " + result);
+        System.out.println("INFO - IL: Finished generating HIV+ cases dataset");
         return result;
     }
-
     /**
      * Retrieves a list of patients linked to HIV care since the last fetch date
      */
     public List<SimpleObject> getLinkageToHIVCare(Date fetchDate) {
+        System.out.println("INFO - IL: Started generating Linked to HIV Care dataset... ");
         if (fetchDate == null) {
             throw new IllegalArgumentException("Fetch date cannot be null");
         }
         List<SimpleObject> result = new ArrayList<>();
         EncounterService encounterService = Context.getEncounterService();
 
-        List<EncounterType> linkageEncounterTypes =  Arrays.asList(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.DRUG_REGIMEN_EDITOR),
+        List<EncounterType> linkageEncounterTypes = Arrays.asList(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.DRUG_REGIMEN_EDITOR),
                 MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.HTS));
-        List<Form> linkageForms =  Arrays.asList(MetadataUtils.existing(Form.class, CommonMetadata._Form.DRUG_REGIMEN_EDITOR), MetadataUtils.existing(Form.class, CommonMetadata._Form.HTS_LINKAGE));
+        List<Form> linkageForms = Arrays.asList(MetadataUtils.existing(Form.class, CommonMetadata._Form.DRUG_REGIMEN_EDITOR), MetadataUtils.existing(Form.class, CommonMetadata._Form.HTS_LINKAGE));
 
         // Fetch all encounters within the date
         List<Encounter> linkageToCareEncounters = encounterService.getEncounters(new EncounterSearchCriteria(
@@ -429,6 +415,8 @@ public class CaseSurveillanceDataExchange {
                 log.error("Error parsing artStartDate: " + e.getMessage());
             }
         }
+        System.out.println("Linked to HIV Care: " + result);
+        System.out.println("INFO - IL: Finished generating Linked to HIV Care dataset");
         return result;
     }
 
@@ -439,6 +427,7 @@ public class CaseSurveillanceDataExchange {
      * @return
      */
     public List<SimpleObject> pregnantAndPostpartumAtHighRisk(Date fetchDate) {
+        System.out.println("INFO - IL: Started generating Pregnant and postpartum at high risk dataset... ");
         if (fetchDate == null) {
             throw new IllegalArgumentException("Fetch date cannot be null");
         }
@@ -456,7 +445,6 @@ public class CaseSurveillanceDataExchange {
         Concept htsNegativeResult = conceptService.getConcept(HtsConstants.HTS_NEGATIVE_RESULT_CONCEPT_ID);
 
         if (htsFinalTestQuestion == null || htsNegativeResult == null) {
-            log.error("Required HTS concepts are missing");
             return result;
         }
 
@@ -474,42 +462,62 @@ public class CaseSurveillanceDataExchange {
         );
 
         List<Encounter> screeningEncounters = encounterService.getEncounters(htsEligibilityScrSearchCriteria);
-        if( screeningEncounters == null || screeningEncounters.isEmpty()) {
-            log.warn("No HTS screening encounters found for the given date.");
-            return result;
+        if (screeningEncounters == null || screeningEncounters.isEmpty()) {
+            return Collections.emptyList();
         }
-        for (Encounter htsScreeningEncounter : screeningEncounters) {
-            if (htsScreeningEncounter == null) {
-                log.warn("Encounter is null, skipping...");
-                continue;
-            }
 
+        Set<Patient> highRiskPatients = new HashSet<>();
+        for (Encounter htsScreeningEncounter : screeningEncounters) {
             Patient patient = htsScreeningEncounter.getPatient();
             if (patient == null) {
-                log.warn("Encounter has no HTS screening encounter patient, skipping...");
                 continue;
             }
-            if ((EmrUtils.encounterThatPassCodedAnswer(htsScreeningEncounter, htsScrRiskQstn, htsScrHighRiskResult) || EmrUtils.encounterThatPassCodedAnswer(htsScreeningEncounter, htsScrRiskQstn, htsScrHighestRiskResult))) {
-                // Build HTS encounter search criteria for HTS testing
-                EncounterSearchCriteria htsTestSearchCriteria = new EncounterSearchCriteria(
-                        null, null, fetchDate, null, null, testingForms, htsEncounterType,
-                        null, null, null, false
-                );
-                List<Encounter> htsTestEncounters = encounterService.getEncounters(htsTestSearchCriteria);
-                for (Encounter htsTestEncounter : htsTestEncounters) {
-                    if (htsTestEncounter != null && htsTestEncounter.getPatient().equals(patient) && "F".equals(patient.getGender())) {
-                        if (EmrUtils.encounterThatPassCodedAnswer(htsTestEncounter, htsFinalTestQuestion, htsNegativeResult) && (EmrUtils.encounterThatPassCodedAnswer(htsTestEncounter, htsEntryPointQstn, htsEntryPointANC) || EmrUtils.encounterThatPassCodedAnswer(htsTestEncounter, htsEntryPointQstn, htsEntryPointMAT) || EmrUtils.encounterThatPassCodedAnswer(htsTestEncounter, htsEntryPointQstn, htsEntryPointPNC))) {
-                            result.add(mapToPregnantAndPostpartumAtHighRiskObject(htsScreeningEncounter, patient));
-                            break;
-                        }
-                    }
+            boolean isHighRisk = EmrUtils.encounterThatPassCodedAnswer(htsScreeningEncounter, htsScrRiskQstn, htsScrHighRiskResult)
+                    || EmrUtils.encounterThatPassCodedAnswer(htsScreeningEncounter, htsScrRiskQstn, htsScrHighestRiskResult);
+
+            if (isHighRisk) {
+                highRiskPatients.add(patient);
+            }
+        }
+        EncounterSearchCriteria htsTestSearchCriteria = new EncounterSearchCriteria(
+                null, null, fetchDate, null, null, testingForms,
+                Collections.singletonList(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.HTS)),
+                null, null, null, false
+        );
+        List<Encounter> htsTestEncounters = encounterService.getEncounters(htsTestSearchCriteria);
+        if( htsTestEncounters == null || htsTestEncounters.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Map<Patient, List<Encounter>> testEncountersByPatient = htsTestEncounters.stream()
+                .filter(e -> e.getPatient() != null)
+                .collect(Collectors.groupingBy(Encounter::getPatient));
+
+        // Evaluate each high-risk patient
+        for (Encounter screening : screeningEncounters) {
+            Patient patient = screening.getPatient();
+            if (!highRiskPatients.contains(patient) || !"F".equals(patient.getGender())) {
+                continue;
+            }
+            List<Encounter> patientTests = testEncountersByPatient.getOrDefault(patient, Collections.emptyList());
+
+            // Check if patient meets criteria based on test encounters
+            for (Encounter testEncounter : patientTests) {
+                if (EmrUtils.encounterThatPassCodedAnswer(testEncounter, htsFinalTestQuestion, htsNegativeResult)
+                        && (EmrUtils.encounterThatPassCodedAnswer(testEncounter, htsEntryPointQstn, htsEntryPointANC)
+                        || EmrUtils.encounterThatPassCodedAnswer(testEncounter, htsEntryPointQstn, htsEntryPointMAT)
+                        || EmrUtils.encounterThatPassCodedAnswer(testEncounter, htsEntryPointQstn, htsEntryPointPNC))) {
+                    result.add(mapToPregnantAndPostpartumAtHighRiskObject(screening, patient));
+                    break;
                 }
             }
-
         }
+        System.out.println("Pregnant and postpartum: " + result);
+        System.out.println("INFO - IL: Finished generating Pregnant and postpartum at high risk dataset");
         return result;
     }
+
     public List<SimpleObject> pregnantAndPostpartumAtHighRiskLinkedToPrEP(Date fetchDate) {
+        System.out.println("INFO - IL: Started generating Pregnant and postpartum at high risk linked to PrEP dataset... ");
         if (fetchDate == null) {
             throw new IllegalArgumentException("Fetch date cannot be null");
         }
@@ -553,8 +561,15 @@ public class CaseSurveillanceDataExchange {
                 MetadataUtils.existing(Form.class, CommonMetadata._Form.HTS_INITIAL_TEST),
                 MetadataUtils.existing(Form.class, CommonMetadata._Form.HTS_CONFIRMATORY_TEST)
         );
+        Form prepInitialForm = MetadataUtils.existing(Form.class, PrEP_INITIAL_FORM);
+        Form htsEligibilityForm = MetadataUtils.existing(Form.class, HTS_ELIGIBILITY_FORM);
 
-        // Fetch encounters
+        // Pre-Fetch encounters
+        Map<Patient, List<Encounter>> htsScreeningEncountersMap = encounterService.getEncounters(
+                new EncounterSearchCriteria(null, null, fetchDate, null, null,
+                        Collections.singletonList(htsEligibilityForm), htsEncounterType, null, null, null, false)
+        ).stream().collect(Collectors.groupingBy(Encounter::getPatient));
+
         Map<Patient, List<Encounter>> htsTestEncountersMap = encounterService.getEncounters(
                 new EncounterSearchCriteria(null, null, fetchDate, null, null, testingForms, htsEncounterType, null, null, null, false)
         ).stream().collect(Collectors.groupingBy(Encounter::getPatient));
@@ -568,151 +583,170 @@ public class CaseSurveillanceDataExchange {
         Set<Integer> processedPatientIds = new HashSet<>();
 
         // Screening encounters
-        for (Encounter htsScreeningEncounter : encounterService.getEncounters(
-                new EncounterSearchCriteria(null, null, fetchDate, null, null,
-                        Collections.singletonList(MetadataUtils.existing(Form.class, HTS_ELIGIBILITY_FORM)), htsEncounterType, null, null, null, false)
-        )) {
-            if (htsScreeningEncounter == null || htsScreeningEncounter.getPatient() == null) continue;
-            Patient patient = htsScreeningEncounter.getPatient();
-            if (processedPatientIds.contains(patient.getId())) continue; // avoid duplicates
+        for (Map.Entry<Patient, List<Encounter>> entry : htsScreeningEncountersMap.entrySet()) {
+            Patient patient = entry.getKey();
+            if (patient == null || processedPatientIds.contains(patient.getId())) continue;
 
-            boolean isHighRisk = EmrUtils.encounterThatPassCodedAnswer(htsScreeningEncounter, htsScrRiskQstn, htsScrHighRiskResult);
-            boolean isHighestRisk = EmrUtils.encounterThatPassCodedAnswer(htsScreeningEncounter, htsScrRiskQstn, htsScrHighestRiskResult);
-            if (!isHighRisk && !isHighestRisk) continue;
+            for (Encounter screeningEncounter : entry.getValue()) {
+                // Check high-risk flags
+                boolean isHighRisk = EmrUtils.encounterThatPassCodedAnswer(screeningEncounter, htsScrRiskQstn, htsScrHighRiskResult)
+                        || EmrUtils.encounterThatPassCodedAnswer(screeningEncounter, htsScrRiskQstn, htsScrHighestRiskResult);
+                if (!isHighRisk) continue;
 
-            for (Encounter htsEncounter : htsTestEncountersMap.getOrDefault(patient, Collections.emptyList())) {
-                boolean testedNegative = EmrUtils.encounterThatPassCodedAnswer(htsEncounter, htsFinalTestQuestion, htsNegativeResult);
-                boolean hasEntryPoint = EmrUtils.encounterThatPassCodedAnswer(htsEncounter, htsEntryPointQstn, htsEntryPointANC) ||
-                        EmrUtils.encounterThatPassCodedAnswer(htsEncounter, htsEntryPointQstn, htsEntryPointMAT) ||
-                        EmrUtils.encounterThatPassCodedAnswer(htsEncounter, htsEntryPointQstn, htsEntryPointPNC);
-                if (!testedNegative || !hasEntryPoint) continue;
+                // Get all test encounters for patient
+                List<Encounter> testEncounters = htsTestEncountersMap.getOrDefault(patient, Collections.emptyList());
 
-                // Only include if currently on PrEP OR has PrEP encounters
-                boolean isCurrentlyOnPrEP = EmrUtils.encounterThatPassCodedAnswer(htsScreeningEncounter, htsEligibilityCurrentOnPrEPQstn, htsEligibilityCurrentOnPrEPResult);
-                List<Encounter> patientPrepEncounters = prepEncountersMap.getOrDefault(patient, Collections.emptyList());
-                if (!isCurrentlyOnPrEP && patientPrepEncounters.isEmpty()) continue;
+                for (Encounter htsEncounter : testEncounters) {
+                    boolean testedNegative = EmrUtils.encounterThatPassCodedAnswer(htsEncounter, htsFinalTestQuestion, htsNegativeResult);
+                    boolean hasEntryPoint = EmrUtils.encounterThatPassCodedAnswer(htsEncounter, htsEntryPointQstn, htsEntryPointANC)
+                            || EmrUtils.encounterThatPassCodedAnswer(htsEncounter, htsEntryPointQstn, htsEntryPointMAT)
+                            || EmrUtils.encounterThatPassCodedAnswer(htsEncounter, htsEntryPointQstn, htsEntryPointPNC);
+                    if (!testedNegative || !hasEntryPoint) continue;
 
-                String prepNumber = CaseSurveillanceUtils.getPrepNumber(patient);
-                String prepRegimen = CaseSurveillanceUtils.getPrepRegimen(patient);
+                    // Check PrEP linkage (either currently on PrEP or has PrEP encounters)
+                    boolean isCurrentlyOnPrEP = EmrUtils.encounterThatPassCodedAnswer(screeningEncounter, htsEligibilityCurrentOnPrEPQstn, htsEligibilityCurrentOnPrEPResult);
+                    List<Encounter> prepEncounters = prepEncountersMap.getOrDefault(patient, Collections.emptyList());
+                    if (!isCurrentlyOnPrEP && prepEncounters.isEmpty()) continue;
 
-                result.add(mapToPregnantAndPostpartumAtHighRiskOnPrEPObject(htsEncounter, patient, prepNumber, prepRegimen));
-                processedPatientIds.add(patient.getId());
-            }
-        }
-        return result;
-    }
+                    // Collect PrEP details
+                    String prepNumber = CaseSurveillanceUtils.getPrepNumber(patient);
+                    String prepRegimen = CaseSurveillanceUtils.getPrepRegimen(patient);
 
-    /**
-     * VL eligibility variables
-     * @param fetchDate
-     * @return
-     */
-    public List<SimpleObject> eligibleForVl(Date fetchDate) {
-
-        if (fetchDate == null) {
-            throw new IllegalArgumentException("Fetch date cannot be null");
-        }
-
-        List<SimpleObject> result = new ArrayList<>();
-
-        List<Encounter> latestEncounters = new ArrayList<>(getLatestEncounters(fetchDate));
-
-      //  System.out.println("latestEncounters: " + latestEncounters.size());
-
-        if (latestEncounters.isEmpty()) {
-            log.warn("No eligible encounters found for VL eligibility, skipping...");
-            return result;
-        }
-
-        String artStartDate;
-        String upn;
-
-        for (Encounter encounter : latestEncounters) {
-            String vlResult = "";
-            Date vlresultDate = null;
-            Date vlOrderDate = null;
-            boolean isPregnant = false;
-            boolean isBreastFeeding = false;
-
-            Patient patient = encounter.getPatient();
-
-            if (patient == null) {
-                log.warn("Encounter has no patient, skipping...");
-                continue;
-            }
-            PatientWrapper patientWrapper = new PatientWrapper(patient);
-            upn = patientWrapper.getUniquePatientNumber();
-
-            if( upn == null || upn.isEmpty()) {
-                log.warn("Not a CCC client, skipping...");
-                continue;
-            }
-
-            artStartDate = getArtStartDate(patient);
-
-            Encounter latestMCHEnc = patientWrapper.lastEncounter(mchMotherEncounterType);
-            Encounter latestHIVConsultationEnc = patientWrapper.lastEncounter(hivConsultationEncounterType);
-
-            Order latestVlOrder = getLatestVlOrderForPatient(patient);
-
-            Encounter latestVlResultsEnc = null;
-            Encounter latestVlOrderEncounter = null;
-            Obs latestVlOrderResultObs = null;
-
-            if(latestVlOrder != null){
-                vlOrderDate = latestVlOrder.getDateActivated();
-                latestVlOrderEncounter = latestVlOrder.getEncounter();
-                latestVlOrderResultObs = getLatestVlResultObs(patient, latestVlOrder);
-                latestVlResultsEnc = latestVlOrderResultObs != null ? latestVlOrderResultObs.getEncounter(): null;
-            }
-
-         if(latestMCHEnc == null && latestHIVConsultationEnc == null && (latestVlOrderEncounter == null || latestVlOrderEncounter.getEncounterDatetime().compareTo(fetchDate) < 0)
-                 && (latestVlResultsEnc == null || latestVlResultsEnc.getEncounterDatetime().compareTo(fetchDate) < 0)) {
-             log.warn("No MCH, HIV consultation or viral load encounters found for patient: " + patient.getPatientId());
-             continue;
-         }
-            Obs undetectableObs = patientWrapper.lastObs(vlUndetectableConcept);
-            Obs qtyObs = patientWrapper.lastObs(vlQuatitativeConcept);
-            if (latestVlOrderResultObs != null) {
-                if (vlUndetectableConcept.equals(latestVlOrderResultObs.getConcept())) {
-                    vlResult = undetectableObs.getValueCoded() != null ? undetectableObs.getValueCoded().getName().getName() : "";
-                    vlresultDate = undetectableObs.getObsDatetime();
-                } else if (vlQuatitativeConcept.equals(latestVlOrderResultObs.getConcept())) {
-                    vlResult = qtyObs.getValueNumeric() != null ? qtyObs.getValueNumeric().toString() : "";
-                    vlresultDate = qtyObs.getObsDatetime();
+                    result.add(mapToPregnantAndPostpartumAtHighRiskOnPrEPObject(htsEncounter, patient, prepNumber, prepRegimen));
+                    processedPatientIds.add(patient.getId());
+                    break;
                 }
             }
-
-            if (latestHIVConsultationEnc != null && latestHIVConsultationEnc.equals(encounter)) {
-                isPregnant = isPregnant(encounter);
-                isBreastFeeding = isBreastFeeding(encounter);
-            } else if (latestMCHEnc != null && latestMCHEnc.equals(encounter) && encounter.getForm() != null && ancForm.equals(encounter.getForm()) ){
-                isPregnant = true;
-
-            } else if (latestMCHEnc != null && latestMCHEnc.equals(encounter) && encounter.getForm() != null && pncForm.equals(encounter.getForm()) ){
-
-                Obs infantFeedingObs = encounter.getObs().stream()
-                        .filter(obs -> obs.getConcept().equals(Dictionary.getConcept(Dictionary.INFANT_FEEDING_METHOD)))
-                        .findFirst()
-                        .orElse(null);
-                isBreastFeeding = infantFeedingObs != null && infantFeedingObs.getValueCoded() != null && (EXCLUSIVE_BREASTFEEDING.equals(infantFeedingObs.getValueCoded()) || MIXED_FEEDING.equals(infantFeedingObs.getValueCoded()));
-            }
-      //  System.out.println("VL Eligibility patient: " + patient.getPatientId() + " VL Result: " + vlResult + " VL Result Date: " + vlresultDate + " VL Order Date: " + vlOrderDate + " ART Start Date: " + artStartDate);
-            result.add(mapToVlEligibilityObject(encounter, upn, isPregnant, isBreastFeeding, vlResult, vlresultDate, vlOrderDate, artStartDate));
         }
-
-      //  System.out.println("Vl eligibility Variables: " + result);//todo: remove when ready to ship
-
+        System.out.println("Pregnant and Postpartum at High Risk Linked to PrEP:" +result);
+        System.out.println("INFO - IL: Finished generating Pregnant and postpartum at high risk linked to PrEP dataset");
         return result;
     }
+    @SuppressWarnings("unchecked")
+    public List<SimpleObject> eligibleForVl() {
+        System.out.println("INFO - IL: Started generating eligible for VL dataset (ETL-based)...");
+        Session session = Context.getRegisteredComponent("sessionFactory", SessionFactory.class).getCurrentSession();
+
+        String sql = "select e.patient_id,\n" +
+                "       b.pregnant,\n" +
+                "       b.breastFeedingStatus,\n" +
+                "       b.positiveHivTestDate,\n" +
+                "       b.visitDate,\n" +
+                "       b.artStartDate,\n" +
+                "       b.lastVlOrderDate,\n" +
+                "       b.lastVlResultsDate,\n" +
+                "       b.vlOrderReason,\n" +
+                "       b.dateCreated,\n" +
+                "       e.upn,\n" +
+                "       b.vlResult\n" +
+                "from (select fup.visit_date,\n" +
+                "             fup.patient_id,\n" +
+                "             max(e.visit_date)                                                      as enroll_date,\n" +
+                "             greatest(max(fup.visit_date), ifnull(max(d.visit_date), '0000-00-00')) as latest_vis_date,\n" +
+                "             greatest(mid(max(concat(fup.visit_date, fup.next_appointment_date)), 11),\n" +
+                "                      ifnull(max(d.visit_date), '0000-00-00'))                      as latest_tca,\n" +
+                "             d.patient_id                                                           as disc_patient,\n" +
+                "             d.effective_disc_date                                                  as effective_disc_date,\n" +
+                "             max(d.visit_date)                                                      as date_discontinued,\n" +
+                "             de.patient_id                                                          as started_on_drugs,\n" +
+                "             p.unique_patient_no                                                    as upn\n" +
+                "      from kenyaemr_etl.etl_patient_hiv_followup fup\n" +
+                "               join kenyaemr_etl.etl_patient_demographics p on p.patient_id = fup.patient_id\n" +
+                "               join kenyaemr_etl.etl_hiv_enrollment e on fup.patient_id = e.patient_id\n" +
+                "               left join kenyaemr_etl.etl_drug_event de\n" +
+                "                         on e.patient_id = de.patient_id and de.program = 'HIV' and\n" +
+                "                            date(de.date_started) <= date(CURRENT_DATE)\n" +
+                "               left outer JOIN\n" +
+                "           (select patient_id,\n" +
+                "                   coalesce(date(effective_discontinuation_date), visit_date) visit_date,\n" +
+                "                   max(date(effective_discontinuation_date)) as               effective_disc_date\n" +
+                "            from kenyaemr_etl.etl_patient_program_discontinuation\n" +
+                "            where date(visit_date) <= date(CURRENT_DATE)\n" +
+                "              and program_name = 'HIV'\n" +
+                "            group by patient_id) d on d.patient_id = fup.patient_id\n" +
+                "      where fup.visit_date <= date(CURRENT_DATE)\n" +
+                "      group by patient_id\n" +
+                "      having (started_on_drugs is not null and started_on_drugs <> '')\n" +
+                "         and (\n" +
+                "          (\n" +
+                "              (timestampdiff(DAY, date(latest_tca), date(CURRENT_DATE)) <= 30 and\n" +
+                "               ((date(d.effective_disc_date) > date(CURRENT_DATE) or date(enroll_date) > date(d.effective_disc_date)) or\n" +
+                "                d.effective_disc_date is null))\n" +
+                "                  and\n" +
+                "              (date(latest_vis_date) >= date(date_discontinued) or date(latest_tca) >= date(date_discontinued) or\n" +
+                "               disc_patient is null)\n" +
+                "              )\n" +
+                "          )) e\n" +
+                "         INNER JOIN (select v.patient_id,case pregnancy_status when 1065 then 'YES' when 1066 then 'NO' end     as pregnant,\n" +
+                "                            case v.breastfeeding_status when 1065 then 'YES' when 1066 then 'NO' end as breastFeedingStatus,\n" +
+                "                            v.date_confirmed_hiv_positive                                            as positiveHivTestDate,\n" +
+                "                            v.latest_hiv_followup_visit                                              as visitDate,\n" +
+                "                            v.date_started_art                                                       as artStartDate,\n" +
+                "                            v.date_test_requested                                                    as lastVlOrderDate,\n" +
+                "                            v.date_test_result_received                                              as lastVlResultsDate,\n" +
+                "                            v.order_reason                                                           as vlOrderReason,\n" +
+                "                            v.date_created                                                           as dateCreated,\n" +
+                "                            v.vl_result                                                           as vlResult\n" +
+                "                     from kenyaemr_etl.etl_viral_load_validity_tracker v\n" +
+                "                              inner join kenyaemr_etl.etl_patient_demographics d on v.patient_id = d.patient_id\n" +
+                "                     where ((TIMESTAMPDIFF(MONTH, v.date_started_art, date(CURRENT_DATE)) >= 3 and\n" +
+                "                             v.base_viral_load_test_result is null) -- First VL new on ART+\n" +
+                "                         OR ((v.pregnancy_status = 1065 or v.breastfeeding_status = 1065) and\n" +
+                "                             TIMESTAMPDIFF(MONTH, v.date_started_art, date(CURRENT_DATE)) >= 3 and\n" +
+                "                             (v.vl_result is not null and\n" +
+                "                              v.date_test_requested < date(CURRENT_DATE)) and\n" +
+                "                             (v.order_reason not in (159882, 1434, 2001237, 163718))) -- immediate for PG & BF+\n" +
+                "                         OR (v.lab_test = 856 AND v.vl_result >= 200 AND\n" +
+                "                             TIMESTAMPDIFF(MONTH, v.date_test_requested, date(CURRENT_DATE)) >= 3) -- Unsuppressed VL+\n" +
+                "                         OR (((v.lab_test = 1305 AND v.vl_result = 1302) OR v.vl_result < 200) AND\n" +
+                "                             TIMESTAMPDIFF(MONTH, v.date_test_requested, date(CURRENT_DATE)) >= 6 and\n" +
+                "                             TIMESTAMPDIFF(YEAR, d.DOB, v.date_test_requested) BETWEEN 0 AND 24) -- 0-24 with last suppressed vl+\n" +
+                "                         OR (((v.lab_test = 1305 AND v.vl_result = 1302) OR v.vl_result < 200) AND\n" +
+                "                             TIMESTAMPDIFF(MONTH, v.date_test_requested, date(CURRENT_DATE)) >= 12 and\n" +
+                "                             TIMESTAMPDIFF(YEAR, d.DOB, v.date_test_requested) > 24) -- > 24 with last suppressed vl+\n" +
+                "                         OR ((v.pregnancy_status = 1065 or v.breastfeeding_status = 1065) and\n" +
+                "                             TIMESTAMPDIFF(MONTH, v.date_started_art, date(CURRENT_DATE)) >= 3\n" +
+                "                             and (v.order_reason in (159882, 1434, 2001237, 163718) and\n" +
+                "                                  TIMESTAMPDIFF(MONTH, v.date_test_requested, date(CURRENT_DATE)) >= 6) and\n" +
+                "                             ((v.lab_test = 1305 AND v.vl_result = 1302) OR (v.vl_result < 200))) -- PG & BF after PG/BF baseline < 200\n" +
+                "                               )) b on e.patient_id = b.patient_id;";
+
+        List<Object[]> rows = session.createSQLQuery(sql)
+                .list();
+
+        List<SimpleObject> result = new ArrayList<>();
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+
+        for (Object[] row : rows) {
+            Integer patientId = row[0] != null ? Integer.parseInt(row[0].toString()) : null;
+            String pregnant = safeToString(row[1]);
+            String breastFeedingStatus = safeToString(row[2]);
+            String positiveHivTestDate = CaseSurveillanceUtils.formatDate(row[3], df);
+            String visitDate = CaseSurveillanceUtils.formatDate(row[4], df);
+            String artStartDate = CaseSurveillanceUtils.formatDate(row[5], df);
+            String lastVlOrderDate = CaseSurveillanceUtils.formatDate(row[6], df);
+            String lastVlResultsDate = CaseSurveillanceUtils.formatDate(row[7], df);
+            Integer orderReason = row[8] != null ? Integer.parseInt(row[8].toString()) : null;
+            String createdAt = CaseSurveillanceUtils.formatDate(row[9], df);
+            String upn = safeToString(row[10]);
+            String vlResult = safeToString(row[11]);
+
+            result.add(mapToVlEligibilityObject(createdAt, patientId,pregnant,breastFeedingStatus,vlResult,lastVlResultsDate,positiveHivTestDate,visitDate,artStartDate,lastVlOrderDate,orderReason, upn));
+
+        }
+
+        System.out.println("INFO - IL: Finished generating eligible for VL dataset (ETL-based). Total: " + result.size());
+        return result;
+    }
+
     /**
      * Patients with enhanced adherence
-     *
      *
      * @param fetchDate
      * @return
      */
     public List<SimpleObject> enhancedAdherence(Date fetchDate) {
+        System.out.println("INFO - IL: Started generating Enhanced Adherence dataset... ");
         if (fetchDate == null) {
             throw new IllegalArgumentException("Fetch date cannot be null");
         }
@@ -737,14 +771,12 @@ public class CaseSurveillanceDataExchange {
             Set<Integer> processedPatientIds = new HashSet<>();
             for (Encounter encounter : eacEncounters) {
                 if (encounter == null) {
-                    log.warn("Encounter is null, skipping...");
                     continue;
                 }
 
                 Patient patient = encounter.getPatient();
 
                 if (patient == null) {
-                    log.warn("Encounter has no patient, skipping...");
                     continue;
                 }
 
@@ -756,23 +788,25 @@ public class CaseSurveillanceDataExchange {
                     // This patient's first encounter has already been added, skip this one
                     continue;
                 }
-              //  System.out.println("EAC patient: " + patient.getPatientId());
                 result.add(mapToEacObject(encounter, patient, upn));
                 processedPatientIds.add(patient.getId());
             }
         }
-      //  System.out.println("EAC encounters: " + result);//todo: remove when ready to ship
+        System.out.println("EAC encounters: " + result);//todo: remove when ready to ship
+        System.out.println("INFO - IL: Finished generating Enhanced Adherence dataset");
         return result;
     }
 
     /**
      * HEI cohort
+     *
      * @return
      */
     //todo Confirm whether transmission is cumulative
     public List<SimpleObject> totalHEI() {
+        System.out.println("INFO - IL: Started generating all HEIs dataset... ");
+        Date effectiveDate = Date.from(LocalDate.now().minusMonths(24).withDayOfMonth(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
 
-        Date effectiveDate = Date.from(LocalDate.now().minusMonths(25).atStartOfDay(ZoneId.systemDefault()).toInstant().plus(2, ChronoUnit.DAYS));
         List<SimpleObject> result = new ArrayList<>();
         EncounterService encounterService = Context.getEncounterService();
 
@@ -782,7 +816,7 @@ public class CaseSurveillanceDataExchange {
 
         // Build HEI encounter search criteria
         EncounterSearchCriteria heiSearchCriteria = new EncounterSearchCriteria(
-                    null, null, effectiveDate, null, null, heiEnrollmentForm, heiEncounterType, null, null, null, false
+                null, null, effectiveDate, null, null, heiEnrollmentForm, heiEncounterType, null, null, null, false
         );
 
         List<Encounter> heiEncounters = encounterService.getEncounters(heiSearchCriteria);
@@ -796,11 +830,13 @@ public class CaseSurveillanceDataExchange {
                 }
             }
         }
+        System.out.println("All HEIs : " + result);
+        System.out.println("INFO - IL: Finished generating all HEIs dataset");
         return result;
     }
 
     public List<SimpleObject> heiWithoutDnaPCRResults() {
-
+        System.out.println("INFO - IL: Started generating HEI without DNA PCR test dataset... ");
         Date effectiveDate = Date.from(LocalDate.now().minusWeeks(8).atStartOfDay(ZoneId.systemDefault()).toInstant().plus(0, ChronoUnit.DAYS));
         List<SimpleObject> result = new ArrayList<>();
         EncounterService encounterService = Context.getEncounterService();
@@ -820,7 +856,7 @@ public class CaseSurveillanceDataExchange {
                 Patient patient = heiEncounter.getPatient();
 
                 String heiNumber = getHEINumber(patient);
-                if (patient.getBirthdate() != null && isBetween6And8WeeksOld(patient.getBirthdate(),effectiveDate) && heiNumber != null) {
+                if (patient.getBirthdate() != null && isBetween6And8WeeksOld(patient.getBirthdate(), effectiveDate) && heiNumber != null) {
 
                     PatientWrapper patientWrapper = new PatientWrapper(patient);
 
@@ -832,51 +868,70 @@ public class CaseSurveillanceDataExchange {
                 }
             }
         }
+        System.out.println("HEIs without dna pcr : " + result);
+        System.out.println("INFO - IL: Finished generating HEI without DNA PCR test dataset");
         return result;
     }
 
-    /**public Encounter getLatestHIVConsultationEncounter() {
-    return getLatestHIVConsultationEncounter(null);
-}
-     * HEIs without documented final Outcome
-     *
+
+    /** HEIs without documented final Outcome
      * @param fetchDate
      * @return
      */
     public List<SimpleObject> heiWithoutFinalOutcome(Date fetchDate) {
+        System.out.println("INFO - IL: Started generating HEI without final outcome dataset... ");
         if (fetchDate == null) {
             throw new IllegalArgumentException("Fetch date cannot be null");
         }
-        Date effectiveDate = Date.from(LocalDate.now().minusMonths(25).atStartOfDay(ZoneId.systemDefault()).toInstant().plus(0, ChronoUnit.DAYS));
+
         List<SimpleObject> result = new ArrayList<>();
         EncounterService encounterService = Context.getEncounterService();
 
-        // Get relevant encounter types
-        List<EncounterType> heiEncounterType = Collections.singletonList(MetadataUtils.existing(EncounterType.class, MchMetadata._EncounterType.MCHCS_ENROLLMENT));
-        List<Form> heiEnrollmentForm = Collections.singletonList(MetadataUtils.existing(Form.class, MchMetadata._Form.MCHCS_ENROLLMENT));
+        // Pre-fetch metadata (avoid repeated calls inside loop)
+        EncounterType heiEncounterType = MetadataUtils.existing(EncounterType.class, MchMetadata._EncounterType.MCHCS_ENROLLMENT);
+        Form heiEnrollmentForm = MetadataUtils.existing(Form.class, MchMetadata._Form.MCHCS_ENROLLMENT);
+        Concept hivStatusConcept = MetadataUtils.existing(Concept.class, Metadata.Concept.HIV_STATUS);
 
-        // Build HEI encounter search criteria
+        // Compute a birthdate cutoff for 24 months to filter before loading all encounters
+        LocalDate contextLocal = fetchDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate minBirthDate = contextLocal.minusMonths(24); // inclusive window
+        Date minBirthDateAsDate = Date.from(minBirthDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        LocalDate earliestRelevantDate = contextLocal.minusMonths(24);
+        Date earliestEncounterDate = Date.from(earliestRelevantDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        // Search only HEI encounters where patient birthdate is within 24 months window
         EncounterSearchCriteria heiSearchCriteria = new EncounterSearchCriteria(
-                null, null, effectiveDate, null, null, heiEnrollmentForm, heiEncounterType, null, null, null, false
+                null, null, earliestEncounterDate, null, null,
+                Collections.singletonList(heiEnrollmentForm),
+                Collections.singletonList(heiEncounterType),
+                null, null, null,
+                false
         );
         List<Encounter> heiEncounters = encounterService.getEncounters(heiSearchCriteria);
-        if (!heiEncounters.isEmpty()) {
-            for (Encounter heiEncounter : heiEncounters) {
-                Patient patient = heiEncounter.getPatient();
-                String heiNumber = getHEINumber(patient);
-                Integer ageInMonths = getAgeInMonths(patient.getBirthdate(), fetchDate);
-                if (heiNumber != null && ageInMonths == 24) {
-                    PatientWrapper patientWrapper = new PatientWrapper(patient);
 
-                    Obs obs = patientWrapper.lastObs(MetadataUtils.existing(Concept.class, Metadata.Concept.HIV_STATUS));
+        for (Encounter heiEncounter : heiEncounters) {
+            Patient patient = heiEncounter.getPatient();
+            // Skip early if outside the 24-month window (avoid unnecessary wrapper creation)
+            if (patient.getBirthdate() == null || patient.getBirthdate().before(minBirthDateAsDate)) {
+                continue;
+            }
+            String heiNumber = getHEINumber(patient);
+            if (heiNumber == null) {
+                continue;
+            }
 
-                    if (obs == null || obs.getValueCoded() == null) {
-                        result.add(mapToHEIWithoutOutcomesObject(heiEncounter, patient, heiNumber));
-                    }
+            // Final validation using MySQL-like month calculation (ensures no April edge cases)
+            int ageInMonths = getAgeInMonths(patient.getBirthdate(), fetchDate);
+            if (ageInMonths == 24) {
+                PatientWrapper patientWrapper = new PatientWrapper(patient);
+                Obs obs = patientWrapper.lastObs(hivStatusConcept);
+
+                if (obs == null || obs.getValueCoded() == null) {
+                    result.add(mapToHEIWithoutOutcomesObject(heiEncounter, patient, heiNumber));
                 }
             }
         }
-      //  System.out.println("HEI Without Final Outcome: " + result);//todo: remove when ready to ship
+        System.out.println("HEI Without Final Outcome : " + result);
+        System.out.println("INFO - IL: Finished generating HEI without final outcome dataset");
         return result;
     }
 
@@ -885,7 +940,6 @@ public class CaseSurveillanceDataExchange {
      */
     public List<Map<String, Object>> generateCaseSurveillancePayload(Date fetchDate) {
         List<Map<String, Object>> payload = new ArrayList<>();
-
         // Tested HIV-positive data as "new_case"
         Set<SimpleObject> testedPositive = testedHIVPositive(fetchDate);
         for (SimpleObject tested : testedPositive) {
@@ -931,7 +985,7 @@ public class CaseSurveillanceDataExchange {
             payload.add(mapToDatasetStructure(eac, "unsuppressed_viral_load"));
         }
         // Eligible for VL
-        List<SimpleObject> eligibleForVl = eligibleForVl(fetchDate);
+        List<SimpleObject> eligibleForVl = eligibleForVl();
         for (SimpleObject eligibleForVlVariables : eligibleForVl) {
             payload.add(mapToDatasetStructure(eligibleForVlVariables, "eligible_for_vl"));
         }
@@ -996,7 +1050,8 @@ public class CaseSurveillanceDataExchange {
         return result;
     }
 
-    public String sendCaseSurveillancePayload(List<Map<String, Object>> payload) {
+   public String sendCaseSurveillancePayload(List<Map<String, Object>> payload) {
+        System.out.println("Sending case surveillance payload: " + payload.size());
         // Retrieve the Bearer Token
         String bearerToken = getBearerToken();
         if (bearerToken.isEmpty()) {
@@ -1037,6 +1092,9 @@ public class CaseSurveillanceDataExchange {
                     case HttpURLConnection.HTTP_CREATED:
                         System.out.println("Case surveillance payload sent successfully. Response: " + responseContent);
                         return "Success: Payload sent. Response: " + responseContent;
+                    case HttpURLConnection.HTTP_ACCEPTED:
+                        System.out.println("Case surveillance payload accepted. Response: " + responseContent);
+                        return "Success: Payload accepted. Response: " + responseContent;
                     case HttpURLConnection.HTTP_BAD_REQUEST:
                         log.error("Case surveillance Bad Request. Status Code: {}. Response: {}", statusCode, responseContent);
                         return "Error: Bad Request. Response: " + responseContent;
@@ -1055,157 +1113,30 @@ public class CaseSurveillanceDataExchange {
     }
 
     public String processAndSendCaseSurveillancePayload(Date fetchDate) {
+        log.warn("processAndSendCaseSurveillancePayload called. Fetch date: {}", fetchDate);
         List<Map<String, Object>> payload = generateCaseSurveillancePayload(fetchDate);
         Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
         String jsonPayload = gson.toJson(payload); // Serialize to JSON
         if (jsonPayload == null || jsonPayload.isEmpty()) {
-            return ("No case surveillance data to send at "+ fetchDate);
+            return ("No case surveillance data to send at " + fetchDate);
         }
-        System.out.println("Case surveillance payload: " + jsonPayload);
+        System.out.println("Case surveillance Payload size: " + jsonPayload.getBytes(StandardCharsets.UTF_8).length + " bytes");
         return sendCaseSurveillancePayload(payload);
     }
 
     public String getArtStartDate(Patient patient) {
-        CalculationResult artStartDateResults = EmrCalculationUtils
-                .evaluateForPatient(InitialArtStartDateCalculation.class, null, patient);
-
-        if (artStartDateResults != null && artStartDateResults.getValue() != null) {
-            return formatDateTime((Date) artStartDateResults.getValue());
-        } else {
-            log.warn("ART Start Date Calculation returned null for patient: " + patient.getPatientId());
-            return null;
-        }
-    }
-
-    public Order getLatestVlOrderForPatient(Patient patient) {
-        OrderService orderService = Context.getOrderService();
-        OrderSearchCriteriaBuilder orderSearchCriteriaBuilder = new OrderSearchCriteriaBuilder()
-                .setPatient(patient)
-                .setConcepts(Arrays.asList(vlQuatitativeConcept, vlUndetectableConcept))
-                .setOrderTypes(Collections.singleton(orderService.getOrderTypeByUuid(TEST_ORDER_TYPE_UUID)))
-                .setAction(Order.Action.NEW);
-
-        List<Order> orders = orderService.getOrders(orderSearchCriteriaBuilder.build());
-        if (orders != null && !orders.isEmpty()) {
-            return orders.get(0);
+        try {
+            CalculationResult artStartDateResults = EmrCalculationUtils
+                    .evaluateForPatient(InitialArtStartDateCalculation.class, null, patient);
+            if (artStartDateResults != null && artStartDateResults.getValue() != null) {
+                return formatDateTime((Date) artStartDateResults.getValue());
+            } else {
+                return null;
+            }
+        } catch (Exception e) {
+            log.error("Error evaluating InitialArtStartDateCalculation for patient {}: {}", patient.getPatientId(), e.getMessage(), e);
         }
         return null;
-    }
-
-    public List<Encounter> getLatestVlResultEncounters(Date fetchDate) {
-        List<Encounter> vlResultsEncounters = new ArrayList<>();
-        OrderSearchCriteriaBuilder orderSearchCriteria = new OrderSearchCriteriaBuilder().
-                setConcepts(Arrays.asList(vlQuatitativeConcept, vlUndetectableConcept))
-                .setOrderTypes(Collections.singleton(orderService.getOrderTypeByUuid(TEST_ORDER_TYPE_UUID)))
-                .setFulfillerStatus(Order.FulfillerStatus.COMPLETED)
-                .setAction(Order.Action.NEW)
-                .setIsStopped(true);
-
-       List<Order> orders = orderService.getOrders(orderSearchCriteria.build());
-        if (orders.isEmpty()) {
-            return vlResultsEncounters;
-        }
-
-        for (Order order : orders) {
-            if(!Order.FulfillerStatus.COMPLETED.equals(order.getFulfillerStatus()) && (!vlQuatitativeConcept.equals(order.getConcept()) || !vlUndetectableConcept.equals(order.getConcept()))) {
-                continue;
-            }
-            Encounter e = order.getEncounter();
-            if (e != null) {
-                Set<Obs> obs = e.getObs();
-                for (Obs obsItem : obs) {
-                    if (obsItem.getDateCreated().compareTo(fetchDate) >= 0) {
-                        vlResultsEncounters.add(obsItem.getEncounter());
-                    }
-                }
-
-            }
-        }
-        return vlResultsEncounters;
-    }
-
-    public Obs getLatestVlResultObs(Patient patient, Order vlOrder) {
-        Obs latestObs;
-        PatientWrapper patientWrapper = new PatientWrapper(patient);
-
-        Obs undetectableVLObs = patientWrapper.lastObs(vlUndetectableConcept);
-        Obs qtyObs = patientWrapper.lastObs(vlQuatitativeConcept);
-
-        if (qtyObs == null) {
-            latestObs = undetectableVLObs;
-        } else if (undetectableVLObs != null) {
-            latestObs = undetectableVLObs.getDateCreated().after(qtyObs.getDateCreated()) ? undetectableVLObs : qtyObs;
-        } else {
-            latestObs = qtyObs;
-        }
-        if (latestObs == null) {
-            return null;
-        }
-
-        return vlOrder.equals(latestObs.getOrder()) ? latestObs : null;
-   }
-
-    public Collection<Encounter> getLatestEncounters(Date fetchDate) {
-
-        List<Encounter> vlResultsEncounters = getLatestVlResultEncounters(fetchDate);
-
-        EncounterSearchCriteriaBuilder encounterSearchCriteriaBuilder = new EncounterSearchCriteriaBuilder()
-                .setFromDate(fetchDate)
-                .setEncounterTypes(Arrays.asList(hivConsultationEncounterType, labOrderEncounterType, labResultsEncounterType, mchMotherEncounterType))
-                .setIncludeVoided(false);
-
-        // Fetch all matching encounters
-        List<Encounter> encounterList = encounterService.getEncounters(encounterSearchCriteriaBuilder.createEncounterSearchCriteria());
-        encounterList.addAll(vlResultsEncounters);
-
-        // Map to remember latest encounter for each patient
-        Map<Patient, Encounter> latestEncounterMap = new HashMap<>();
-        for (Encounter encounter : encounterList) {
-            Patient patient = encounter.getPatient();
-            Encounter existingLatest = latestEncounterMap.get(patient);
-
-            if (existingLatest == null
-                    || (encounter.getEncounterDatetime() != null
-                    && encounter.getEncounterDatetime().after(existingLatest.getEncounterDatetime()))) {
-                latestEncounterMap.put(patient, encounter);
-            }
-        }
-        // Return the latest encounter for each patient
-        return latestEncounterMap.values();
-
-    }
-    public boolean isBreastFeeding(Encounter encounter) {
-        boolean  breastfeeding = false;
-        Concept breastfeedingStatusQstn = Dictionary.getConcept(Dictionary.CURRENTLY_BREASTFEEDING);
-        Set<Obs> obsSet = encounter.getObs();
-
-        for (Obs obs : obsSet) {
-            if (Objects.equals(obs.getConcept(), breastfeedingStatusQstn)) {
-                Concept valueCoded = obs.getValueCoded();
-                if (valueCoded != null) {
-
-                    breastfeeding = valueCoded.equals(YES);
-                }
-            }
-        }
-        return breastfeeding;
-    }
-
-    public boolean isPregnant(Encounter encounter){
-        boolean pregnant = false;
-        Concept pregnancyStatusQstn = Dictionary.getConcept(Dictionary.PREGNANCY_STATUS);
-        Set<Obs> obsSet = encounter.getObs();
-
-        for (Obs obs : obsSet) {
-
-            if (Objects.equals(obs.getConcept(), pregnancyStatusQstn)) {
-                Concept valueCoded = obs.getValueCoded();
-                if (valueCoded != null) {
-                    pregnant = valueCoded.equals(YES);
-                }
-            }
-        }
-        return pregnant;
     }
 }
 

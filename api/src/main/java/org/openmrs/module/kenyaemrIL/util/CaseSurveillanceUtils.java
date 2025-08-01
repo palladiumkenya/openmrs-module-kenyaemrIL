@@ -12,8 +12,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
-import org.joda.time.DateTime;
-import org.joda.time.Months;
 import org.openmrs.Concept;
 import org.openmrs.Obs;
 import org.openmrs.Patient;
@@ -29,7 +27,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
+import java.text.DateFormat;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -54,6 +54,7 @@ public class CaseSurveillanceUtils {
     private static final String API_CS_CLIENT_SECRET = ILMetadata.GP_CS_SERVER_CLIENT_SECRET;
     private static final String PrEP_NUMBER_IDENTIFIER_TYPE_UUID = "ac64e5cb-e3e2-4efa-9060-0dd715a843a1";
     private static final int PrEP_REGIMEN_CONCEPT_ID = 164515;
+
     public static SSLConnectionSocketFactory createSslConnectionFactory() throws Exception {
         return new SSLConnectionSocketFactory(
                 SSLContexts.createDefault(),
@@ -138,28 +139,38 @@ public class CaseSurveillanceUtils {
 
     /**
      * Utility Method to compute age in months
-     * @param birtDate
-     * @param context
+     *
+     * @param birthDate
+     * @param contextDate
      * @return
      */
-    public static Integer getAgeInMonths(Date birtDate, Date context) {
-        DateTime d1 = new DateTime(birtDate.getTime());
-        DateTime d2 = new DateTime(context.getTime());
-        return Months.monthsBetween(d1, d2).getMonths();
+    public static Integer getAgeInMonths(Date birthDate, Date contextDate) {
+        if (birthDate == null || contextDate == null) {
+            return null;
+        }
+        // Convert Dates to YearMonth (ignoring day-of-month for month diff)
+        YearMonth birthYM = YearMonth.from(birthDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+        YearMonth contextYM = YearMonth.from(contextDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+
+        // Count months between like MySQL TIMESTAMPDIFF(MONTH, dob, context)
+        return (int) birthYM.until(contextYM, ChronoUnit.MONTHS);
     }
 
     /**
      * Utility method to get HEI number
+     *
      * @param patient
      * @return
      */
-    public static String getHEINumber(Patient patient){
+    public static String getHEINumber(Patient patient) {
         PatientIdentifierType heiIdentifierType = MetadataUtils.existing(PatientIdentifierType.class, Metadata.IdentifierType.HEI_UNIQUE_NUMBER);
         PatientIdentifier heiIdentifier = patient.getPatientIdentifier(heiIdentifierType);
         return heiIdentifier != null ? heiIdentifier.getIdentifier() : null;
     }
 
-    /** Fetch PrEP Number for the given patient */
+    /**
+     * Fetch PrEP Number for the given patient
+     */
     public static String getPrepNumber(Patient patient) {
         PatientIdentifierType prepIdentifierType = MetadataUtils.existing(
                 PatientIdentifierType.class, PrEP_NUMBER_IDENTIFIER_TYPE_UUID
@@ -168,7 +179,9 @@ public class CaseSurveillanceUtils {
         return prepIdentifier != null ? prepIdentifier.getIdentifier() : null;
     }
 
-    /** Fetch PrEP Regimen from the for patient */
+    /**
+     * Fetch PrEP Regimen from the for patient
+     */
     public static String getPrepRegimen(Patient patient) {
         Concept prepRegimenConcept = conceptService.getConcept(PrEP_REGIMEN_CONCEPT_ID);
         PatientWrapper patientWrapper = new PatientWrapper(patient);
@@ -178,12 +191,34 @@ public class CaseSurveillanceUtils {
         }
         return null;
     }
+
     public static boolean isBetween6And8WeeksOld(Date birthDate, Date referenceDate) {
         LocalDate birth = birthDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         LocalDate ref = referenceDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-
         long weeks = ChronoUnit.WEEKS.between(birth, ref);
         return weeks >= 6 && weeks <= 8;
     }
 
+    public static Concept getConceptByConceptId(Integer conceptId) {
+        if (conceptId == null) {
+            return null;
+        }
+        Concept concept = conceptService.getConcept(conceptId);
+        if (concept == null) {
+            log.warn("Concept with ID {} not found", conceptId);
+        }
+        return concept;
+    }
+    // Helper: safely handle Strings and nulls
+    public static String safeToString(Object obj) {
+        return obj != null ? obj.toString() : null;
+    }
+
+    // Helper: format Date or SQLDate into a String (yyyy-MM-dd)
+    public static String formatDate(Object obj, DateFormat df) {
+        if (obj instanceof java.sql.Date || obj instanceof java.util.Date) {
+            return df.format((Date) obj);
+        }
+        return obj != null ? obj.toString() : null;
+    }
 }
