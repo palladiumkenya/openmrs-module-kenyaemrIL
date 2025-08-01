@@ -54,14 +54,15 @@ public class ProcessAppointmentsTask extends AbstractTask {
         ArrayList<Integer> patientIdListFromAppointments = new ArrayList<>(appointmentMap.values());
         Map<Integer, Boolean> patientConsentMap = getLatestConsentForReminder(patientIdListFromAppointments);
 
-        for (String appointmentUuid : appointmentMap.keySet()) {
+        for (Map.Entry<String, Integer> entry : appointmentMap.entrySet()) {
+            String appointmentUuid = entry.getKey();
+            Integer patientId = entry.getValue();
             Appointment appt = appointmentsService.getAppointmentByUuid(appointmentUuid);
-            Integer patientId = appt.getPatient().getPatientId();
-
-            if (patientConsentMap !=null && !patientConsentMap.isEmpty()) {
-            boolean consentForReminder = patientConsentMap.get(patientId);
-            appointmentsEvent(appt.getPatient(), appt, consentForReminder);
+            if (appt == null || appt.getPatient() == null) {
+                continue;
             }
+            boolean consentForReminder = Boolean.TRUE.equals(patientConsentMap.get(patientId));
+            appointmentsEvent(appt.getPatient(), appt, consentForReminder);
         }
 
         Date nextProcessingDate = new Date();
