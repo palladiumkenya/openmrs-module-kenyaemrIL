@@ -1094,6 +1094,7 @@ public class CaseSurveillanceDataExchange {
                         return "Success: Payload sent. Response: " + responseContent;
                     case HttpURLConnection.HTTP_ACCEPTED:
                         System.out.println("Case surveillance payload accepted. Response: " + responseContent);
+                        return "Success: Payload accepted. Response: " + responseContent;
                     case HttpURLConnection.HTTP_BAD_REQUEST:
                         log.error("Case surveillance Bad Request. Status Code: {}. Response: {}", statusCode, responseContent);
                         return "Error: Bad Request. Response: " + responseContent;
