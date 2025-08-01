@@ -12,8 +12,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
-import org.joda.time.DateTime;
-import org.joda.time.Months;
 import org.openmrs.Concept;
 import org.openmrs.Obs;
 import org.openmrs.Patient;
@@ -31,7 +29,6 @@ import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.time.LocalDate;
-import java.time.Period;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
@@ -57,8 +54,6 @@ public class CaseSurveillanceUtils {
     private static final String API_CS_CLIENT_SECRET = ILMetadata.GP_CS_SERVER_CLIENT_SECRET;
     private static final String PrEP_NUMBER_IDENTIFIER_TYPE_UUID = "ac64e5cb-e3e2-4efa-9060-0dd715a843a1";
     private static final int PrEP_REGIMEN_CONCEPT_ID = 164515;
-    private static final int HEI_CUTOFF_MONTHS = 24;
-    private static final int EXTRA_DAYS_TOLERANCE = 29; // Allow ~4 weeks past 24 months
 
     public static SSLConnectionSocketFactory createSslConnectionFactory() throws Exception {
         return new SSLConnectionSocketFactory(
