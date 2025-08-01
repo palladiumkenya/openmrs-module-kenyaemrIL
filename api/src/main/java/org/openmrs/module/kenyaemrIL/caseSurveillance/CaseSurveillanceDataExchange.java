@@ -4,12 +4,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.hibernate.Session;
@@ -27,9 +25,7 @@ import org.openmrs.PatientIdentifierType;
 import org.openmrs.PersonAddress;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.EncounterService;
-import org.openmrs.api.ObsService;
 import org.openmrs.api.OrderService;
-import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
 import org.openmrs.calculation.result.CalculationResult;
 import org.openmrs.module.kenyaemr.Dictionary;
@@ -46,14 +42,11 @@ import org.openmrs.module.kenyaemrIL.dmi.dmiUtils;
 import org.openmrs.module.kenyaemrIL.util.CaseSurveillanceUtils;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.parameter.EncounterSearchCriteria;
-import org.openmrs.parameter.EncounterSearchCriteriaBuilder;
-import org.openmrs.parameter.OrderSearchCriteria;
 import org.openmrs.parameter.OrderSearchCriteriaBuilder;
 import org.openmrs.ui.framework.SimpleObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
@@ -65,27 +58,21 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.openmrs.OrderType.TEST_ORDER_TYPE_UUID;
 import static org.openmrs.module.kenyaemr.Metadata.Concept.ANTIRETROVIRAL_TREATMENT_START_DATE;
 import static org.openmrs.module.kenyaemr.util.EmrUtils.getGlobalPropertyValue;
 import static org.openmrs.module.kenyaemrIL.util.CaseSurveillanceUtils.*;
-import static org.springframework.jdbc.object.BatchSqlUpdate.DEFAULT_BATCH_SIZE;
 
 public class CaseSurveillanceDataExchange {
     private static final Logger log = LoggerFactory.getLogger(CaseSurveillanceDataExchange.class);
@@ -94,19 +81,6 @@ public class CaseSurveillanceDataExchange {
     private static final String PrEP_INITIAl_FUP_ENCOUNTER = "706a8b12-c4ce-40e4-aec3-258b989bf6d3";
     private static final String HTS_ELIGIBILITY_FORM = "04295648-7606-11e8-adc0-fa7ae01bbebc";
     private static final String PrEP_INITIAL_FORM = "1bfb09fc-56d7-4108-bd59-b2765fd312b8";
-
-    EncounterService encounterService = Context.getEncounterService();
-    OrderService orderService = Context.getOrderService();
-
-    Concept vlUndetectableConcept = MetadataUtils.existing(Concept.class, Metadata.Concept.HIV_VIRAL_LOAD_QUALITATIVE);
-    Concept vlQuatitativeConcept = MetadataUtils.existing(Concept.class, Metadata.Concept.HIV_VIRAL_LOAD);
-
-    EncounterType hivConsultationEncounterType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.HIV_CONSULTATION);
-    EncounterType mchMotherEncounterType = MetadataUtils.existing(EncounterType.class, MchMetadata._EncounterType.MCHMS_CONSULTATION);
-    EncounterType labResultsEncounterType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.LAB_RESULTS);
-    EncounterType labOrderEncounterType = MetadataUtils.existing(EncounterType.class, HivMetadata._EncounterType.DRUG_ORDER);
-
-    private static final Concept YES = Dictionary.getConcept(Dictionary.YES);
 
     // Utility method for null-safe string extraction
     private static String safeGetField(PersonAddress address, Function<PersonAddress, String> mapper) {
@@ -371,7 +345,6 @@ public class CaseSurveillanceDataExchange {
         OrderSearchCriteriaBuilder orderSearchCriteriaBuilder = new OrderSearchCriteriaBuilder().setOrderTypes(Collections.singletonList(orderService.getOrderTypeByUuid(OrderType.TEST_ORDER_TYPE_UUID))).setActivatedOnOrAfterDate(fetchDate).setConcepts(Collections.singletonList(Dictionary.getConcept(Dictionary.HIV_DNA_POLYMERASE_CHAIN_REACTION_QUALITATIVE)));
 
         List<Order> dnaPCROrders = orderService.getOrders(orderSearchCriteriaBuilder.build());
-        System.out.println("=======pcr order s size: "+dnaPCROrders.size());
         if (!dnaPCROrders.isEmpty()) {
             for (Order order : dnaPCROrders) {
                 Patient patient = order.getPatient();
@@ -384,7 +357,6 @@ public class CaseSurveillanceDataExchange {
 
                 Encounter e = order.getEncounter();
                 if (obs != null && obs.getValueCoded() == MetadataUtils.existing(Concept.class, Metadata.Concept.POSITIVE)) {
-                    System.out.println("------------------Tested through lab order: " +e.getPatient().getPatientId());
                     result.add(mapToTestedPositiveObject(e, patient));
                     processedPatientIds.add(patient.getId());
                 }
@@ -394,61 +366,6 @@ public class CaseSurveillanceDataExchange {
         System.out.println("INFO - IL: Finished generating HIV+ cases dataset");
         return result;
     }
-/*    public List<SimpleObject> getLinkageToHIVCare(Date fetchDate) {
-        System.out.println("INFO - IL: Started generating Linked to HIV Care dataset...");
-        if (fetchDate == null) {
-            throw new IllegalArgumentException("Fetch date cannot be null");
-        }
-
-        EncounterService encounterService = Context.getEncounterService();
-        List<SimpleObject> result = new ArrayList<>();
-
-        // Preload metadata objects (avoids repeated MetadataUtils lookups)
-        EncounterType drugRegimenType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.DRUG_REGIMEN_EDITOR);
-        EncounterType htsType = MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.HTS);
-        Form drugRegimenForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.DRUG_REGIMEN_EDITOR);
-        Form htsForm = MetadataUtils.existing(Form.class, CommonMetadata._Form.HTS_LINKAGE);
-
-        // Fetch all encounters within the fetch date
-        List<Encounter> linkageToCareEncounters = encounterService.getEncounters(new EncounterSearchCriteria(
-                null, null, fetchDate, null, null,
-                Arrays.asList(drugRegimenForm, htsForm),
-                Arrays.asList(drugRegimenType, htsType),
-                null, null, null, false
-        ));
-
-        if (linkageToCareEncounters.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // Extract all patient IDs from these encounters
-        Set<Integer> patientIds = linkageToCareEncounters.stream()
-                .map(e -> e.getPatient().getPatientId())
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-
-        // Batch fetch ART start dates for all patients
-        Map<Integer, String> artStartDates = getArtStartDatesForPatients(patientIds,fetchDate);
-
-        // Now filter and map results
-        for (Encounter encounter : linkageToCareEncounters) {
-            Patient patient = encounter.getPatient();
-            if (patient == null) {
-                continue;
-            }
-
-            String artStartDate = artStartDates.get(patient.getPatientId());
-            if (artStartDate == null) {
-                continue;
-            }
-            result.add(mapToLinkageObject(encounter, patient, artStartDate));
-        }
-
-        System.out.println("Linked to HIV Care: " + result);
-        System.out.println("INFO - IL: Finished generating Linked to HIV Care dataset");
-        return result;
-    }*/
-
     /**
      * Retrieves a list of patients linked to HIV care since the last fetch date
      */
@@ -921,7 +838,6 @@ public class CaseSurveillanceDataExchange {
     public List<SimpleObject> heiWithoutDnaPCRResults() {
         System.out.println("INFO - IL: Started generating HEI without DNA PCR test dataset... ");
         Date effectiveDate = Date.from(LocalDate.now().minusWeeks(8).atStartOfDay(ZoneId.systemDefault()).toInstant().plus(0, ChronoUnit.DAYS));
-        System.out.println("HEI DNA PCR EFFECTIVE DATE.. " + effectiveDate);
         List<SimpleObject> result = new ArrayList<>();
         EncounterService encounterService = Context.getEncounterService();
 
@@ -1134,171 +1050,7 @@ public class CaseSurveillanceDataExchange {
         return result;
     }
 
-    private static final int DEFAULT_BATCH_SIZE = 50;
-    private static final int MAX_RETRY_ATTEMPTS = 3;
-    private static final long BASE_BACKOFF_MILLIS = 100000;
-
-    public String processAndSendCaseSurveillancePayload(Date fetchDate) {
-        System.out.println("Starting case surveillance payload processing for date: {}"+ fetchDate);
-
-        List<Map<String, Object>> payload = generateCaseSurveillancePayload(fetchDate);
-        if (payload == null || payload.isEmpty()) {
-            log.warn("No case surveillance data found for: {}", fetchDate);
-            return "No case surveillance data to send at " + fetchDate;
-        }
-
-        int totalRecords = payload.size();
-        int batchSize = DEFAULT_BATCH_SIZE;
-        int totalBatches = (int) Math.ceil((double) totalRecords / batchSize);
-
-        System.out.println("Total records: "+totalRecords+" , Batch size: "+batchSize+" , Total batches: {}"+totalBatches );
-
-        boolean allSuccess = true;
-        long startTime = System.currentTimeMillis();
-        for (int batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
-            int fromIndex = batchIndex * batchSize;
-            int toIndex = Math.min(fromIndex + batchSize, totalRecords);
-            List<Map<String, Object>> batch = payload.subList(fromIndex, toIndex);
-
-            System.out.println("Sending batch " + (batchIndex + 1) + " of " + totalBatches +
-                    " (records " + (fromIndex + 1) + " to " + toIndex + ")");
-
-            boolean batchSuccess = false;
-            int attempt = 0;
-
-            while (!batchSuccess && attempt < MAX_RETRY_ATTEMPTS) {
-                attempt++;
-                System.out.println("Attempt " + attempt + " for batch " + (batchIndex + 1));
-
-                String response = sendSingleBatch(batch, batchIndex + 1);
-
-                if (response.startsWith("Success")) {
-                    log.info("Batch {} sent successfully. Response: {}", batchIndex + 1, response);
-                    System.out.println("Batch "+(batchIndex + 1)+" sent successfully. Response: {}" + response);
-                    batchSuccess = true;
-                } else {
-                    log.warn("Batch {} attempt {} failed: {}", batchIndex + 1, attempt, response);
-                    System.out.println("Batch "+ (batchIndex + 1) +" attempt "+attempt+" failed: "+ response);
-
-                    if (attempt >= MAX_RETRY_ATTEMPTS) {
-                        log.error("Batch {} failed after {} attempts. Stopping further processing.", batchIndex + 1, MAX_RETRY_ATTEMPTS);
-                        System.out.println("Batch " + (batchIndex + 1) + " failed after " + MAX_RETRY_ATTEMPTS + " attempts.");
-                        allSuccess = false;
-                        break;
-                    }
-
-                    // Exponential backoff
-                    long backoffTime = (long) Math.pow(2, attempt - 1) * BASE_BACKOFF_MILLIS;
-                    System.out.println("Waiting for " + backoffTime + "ms before retrying...");
-                    try {
-                        Thread.sleep(backoffTime);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt(); // best practice
-                        log.error("Retry interrupted", ie);
-                        break;
-                    }
-                }
-            }
-
-            if (!batchSuccess) break;
-        }
-        long elapsedTime = System.currentTimeMillis() - startTime;
-        System.out.println("Case surveillance processing completed in {} ms"+ elapsedTime);
-
-        return allSuccess
-                ? "All case surveillance batches sent successfully."
-                : "One or more case surveillance batches failed.";
-    }
-    private String sendSingleBatch(List<Map<String, Object>> batch, int batchNumber) {
-        System.out.println("Entering sendSingleBatch for batch " + batchNumber);
-
-        String bearerToken = getBearerToken();
-        if (bearerToken == null || bearerToken.isEmpty()) {
-            System.out.println("Bearer token is missing.");
-            log.error("Bearer token is missing.");
-            return "Error: Bearer token is missing.";
-        }
-
-        String endpointUrl = getGlobalPropertyValue(BASE_CS_URL);
-        if (endpointUrl == null || endpointUrl.trim().isEmpty()) {
-            System.out.println("Endpoint URL is missing or invalid.");
-            log.error("Endpoint URL is missing or invalid.");
-            return "Error: Endpoint URL is missing.";
-        }
-
-        Gson gson = new GsonBuilder().serializeNulls().create();
-        String payloadJson = gson.toJson(batch);
-
-        log.debug("Batch {} payload size: {} bytes", batchNumber, payloadJson.getBytes(StandardCharsets.UTF_8).length);
-        System.out.println("Batch "+batchNumber+" payload size: "+payloadJson.getBytes(StandardCharsets.UTF_8).length+" bytes");
-
-        CloseableHttpClient httpClient = null;
-        CloseableHttpResponse response = null;
-        try {
-            System.out.println("About to call remote server for batch " + batchNumber);
-
-            HttpPut putRequest = new HttpPut(endpointUrl.trim());
-            putRequest.setHeader("Content-Type", "application/json");
-            putRequest.setHeader("Authorization", "Bearer " + bearerToken);
-            putRequest.setEntity(new StringEntity(payloadJson, StandardCharsets.UTF_8));
-            System.out.println("Headers set for batch " + batchNumber);
-
-            response = httpClient.execute(putRequest);
-
-            int statusCode = response.getStatusLine().getStatusCode();
-            String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-
-            System.out.println("Batch "+batchNumber+" sent. Response Code: "+statusCode+", Message: {}" + responseBody);
-
-            if (statusCode == HttpURLConnection.HTTP_OK || statusCode == HttpURLConnection.HTTP_CREATED) {
-                return "Success: Batch " + batchNumber + " sent.";
-            } else {
-                return "Error: Batch " + batchNumber + " failed with status " + statusCode + ". Response: " + responseBody;
-            }
-
-            /*
-            try (CloseableHttpClient httpClient = HttpClients.createDefault();
-                 CloseableHttpResponse response = httpClient.execute(putRequest)) {
-
-                int statusCode = response.getStatusLine().getStatusCode();
-                String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-
-                System.out.println("Batch "+batchNumber+" sent. Response Code: "+statusCode+", Message: {}" + responseBody);
-
-                if (statusCode == HttpURLConnection.HTTP_OK || statusCode == HttpURLConnection.HTTP_CREATED) {
-                    return "Success: Batch " + batchNumber + " sent.";
-                } else {
-                    return "Error: Batch " + batchNumber + " failed with status " + statusCode + ". Response: " + responseBody;
-                }
-            }*/
-
-        } catch (Exception e) {
-            log.error("Exception while sending batch {}: {}", batchNumber, e.getMessage(), e);
-            System.out.println("Exception while sending batch "+batchNumber+": "+e.getMessage());
-            return "Error: Exception while sending batch " + batchNumber + ": " + e.getMessage();
-        } finally {
-            try {
-                if (response != null) {
-                    response.close();
-                }
-                if (httpClient != null) {
-                    httpClient.close();
-                }
-            } catch (IOException ex) {
-                log.error("Error closing resources: {}", ex.getMessage(), ex);
-            }
-        }
-    }
-    private int getMaxRetryAttempts() {
-        String value = Context.getAdministrationService().getGlobalProperty("caseSurveillance.maxRetryAttempts");
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            return MAX_RETRY_ATTEMPTS; // fallback to default
-        }
-    }
-
- /*  public String sendCaseSurveillancePayload(List<Map<String, Object>> payload) {
+   public String sendCaseSurveillancePayload(List<Map<String, Object>> payload) {
         System.out.println("Sending case surveillance payload: " + payload.size());
         // Retrieve the Bearer Token
         String bearerToken = getBearerToken();
@@ -1340,6 +1092,8 @@ public class CaseSurveillanceDataExchange {
                     case HttpURLConnection.HTTP_CREATED:
                         System.out.println("Case surveillance payload sent successfully. Response: " + responseContent);
                         return "Success: Payload sent. Response: " + responseContent;
+                    case HttpURLConnection.HTTP_ACCEPTED:
+                        System.out.println("Case surveillance payload accepted. Response: " + responseContent);
                     case HttpURLConnection.HTTP_BAD_REQUEST:
                         log.error("Case surveillance Bad Request. Status Code: {}. Response: {}", statusCode, responseContent);
                         return "Error: Bad Request. Response: " + responseContent;
@@ -1365,47 +1119,10 @@ public class CaseSurveillanceDataExchange {
         if (jsonPayload == null || jsonPayload.isEmpty()) {
             return ("No case surveillance data to send at " + fetchDate);
         }
-        System.out.println("----------Payload size: " + jsonPayload.getBytes(StandardCharsets.UTF_8).length + " bytes");
+        System.out.println("Case surveillance Payload size: " + jsonPayload.getBytes(StandardCharsets.UTF_8).length + " bytes");
         return sendCaseSurveillancePayload(payload);
-    }*/
-
-    private Map<Integer, String> getArtStartDatesForPatients(Set<Integer> patientIds,Date fetchDate) {
-        if (patientIds.isEmpty()) return Collections.emptyMap();
-        ConceptService conceptService = Context.getConceptService();
-        Concept artStartConcept = conceptService.getConceptByUuid(ANTIRETROVIRAL_TREATMENT_START_DATE);
-        if (artStartConcept == null) {
-            return Collections.emptyMap();
-        }
-        String fetchDateStr = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(fetchDate);
-        String idList = patientIds.stream().map(String::valueOf).collect(Collectors.joining(","));
-        String sql = "SELECT p.patient_id, MIN(o.value_datetime) AS art_start_date " +
-                "FROM obs o " +
-                "JOIN patient p ON p.patient_id = o.person_id " +
-                "WHERE o.concept_id = (SELECT concept_id FROM concept WHERE uuid='"+artStartConcept+"') " +
-                "AND o.value_datetime >= '" + fetchDateStr + "' " +
-                "AND p.patient_id IN (" + idList + ") " +
-                "GROUP BY p.patient_id "+
-                "HAVING MIN(o.value_datetime) >= '" + fetchDateStr + "'";
-
-        Map<Integer, String> results = new HashMap<>();
-        List<List<Object>> rows = Context.getAdministrationService().executeSQL(sql, true);
-        for (List<Object> row : rows) {
-            Integer pid = (Integer) row.get(0);
-            Object datetimeObj = row.get(1);
-            Date date = null;
-
-            if (datetimeObj instanceof LocalDateTime) {
-                date = Date.from(((LocalDateTime) datetimeObj).atZone(ZoneId.systemDefault()).toInstant());
-            } else if (datetimeObj instanceof Date) {
-                date = (Date) datetimeObj;
-            }
-
-            if (date != null) {
-                results.put(pid, formatDateTime(date));
-            }
-        }
-        return results;
     }
+
     public String getArtStartDate(Patient patient) {
         try {
             CalculationResult artStartDateResults = EmrCalculationUtils
