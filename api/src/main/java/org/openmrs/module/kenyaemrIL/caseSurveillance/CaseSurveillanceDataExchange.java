@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-import net.sf.cglib.core.Local;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
@@ -54,7 +53,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -71,7 +69,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.openmrs.module.kenyaemr.Metadata.Concept.ANTIRETROVIRAL_TREATMENT_START_DATE;
 import static org.openmrs.module.kenyaemr.util.EmrUtils.getGlobalPropertyValue;
 import static org.openmrs.module.kenyaemrIL.util.CaseSurveillanceUtils.*;
 
