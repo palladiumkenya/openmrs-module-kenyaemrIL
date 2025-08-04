@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import net.sf.cglib.core.Local;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
@@ -856,7 +857,7 @@ public class CaseSurveillanceDataExchange {
                 Patient patient = heiEncounter.getPatient();
 
                 String heiNumber = getHEINumber(patient);
-                if (patient.getBirthdate() != null && isBetween6And8WeeksOld(patient.getBirthdate(), effectiveDate) && heiNumber != null) {
+                if (patient.getBirthdate() != null && isBetween6And8WeeksOld(patient.getBirthdate(), new Date()) && heiNumber != null) {
 
                     PatientWrapper patientWrapper = new PatientWrapper(patient);
 
@@ -1033,6 +1034,7 @@ public class CaseSurveillanceDataExchange {
             for (String field : commonFields) {
                 event.put(field, getStringValue.apply(field));
             }
+            event.put( "vlOrderReason", getStringValue.apply("vlOrderReason"));
         } else if ("unsuppressed_viral_load".equals(eventType)) {
             event.put("lastEacEncounterDate", getStringValue.apply("lastEacEncounterDate"));
             for (String field : commonFields) {
