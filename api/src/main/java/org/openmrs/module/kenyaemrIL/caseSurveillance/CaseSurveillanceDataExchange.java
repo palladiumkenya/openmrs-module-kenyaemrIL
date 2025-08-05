@@ -53,7 +53,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -70,7 +69,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.openmrs.module.kenyaemr.Metadata.Concept.ANTIRETROVIRAL_TREATMENT_START_DATE;
 import static org.openmrs.module.kenyaemr.util.EmrUtils.getGlobalPropertyValue;
 import static org.openmrs.module.kenyaemrIL.util.CaseSurveillanceUtils.*;
 
@@ -856,7 +854,7 @@ public class CaseSurveillanceDataExchange {
                 Patient patient = heiEncounter.getPatient();
 
                 String heiNumber = getHEINumber(patient);
-                if (patient.getBirthdate() != null && isBetween6And8WeeksOld(patient.getBirthdate(), effectiveDate) && heiNumber != null) {
+                if (patient.getBirthdate() != null && isBetween6And8WeeksOld(patient.getBirthdate(), new Date()) && heiNumber != null) {
 
                     PatientWrapper patientWrapper = new PatientWrapper(patient);
 
@@ -1033,6 +1031,7 @@ public class CaseSurveillanceDataExchange {
             for (String field : commonFields) {
                 event.put(field, getStringValue.apply(field));
             }
+            event.put( "vlOrderReason", getStringValue.apply("vlOrderReason"));
         } else if ("unsuppressed_viral_load".equals(eventType)) {
             event.put("lastEacEncounterDate", getStringValue.apply("lastEacEncounterDate"));
             for (String field : commonFields) {
