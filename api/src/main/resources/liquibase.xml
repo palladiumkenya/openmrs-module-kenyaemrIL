@@ -771,9 +771,7 @@
     <changeSet id="${project.parent.artifactId}-20231004-1453" author="pwangoo">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
-                SELECT COUNT(*) FROM scheduler_task_config
-                WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.DmiDirectPushTask'
-                And name = 'Push messages to DMI server'
+                SELECT COUNT(*) FROM scheduler_task_config WHERE uuid = 'a63b35e1-9b4d-4cb9-8a26-4fbf33b353e5'
             </sqlCheck>
         </preConditions>
         <comment>Add task for pushing messages to DMI receiver</comment>
@@ -819,19 +817,17 @@
 	<changeSet id="${project.parent.artifactId}-202505201200" author="pwangoo">
 		<preConditions onFail="MARK_RAN">
 			<sqlCheck expectedResult="1">
-				SELECT COUNT(*) FROM scheduler_task_config
-				WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.DmiDirectPushTask'
-				And name = 'Push messages to DMI server'
+                SELECT COUNT(*) FROM scheduler_task_config
+                WHERE uuid = 'a63b35e1-9b4d-4cb9-8a26-4fbf33b353e5'
 			</sqlCheck>
 		</preConditions>
 		<comment>Update org.openmrs.module.kenyaemrIL.ProgramMonitorPushTask to started by default and to run after 1
             Day
         </comment>
 		<sql>
-			UPDATE openmrs.scheduler_task_config 
-			SET repeat_interval = 86400, started = 1
-			WHERE schedulable_class = 'org.openmrs.module.kenyaemrIL.DmiDirectPushTask'
-			AND name = 'Push messages to DMI server';
+            UPDATE openmrs.scheduler_task_config
+            SET repeat_interval = 86400, started = 1
+            WHERE uuid = 'a63b35e1-9b4d-4cb9-8a26-4fbf33b353e5';
 		</sql>
 	</changeSet>
     <changeSet id="${project.parent.artifactId}-20250630-1545" author="schege">
