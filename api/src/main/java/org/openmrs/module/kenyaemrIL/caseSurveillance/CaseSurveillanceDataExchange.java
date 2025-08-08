@@ -360,8 +360,7 @@ public class CaseSurveillanceDataExchange {
                 }
             }
         }
-        System.out.println("Tested HIV Positive: " + result);
-        System.out.println("INFO - IL: Finished generating HIV+ cases dataset");
+        System.out.println("INFO - IL: Finished generating HIV+ cases dataset: "+ result.size() + " records found");
         return result;
     }
     /**
@@ -413,8 +412,7 @@ public class CaseSurveillanceDataExchange {
                 log.error("Error parsing artStartDate: " + e.getMessage());
             }
         }
-        System.out.println("Linked to HIV Care: " + result);
-        System.out.println("INFO - IL: Finished generating Linked to HIV Care dataset");
+        System.out.println("INFO - IL: Finished generating Linked to HIV Care dataset: "+ result.size() + " records found");
         return result;
     }
 
@@ -509,8 +507,7 @@ public class CaseSurveillanceDataExchange {
                 }
             }
         }
-        System.out.println("Pregnant and postpartum: " + result);
-        System.out.println("INFO - IL: Finished generating Pregnant and postpartum at high risk dataset");
+        System.out.println("INFO - IL: Finished generating Pregnant and postpartum at high risk dataset: "+ result.size() + " records found");
         return result;
     }
 
@@ -616,8 +613,7 @@ public class CaseSurveillanceDataExchange {
                 }
             }
         }
-        System.out.println("Pregnant and Postpartum at High Risk Linked to PrEP:" +result);
-        System.out.println("INFO - IL: Finished generating Pregnant and postpartum at high risk linked to PrEP dataset");
+        System.out.println("INFO - IL: Finished generating Pregnant and postpartum at high risk linked to PrEP dataset: "+ result.size() + " records found");
         return result;
     }
     @SuppressWarnings("unchecked")
@@ -732,8 +728,7 @@ public class CaseSurveillanceDataExchange {
             result.add(mapToVlEligibilityObject(createdAt, patientId,pregnant,breastFeedingStatus,vlResult,lastVlResultsDate,positiveHivTestDate,visitDate,artStartDate,lastVlOrderDate,orderReason, upn));
 
         }
-
-        System.out.println("INFO - IL: Finished generating eligible for VL dataset (ETL-based). Total: " + result.size());
+        System.out.println("INFO - IL: Finished generating eligible for VL dataset (ETL-based): "+ result.size() + " records found");
         return result;
     }
 
@@ -790,8 +785,7 @@ public class CaseSurveillanceDataExchange {
                 processedPatientIds.add(patient.getId());
             }
         }
-        System.out.println("EAC encounters: " + result);//todo: remove when ready to ship
-        System.out.println("INFO - IL: Finished generating Enhanced Adherence dataset");
+        System.out.println("INFO - IL: Finished generating Enhanced Adherence dataset: " + result.size() + " records found");
         return result;
     }
 
@@ -828,8 +822,7 @@ public class CaseSurveillanceDataExchange {
                 }
             }
         }
-        System.out.println("All HEIs : " + result);
-        System.out.println("INFO - IL: Finished generating all HEIs dataset");
+        System.out.println("INFO - IL: Finished generating all HEIs dataset: " + result.size() + " records found");
         return result;
     }
 
@@ -866,8 +859,7 @@ public class CaseSurveillanceDataExchange {
                 }
             }
         }
-        System.out.println("HEIs without dna pcr : " + result);
-        System.out.println("INFO - IL: Finished generating HEI without DNA PCR test dataset");
+        System.out.println("INFO - IL: Finished generating HEI without DNA PCR test dataset: "+ result.size() + " records found");
         return result;
     }
 
@@ -928,8 +920,7 @@ public class CaseSurveillanceDataExchange {
                 }
             }
         }
-        System.out.println("HEI Without Final Outcome : " + result);
-        System.out.println("INFO - IL: Finished generating HEI without final outcome dataset");
+        System.out.println("INFO - IL: Finished generating HEI without final outcome dataset: "+ result.size() + " records found");
         return result;
     }
 
@@ -987,8 +978,6 @@ public class CaseSurveillanceDataExchange {
         for (SimpleObject eligibleForVlVariables : eligibleForVl) {
             payload.add(mapToDatasetStructure(eligibleForVlVariables, "eligible_for_vl"));
         }
-
-        System.out.println("Case surveillance payload: "+ payload);
         return payload;
     }
 
