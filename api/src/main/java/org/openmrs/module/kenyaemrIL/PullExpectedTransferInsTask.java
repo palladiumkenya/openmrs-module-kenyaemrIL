@@ -111,18 +111,23 @@ public class PullExpectedTransferInsTask extends AbstractTask {
         }
         if (ilMessage != null) {
            //Patient names
+			System.out.println(ilMessage.toString());
 			if(ilMessage.extractILRegistration().getPatient_identification().getPatient_name().getFirst_name() != null) {
 				expectedTransferInPatient.setClientFirstName(ilMessage.extractILRegistration().getPatient_identification().getPatient_name().getFirst_name());
 			};
 			if(ilMessage.extractILRegistration().getPatient_identification().getPatient_name().getMiddle_name() != null) {
-				expectedTransferInPatient.setClientFirstName(ilMessage.extractILRegistration().getPatient_identification().getPatient_name().getMiddle_name());
+				expectedTransferInPatient.setClientMiddleName(ilMessage.extractILRegistration().getPatient_identification().getPatient_name().getMiddle_name());
 			};
 			if(ilMessage.extractILRegistration().getPatient_identification().getPatient_name().getLast_name() != null) {
-				expectedTransferInPatient.setClientFirstName(ilMessage.extractILRegistration().getPatient_identification().getPatient_name().getLast_name());
+				expectedTransferInPatient.setClientLastName(ilMessage.extractILRegistration().getPatient_identification().getPatient_name().getLast_name());
 			};
-           //Dob
+           //Gender
+			if(ilMessage.extractILRegistration().getPatient_identification().getSex() != null) {
+				expectedTransferInPatient.setClientGender(ilMessage.extractILRegistration().getPatient_identification().getSex());
+			};
+			//DOB
 			if(ilMessage.extractILRegistration().getPatient_identification().getDate_of_birth() != null) {
-				expectedTransferInPatient.setClientFirstName(ilMessage.extractILRegistration().getPatient_identification().getDate_of_birth());
+				expectedTransferInPatient.setClientBirthDate(formatter.parse(ilMessage.extractILRegistration().getPatient_identification().getDate_of_birth()));
 			};
            
             Program_Discontinuation_Message discontinuation_message = ilMessage.getDiscontinuation_message();
