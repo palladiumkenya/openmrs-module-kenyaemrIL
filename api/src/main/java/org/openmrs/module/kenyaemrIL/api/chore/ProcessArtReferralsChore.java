@@ -36,7 +36,8 @@ public class ProcessArtReferralsChore extends AbstractChore {
 
     }
 
-    private void processTransferOuts() {
+    private void 
+	processTransferOuts() {
         // Fetch all discontinuation encounters
         List<Encounter> pendingHivDiscontinuations = fetchPendingHivDiscontinuations();
         List<String> capturedDiscontinuations = Arrays.asList("159492AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "160034AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "5240AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "164349AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
