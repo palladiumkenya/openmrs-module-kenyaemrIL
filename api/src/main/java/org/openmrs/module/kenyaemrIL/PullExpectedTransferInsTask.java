@@ -17,6 +17,7 @@ import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.Program_Discontinuation_Message;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
 import org.openmrs.module.kenyaemrIL.il.INTERNAL_PATIENT_ID;
+import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
@@ -100,8 +101,6 @@ public class PullExpectedTransferInsTask extends AbstractTask {
 
         ILMessage ilMessage = mapper.readValue(referralObject.toLowerCase(), ILMessage.class);
         String ccc = "";
-
-		ilMessage.extractILRegistration().getPatient_identification().getPatient_name().getFirst_name();
 		
         for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
             if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
@@ -112,23 +111,24 @@ public class PullExpectedTransferInsTask extends AbstractTask {
         if (ilMessage != null) {
            //Patient names
 			System.out.println(ilMessage.toString());
-			if(ilMessage.extractILRegistration().getPatient_identification().getPatient_name().getFirst_name() != null) {
-				expectedTransferInPatient.setClientFirstName(ilMessage.extractILRegistration().getPatient_identification().getPatient_name().getFirst_name());
-			};
-			if(ilMessage.extractILRegistration().getPatient_identification().getPatient_name().getMiddle_name() != null) {
-				expectedTransferInPatient.setClientMiddleName(ilMessage.extractILRegistration().getPatient_identification().getPatient_name().getMiddle_name());
-			};
-			if(ilMessage.extractILRegistration().getPatient_identification().getPatient_name().getLast_name() != null) {
-				expectedTransferInPatient.setClientLastName(ilMessage.extractILRegistration().getPatient_identification().getPatient_name().getLast_name());
-			};
+			PATIENT_IDENTIFICATION patientIdentification=  ilMessage.extractILRegistration().getPatient_identification();
+			if(patientIdentification.getPatient_name().getFirst_name() != null) {
+				expectedTransferInPatient.setClientFirstName(patientIdentification.getPatient_name().getFirst_name() );
+			}
+			if(patientIdentification.getPatient_name().getMiddle_name() != null) {
+				expectedTransferInPatient.setClientFirstName(patientIdentification.getPatient_name().getMiddle_name() );
+			}
+			if(patientIdentification.getPatient_name().getLast_name() != null) {
+				expectedTransferInPatient.setClientFirstName(patientIdentification.getPatient_name().getLast_name() );
+			}
            //Gender
-			if(ilMessage.extractILRegistration().getPatient_identification().getSex() != null) {
-				expectedTransferInPatient.setClientGender(ilMessage.extractILRegistration().getPatient_identification().getSex());
-			};
+			if(patientIdentification.getSex() != null) {
+				expectedTransferInPatient.setClientGender(patientIdentification.getSex());
+			}
 			//DOB
-			if(ilMessage.extractILRegistration().getPatient_identification().getDate_of_birth() != null) {
-				expectedTransferInPatient.setClientBirthDate(formatter.parse(ilMessage.extractILRegistration().getPatient_identification().getDate_of_birth()));
-			};
+			if(patientIdentification.getDate_of_birth() != null) {
+				expectedTransferInPatient.setClientBirthDate(formatter.parse(patientIdentification.getDate_of_birth()));
+			}
            
             Program_Discontinuation_Message discontinuation_message = ilMessage.getDiscontinuation_message();
 			if (discontinuation_message.getService_request() != null && discontinuation_message.getService_request().getSupporting_info() != null && !Strings.isNullOrEmpty(discontinuation_message.getService_request().getSupporting_info().getAppointment_date())) {
