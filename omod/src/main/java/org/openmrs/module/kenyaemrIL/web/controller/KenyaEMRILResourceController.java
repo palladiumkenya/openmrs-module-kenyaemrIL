@@ -184,47 +184,54 @@ public class KenyaEMRILResourceController extends MainResourceController {
         List<SimpleObject> completedReferrals = new ArrayList<>();
 
         if (status.equals("active")) {
+			System.out.println("Active Referrals");
             // Filter all community referrals with active referral status
-            List<ExpectedTransferInPatients> activeCommunityReferralsList = ilService.getCommunityReferrals("COMMUNITY", "ACTIVE");
-            for (ExpectedTransferInPatients expectedTransferInPatients : activeCommunityReferralsList) {
-                IParser parser = fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
-                ServiceRequest serviceRequest = parser.parseResource(ServiceRequest.class, expectedTransferInPatients.getPatientSummary());
-                String requester = "";
-                if (serviceRequest.hasRequester()) {
-                    if (serviceRequest.getRequester().getDisplay() != null) {
-                        Location location = ILUtils.getLocationByMflCode(serviceRequest.getRequester().getDisplay());
-                        if (location != null) {
-                            requester = location.getName();
-                        } else {
-                            requester = "Community";
-                        }
+            List<ExpectedTransferInPatients> activeCommunityReferralsList = ilService.getCommunityReferrals("HIV", "ACTIVE");
+			if (activeCommunityReferralsList != null && !activeCommunityReferralsList.isEmpty()) {
+				System.out.println("Active Referrals are==>"+activeCommunityReferralsList.size());
+				for (ExpectedTransferInPatients expectedTransferInPatients : activeCommunityReferralsList) {
+					IParser parser = fhirConfig.getFhirContext().newJsonParser().setPrettyPrint(true);
+			//		ServiceRequest serviceRequest = parser.parseResource(ServiceRequest.class, expectedTransferInPatients.getPatientSummary());
+//					String requester = "";
+//					if (serviceRequest.hasRequester()) {
+//						if (serviceRequest.getRequester().getDisplay() != null) {
+//							Location location = ILUtils.getLocationByMflCode(serviceRequest.getRequester().getDisplay());
+//							if (location != null) {
+//								requester = location.getName();
+//							} else {
+//								requester = "Community";
+//							}
+//
+//						} else if (serviceRequest.getRequester().getIdentifier() != null && serviceRequest.getRequester().getIdentifier().getValue() != null) {
+//							Location location = ILUtils.getLocationByMflCode(serviceRequest.getRequester().getIdentifier().getValue());
+//							if (location != null) {
+//								requester = location.getName();
+//							} else {
+//								requester = "Community";
+//							}
+//						}
+//					}
 
-                    } else if (serviceRequest.getRequester().getIdentifier() != null && serviceRequest.getRequester().getIdentifier().getValue() != null) {
-                        Location location = ILUtils.getLocationByMflCode(serviceRequest.getRequester().getIdentifier().getValue());
-                        if (location != null) {
-                            requester = location.getName();
-                        } else {
-                            requester = "Community";
-                        }
-                    }
-                }
-
-                SimpleObject activeReferralsObject = new SimpleObject();
-                activeReferralsObject.put("id", expectedTransferInPatients.getId());
-                activeReferralsObject.put("uuid", expectedTransferInPatients.getUuid());
-                activeReferralsObject.put("nupi", expectedTransferInPatients.getNupiNumber());
-                activeReferralsObject.put("dateReferred", serviceRequest.getAuthoredOn() != null ? new SimpleDateFormat("yyyy-MM-dd").format(serviceRequest.getAuthoredOn()) : "");
-                activeReferralsObject.put("referredFrom", requester);
-                activeReferralsObject.put("givenName", expectedTransferInPatients.getClientFirstName() != null ? expectedTransferInPatients.getClientFirstName() : "");
-                activeReferralsObject.put("middleName", expectedTransferInPatients.getClientMiddleName() != null ? expectedTransferInPatients.getClientMiddleName() : "");
-                activeReferralsObject.put("familyName", expectedTransferInPatients.getClientLastName() != null ? expectedTransferInPatients.getClientLastName() : "");
-                activeReferralsObject.put("birthdate", formatDate(expectedTransferInPatients.getClientBirthDate()));
-                activeReferralsObject.put("gender", expectedTransferInPatients.getClientGender());
-                activeReferralsObject.put("status", expectedTransferInPatients.getReferralStatus());
-                activeReferralsObject.add("referralReasons", extractReferralReasons(serviceRequest));
-                activeReferrals.add(activeReferralsObject);
-            }
-            return activeReferrals;
+					SimpleObject activeReferralsObject = new SimpleObject();
+					activeReferralsObject.put("id", expectedTransferInPatients.getId());
+					activeReferralsObject.put("uuid", expectedTransferInPatients.getUuid());
+					activeReferralsObject.put("nupi", expectedTransferInPatients.getNupiNumber());
+					//activeReferralsObject.put("dateReferred", serviceRequest.getAuthoredOn() != null ? new SimpleDateFormat("yyyy-MM-dd").format(serviceRequest.getAuthoredOn()) : "");
+					activeReferralsObject.put("dateReferred", formatDate(expectedTransferInPatients.getTransferOutDate()));
+					//activeReferralsObject.put("referredFrom", requester);
+					activeReferralsObject.put("referredFrom", expectedTransferInPatients.getTransferOutFacility());
+					activeReferralsObject.put("givenName", expectedTransferInPatients.getClientFirstName() != null ? expectedTransferInPatients.getClientFirstName() : "");
+					activeReferralsObject.put("middleName", expectedTransferInPatients.getClientMiddleName() != null ? expectedTransferInPatients.getClientMiddleName() : "");
+					activeReferralsObject.put("familyName", expectedTransferInPatients.getClientLastName() != null ? expectedTransferInPatients.getClientLastName() : "");
+					activeReferralsObject.put("birthdate", formatDate(expectedTransferInPatients.getClientBirthDate()));
+					activeReferralsObject.put("gender", expectedTransferInPatients.getClientGender());
+					activeReferralsObject.put("status", expectedTransferInPatients.getReferralStatus());
+					activeReferralsObject.add("referralReasons", expectedTransferInPatients.getPatientSummary());
+					//activeReferralsObject.add("referralReasons", extractReferralReasons(serviceRequest));
+					activeReferrals.add(activeReferralsObject);
+				}
+				return activeReferrals;
+			}
 
         } else if (status.equals("completed")) {
 

@@ -12,16 +12,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.openmrs.GlobalProperty;
-import org.openmrs.Patient;
-import org.openmrs.PatientIdentifier;
-import org.openmrs.PatientIdentifierType;
-import org.openmrs.Person;
-import org.openmrs.PersonAddress;
-import org.openmrs.PersonAttribute;
-import org.openmrs.PersonName;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.idgen.service.IdentifierSourceService;
-import org.openmrs.module.kenyaemr.metadata.HivMetadata;
 import org.openmrs.module.kenyaemrIL.api.KenyaEMRILService;
 import org.openmrs.module.kenyaemrIL.hivDicontinuation.Program_Discontinuation_Message;
 import org.openmrs.module.kenyaemrIL.il.ILMessage;
@@ -30,15 +21,11 @@ import org.openmrs.module.kenyaemrIL.il.PATIENT_IDENTIFICATION;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.module.kenyaemrIL.programEnrollment.ExpectedTransferInPatients;
 import org.openmrs.module.kenyaemrIL.util.ILUtils;
-import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.scheduler.tasks.AbstractTask;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class PullExpectedTransferInsTask extends AbstractTask {
 
@@ -114,7 +101,7 @@ public class PullExpectedTransferInsTask extends AbstractTask {
 
         ILMessage ilMessage = mapper.readValue(referralObject.toLowerCase(), ILMessage.class);
         String ccc = "";
-
+		
         for (INTERNAL_PATIENT_ID internalPatientId : ilMessage.getPatient_identification().getInternal_patient_id()) {
             if (internalPatientId.getIdentifier_type().equalsIgnoreCase("CCC_NUMBER")) {
                 ccc = internalPatientId.getId();
@@ -122,7 +109,32 @@ public class PullExpectedTransferInsTask extends AbstractTask {
             }
         }
         if (ilMessage != null) {
+           //Patient names
+			System.out.println(ilMessage.toString());
+			PATIENT_IDENTIFICATION patientIdentification=  ilMessage.extractILRegistration().getPatient_identification();
+			if(patientIdentification.getPatient_name().getFirst_name() != null) {
+				expectedTransferInPatient.setClientFirstName(patientIdentification.getPatient_name().getFirst_name() );
+			}
+			if(patientIdentification.getPatient_name().getMiddle_name() != null) {
+				expectedTransferInPatient.setClientFirstName(patientIdentification.getPatient_name().getMiddle_name() );
+			}
+			if(patientIdentification.getPatient_name().getLast_name() != null) {
+				expectedTransferInPatient.setClientFirstName(patientIdentification.getPatient_name().getLast_name() );
+			}
+           //Gender
+			if(patientIdentification.getSex() != null) {
+				expectedTransferInPatient.setClientGender(patientIdentification.getSex());
+			}
+			//DOB
+			if(patientIdentification.getDate_of_birth() != null) {
+				expectedTransferInPatient.setClientBirthDate(formatter.parse(patientIdentification.getDate_of_birth()));
+			}
+           
             Program_Discontinuation_Message discontinuation_message = ilMessage.getDiscontinuation_message();
+			if (discontinuation_message.getService_request() != null && discontinuation_message.getService_request().getSupporting_info() != null && !Strings.isNullOrEmpty(discontinuation_message.getService_request().getSupporting_info().getAppointment_date())) {
+				expectedTransferInPatient.setAppointmentDate(formatter.parse(discontinuation_message.getService_request().getSupporting_info().getAppointment_date()));
+			}
+			
             if (discontinuation_message.getService_request() != null && discontinuation_message.getService_request().getSupporting_info() != null && !Strings.isNullOrEmpty(discontinuation_message.getService_request().getSupporting_info().getAppointment_date())) {
                 expectedTransferInPatient.setAppointmentDate(formatter.parse(discontinuation_message.getService_request().getSupporting_info().getAppointment_date()));
             }

@@ -293,7 +293,8 @@ public class ReferralsDataExchangeFragmentController {
         }
         expectedTransferInPatients.setClientGender(gender);
         expectedTransferInPatients.setReferralStatus("ACTIVE");
-        expectedTransferInPatients.setPatientSummary(fhirConfig.getFhirContext().newJsonParser().encodeResourceToString(fhirServiceRequest));
+        //expectedTransferInPatients.setPatientSummary(fhirConfig.getFhirContext().newJsonParser().encodeResourceToString(fhirServiceRequest));
+        expectedTransferInPatients.setPatientSummary("");
         expectedTransferInPatients.setServiceType(serviceType);
         Context.getService(KenyaEMRILService.class).createPatient(expectedTransferInPatients);
         System.out.println("Successfully persisted in expected referrals model ==>");

@@ -541,7 +541,7 @@
         </preConditions>
         <comment>Rename UshauriDirectPushTask scheduler to KenyaEmrInteropDirectPushTask</comment>
         <sql>
-            UPDATE openmrs.scheduler_task_config SET schedulable_class = 'org.openmrs.module.kenyaemrIL.KenyaEmrInteropDirectPushTask',
+            UPDATE scheduler_task_config SET schedulable_class = 'org.openmrs.module.kenyaemrIL.KenyaEmrInteropDirectPushTask',
             name = 'OpenHIM Message Publisher' where uuid = '7351bb07-97b2-47b6-804b-c9c018c36609'
         </sql>
     </changeSet>
@@ -557,7 +557,7 @@
         </preConditions>
         <comment>Update start on start to yes of KenyaEmrInteropDirectPushTask</comment>
         <sql>
-            UPDATE openmrs.scheduler_task_config SET start_on_startup = "1"
+            UPDATE scheduler_task_config SET start_on_startup = "1"
             where uuid = '7351bb07-97b2-47b6-804b-c9c018c36609'
         </sql>
     </changeSet>
@@ -825,7 +825,7 @@
             Day
         </comment>
 		<sql>
-            UPDATE openmrs.scheduler_task_config
+            UPDATE scheduler_task_config
             SET repeat_interval = 86400, started = 1
             WHERE uuid = 'a63b35e1-9b4d-4cb9-8a26-4fbf33b353e5';
 		</sql>
