@@ -70,6 +70,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.openmrs.module.kenyaemr.util.EmrUtils.getGlobalPropertyValue;
+import static org.openmrs.module.kenyaemr.util.ServerInformation.getKenyaemrInformation;
 import static org.openmrs.module.kenyaemrIL.util.CaseSurveillanceUtils.*;
 
 public class CaseSurveillanceDataExchange {
@@ -109,6 +110,13 @@ public class CaseSurveillanceDataExchange {
                 "dob", formatDate(patient.getBirthdate()),
                 "sex", sex != null ? dmiUtils.formatGender(sex) : null,
                 "positiveHivTestDate", formatDateTime(encounter.getEncounterDatetime())
+        );
+    }
+
+    private static SimpleObject mapToRollCallObject() {
+        return SimpleObject.create(
+                "mflCode", EmrUtils.getMFLCode(),
+                "emrVersion", getKenyaemrInformation().get("version")
         );
     }
 
@@ -929,6 +937,11 @@ public class CaseSurveillanceDataExchange {
      */
     public List<Map<String, Object>> generateCaseSurveillancePayload(Date fetchDate) {
         List<Map<String, Object>> payload = new ArrayList<>();
+
+        // Add roll_call data
+        SimpleObject rollCallData = mapToRollCallObject();
+        payload.add(mapToDatasetStructure(rollCallData, "roll_call"));
+
         // Tested HIV-positive data as "new_case"
         Set<SimpleObject> testedPositive = testedHIVPositive(fetchDate);
         for (SimpleObject tested : testedPositive) {
@@ -988,6 +1001,19 @@ public class CaseSurveillanceDataExchange {
         // Helper method to safely extract values from source
         Function<String, String> getStringValue = key -> source.get(key) == null ? null : String.valueOf(source.get(key));
         Function<String, Integer> getIntegerValue = key -> source.get(key) == null ? null : Integer.valueOf(source.get(key).toString());
+
+        // Special handling for roll_call event type which doesn't include client data
+        if ("roll_call".equals(eventType)) {
+            // For roll_call, we only need the event data (mflCode and emrVersion)
+            event.put("mflCode", source.get("mflCode"));
+            event.put("emrVersion", source.get("emrVersion"));
+
+            // Create final payload structure
+            Map<String, Object> result = new HashMap<>();
+            result.put("eventType", eventType);
+            result.put("event", event);
+            return result;
+        }
 
         // Populate client details
         client.put("county", getStringValue.apply("county"));
