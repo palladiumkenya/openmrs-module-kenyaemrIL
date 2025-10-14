@@ -1252,7 +1252,7 @@ public class VisualizationDataExchange {
 		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String effectiveDate = sd.format(fetchDate);
 		Long ret = null;
-		String hivTestedPositiveQuery = "Select count(pi.patient_id) from patient_identifier pi inner join patient_identifier_type pt on pi.identifier_type = pt.patient_identifier_type_id and pt.uuid = '24aedd37-b5be-4e08-8311-3721b8d5100d' and pt.date_created >= '" + effectiveDate + "'";
+		String hivTestedPositiveQuery = "Select count(pi.patient_id) from patient_identifier pi inner join patient_identifier_type pt on pi.identifier_type = pt.patient_identifier_type_id and pt.uuid = '24aedd37-b5be-4e08-8311-3721b8d5100d' and pi.date_created >= '" + effectiveDate + "'";
 		try {
 			Context.addProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
 			ret = (Long) Context.getAdministrationService().executeSQL(hivTestedPositiveQuery, true).get(0).get(0);
