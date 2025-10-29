@@ -5,7 +5,16 @@ import org.apache.commons.logging.LogFactory;
 import org.hibernate.Transaction;
 import org.hibernate.jdbc.Work;
 import org.json.simple.JSONObject;
-import org.openmrs.*;
+import org.openmrs.Concept;
+import org.openmrs.Diagnosis;
+import org.openmrs.Encounter;
+import org.openmrs.EncounterType;
+import org.openmrs.Form;
+import org.openmrs.Obs;
+import org.openmrs.Patient;
+import org.openmrs.Person;
+import org.openmrs.Visit;
+import org.openmrs.VisitType;
 import org.openmrs.api.DiagnosisService;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.PersonService;
@@ -15,25 +24,40 @@ import org.openmrs.api.db.hibernate.DbSessionFactory;
 import org.openmrs.module.Module;
 import org.openmrs.module.ModuleFactory;
 import org.openmrs.module.kenyaemr.Dictionary;
+import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemr.metadata.HivMetadata;
 import org.openmrs.module.kenyaemr.metadata.MchMetadata;
 import org.openmrs.module.kenyaemr.metadata.OTZMetadata;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
-import org.openmrs.parameter.EncounterSearchCriteria;
+import org.openmrs.parameter.EncounterSearchCriteriaBuilder;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.util.PrivilegeConstants;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.openmrs.module.kenyaemrIL.visualizationMetrics.VisualizationUtils.mapToBreakdownList;
 
 public class VisualizationDataExchange {
 
-	private static Log log = LogFactory.getLog(VisualizationDataExchange.class);
+	private static final Log log = LogFactory.getLog(VisualizationDataExchange.class);
 	private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	private static List<Diagnosis> allDiagnosis;
 	private static EncounterService service= Context.getEncounterService();
@@ -41,12 +65,13 @@ public class VisualizationDataExchange {
 	public static final String IMMUNIZATION = "29c02aff-9a93-46c9-bf6f-48b552fcb1fa";
 	public static Concept immunizationConcept = Dictionary.getConcept(Dictionary.IMMUNIZATIONS);
 	/**
-	 * Generates the payload used to post to visualization server     *
+	 * Generates the payload used to post to visualization server*
 	 *
 	 * @param
 	 * @return
 	 */
 	public static JSONObject generateVisualizationPayload(Date fetchDate) {
+        System.out.println("KenyaEMR IL: Visualization: generateVisualizationPayload started for fetchDate="+fetchDate);
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
 		JSONObject payloadObj = new JSONObject();
 		List<SimpleObject> bedManagement = new ArrayList<SimpleObject>();
@@ -56,7 +81,10 @@ public class VisualizationDataExchange {
 		Map<String, Integer> mortalityMap;
 		Map<String, Integer> workloadMap;
 		Map<String, Integer> visitByAgeMap;
-		Map<String, Integer> outpatientByServiceMap;
+        Map<String, Integer> inpatientVisitsByAgeMap;
+        Map<String, Integer> casualtyVisitsByAgeMap;
+        Map<String, Integer> mortuaryVisitsByAgeMap;
+        Map<String, Integer> outpatientByServiceMap;
 		Map<String, Integer> immunizationsMap;
 		List<SimpleObject> diagnosis = new ArrayList<SimpleObject>();
 		List<SimpleObject> workload = new ArrayList<SimpleObject>();
@@ -89,6 +117,8 @@ public class VisualizationDataExchange {
 		payloadObj.put("timestamp", timestamp);
 		payloadObj.put("version", version);
 
+        log.info("Visualization: Payload assembly started for mfl_code=" + facilityMfl + ", timestamp=" + timestamp);
+
 		try {
 			if (bedManagement.size() > 0) {
 				SimpleObject bedManagementObject = new SimpleObject();
@@ -102,90 +132,93 @@ public class VisualizationDataExchange {
 				payloadObj.put("bed_management", bedManagement);
 			}
 		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : bed_management : " + ex.getMessage());
-			ex.printStackTrace();
+            log.error("Visualization: Error building bed_management: "+ ex.getMessage(), ex);
 		}
 		try {
 			// Fetch visit data
-			visitsMap = allVisits(fetchDate);
-			visitByAgeMap = outPatientVisitsByAge(fetchDate);
-			outpatientByServiceMap = outPatientVisitsByService(fetchDate);
+
+            VisitService visitService = Context.getVisitService();
+            Collection<VisitType> visitTypes = Arrays.asList(
+                MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.INPATIENT),
+                MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.OUTPATIENT)/*,
+                MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.CASUALTY),
+                MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.MORTUARY)*/
+            );
+            List<Visit> allVisits = visitService.getVisits(visitTypes, null, null, null, fetchDate, null, null, null, null, true, false);
+            List<Visit> outPatientVisits = visitService.getVisits(Collections.singleton(MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.OUTPATIENT)), null, null, null, fetchDate, null, null, null, null, true, false);
+            List<Visit> inPatientVisits = visitService.getVisits(Collections.singleton(MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.INPATIENT)), null, null, null, fetchDate, null, null, null, null, true, false);
+            List<Visit> casualtyPatientVisits = visitService.getVisits(Collections.singleton(MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.CASUALTY)), null, null, null, fetchDate, null, null, null, null, true, false);
+            List<Visit> mortuaryAdmissions = visitService.getVisits(Collections.singleton(MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.MORTUARY)), null, null, null, fetchDate, null, null, null, null, true, false);
+
+            visitsMap = allVisits(allVisits);
+            outpatientByServiceMap = outPatientVisitsByService(outPatientVisits);
+            inpatientVisitsByAgeMap = inPatientVisitsByAge(inPatientVisits);
+            visitByAgeMap = outPatientVisitsByAge(outPatientVisits);
+            casualtyVisitsByAgeMap = casualtyVisitsByAge(casualtyPatientVisits);
+            mortuaryVisitsByAgeMap = mortuaryVisitsByAge(mortuaryAdmissions);
 
 			// Prepare the visits structure
 			List<SimpleObject> visitDetails = new ArrayList<>();
-			List<SimpleObject> ageDetails = new ArrayList<>();
 
 			// Group visits by visit_type
-			if (!visitsMap.isEmpty()) {
-				for (Map.Entry<String, Integer> visitEntry : visitsMap.entrySet()) {
-					SimpleObject visitsObject = new SimpleObject();
-					visitsObject.put("visit_type", visitEntry.getKey());
-					visitsObject.put("total", visitEntry.getValue().toString());
+            for (Map.Entry<String, Integer> visitEntry : visitsMap.entrySet()) {
+                SimpleObject visitsObject = new SimpleObject();
+                final String visitType = visitEntry.getKey();
+                visitsObject.put("visit_type", visitType);
+                visitsObject.put("total", visitEntry.getValue().toString());
 
-					// Add age details if it's an Outpatient visit
-					if ("Outpatient".equals(visitEntry.getKey()) && !visitByAgeMap.isEmpty()) {
-						List<SimpleObject> ageDetailsList = new ArrayList<>();
-						for (Map.Entry<String, Integer> ageEntry : visitByAgeMap.entrySet()) {
-							SimpleObject ageObject = new SimpleObject();
-							ageObject.put("age", ageEntry.getKey());
-							ageObject.put("total", ageEntry.getValue().toString());
-							ageDetailsList.add(ageObject);
-						}
-						visitsObject.put("age_details", ageDetailsList);
-					}
-
-					visitDetails.add(visitsObject);
-				}
-			}
+                // Attach age breakdown
+                if ("Outpatient".equals(visitType) && !visitByAgeMap.isEmpty()) {
+                    visitsObject.put("age_details", mapToBreakdownList(visitByAgeMap, "age", "total"));
+                } /*else if ("Inpatient".equals(visitType) && !inpatientVisitsByAgeMap.isEmpty()) {
+                    visitsObject.put("age_details", mapToBreakdownList(inpatientVisitsByAgeMap, "age", "total"));
+                } else if ("Casualty/Emergency".equals(visitType) && !casualtyVisitsByAgeMap.isEmpty()) {
+                    visitsObject.put("age_details", mapToBreakdownList(casualtyVisitsByAgeMap, "age", "total"));
+                } else if ("Mortuary".equals(visitType) && !mortuaryVisitsByAgeMap.isEmpty()) {
+                    visitsObject.put("age_details", mapToBreakdownList(mortuaryVisitsByAgeMap, "age", "total"));
+                }*/
+                visitDetails.add(visitsObject);
+            }
 
 			// Prepare the service type structure
-			List<SimpleObject> serviceDetails = new ArrayList<>();
-			if (!outpatientByServiceMap.isEmpty()) {
-				for (Map.Entry<String, Integer> visitEntry : outpatientByServiceMap.entrySet()) {
-					SimpleObject outpatientByServiceObject = new SimpleObject();
-					outpatientByServiceObject.put("service", visitEntry.getKey());
-					outpatientByServiceObject.put("total", visitEntry.getValue().toString());
-					serviceDetails.add(outpatientByServiceObject);
-				}
-			}
+            List<SimpleObject> serviceDetails = mapToBreakdownList(outpatientByServiceMap, "service", "total");
+            SimpleObject visitsPayload = new SimpleObject();
+            visitsPayload.put("category", "visit_type");
+            visitsPayload.put("details", visitDetails);
 
-			// Create the final payload structure
-			SimpleObject visitsPayload = new SimpleObject();
-			visitsPayload.put("category", "visit_type");
-			visitsPayload.put("details", visitDetails);
+            SimpleObject servicePayload = new SimpleObject();
+            servicePayload.put("category", "service_type");
+            servicePayload.put("details", serviceDetails);
 
-			SimpleObject servicePayload = new SimpleObject();
-			servicePayload.put("category", "service_type");
-			servicePayload.put("details", serviceDetails);
+            List<SimpleObject> visitsList = new ArrayList<>();
+            visitsList.add(visitsPayload);
+            visitsList.add(servicePayload);
 
-			List<SimpleObject> visitsList = new ArrayList<>();
-			visitsList.add(visitsPayload);
-			visitsList.add(servicePayload);
-
-			// Put it all in the final payload object
-			payloadObj.put("visits", visitsList);
+            payloadObj.put("visits", visitsList);
+            log.info("Visualization: Visits data loaded. visitTypes="+visitsMap.keySet()+" outpatientServiceTypes="+ outpatientByServiceMap.keySet());
+            System.out.println("Visualization: Visits data loaded. visitTypes="+visitsMap.keySet()+" outpatientServiceTypes="+ outpatientByServiceMap.keySet());
 
 		} catch (Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : visits : " + ex.getMessage());
-			ex.printStackTrace();
+			log.error("KenyaEMR IL: Visualization: Error building visits payload: " + ex.getMessage(), ex);
+			System.err.println("KenyaEMR IL: Visualization: Error building visits payload: " + ex.getMessage());
 		}
 
 		try {
 			immunizationsMap = immunizations(fetchDate);
 			if(!immunizationsMap.isEmpty()) {
-				for (Map.Entry<String, Integer> immunizationEntry : immunizationsMap.entrySet()) {
-					SimpleObject immunizationsObject = new SimpleObject();
-					immunizationsObject.put("Vaccine", immunizationEntry.getKey());
-					immunizationsObject.put("total", immunizationEntry.getValue().toString());
-					immunizations.add(immunizationsObject);
-				}
+                for (Map.Entry<String, Integer> immunizationEntry : immunizationsMap.entrySet()) {
+                    SimpleObject immunizationsObject = new SimpleObject();
+                    immunizationsObject.put("Vaccine", immunizationEntry.getKey());
+                    immunizationsObject.put("total", immunizationEntry.getValue().toString());
+                    immunizations.add(immunizationsObject);
+                }
+            }
+            System.out.println("KenyaEMR IL: Visualization: Immunizations data loaded. immunizations="+immunizationsMap.keySet());
 				payloadObj.put("Immunization", immunizations);
-			} else {
-				payloadObj.put("Immunization", immunizations);
-			}
+
 		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : immunization : " + ex.getMessage());
-			ex.printStackTrace();
+            log.error("KenyaEMR IL: Visualization: Error building immunization payload: " + ex.getMessage(), ex);
+            System.err.println("KenyaEMR IL: Visualization: Error building immunization payload: " + ex.getMessage());
 		}
 
 		try {
@@ -201,9 +234,9 @@ public class VisualizationDataExchange {
 			} else {
 				payloadObj.put("diagnosis", diagnosis);
 			}
+            System.out.println("KenyaEMR IL: Visualization: Diagnosis data loaded. diagnosis="+diagnosisMap.keySet());
 		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : diagnosis : " + ex.getMessage());
-			ex.printStackTrace();
+            log.error("KenyaEMR IL: Visualization: Error building diagnosis payload: " + ex.getMessage(), ex);
 		}
 
 		try {
@@ -219,9 +252,10 @@ public class VisualizationDataExchange {
 			} else {
 				payloadObj.put("workload", workload);
 			}
+            System.out.println("KenyaEMR IL: Visualization: Workload data loaded. workload="+workloadMap.keySet());
 		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : workload : " + ex.getMessage());
-			ex.printStackTrace();
+			log.error("KenyaEMR IL: Visualization: Error building workload payload: " + ex.getMessage(), ex);
+			System.err.println("KenyaEMR IL: Visualization: Error building workload payload: " + ex.getMessage());
 		}
 
 		try {
@@ -241,9 +275,9 @@ public class VisualizationDataExchange {
 			} else {
 				payloadObj.put("billing", billing);
 			}
+            System.out.println("KenyaEMR IL: Visualization: Billing data loaded. billing="+billingItems.size());
 		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : billing : " + ex.getMessage());
-			ex.printStackTrace();
+			log.error("KenyaEMR IL: Visualization: Error building billing payload: " + ex.getMessage(), ex);
 		}
 
 		try {
@@ -282,13 +316,12 @@ public class VisualizationDataExchange {
 				departmentCategory.put("details", departmentDetails);
 				payments.add(departmentCategory);
 			}
-
+System.out.println("KenyaEMR IL: Visualization: Payment data loaded. payments="+payments.size());
 			// Add all payments to the payload object
 			payloadObj.put("payments", payments);
 
 		} catch (Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualizing data : payments : " + ex.getMessage());
-			ex.printStackTrace();
+			log.error("KenyaEMR IL: Visualization: Error building payments payload: " + ex.getMessage(), ex);
 		}
 		try {
 			inventoryItems = getInventory(fetchDate);
@@ -307,9 +340,9 @@ public class VisualizationDataExchange {
 			} else {
 				payloadObj.put("inventory", inventory);
 			}
+            System.out.println("KenyaEMR IL: Visualization: Inventory data loaded. inventory="+inventoryItems.size());
 		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : inventory : " + ex.getMessage());
-			ex.printStackTrace();
+			log.error("KenyaEMR IL: Visualization: Error building inventory payload: " + ex.getMessage(), ex);
 		}
 
 		try {
@@ -326,8 +359,7 @@ public class VisualizationDataExchange {
 				payloadObj.put("mortality", mortality);
 			}
 		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : mortality : " + ex.getMessage());
-			ex.printStackTrace();
+			log.error("KenyaEMR IL: Visualization: Error building mortality payload: " + ex.getMessage(), ex);
 		}
 
 		try {
@@ -346,8 +378,7 @@ public class VisualizationDataExchange {
 				payloadObj.put("wait_time", queueWaitTime);
 			}
 		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : wait time : " + ex.getMessage());
-			ex.printStackTrace();
+			log.error("KenyaEMR IL: Visualization: Error building  wait time : " + ex.getMessage(), ex);
 		}
 
 		try {
@@ -364,9 +395,9 @@ public class VisualizationDataExchange {
 			} else {
 				payloadObj.put("staff_count", staffCount);
 			}
+            System.out.println("KenyaEMR IL: Visualization: Staff data loaded. staff="+staff.size());
 		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : staff : " + ex.getMessage());
-			ex.printStackTrace();
+			log.error("KenyaEMR IL: Visualization: Error building  staff : " + ex.getMessage(), ex);
 		}
 
 		try {
@@ -377,9 +408,9 @@ public class VisualizationDataExchange {
 			} else {
 				payloadObj.put("waivers", "");
 			}
+            System.out.println("KenyaEMR IL: Visualization: Waivers data loaded. waivers="+waivers.size());
 		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : waivers : " + ex.getMessage());
-			ex.printStackTrace();
+			log.error("KenyaEMR IL: Visualization: Error building  waivers : " + ex.getMessage(), ex);
 		}
 
 		try {
@@ -390,9 +421,9 @@ public class VisualizationDataExchange {
 			} else {
 				payloadObj.put("sha_enrollments", "");
 			}
+            System.out.println("KenyaEMR IL: Visualization: SHA data loaded. shaPatients="+shaPatients);
 		} catch (Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : shaPatients : " + ex.getMessage());
-			ex.printStackTrace();
+			log.error("KenyaEMR IL: Visualization: Error building  shaPatients : " + ex.getMessage(), ex);
 		}
 
 		try {
@@ -409,9 +440,9 @@ public class VisualizationDataExchange {
 			} else {
 				payloadObj.put("admissions", ipdAgePatients);
 			}
+            System.out.println("KenyaEMR IL: Visualization: IPD by age data loaded. ipdAgePatients="+ipdAgePatients.size());
 		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : IPD by ward : " + ex.getMessage());
-			ex.printStackTrace();
+			log.error("KenyaEMR IL: Visualization: Error building  IPD by ward : " + ex.getMessage(),ex);
 		}
 		try {
 			ipdWardPatients = getInpatientsByWard(fetchDate);
@@ -427,160 +458,176 @@ public class VisualizationDataExchange {
 			} else {
 				payloadObj.put("admissions", ipdPatientsByWard);
 			}
+            System.out.println("KenyaEMR IL: Visualization: IPD by ward data loaded. ipdPatientsByWard="+ipdPatientsByWard.size());
 		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : IPD by ward : " + ex.getMessage());
-			ex.printStackTrace();
+			log.error("KenyaEMR IL: Visualization: Error building  IPD by ward : " + ex.getMessage(), ex);
 		}
 
 		Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
+        System.out.println("KenyaEMR IL: Visualization: Payload data loaded. payloadObj="+payloadObj);
 		return payloadObj;
 	}
 
-	public static Map<String, Integer> allVisits(Date fetchDate) {
-
+	public static Map<String, Integer> allVisits(List<Visit> allVisits) {
 		Map<String, Integer> visitMap = new HashMap<>();
-		VisitService visitService = Context.getVisitService();
-		List<Visit> allVisits = visitService.getVisits(null, null, null, null, fetchDate, null, null, null, null, true, false);
-		if (!allVisits.isEmpty()) {
 			for (Visit visit : allVisits) {
+                if (visit.getVisitType() == null || visit.getVisitType().getName() == null) {
+                    continue;
+                }
 				String visitType = visit.getVisitType().getName();
-				visitMap.put(visitType, visitMap.getOrDefault(visitType, 0) + 1);
+                visitMap.merge(visitType, 1, Integer::sum);
 			}
-		}
+            log.info("allVisits: " + visitMap);
+            System.out.println("KenyaEMR IL: Visualization: allVisits data loaded. visitMap="+visitMap.size());
 		return visitMap;
 	}
-	public static Map<String, Integer> outPatientVisitsByAge(Date fetchDate) {
 
-		Map<String, Integer> outpatientByByAgeMap = new HashMap<>();
-		VisitService visitService = Context.getVisitService();
-		List<Visit> allVisits = visitService.getVisits(null, null, null, null, fetchDate, null, null, null, null, true, false);
-		if (!allVisits.isEmpty()) {
-			for (Visit visit : allVisits) {
-				String visitType = visit.getVisitType().getName();
-				Patient patient = visit.getPatient();
+	public static Map<String, Integer> outPatientVisitsByAge(List<Visit> outPatientVisits) {
+        Map<String, Integer> outpatientByAgeMap = new HashMap<>();
 
-				if (visitType.equals("Outpatient")) {
-					if(patient != null) {
-						if (patient.getAge() < 5) {
-							outpatientByByAgeMap.put("Outpatient Under 5", outpatientByByAgeMap.getOrDefault("Outpatient Under 5", 0) + 1);
-						} else {
-							outpatientByByAgeMap.put("Outpatient 5 And Above", outpatientByByAgeMap.getOrDefault("Outpatient 5 And Above", 0) + 1);
-						}
-					}
-				}
-			}
-		}
-		return outpatientByByAgeMap;
-	}
-	public static Map<String, Integer> inPatientVisitsByAge(Date fetchDate) {
+        if (outPatientVisits == null || outPatientVisits.isEmpty()) {
+            return outpatientByAgeMap;
+        }
 
-		Map<String, Integer> inpatientByAgeMap = new HashMap<>();
-		VisitService visitService = Context.getVisitService();
-		List<Visit> allVisits = visitService.getVisits(null, null, null, null, fetchDate, null, null, null, null, true, false);
-		if (!allVisits.isEmpty()) {
-			for (Visit visit : allVisits) {
-				String visitType = visit.getVisitType().getName();
-				Patient patient = visit.getPatient();
+        final String UNDER_5 = "Outpatient Under 5";
+        final String ABOVE_5 = "Outpatient 5 And Above";
 
-				if (visitType.equals("Inpatient")) {
-					if(patient != null) {
-						if (patient.getAge() < 5) {
-							inpatientByAgeMap.put("Inpatient Under 5", inpatientByAgeMap.getOrDefault("Inpatient Under 5", 0) + 1);
-						} else {
-							inpatientByAgeMap.put("Inpatient 5 And Above", inpatientByAgeMap.getOrDefault("Inpatient 5 And Above", 0) + 1);
-						/*	if(){
-								inpatientByAgeMap.put("Maternity", inpatientByAgeMap.getOrDefault("Maternity", 0) + 1);
-							}*/
-						}
-					}
-				}
-			}
-		}
-		return inpatientByAgeMap;
+        for (Visit visit : outPatientVisits) {
+            VisitType visitTypeObj = visit.getVisitType();
+            if (visitTypeObj == null) continue;
+
+            Patient patient = visit.getPatient();
+            if (patient == null) continue;
+
+            int age = patient.getAge();
+            String key = (age < 5) ? UNDER_5 : ABOVE_5;
+            outpatientByAgeMap.merge(key, 1, Integer::sum);
+        }
+        System.out.println("KenyaEMR IL: Visualization: outPatientVisitsByAge data loaded. outpatientByAgeMap="+outpatientByAgeMap.size());
+        return outpatientByAgeMap;
 	}
 
-	public static Map<String, Integer> outPatientVisitsByService(Date fetchDate) {
+    public static Map<String, Integer> casualtyVisitsByAge(List<Visit> casualtyVisits) {
+        Map<String, Integer> casualtyByAgeMap = new HashMap<>();
 
-		Map<String, Integer> outpatientByServiceMap = new HashMap<>();
-		VisitService visitService = Context.getVisitService();
-		List<Visit> allVisits = visitService.getVisits(null, null, null, null, fetchDate, null, null, null, null, true, false);
+        if (casualtyVisits == null || casualtyVisits.isEmpty()) {
+            return casualtyByAgeMap;
+        }
 
-		if (!allVisits.isEmpty()) {
-			for (Visit visit : allVisits) {
-				String visitType = visit.getVisitType().getName();
+        final String UNDER_5 = "Casualty/Emergency Under 5";
+        final String ABOVE_5 = "Casualty/Emergency 5 And Above";
 
-				if (visitType.equals("Outpatient")) {
-					List<Encounter> encounters = service.getEncountersByVisit(visit, false);
-					if (!encounters.isEmpty()){
-						for (Encounter encounter : encounters) {
-							String serviceName = encounter.getEncounterType().getName();
-							outpatientByServiceMap.put(serviceName, outpatientByServiceMap.getOrDefault(serviceName, 0) + 1);
-						}
-				}
-				}
-			}
-		}
-		return outpatientByServiceMap;
+        for (Visit visit : casualtyVisits) {
+            VisitType visitTypeObj = visit.getVisitType();
+            if (visitTypeObj == null) continue;
+
+            Patient patient = visit.getPatient();
+            if (patient == null) continue;
+
+            int age = patient.getAge();
+            String key = (age < 5) ? UNDER_5 : ABOVE_5;
+            casualtyByAgeMap.merge(key, 1, Integer::sum);
+        }
+        System.out.println("KenyaEMR IL: Visualization: casualtyVisitsByAge data loaded. casualtyByAgeMap="+casualtyByAgeMap.size());
+        return casualtyByAgeMap;
+    }
+
+    public static Map<String, Integer> mortuaryVisitsByAge(List<Visit> mortuaryAdmissions) {
+        Map<String, Integer> mortuaryByAgeMap = new HashMap<>();
+
+        if (mortuaryAdmissions == null || mortuaryAdmissions.isEmpty()) {
+            return mortuaryByAgeMap;
+        }
+
+        final String UNDER_5 = "Mortuary Under 5";
+        final String ABOVE_5 = "Mortuary 5 And Above";
+
+        for (Visit visit : mortuaryAdmissions) {
+            Patient patient = visit.getPatient();
+            if (patient == null) continue;
+
+            int age = patient.getAge();
+            String key = (age < 5) ? UNDER_5 : ABOVE_5;
+            mortuaryByAgeMap.merge(key, 1, Integer::sum);
+        }
+        return mortuaryByAgeMap;
+    }
+
+	public static Map<String, Integer> inPatientVisitsByAge(List<Visit> inpatientVisits) {
+        Map<String, Integer> inpatientByAgeMap = new HashMap<>();
+
+        if (inpatientVisits == null || inpatientVisits.isEmpty()) {
+            return inpatientByAgeMap;
+        }
+
+        final String UNDER_5 = "Inpatient Under 5";
+        final String ABOVE_5 = "Inpatient 5 And Above";
+
+        for (Visit visit : inpatientVisits) {
+            Patient patient = visit.getPatient();
+            if (patient == null) continue;
+
+            int age = patient.getAge();
+            String key = (age < 5) ? UNDER_5 : ABOVE_5;
+            inpatientByAgeMap.merge(key, 1, Integer::sum);
+        }
+        return inpatientByAgeMap;
 	}
+
+    public static Map<String, Integer> outPatientVisitsByService(List<Visit> outPatientVisits) {
+
+        Map<String, Integer> outpatientByServiceMap = new HashMap<>();
+
+        EncounterSearchCriteriaBuilder searchCriteria = new EncounterSearchCriteriaBuilder().setVisits(outPatientVisits);
+
+        List<Encounter> encounters = service.getEncounters(searchCriteria.createEncounterSearchCriteria());
+
+        if (!encounters.isEmpty()) {
+            for (Encounter encounter : encounters) {
+                if (encounter.getEncounterType() == null || encounter.getEncounterType().getName() == null) {
+                    continue;
+                }
+                String serviceName = encounter.getEncounterType().getName();
+                outpatientByServiceMap.merge(serviceName, 1, Integer::sum);
+                log.debug("outpatientByServiceMap: " + outpatientByServiceMap);
+            }
+        }
+        return outpatientByServiceMap;
+    }
 
 	public static Map<String, Integer> immunizations(Date fetchDate) {
-
 		Map<String, Integer> immunizationsMap = new HashMap<>();
-		EncounterSearchCriteria encounterSearchCriteria = new EncounterSearchCriteria(null,
-				null,
-				fetchDate,
-				null,
-				null,
-				null,
-				Arrays.asList(MetadataUtils.existing(EncounterType.class, IMMUNIZATION)),
-				null,
-				null,
-				null,
-				false);
-		List<Encounter> immunizationEncounters = service.getEncounters(encounterSearchCriteria);
+        EncounterSearchCriteriaBuilder searchCriteria = new EncounterSearchCriteriaBuilder().setFromDate(fetchDate).setEncounterTypes(Collections.singletonList(MetadataUtils.existing(EncounterType.class, IMMUNIZATION)));
+        List<Encounter> immunizationEncounters = service.getEncounters(searchCriteria.createEncounterSearchCriteria());
 
-		if (!immunizationEncounters.isEmpty()) {
-			String immunizationGiven;
-			for (Encounter encounter : immunizationEncounters) {
-				for (Obs obs : encounter.getObs()) {
-					if (obs.getConcept().equals(immunizationConcept)) {
-						immunizationGiven = obs.getValueCoded().getName().toString();
-						if(!immunizationGiven.equals( "None")) {
-							immunizationsMap.put(immunizationGiven, immunizationsMap.getOrDefault(immunizationGiven, 0) + 1);
-						}
-					}
-				}
-			}
+        if (!immunizationEncounters.isEmpty()) {
+            immunizationEncounters.stream()
+                    .flatMap(encounter -> encounter.getObs().stream())
+                    .filter(obs -> obs.getConcept().equals(immunizationConcept))
+                    .map(obs -> obs.getValueCoded().getName().toString())
+                    .filter(immunizationGiven -> !"None".equals(immunizationGiven))
+                    .forEach(immunizationGiven ->
+                            immunizationsMap.merge(immunizationGiven, 1, Integer::sum)
+                    );
 		}
 		return immunizationsMap;
 	}
 
-	public static Map<String, Integer> allDiagnosis(Date fetchDate) {
+    public static Map<String, Integer> allDiagnosis(Date fetchDate) {
+        Map<String, Integer> diagnosisMap = new HashMap<>();
+        EncounterSearchCriteriaBuilder encounterSearchCriteriaBuilder = new EncounterSearchCriteriaBuilder().setFromDate(fetchDate).setIncludeVoided(false);
+        List<Encounter> encounters = service.getEncounters(encounterSearchCriteriaBuilder.createEncounterSearchCriteria());
+        DiagnosisService diagnosisService = Context.getDiagnosisService();
 
-		Map<String, Integer> diagnosisMap = new HashMap<>();
-		VisitService visitService = Context.getVisitService();
-		List<Visit> allVisits = visitService.getVisits(null, null, null, null, fetchDate, null, null, null, null, true, false);
-
-		if (!allVisits.isEmpty()) {
-			for (Visit visit : allVisits) {
-				if (!visit.getEncounters().isEmpty()) {					
-					for (Encounter encounter : visit.getEncounters()) {
-						//Get diagnosis
-						DiagnosisService diagnosisService = Context.getDiagnosisService();
-						List<Diagnosis> allDiagnosis = diagnosisService.getDiagnosesByEncounter(encounter, false, false);
-						if (!allDiagnosis.isEmpty()) {
-							for (Diagnosis diagnosis : allDiagnosis) {
-								String diagnosisName = diagnosis.getDiagnosis().getCoded().getName().getName();
-								diagnosisMap.put(diagnosisName, diagnosisMap.getOrDefault(diagnosisName, 0) + 1);
-							}
-						}
-					}
-				}
-			}
-		}
-		
-	return diagnosisMap;
-	}
+        encounters.stream()
+                .flatMap(encounter -> diagnosisService.getDiagnosesByEncounter(encounter, false, false).stream())
+                .filter(diagnosis -> diagnosis.getDiagnosis() != null &&
+                        diagnosis.getDiagnosis().getCoded() != null &&
+                        diagnosis.getDiagnosis().getCoded().getName() != null)
+                .map(diagnosis -> diagnosis.getDiagnosis().getCoded().getName().getName())
+                .forEach(name -> diagnosisMap.merge(name, 1, Integer::sum));
+        return diagnosisMap;
+    }
 	/**
 	 * Gets details of all bills
 	 * @param 
@@ -695,6 +742,7 @@ public class VisualizationDataExchange {
 		} catch (Exception e) {
 			throw new IllegalArgumentException("Unable to execute query", e);
 		}
+        System.out.println("KenyaEMR IL: Visualization: getPayments data loaded. ret="+ret.size());
 		return ret;
 	}
 
@@ -773,6 +821,7 @@ public class VisualizationDataExchange {
 
 			}
 		}
+        System.out.println("KenyaEMR IL: Visualization: mortality data loaded. mortalityMap="+mortalityMap.size());
 		return mortalityMap;
 	}
 	/**
@@ -830,7 +879,8 @@ public class VisualizationDataExchange {
 			});
 		} catch (Exception e) {
 			throw new IllegalArgumentException("Unable to execute query", e);
-		}		
+		}
+        System.out.println("KenyaEMR IL: Visualization: getInventory data loaded. ret="+ret.size());
 		return ret;
 	}
 
@@ -843,6 +893,7 @@ public class VisualizationDataExchange {
 						workLoadMap.put(e.getEncounterType().getName(), workLoadMap.getOrDefault(e.getEncounterType().getName(), 0) + 1);
 				}
 			}
+            System.out.println("KenyaEMR IL: Visualization: workLoad data loaded. workLoadMap="+workLoadMap.size());
 		return workLoadMap;
 	}
 
@@ -850,6 +901,7 @@ public class VisualizationDataExchange {
 	 * Gets details of  wait_time
 	 * @param
 	 * @return details of  wait_time
+     *
 	 */
 	public static List<SimpleObject> getWaitTime(Date fetchDate) {
 		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -868,9 +920,9 @@ public class VisualizationDataExchange {
 				@Override
 				public void execute(Connection connection) throws SQLException {
 					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
+                    ResultSet resultSet = statement.executeQuery();
 					try {
 
-						ResultSet resultSet = statement.executeQuery();
 						if (resultSet != null) {
 							ResultSetMetaData metaData = resultSet.getMetaData();
 
@@ -889,6 +941,9 @@ public class VisualizationDataExchange {
 						}
 						finalTx.commit();
 					} finally {
+                        try {
+                            if (resultSet != null) resultSet.close();
+                        } catch (Exception e) {}
 						try {
 							if (statement != null) {
 								statement.close();
@@ -901,6 +956,7 @@ public class VisualizationDataExchange {
 		} catch (Exception e) {
 			throw new IllegalArgumentException("Unable to execute query", e);
 		}
+        System.out.println("KenyaEMR IL: Visualization: getWaitTime data loaded. ret="+ret.size());
 		return ret;
 	}
 
@@ -937,9 +993,8 @@ public class VisualizationDataExchange {
 				@Override
 				public void execute(Connection connection) throws SQLException {
 					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
+                    ResultSet resultSet = statement.executeQuery();
 					try {
-
-						ResultSet resultSet = statement.executeQuery();
 						if (resultSet != null) {
 							ResultSetMetaData metaData = resultSet.getMetaData();
 
@@ -957,6 +1012,9 @@ public class VisualizationDataExchange {
 						}
 						finalTx.commit();
 					} finally {
+                        try {
+                            if (resultSet != null) resultSet.close();
+                        } catch (Exception e) {}
 						try {
 							if (statement != null) {
 								statement.close();
@@ -967,10 +1025,11 @@ public class VisualizationDataExchange {
 				}
 			});
 		} catch (Exception e) {
-			System.err.println("KenyaEMR IL: Unable to get staff by cadre: " + e.getMessage());
+			log.error("KenyaEMR IL: Unable to get staff by cadre: " + e.getMessage());
 			e.printStackTrace();
 			throw new IllegalArgumentException("Unable to execute query", e);
 		}
+        System.out.println("KenyaEMR IL: Visualization: getStaffByCadre data loaded. ret="+ret.size());
 		return ret;
 	}
 
@@ -995,9 +1054,8 @@ public class VisualizationDataExchange {
 				@Override
 				public void execute(Connection connection) throws SQLException {
 					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
+                    ResultSet resultSet = statement.executeQuery();
 					try {
-
-						ResultSet resultSet = statement.executeQuery();
 						if (resultSet != null) {
 							ResultSetMetaData metaData = resultSet.getMetaData();
 
@@ -1014,6 +1072,9 @@ public class VisualizationDataExchange {
 						}
 						finalTx.commit();
 					} finally {
+                        try {
+                            if (resultSet != null) resultSet.close();
+                        } catch (Exception e) {}
 						try {
 							if (statement != null) {
 								statement.close();
@@ -1026,6 +1087,7 @@ public class VisualizationDataExchange {
 		} catch (Exception e) {
 			throw new IllegalArgumentException("Unable to execute query", e);
 		}
+        System.out.println("KenyaEMR IL: Visualization: getTotalWaivers data loaded. ret="+ret.size());
 		return ret;
 	}
 	/**
@@ -1075,9 +1137,8 @@ public class VisualizationDataExchange {
 				@Override
 				public void execute(Connection connection) throws SQLException {
 					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
+                    ResultSet resultSet = statement.executeQuery();
 					try {
-
-						ResultSet resultSet = statement.executeQuery();
 						if (resultSet != null) {
 							ResultSetMetaData metaData = resultSet.getMetaData();
 
@@ -1095,6 +1156,9 @@ public class VisualizationDataExchange {
 						}
 						finalTx.commit();
 					} finally {
+                        try {
+                            if (resultSet != null) resultSet.close();
+                        } catch (Exception e) {}
 						try {
 							if (statement != null) {
 								statement.close();
@@ -1107,6 +1171,7 @@ public class VisualizationDataExchange {
 		} catch (Exception e) {
 			throw new IllegalArgumentException("Unable to execute query", e);
 		}
+        System.out.println("KenyaEMR IL: Visualization: getInpatientsByWard data loaded. ret="+ret.size());
 		return ret;
 	}
 
@@ -1118,7 +1183,7 @@ public class VisualizationDataExchange {
 		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String effectiveDate = sd.format(fetchDate);
 		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
-		final String sqlSelectQuery = "select if(timestampdiff(YEAR, date(p.birthdate), date(current_date)) < 5, 'Child', 'Adult') as Age,\n" +
+		final String sqlSelectQuery = "select if(timestampdiff(YEAR, date(p.birthdate), date(current_date)) < 5, 'Child', 'Adult') as age,\n" +
 				"       count(bm.patient_id)                                                                 as no_of_patients\n" +
 				"from bed_patient_assignment_map bm\n" +
 				"         inner join encounter e on bm.encounter_id = e.encounter_id\n" +
@@ -1134,7 +1199,35 @@ public class VisualizationDataExchange {
 				"group by age;";
 		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
 		Transaction tx = null;
-		try {
+        try {
+            tx = sf.getHibernateSessionFactory().getCurrentSession().beginTransaction();
+            sf.getCurrentSession().doWork(connection -> {
+                // try-with-resources ensures statement/resultset closing
+                try (PreparedStatement statement = connection.prepareStatement(sqlSelectQuery)) {
+                    statement.setString(1, effectiveDate);
+                    try (ResultSet resultSet = statement.executeQuery()) {
+                        ResultSetMetaData metaData = resultSet.getMetaData();
+                        while (resultSet.next()) {
+                            Object[] row = new Object[metaData.getColumnCount()];
+                            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                                row[i - 1] = resultSet.getObject(i);
+                            }
+                            ret.add(SimpleObject.create(
+                                    "age", row[0] != null ? row[0].toString() : "",
+                                    "no_of_patients", row[1] != null ? row[1].toString() : ""
+                            ));
+                        }
+                    }
+                }
+            });
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
+            }
+            throw new IllegalArgumentException("Unable to execute query", e);
+        }
+		/*try {
 
 			tx = sf.getHibernateSessionFactory().getCurrentSession().beginTransaction();
 			final Transaction finalTx = tx;
@@ -1143,9 +1236,8 @@ public class VisualizationDataExchange {
 				@Override
 				public void execute(Connection connection) throws SQLException {
 					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
+                    ResultSet resultSet = statement.executeQuery();
 					try {
-
-						ResultSet resultSet = statement.executeQuery();
 						if (resultSet != null) {
 							ResultSetMetaData metaData = resultSet.getMetaData();
 
@@ -1163,6 +1255,9 @@ public class VisualizationDataExchange {
 						}
 						finalTx.commit();
 					} finally {
+                        try {
+                            if (resultSet != null) resultSet.close();
+                        } catch (Exception e) {}
 						try {
 							if (statement != null) {
 								statement.close();
@@ -1174,7 +1269,8 @@ public class VisualizationDataExchange {
 			});
 		} catch (Exception e) {
 			throw new IllegalArgumentException("Unable to execute query", e);
-		}
+		}*/
+        System.out.println("KenyaEMR IL: Visualization: getInpatientsByAge data loaded. ret="+ret.size());
 		return ret;
 	}
 
@@ -1205,9 +1301,8 @@ public class VisualizationDataExchange {
 				@Override
 				public void execute(Connection connection) throws SQLException {
 					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
+                    ResultSet resultSet = statement.executeQuery();
 					try {
-
-						ResultSet resultSet = statement.executeQuery();
 						if (resultSet != null) {
 							ResultSetMetaData metaData = resultSet.getMetaData();
 
@@ -1225,6 +1320,9 @@ public class VisualizationDataExchange {
 						}
 						finalTx.commit();
 					} finally {
+                        try {
+                            if (resultSet != null) resultSet.close();
+                        } catch (Exception e) {}
 						try {
 							if (statement != null) {
 								statement.close();
@@ -1235,10 +1333,10 @@ public class VisualizationDataExchange {
 				}
 			});
 		} catch (Exception e) {
-			System.err.println("KenyaEMR IL: Unable to get payment by department: " + e.getMessage());
-			e.printStackTrace();
+			log.error("KenyaEMR IL: Unable to get payment by department: " + e.getMessage(),e);;
 			throw new IllegalArgumentException("Unable to execute query", e);
 		}
+        System.out.println("KenyaEMR IL: Visualization: getPaymentByDepartment data loaded. ret="+ret.size());
 		return ret;
 	}
 
@@ -1259,8 +1357,10 @@ public class VisualizationDataExchange {
 		} finally {
 			Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
 		}
+        System.out.println("KenyaEMR IL: Visualization: getTotalPatientsOnSHA data loaded. ret="+ret);;
 		return ret;
 	}
+
 }
 
 
