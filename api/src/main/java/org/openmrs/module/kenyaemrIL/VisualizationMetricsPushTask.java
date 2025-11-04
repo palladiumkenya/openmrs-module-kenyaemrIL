@@ -1,6 +1,5 @@
 package org.openmrs.module.kenyaemrIL;
 
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.openmrs.GlobalProperty;
 import org.openmrs.api.context.Context;
@@ -11,79 +10,77 @@ import org.openmrs.util.OpenmrsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URL;
-import java.net.URLConnection;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Directly push visualization metrics to Visualization server
  */
 public class VisualizationMetricsPushTask extends AbstractTask {
 
-	private static final Logger log = LoggerFactory.getLogger(VisualizationMetricsPushTask.class);
-	private String url = "http://www.google.com:80/index.html";
-
-	/**
+    private static final Logger log = LoggerFactory.getLogger(VisualizationMetricsPushTask.class);
+    private static final String CONNECTIVITY_TEST_URL = "http://www.google.com:80/index.html";
+    private static final String GLOBAL_PROP_LAST_FETCH = "visualizationTask.lastFetchDateAndTime";
+    private static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyyMMddHHmmss");
+    private static final Object TASK_LOCK = new Object();
+    /**
 	 * @see AbstractTask#execute()
 	 */
-	public void execute() {
-		System.out.println("Visualization PUSH: Scheduler started....");
-		SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+    public void execute() {
+        synchronized (TASK_LOCK) {
+            boolean sessionOpened = false;
+            try {
+                if (!Context.isSessionOpen()) {
+                    Context.openSession();
+                    sessionOpened = true;
+                }
+            Date fetchDate;
+            GlobalProperty globalPropertyObject = null;
 
-		// Fetch the last date of fetch
-		Date fetchDate = null;
-		GlobalProperty globalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject("visualizationTask.lastFetchDateAndTime");
+            try {
+                globalPropertyObject = Context.getAdministrationService().getGlobalPropertyObject(GLOBAL_PROP_LAST_FETCH);
+                if (globalPropertyObject != null && globalPropertyObject.getValue() != null) {
+                    String ts = globalPropertyObject.getValue().toString();
+                    fetchDate = TIMESTAMP_FORMAT.parse(ts);
+                } else {
+                    fetchDate = new Date();
+                    System.out.println("Visualization data push:Last fetch date not found. Defaulting to: " + fetchDate);
+                }
+                System.out.println("Visualization data push: Last fetch date: " + fetchDate);
+            } catch (Exception e) {
+                System.err.println("KenyaEMR IL: Error formatting last fetch date. Defaulting to current date:" + e.getMessage() + ":" + e);
+                fetchDate = new Date();
+            }
+            if (!VisualizationUtils.hasInternetConnectivity(CONNECTIVITY_TEST_URL)) {
+                    String text = "KenyaEMR IL: Visualization data push at: " + new Date() + " there was connectivity error.";
+                    System.err.println(text);
+                    return;
+                }
 
-		try {
-			String ts = globalPropertyObject.getValue().toString();
-			fetchDate = formatter.parse(ts);
-		} catch (Exception e) {
-			System.err.println("KenyaEMR IL: Error formating date" + e.getMessage());
-			e.printStackTrace();
-		}
+                VisualizationDataExchange vDataExchange = new VisualizationDataExchange();
 
-		try {
-			Context.openSession();
+                JSONObject params = vDataExchange.generateVisualizationPayload(fetchDate);
 
-			// check first if there is internet connectivity before pushing
-			URLConnection connection = new URL(url).openConnection();
-			connection.connect();
-			VisualizationDataExchange vDataExchange = new VisualizationDataExchange();
-			JSONObject params = vDataExchange.generateVisualizationPayload(fetchDate);		
+                boolean results = VisualizationUtils.sendPOST(params.toJSONString());
 
-			try {
-				System.err.println("KenyaEMR IL: sending visualization data: " + params.toJSONString());
-				Boolean results = VisualizationUtils.sendPOST(params.toJSONString());
-				System.out.println("Send status ==>" + results);
-			} catch (Exception e) {
-				System.out.println(e.getMessage());
-			}
+                // Set next fetch date as the last moment of previous day (midnight)
+                Date yesterdayMidnight = OpenmrsUtil.getLastMomentOfDay(
+                        new Date(System.currentTimeMillis() - 1000L * 60 * 60 * 24)
+                );
 
-        	//Set next fetch date start time
-			Date nextProcessingDate = new Date();
-			nextProcessingDate.setTime(System.currentTimeMillis());
-			Date startOfDayMidnight = new Date(nextProcessingDate.getTime() - (1000 * 60 * 60 * 24));
-			Date midnightDateTime = OpenmrsUtil.getLastMomentOfDay(startOfDayMidnight);			
-			
-			globalPropertyObject.setPropertyValue(formatter.format(midnightDateTime));
-			Context.getAdministrationService().saveGlobalProperty(globalPropertyObject);
-			Context.flushSession();
-		} catch (Exception ex) {
-			try {
-				String text = "KenyaEMR IL: IL - Visualization PUSH: At " + new Date() + " there was connectivity error. ";
-				System.err.println("KenyaEMR IL: " + text);
-				log.warn(text);
-			} catch (Exception e) {
-				System.err.println("KenyaEMR IL: " + e.getMessage());
-				log.error("KenyaEMR IL: IL - Visualization PUSH: Failed to check internet connectivity", e);
-			}
-			ex.printStackTrace();
-		} finally {
-			Context.closeSession();
-		}
-	}
-
+                if (results && globalPropertyObject != null) {
+                    globalPropertyObject.setPropertyValue(TIMESTAMP_FORMAT.format(yesterdayMidnight));
+                    Context.getAdministrationService().saveGlobalProperty(globalPropertyObject);
+                    System.out.println("Updated last fetch date to: " + TIMESTAMP_FORMAT.format(yesterdayMidnight));
+                }
+                Context.flushSession();
+            } catch (Exception ex) {
+                System.err.println("KenyaEMR IL: Visualization PUSH: " + ex.getMessage() + ":" + ex);
+            } finally {
+                if (sessionOpened) {
+                    Context.closeSession();
+                }
+            }
+        }
+    }
 }

@@ -2,11 +2,20 @@ package org.openmrs.module.kenyaemrIL.visualizationMetrics;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.jdbc.Work;
 import org.json.simple.JSONObject;
-import org.openmrs.*;
-import org.openmrs.api.DiagnosisService;
+import org.openmrs.Concept;
+import org.openmrs.Diagnosis;
+import org.openmrs.Encounter;
+import org.openmrs.EncounterType;
+import org.openmrs.Form;
+import org.openmrs.Obs;
+import org.openmrs.Patient;
+import org.openmrs.Person;
+import org.openmrs.Visit;
+import org.openmrs.VisitType;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.PersonService;
 import org.openmrs.api.VisitService;
@@ -15,33 +24,47 @@ import org.openmrs.api.db.hibernate.DbSessionFactory;
 import org.openmrs.module.Module;
 import org.openmrs.module.ModuleFactory;
 import org.openmrs.module.kenyaemr.Dictionary;
+import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemr.metadata.HivMetadata;
 import org.openmrs.module.kenyaemr.metadata.MchMetadata;
 import org.openmrs.module.kenyaemr.metadata.OTZMetadata;
 import org.openmrs.module.kenyaemrIL.il.utils.MessageHeaderSingleton;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
-import org.openmrs.parameter.EncounterSearchCriteria;
+import org.openmrs.parameter.EncounterSearchCriteriaBuilder;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.util.PrivilegeConstants;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.openmrs.module.kenyaemrIL.visualizationMetrics.VisualizationUtils.mapToBreakdownList;
 
 public class VisualizationDataExchange {
 
-	private static Log log = LogFactory.getLog(VisualizationDataExchange.class);
+	private static final Log log = LogFactory.getLog(VisualizationDataExchange.class);
 	private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	private static List<Diagnosis> allDiagnosis;
 	private static EncounterService service= Context.getEncounterService();
-	final static String FAMILY_PLANNING_FORM_UUID = "a52c57d4-110f-4879-82ae-907b0d90add6";
 	public static final String IMMUNIZATION = "29c02aff-9a93-46c9-bf6f-48b552fcb1fa";
 	public static Concept immunizationConcept = Dictionary.getConcept(Dictionary.IMMUNIZATIONS);
 	/**
-	 * Generates the payload used to post to visualization server     *
+	 * Generates the payload used to post to visualization server*
 	 *
 	 * @param
 	 * @return
@@ -56,7 +79,10 @@ public class VisualizationDataExchange {
 		Map<String, Integer> mortalityMap;
 		Map<String, Integer> workloadMap;
 		Map<String, Integer> visitByAgeMap;
-		Map<String, Integer> outpatientByServiceMap;
+        Map<String, Integer> inpatientVisitsByAgeMap;
+        Map<String, Integer> casualtyVisitsByAgeMap;
+        Map<String, Integer> mortuaryVisitsByAgeMap;
+        Map<String, Integer> outpatientByServiceMap;
 		Map<String, Integer> immunizationsMap;
 		List<SimpleObject> diagnosis = new ArrayList<SimpleObject>();
 		List<SimpleObject> workload = new ArrayList<SimpleObject>();
@@ -89,7 +115,9 @@ public class VisualizationDataExchange {
 		payloadObj.put("timestamp", timestamp);
 		payloadObj.put("version", version);
 
+        System.out.println("KenyaEMR IL: Visualization: generating Visualization data started for mfl_code "+facilityMfl+" since "+fetchDate+ "at "+new Date());
 		try {
+            System.out.println("KenyaEMR IL: Visualization: Generating bed management data...");
 			if (bedManagement.size() > 0) {
 				SimpleObject bedManagementObject = new SimpleObject();
 				bedManagementObject.put("ward", "");
@@ -101,94 +129,97 @@ public class VisualizationDataExchange {
 			} else {
 				payloadObj.put("bed_management", bedManagement);
 			}
+            System.out.println("KenyaEMR IL: Visualization: Finished generating bed management data.");
 		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : bed_management : " + ex.getMessage());
-			ex.printStackTrace();
+            System.err.println("KenyaEMR IL:Visualization: Error generating bed management data: "+ ex.getMessage()+":"+ ex);
 		}
 		try {
 			// Fetch visit data
-			visitsMap = allVisits(fetchDate);
-			visitByAgeMap = outPatientVisitsByAge(fetchDate);
-			outpatientByServiceMap = outPatientVisitsByService(fetchDate);
+            System.out.println("KenyaEMR IL: Visualization: Generating visits data...");
+            VisitService visitService = Context.getVisitService();
+            Collection<VisitType> visitTypes = Arrays.asList(
+                MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.INPATIENT),
+                MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.OUTPATIENT),
+                MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.CASUALTY),
+                MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.MORTUARY)
+            );
+            List<Visit> allVisits = visitService.getVisits(visitTypes, null, null, null, fetchDate, null, null, null, null, true, false);
+            List<Visit> outPatientVisits = visitService.getVisits(Collections.singleton(MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.OUTPATIENT)), null, null, null, fetchDate, null, null, null, null, true, false);
+            List<Visit> inPatientVisits = visitService.getVisits(Collections.singleton(MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.INPATIENT)), null, null, null, fetchDate, null, null, null, null, true, false);
+            List<Visit> casualtyPatientVisits = visitService.getVisits(Collections.singleton(MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.CASUALTY)), null, null, null, fetchDate, null, null, null, null, true, false);
+            List<Visit> mortuaryAdmissions = visitService.getVisits(Collections.singleton(MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.MORTUARY)), null, null, null, fetchDate, null, null, null, null, true, false);
+
+            visitsMap = allVisits(allVisits);
+            outpatientByServiceMap = outPatientVisitsByService(outPatientVisits);
+            inpatientVisitsByAgeMap = inPatientVisitsByAge(inPatientVisits);
+            visitByAgeMap = outPatientVisitsByAge(outPatientVisits);
+            casualtyVisitsByAgeMap = casualtyVisitsByAge(casualtyPatientVisits);
+            mortuaryVisitsByAgeMap = mortuaryVisitsByAge(mortuaryAdmissions);
 
 			// Prepare the visits structure
 			List<SimpleObject> visitDetails = new ArrayList<>();
-			List<SimpleObject> ageDetails = new ArrayList<>();
 
 			// Group visits by visit_type
-			if (!visitsMap.isEmpty()) {
-				for (Map.Entry<String, Integer> visitEntry : visitsMap.entrySet()) {
-					SimpleObject visitsObject = new SimpleObject();
-					visitsObject.put("visit_type", visitEntry.getKey());
-					visitsObject.put("total", visitEntry.getValue().toString());
+            for (Map.Entry<String, Integer> visitEntry : visitsMap.entrySet()) {
+                SimpleObject visitsObject = new SimpleObject();
+                final String visitType = visitEntry.getKey();
+                visitsObject.put("visit_type", visitType);
+                visitsObject.put("total", visitEntry.getValue().toString());
 
-					// Add age details if it's an Outpatient visit
-					if ("Outpatient".equals(visitEntry.getKey()) && !visitByAgeMap.isEmpty()) {
-						List<SimpleObject> ageDetailsList = new ArrayList<>();
-						for (Map.Entry<String, Integer> ageEntry : visitByAgeMap.entrySet()) {
-							SimpleObject ageObject = new SimpleObject();
-							ageObject.put("age", ageEntry.getKey());
-							ageObject.put("total", ageEntry.getValue().toString());
-							ageDetailsList.add(ageObject);
-						}
-						visitsObject.put("age_details", ageDetailsList);
-					}
-
-					visitDetails.add(visitsObject);
-				}
-			}
+                // Attach age breakdown
+                if ("Outpatient".equals(visitType) && !visitByAgeMap.isEmpty()) {
+                    visitsObject.put("age_details", mapToBreakdownList(visitByAgeMap, "age", "total"));
+                } else if ("Inpatient".equals(visitType) && !inpatientVisitsByAgeMap.isEmpty()) {
+                    visitsObject.put("age_details", mapToBreakdownList(inpatientVisitsByAgeMap, "age", "total"));
+                } else if ("Casualty/Emergency".equals(visitType) && !casualtyVisitsByAgeMap.isEmpty()) {
+                    visitsObject.put("age_details", mapToBreakdownList(casualtyVisitsByAgeMap, "age", "total"));
+                } else if ("Mortuary".equals(visitType) && !mortuaryVisitsByAgeMap.isEmpty()) {
+                    visitsObject.put("age_details", mapToBreakdownList(mortuaryVisitsByAgeMap, "age", "total"));
+                }
+                visitDetails.add(visitsObject);
+            }
 
 			// Prepare the service type structure
-			List<SimpleObject> serviceDetails = new ArrayList<>();
-			if (!outpatientByServiceMap.isEmpty()) {
-				for (Map.Entry<String, Integer> visitEntry : outpatientByServiceMap.entrySet()) {
-					SimpleObject outpatientByServiceObject = new SimpleObject();
-					outpatientByServiceObject.put("service", visitEntry.getKey());
-					outpatientByServiceObject.put("total", visitEntry.getValue().toString());
-					serviceDetails.add(outpatientByServiceObject);
-				}
-			}
+            List<SimpleObject> serviceDetails = mapToBreakdownList(outpatientByServiceMap, "service", "total");
+            SimpleObject visitsPayload = new SimpleObject();
+            visitsPayload.put("category", "visit_type");
+            visitsPayload.put("details", visitDetails);
 
-			// Create the final payload structure
-			SimpleObject visitsPayload = new SimpleObject();
-			visitsPayload.put("category", "visit_type");
-			visitsPayload.put("details", visitDetails);
+            SimpleObject servicePayload = new SimpleObject();
+            servicePayload.put("category", "service_type");
+            servicePayload.put("details", serviceDetails);
 
-			SimpleObject servicePayload = new SimpleObject();
-			servicePayload.put("category", "service_type");
-			servicePayload.put("details", serviceDetails);
+            List<SimpleObject> visitsList = new ArrayList<>();
+            visitsList.add(visitsPayload);
+            visitsList.add(servicePayload);
 
-			List<SimpleObject> visitsList = new ArrayList<>();
-			visitsList.add(visitsPayload);
-			visitsList.add(servicePayload);
+            payloadObj.put("visits", visitsList);
 
-			// Put it all in the final payload object
-			payloadObj.put("visits", visitsList);
-
-		} catch (Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : visits : " + ex.getMessage());
-			ex.printStackTrace();
+            System.out.println("KenyaEMR IL: Visualization: Finished generating visits data.");
+        } catch(Exception ex) {
+            System.err.println("KenyaEMR IL:Visualization: Error generating visits data: "+ ex.getMessage()+":"+ ex);
 		}
 
 		try {
+            System.out.println("KenyaEMR IL: Visualization: Generating immunizations data...");
 			immunizationsMap = immunizations(fetchDate);
 			if(!immunizationsMap.isEmpty()) {
-				for (Map.Entry<String, Integer> immunizationEntry : immunizationsMap.entrySet()) {
-					SimpleObject immunizationsObject = new SimpleObject();
-					immunizationsObject.put("Vaccine", immunizationEntry.getKey());
-					immunizationsObject.put("total", immunizationEntry.getValue().toString());
-					immunizations.add(immunizationsObject);
-				}
+                for (Map.Entry<String, Integer> immunizationEntry : immunizationsMap.entrySet()) {
+                    SimpleObject immunizationsObject = new SimpleObject();
+                    immunizationsObject.put("Vaccine", immunizationEntry.getKey());
+                    immunizationsObject.put("total", immunizationEntry.getValue().toString());
+                    immunizations.add(immunizationsObject);
+                }
+            }
 				payloadObj.put("Immunization", immunizations);
-			} else {
-				payloadObj.put("Immunization", immunizations);
-			}
-		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : immunization : " + ex.getMessage());
-			ex.printStackTrace();
+
+            System.out.println("KenyaEMR IL: Visualization: Finished generating Immunization data.");
+        } catch(Exception ex) {
+            System.err.println("KenyaEMR IL:Visualization: Error generating Immunization data: "+ ex.getMessage()+":"+ ex);
 		}
 
 		try {
+            System.out.println("KenyaEMR IL: Visualization: Generating diagnosis data...");
 			diagnosisMap = allDiagnosis(fetchDate);
 			if (!diagnosisMap.isEmpty()) {
 				for (Map.Entry<String, Integer> diagnosisEntry : diagnosisMap.entrySet()) {
@@ -201,12 +232,13 @@ public class VisualizationDataExchange {
 			} else {
 				payloadObj.put("diagnosis", diagnosis);
 			}
-		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : diagnosis : " + ex.getMessage());
-			ex.printStackTrace();
+            System.out.println("KenyaEMR IL: Visualization: Finished generating diagnosis data.");
+        } catch(Exception ex) {
+            System.err.println("KenyaEMR IL:Visualization: Error generating diagnosis data: "+ ex.getMessage()+":"+ ex);
 		}
 
 		try {
+            System.out.println("KenyaEMR IL: Visualization: Generating workload data...");
 			workloadMap = workLoad(fetchDate);
 			if (!workloadMap.isEmpty()){
 				for(Map.Entry<String, Integer> workloadEntry : workloadMap.entrySet()){
@@ -219,12 +251,13 @@ public class VisualizationDataExchange {
 			} else {
 				payloadObj.put("workload", workload);
 			}
-		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : workload : " + ex.getMessage());
-			ex.printStackTrace();
+            System.out.println("KenyaEMR IL: Visualization: Finished generating workload data.");
+        } catch(Exception ex) {
+            System.err.println("KenyaEMR IL:Visualization: Error generating workload data: "+ ex.getMessage()+":"+ ex);
 		}
 
 		try {
+            System.out.println("KenyaEMR IL: Visualization: Generating billing data...");
 			billingItems = getBillingItems(fetchDate);
 			if (billingItems.size() > 0) {		
 				for (int i = 0; i < billingItems.size(); i++) {
@@ -241,12 +274,13 @@ public class VisualizationDataExchange {
 			} else {
 				payloadObj.put("billing", billing);
 			}
-		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : billing : " + ex.getMessage());
-			ex.printStackTrace();
+            System.out.println("KenyaEMR IL: Visualization: Finished generating billing data.");
+        } catch(Exception ex) {
+            System.err.println("KenyaEMR IL:Visualization: Error generating billing data: "+ ex.getMessage()+":"+ ex);
 		}
 
 		try {
+            System.out.println("KenyaEMR IL: Visualization: Generating payments data...");
 			paymentItems = getPayments(fetchDate);
 			paymentsByDepartment = getPaymentByDepartment(fetchDate);
 
@@ -282,15 +316,15 @@ public class VisualizationDataExchange {
 				departmentCategory.put("details", departmentDetails);
 				payments.add(departmentCategory);
 			}
-
 			// Add all payments to the payload object
 			payloadObj.put("payments", payments);
 
-		} catch (Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualizing data : payments : " + ex.getMessage());
-			ex.printStackTrace();
+            System.out.println("KenyaEMR IL: Visualization: Finished generating payments data.");
+        } catch(Exception ex) {
+            System.err.println("KenyaEMR IL:Visualization: Error generating payments data: "+ ex.getMessage()+":"+ ex);
 		}
 		try {
+            System.out.println("KenyaEMR IL: Visualization: Generating inventory data...");
 			inventoryItems = getInventory(fetchDate);
 			if (inventoryItems.size() > 0) {			
 				for (int i = 0; i < inventoryItems.size(); i++) {
@@ -308,11 +342,11 @@ public class VisualizationDataExchange {
 				payloadObj.put("inventory", inventory);
 			}
 		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : inventory : " + ex.getMessage());
-			ex.printStackTrace();
+			log.error("KenyaEMR IL: Visualization: Error building inventory payload: " + ex.getMessage(), ex);
 		}
 
 		try {
+            System.out.println("KenyaEMR IL: Visualization: Generating mortality data...");
 			mortalityMap = mortality(fetchDate);
 			if (!mortalityMap.isEmpty()) {
 				for (Map.Entry<String, Integer> mortalityEntry : mortalityMap.entrySet()) {
@@ -325,12 +359,13 @@ public class VisualizationDataExchange {
 			} else {
 				payloadObj.put("mortality", mortality);
 			}
-		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : mortality : " + ex.getMessage());
-			ex.printStackTrace();
+            System.out.println("KenyaEMR IL: Visualization: Finished generating mortality data.");
+        } catch(Exception ex) {
+            System.err.println("KenyaEMR IL:Visualization: Error generating mortality data: "+ ex.getMessage()+":"+ ex);
 		}
 
 		try {
+            System.out.println("KenyaEMR IL: Visualization: Generating waiting times data...");
 			queueItems = getWaitTime(fetchDate);
 			if (queueItems.size() > 0) {
 				for (int i = 0; i < queueItems.size(); i++) {
@@ -345,12 +380,13 @@ public class VisualizationDataExchange {
 			} else {
 				payloadObj.put("wait_time", queueWaitTime);
 			}
-		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : wait time : " + ex.getMessage());
-			ex.printStackTrace();
+            System.out.println("KenyaEMR IL: Visualization: Finished waiting times data.");
+        } catch(Exception ex) {
+            System.err.println("KenyaEMR IL:Visualization: Error generating waiting times data: "+ ex.getMessage()+":"+ ex);
 		}
 
 		try {
+            System.out.println("KenyaEMR IL: Visualization: Generating staffing data...");
 			staff = getStaffByCadre(fetchDate);
 			if (staff.size() > 0) {
 				for (int i = 0; i < staff.size(); i++) {
@@ -364,25 +400,22 @@ public class VisualizationDataExchange {
 			} else {
 				payloadObj.put("staff_count", staffCount);
 			}
-		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : staff : " + ex.getMessage());
-			ex.printStackTrace();
+            System.out.println("KenyaEMR IL: Visualization: Finished generating staffing data.");
+        } catch(Exception ex) {
+            System.err.println("KenyaEMR IL:Visualization: Error generating staffing data: "+ ex.getMessage()+":"+ ex);
 		}
 
 		try {
+            System.out.println("KenyaEMR IL: Visualization: Generating payment waivers data...");
 			waivers = getTotalWaivers(fetchDate);
-			if (waivers.size() > 0) {
-				SimpleObject waiversList= waivers.get(0);
-				payloadObj.put("waivers","");
-			} else {
-				payloadObj.put("waivers", "");
-			}
-		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : waivers : " + ex.getMessage());
-			ex.printStackTrace();
+            payloadObj.put("waivers",waivers);
+            System.out.println("KenyaEMR IL: Visualization: Finished generating payment waivers data.");
+        } catch(Exception ex) {
+            System.err.println("KenyaEMR IL:Visualization: Error generating payment waivers data: "+ ex.getMessage()+":"+ ex);
 		}
 
 		try {
+            System.out.println("KenyaEMR IL: Visualization: Generating SHA enrollments data...");
 			 shaPatients = getTotalPatientsOnSHA(fetchDate);
 			if (shaPatients > 0) {
 				payloadObj.put("sha_enrollments", shaPatients);
@@ -390,197 +423,241 @@ public class VisualizationDataExchange {
 			} else {
 				payloadObj.put("sha_enrollments", "");
 			}
-		} catch (Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : shaPatients : " + ex.getMessage());
-			ex.printStackTrace();
+            System.out.println("KenyaEMR IL: Visualization: Finished generating SHA enrollments data.");
+        } catch(Exception ex) {
+            System.err.println("KenyaEMR IL:Visualization: Error generating SHA enrollments data: "+ ex.getMessage()+":"+ ex);
 		}
 
 		try {
+            System.out.println("KenyaEMR IL: Visualization: Generating admissions by age data...");
 			ipdAgePatients = getInpatientsByAge(fetchDate);
 			if (ipdAgePatients.size() > 0) {
+                List<SimpleObject> admissionsByAge = new ArrayList<SimpleObject>();
 				for (int i = 0; i < ipdAgePatients.size(); i++) {
 					SimpleObject patientList= ipdAgePatients.get(i);
 					SimpleObject ipdObject = new SimpleObject();
 					ipdObject.put("age", patientList.get("age"));
 					ipdObject.put("no_of_patients", patientList.get("no_of_patients"));
-					ipdAgePatients.add(ipdObject);
-					payloadObj.put("admissions", ipdAgePatients);
+                    admissionsByAge.add(ipdObject);
 				}
+                payloadObj.put("admissions", admissionsByAge);
 			} else {
 				payloadObj.put("admissions", ipdAgePatients);
 			}
-		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : IPD by ward : " + ex.getMessage());
-			ex.printStackTrace();
+            System.out.println("KenyaEMR IL: Visualization: Finished generating admissions data.");
+        } catch(Exception ex) {
+            System.err.println("KenyaEMR IL:Visualization: Error generating admissions data: "+ ex.getMessage()+":"+ ex);
 		}
 		try {
+            System.out.println("KenyaEMR IL: Visualization: Generating admissions by ward data...");
 			ipdWardPatients = getInpatientsByWard(fetchDate);
 			if (ipdWardPatients.size() > 0) {
+                List<SimpleObject> admissionsByWard = new ArrayList<SimpleObject>();
 				for (int i = 0; i < ipdWardPatients.size(); i++) {
 					SimpleObject patientList= ipdWardPatients.get(i);
 					SimpleObject ipdObject = new SimpleObject();
 					ipdObject.put("ward", patientList.get("ward"));
 					ipdObject.put("no_of_patients", patientList.get("no_of_patients"));
-					ipdPatientsByWard.add(ipdObject);
-					payloadObj.put("admissions", ipdPatientsByWard);
+                    admissionsByWard.add(ipdObject);
 				}
+                payloadObj.put("admissions", admissionsByWard);
 			} else {
 				payloadObj.put("admissions", ipdPatientsByWard);
 			}
-		} catch(Exception ex) {
-			System.err.println("KenyaEMR IL: ERROR visualization data : IPD by ward : " + ex.getMessage());
-			ex.printStackTrace();
+            System.out.println("KenyaEMR IL: Visualization: Finished generating admissions by ward data.");
+        } catch(Exception ex) {
+            System.err.println("KenyaEMR IL:Visualization: Error generating admissions by ward data: "+ ex.getMessage()+":"+ ex);
 		}
 
 		Context.removeProxyPrivilege(PrivilegeConstants.SQL_LEVEL_ACCESS);
+        System.out.println("Payload " + payloadObj);
+
 		return payloadObj;
 	}
 
-	public static Map<String, Integer> allVisits(Date fetchDate) {
-
+	public static Map<String, Integer> allVisits(List<Visit> allVisits) {
 		Map<String, Integer> visitMap = new HashMap<>();
-		VisitService visitService = Context.getVisitService();
-		List<Visit> allVisits = visitService.getVisits(null, null, null, null, fetchDate, null, null, null, null, true, false);
-		if (!allVisits.isEmpty()) {
 			for (Visit visit : allVisits) {
+                if (visit.getVisitType() == null || visit.getVisitType().getName() == null) {
+                    continue;
+                }
 				String visitType = visit.getVisitType().getName();
-				visitMap.put(visitType, visitMap.getOrDefault(visitType, 0) + 1);
+                visitMap.merge(visitType, 1, Integer::sum);
 			}
-		}
+            log.info("allVisits: " + visitMap);
 		return visitMap;
 	}
-	public static Map<String, Integer> outPatientVisitsByAge(Date fetchDate) {
 
-		Map<String, Integer> outpatientByByAgeMap = new HashMap<>();
-		VisitService visitService = Context.getVisitService();
-		List<Visit> allVisits = visitService.getVisits(null, null, null, null, fetchDate, null, null, null, null, true, false);
-		if (!allVisits.isEmpty()) {
-			for (Visit visit : allVisits) {
-				String visitType = visit.getVisitType().getName();
-				Patient patient = visit.getPatient();
+	public static Map<String, Integer> outPatientVisitsByAge(List<Visit> outPatientVisits) {
+        Map<String, Integer> outpatientByAgeMap = new HashMap<>();
 
-				if (visitType.equals("Outpatient")) {
-					if(patient != null) {
-						if (patient.getAge() < 5) {
-							outpatientByByAgeMap.put("Outpatient Under 5", outpatientByByAgeMap.getOrDefault("Outpatient Under 5", 0) + 1);
-						} else {
-							outpatientByByAgeMap.put("Outpatient 5 And Above", outpatientByByAgeMap.getOrDefault("Outpatient 5 And Above", 0) + 1);
-						}
-					}
-				}
-			}
-		}
-		return outpatientByByAgeMap;
-	}
-	public static Map<String, Integer> inPatientVisitsByAge(Date fetchDate) {
+        if (outPatientVisits == null || outPatientVisits.isEmpty()) {
+            return outpatientByAgeMap;
+        }
 
-		Map<String, Integer> inpatientByAgeMap = new HashMap<>();
-		VisitService visitService = Context.getVisitService();
-		List<Visit> allVisits = visitService.getVisits(null, null, null, null, fetchDate, null, null, null, null, true, false);
-		if (!allVisits.isEmpty()) {
-			for (Visit visit : allVisits) {
-				String visitType = visit.getVisitType().getName();
-				Patient patient = visit.getPatient();
+        final String UNDER_5 = "Outpatient Under 5";
+        final String ABOVE_5 = "Outpatient 5 And Above";
 
-				if (visitType.equals("Inpatient")) {
-					if(patient != null) {
-						if (patient.getAge() < 5) {
-							inpatientByAgeMap.put("Inpatient Under 5", inpatientByAgeMap.getOrDefault("Inpatient Under 5", 0) + 1);
-						} else {
-							inpatientByAgeMap.put("Inpatient 5 And Above", inpatientByAgeMap.getOrDefault("Inpatient 5 And Above", 0) + 1);
-						/*	if(){
-								inpatientByAgeMap.put("Maternity", inpatientByAgeMap.getOrDefault("Maternity", 0) + 1);
-							}*/
-						}
-					}
-				}
-			}
-		}
-		return inpatientByAgeMap;
+        for (Visit visit : outPatientVisits) {
+            VisitType visitTypeObj = visit.getVisitType();
+            if (visitTypeObj == null) continue;
+
+            Patient patient = visit.getPatient();
+            if (patient == null) continue;
+
+            int age = patient.getAge();
+            String key = (age < 5) ? UNDER_5 : ABOVE_5;
+            outpatientByAgeMap.merge(key, 1, Integer::sum);
+        }
+        return outpatientByAgeMap;
 	}
 
-	public static Map<String, Integer> outPatientVisitsByService(Date fetchDate) {
+    public static Map<String, Integer> casualtyVisitsByAge(List<Visit> casualtyVisits) {
+        Map<String, Integer> casualtyByAgeMap = new HashMap<>();
 
-		Map<String, Integer> outpatientByServiceMap = new HashMap<>();
-		VisitService visitService = Context.getVisitService();
-		List<Visit> allVisits = visitService.getVisits(null, null, null, null, fetchDate, null, null, null, null, true, false);
+        if (casualtyVisits == null || casualtyVisits.isEmpty()) {
+            return casualtyByAgeMap;
+        }
 
-		if (!allVisits.isEmpty()) {
-			for (Visit visit : allVisits) {
-				String visitType = visit.getVisitType().getName();
+        final String UNDER_5 = "Casualty/Emergency Under 5";
+        final String ABOVE_5 = "Casualty/Emergency 5 And Above";
 
-				if (visitType.equals("Outpatient")) {
-					List<Encounter> encounters = service.getEncountersByVisit(visit, false);
-					if (!encounters.isEmpty()){
-						for (Encounter encounter : encounters) {
-							String serviceName = encounter.getEncounterType().getName();
-							outpatientByServiceMap.put(serviceName, outpatientByServiceMap.getOrDefault(serviceName, 0) + 1);
-						}
-				}
-				}
-			}
-		}
-		return outpatientByServiceMap;
+        for (Visit visit : casualtyVisits) {
+            VisitType visitTypeObj = visit.getVisitType();
+            if (visitTypeObj == null) continue;
+
+            Patient patient = visit.getPatient();
+            if (patient == null) continue;
+
+            int age = patient.getAge();
+            String key = (age < 5) ? UNDER_5 : ABOVE_5;
+            casualtyByAgeMap.merge(key, 1, Integer::sum);
+        }
+        return casualtyByAgeMap;
+    }
+
+    public static Map<String, Integer> mortuaryVisitsByAge(List<Visit> mortuaryAdmissions) {
+        Map<String, Integer> mortuaryByAgeMap = new HashMap<>();
+
+        if (mortuaryAdmissions == null || mortuaryAdmissions.isEmpty()) {
+            return mortuaryByAgeMap;
+        }
+
+        final String UNDER_5 = "Mortuary Under 5";
+        final String ABOVE_5 = "Mortuary 5 And Above";
+
+        for (Visit visit : mortuaryAdmissions) {
+            Patient patient = visit.getPatient();
+            if (patient == null) continue;
+
+            int age = patient.getAge();
+            String key = (age < 5) ? UNDER_5 : ABOVE_5;
+            mortuaryByAgeMap.merge(key, 1, Integer::sum);
+        }
+        return mortuaryByAgeMap;
+    }
+
+	public static Map<String, Integer> inPatientVisitsByAge(List<Visit> inpatientVisits) {
+        Map<String, Integer> inpatientByAgeMap = new HashMap<>();
+
+        if (inpatientVisits == null || inpatientVisits.isEmpty()) {
+            return inpatientByAgeMap;
+        }
+
+        final String UNDER_5 = "Inpatient Under 5";
+        final String ABOVE_5 = "Inpatient 5 And Above";
+
+        for (Visit visit : inpatientVisits) {
+            Patient patient = visit.getPatient();
+            if (patient == null) continue;
+
+            int age = patient.getAge();
+            String key = (age < 5) ? UNDER_5 : ABOVE_5;
+            inpatientByAgeMap.merge(key, 1, Integer::sum);
+        }
+        return inpatientByAgeMap;
 	}
+
+    public static Map<String, Integer> outPatientVisitsByService(List<Visit> outPatientVisits) {
+
+        Map<String, Integer> outpatientByServiceMap = new HashMap<>();
+
+        EncounterSearchCriteriaBuilder searchCriteria = new EncounterSearchCriteriaBuilder().setVisits(outPatientVisits);
+
+        List<Encounter> encounters = service.getEncounters(searchCriteria.createEncounterSearchCriteria());
+
+        if (!encounters.isEmpty()) {
+            for (Encounter encounter : encounters) {
+                if (encounter.getEncounterType() == null || encounter.getEncounterType().getName() == null) {
+                    continue;
+                }
+                String serviceName = encounter.getEncounterType().getName();
+                outpatientByServiceMap.merge(serviceName, 1, Integer::sum);
+            }
+        }
+        return outpatientByServiceMap;
+    }
 
 	public static Map<String, Integer> immunizations(Date fetchDate) {
-
 		Map<String, Integer> immunizationsMap = new HashMap<>();
-		EncounterSearchCriteria encounterSearchCriteria = new EncounterSearchCriteria(null,
-				null,
-				fetchDate,
-				null,
-				null,
-				null,
-				Arrays.asList(MetadataUtils.existing(EncounterType.class, IMMUNIZATION)),
-				null,
-				null,
-				null,
-				false);
-		List<Encounter> immunizationEncounters = service.getEncounters(encounterSearchCriteria);
+        EncounterSearchCriteriaBuilder searchCriteria = new EncounterSearchCriteriaBuilder().setFromDate(fetchDate).setEncounterTypes(Collections.singletonList(MetadataUtils.existing(EncounterType.class, IMMUNIZATION)));
+        List<Encounter> immunizationEncounters = service.getEncounters(searchCriteria.createEncounterSearchCriteria());
 
-		if (!immunizationEncounters.isEmpty()) {
-			String immunizationGiven;
-			for (Encounter encounter : immunizationEncounters) {
-				for (Obs obs : encounter.getObs()) {
-					if (obs.getConcept().equals(immunizationConcept)) {
-						immunizationGiven = obs.getValueCoded().getName().toString();
-						if(!immunizationGiven.equals( "None")) {
-							immunizationsMap.put(immunizationGiven, immunizationsMap.getOrDefault(immunizationGiven, 0) + 1);
-						}
-					}
-				}
-			}
+        if (!immunizationEncounters.isEmpty()) {
+            immunizationEncounters.stream()
+                    .flatMap(encounter -> encounter.getObs().stream())
+                    .filter(obs -> obs.getConcept().equals(immunizationConcept))
+                    .map(obs -> obs.getValueCoded().getName().toString())
+                    .filter(immunizationGiven -> !"None".equals(immunizationGiven))
+                    .forEach(immunizationGiven ->
+                            immunizationsMap.merge(immunizationGiven, 1, Integer::sum)
+                    );
 		}
 		return immunizationsMap;
 	}
 
-	public static Map<String, Integer> allDiagnosis(Date fetchDate) {
+    public static Map<String, Integer> allDiagnosis(Date fetchDate) {
+        Map<String, Integer> diagnosisMap = new HashMap<>();
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String effectiveDate = sd.format(fetchDate);
+        DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
 
-		Map<String, Integer> diagnosisMap = new HashMap<>();
-		VisitService visitService = Context.getVisitService();
-		List<Visit> allVisits = visitService.getVisits(null, null, null, null, fetchDate, null, null, null, null, true, false);
+        final String sqlSelectQuery = "SELECT cn.name as diagnosis_name, COUNT(*) as total\n" +
+                "FROM encounter_diagnosis d\n" +
+                "         INNER JOIN concept_name cn\n" +
+                "                    ON d.diagnosis_coded = cn.concept_id and cn.locale = 'en' and concept_name_type = 'FULLY_SPECIFIED'\n" +
+                "         INNER JOIN encounter e ON d.encounter_id = e.encounter_id and e.voided = 0\n" +
+                "WHERE e.encounter_datetime >= '" + effectiveDate + "'\n" +
+                "GROUP BY cn.name";
 
-		if (!allVisits.isEmpty()) {
-			for (Visit visit : allVisits) {
-				if (!visit.getEncounters().isEmpty()) {					
-					for (Encounter encounter : visit.getEncounters()) {
-						//Get diagnosis
-						DiagnosisService diagnosisService = Context.getDiagnosisService();
-						List<Diagnosis> allDiagnosis = diagnosisService.getDiagnosesByEncounter(encounter, false, false);
-						if (!allDiagnosis.isEmpty()) {
-							for (Diagnosis diagnosis : allDiagnosis) {
-								String diagnosisName = diagnosis.getDiagnosis().getCoded().getName().getName();
-								diagnosisMap.put(diagnosisName, diagnosisMap.getOrDefault(diagnosisName, 0) + 1);
-							}
-						}
-					}
-				}
-			}
-		}
-		
-	return diagnosisMap;
-	}
+        Transaction tx = null;
+        try {
+            Session hibSession = sf.getHibernateSessionFactory().getCurrentSession();
+            boolean startedTx = false;
+            if (!hibSession.getTransaction().isActive()) {
+                tx = hibSession.beginTransaction();
+                startedTx = true;
+            }
+            sf.getCurrentSession().doWork(connection -> {
+                try (PreparedStatement statement = connection.prepareStatement(sqlSelectQuery)) {
+                    try (ResultSet resultSet = statement.executeQuery()) {
+                        while (resultSet.next()) {
+                            String diagnosisName = resultSet.getString("diagnosis_name");
+                            int total = resultSet.getInt("total");
+                            diagnosisMap.put(diagnosisName, total);
+                        }
+                    }
+                }
+            });
+            if (startedTx && tx != null && tx.isActive()) {
+                tx.commit();
+            }
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) tx.rollback();
+            throw new IllegalArgumentException("Unable to execute diagnosis summary query", e);
+        }
+        return diagnosisMap;
+    }
 	/**
 	 * Gets details of all bills
 	 * @param 
@@ -590,7 +667,60 @@ public class VisualizationDataExchange {
 		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String effectiveDate = sd.format(fetchDate);
 		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);		
-		final String sqlSelectQuery = "select cbl.service_id, cbl.bill_id, cbs.name, SUM(cbp.amount), SUM(cbp.amount_tendered), SUM(cbp.amount - cbp.amount_tendered ) from openmrs.cashier_bill_line_item cbl inner join openmrs.cashier_bill_payment cbp on cbl.bill_id = cbp.bill_id inner join openmrs.cashier_billable_service cbs on cbs.service_id = cbl.service_id where date(cbl.date_created) >= '" + effectiveDate + "' or date(cbl.date_changed) >= '" + effectiveDate + "' group by cbl.service_id;";
+		final String sqlSelectQuery = "WITH bill_line_items AS (\n" +
+                "    SELECT\n" +
+                "        bli.bill_id,\n" +
+                "        bli.service_id,\n" +
+                "        cbs.name AS department,\n" +
+                "        bli.price,\n" +
+                "        bli.date_created\n" +
+                "    FROM cashier_bill_line_item bli\n" +
+                "             INNER JOIN cashier_billable_service cbs ON bli.service_id = cbs.service_id\n" +
+                "    WHERE bli.date_created >= '" + effectiveDate + "'\n" +
+                "      AND bli.payment_status IN ('PAID', 'PENDING')\n" +
+                "),\n" +
+                "     bill_payment_totals AS (\n" +
+                "         -- Total paid per bill\n" +
+                "         SELECT bill_id,\n" +
+                "                SUM(amount_tendered) AS total_tendered\n" +
+                "         FROM cashier_bill_payment\n" +
+                "         WHERE date_created >= '" + effectiveDate + "'\n" +
+                "           AND voided = 0\n" +
+                "GROUP BY bill_id\n" +
+                "     ),\n" +
+                "     bill_amounts AS (\n" +
+                "         -- Total amount billed (sum of all line items) per bill\n" +
+                "         SELECT\n" +
+                "             bill_id,\n" +
+                "             SUM(price) AS bill_total\n" +
+                "         FROM cashier_bill_line_item\n" +
+                "         WHERE date_created >= '" + effectiveDate + "'\n" +
+                "           AND payment_status IN ('PAID', 'PENDING')\n" +
+                "         GROUP BY bill_id\n" +
+                "     ),\n" +
+                "     per_line_item AS (\n" +
+                "         -- Allocate bill payment proportionally to each line item\n" +
+                "         SELECT\n" +
+                "             bli.service_id,\n" +
+                "             bli.bill_id,\n" +
+                "             bli.department,\n" +
+                "             bli.price AS line_item_amount,\n" +
+                "             COALESCE(bpt.total_tendered, 0) * (bli.price / ba.bill_total) AS amount_paid,\n" +
+                "             bli.price - (COALESCE(bpt.total_tendered, 0) * (bli.price / ba.bill_total)) AS remaining_balance\n" +
+                "         FROM bill_line_items bli\n" +
+                "                  LEFT JOIN bill_payment_totals bpt ON bli.bill_id = bpt.bill_id\n" +
+                "                  INNER JOIN bill_amounts ba ON bli.bill_id = ba.bill_id\n" +
+                "     )\n" +
+                "SELECT\n" +
+                "    service_id,\n" +
+                "    COUNT(DISTINCT bill_id) AS invoice_count,\n" +
+                "    department,\n" +
+                "    SUM(line_item_amount) AS bill_amount,\n" +
+                "    SUM(amount_paid) AS amount_paid,\n" +
+                "    SUM(remaining_balance) AS remaining_balance\n" +
+                "FROM per_line_item\n" +
+                "GROUP BY service_id, department\n" +
+                "ORDER BY department, service_id;";
 		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
 		Transaction tx = null;
 		try {
@@ -646,56 +776,68 @@ public class VisualizationDataExchange {
 	 * @return details of all payments
 	 */
 	public static List<SimpleObject> getPayments(Date fetchDate) {
-		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		String effectiveDate = sd.format(fetchDate);
-		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);	
-		final String sqlSelectQuery = "select cbm.payment_mode_id, cbm.name, count(cb.patient_id), SUM( cbp.amount_tendered) as amount_paid from openmrs.cashier_bill_payment cbp inner join openmrs.cashier_payment_mode cbm on cbm.payment_mode_id = cbp.payment_mode_id inner join openmrs.cashier_bill cb on cb.bill_id = cbp.bill_id where cbp.date_created >= '" + effectiveDate + "' or cbp.date_changed >= '" + effectiveDate + "' group by cbm.payment_mode_id;";
-		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
-		Transaction tx = null;
-		try {
-
-			tx = sf.getHibernateSessionFactory().getCurrentSession().beginTransaction();
-			final Transaction finalTx = tx;
-			sf.getCurrentSession().doWork(new Work() {
-
-				@Override
-				public void execute(Connection connection) throws SQLException {
-					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
-
-					try {
-
-						ResultSet resultSet = statement.executeQuery();
-						if (resultSet != null) {
-							ResultSetMetaData metaData = resultSet.getMetaData();
-
-							while (resultSet.next()) {
-								Object[] row = new Object[metaData.getColumnCount()];
-								for (int i = 1; i <= metaData.getColumnCount(); i++) {
-									row[i - 1] = resultSet.getObject(i);
-								}
-
-								ret.add(SimpleObject.create(
-									"payment_mode", row[1] != null ? row[1].toString() : "",
-									"no_of_patients", row[2] != null ? row[2].toString() : "",
-									"amount_paid", row[3] != null ? row[3].toString() : ""									
-								));
-							}
-						}
-						finalTx.commit();
-					} finally {
-						try {
-							if (statement != null) {
-								statement.close();
-							}
-						} catch (Exception e) {
-						}
-					}
-				}
-			});
-		} catch (Exception e) {
-			throw new IllegalArgumentException("Unable to execute query", e);
-		}
-		return ret;
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String effectiveDate = sd.format(fetchDate);
+        DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
+        final String sqlSelectQuery = "WITH payments AS (\n" +
+                "    SELECT\n" +
+                "        bill_id,\n" +
+                "        payment_mode_id,\n" +
+                "        SUM(amount_tendered) AS total_tendered\n" +
+                "    FROM cashier_bill_payment\n" +
+                "    WHERE (date_created >= '" + effectiveDate + "'\n" +
+                "        OR date_changed >= '" + effectiveDate + "')\n" +
+                "      AND voided = 0\n" +
+                "    GROUP BY bill_id, payment_mode_id\n" +
+                ")\n" +
+                "SELECT\n" +
+                "    pm.payment_mode_id, pm.name AS payment_mode,\n" +
+                "    COUNT(DISTINCT cb.patient_id) AS patient_count,\n" +
+                "    SUM(p.total_tendered) AS amount_paid\n" +
+                "FROM payments p\n" +
+                "         INNER JOIN cashier_payment_mode pm\n" +
+                "                    ON pm.payment_mode_id = p.payment_mode_id and pm.retired = 0\n" +
+                "         INNER JOIN cashier_bill cb\n" +
+                "                    ON cb.bill_id = p.bill_id\n" +
+                "GROUP BY pm.payment_mode_id, pm.name\n" +
+                "ORDER BY pm.name;";
+        final List<SimpleObject> ret = new ArrayList<SimpleObject>();
+        Transaction tx = null;
+        try {
+            Session hibSession = sf.getHibernateSessionFactory().getCurrentSession();
+            boolean startedTx = false;
+            if (!hibSession.getTransaction().isActive()) {
+                tx = hibSession.beginTransaction();
+                startedTx = true;
+            }
+            sf.getCurrentSession().doWork(connection -> {
+                try (PreparedStatement statement = connection.prepareStatement(sqlSelectQuery)) {
+                    try (ResultSet resultSet = statement.executeQuery()) {
+                        ResultSetMetaData metaData = resultSet.getMetaData();
+                        while (resultSet.next()) {
+                            Object[] row = new Object[metaData.getColumnCount()];
+                            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                                row[i - 1] = resultSet.getObject(i);
+                            }
+                            ret.add(SimpleObject.create(
+                                    "payment_mode", row[1] != null ? row[1].toString() : "",
+                                    "no_of_patients", row[2] != null ? row[2].toString() : "",
+                                    "amount_paid", row[3] != null ? row[3].toString() : ""
+                            ));
+                        }
+                    }
+                }
+            });
+            if (startedTx && tx != null && tx.isActive()) {
+                tx.commit();
+            }
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
+            }
+            throw new IllegalArgumentException("Unable to execute query", e);
+        }
+        return ret;
 	}
 
 	public static Map<String, Integer> mortality(Date midNightDateTime) {
@@ -781,57 +923,51 @@ public class VisualizationDataExchange {
 	 * @return details of  inventory
 	 */
 	public static List<SimpleObject> getInventory(Date fetchDate) {
-		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		String effectiveDate = sd.format(fetchDate);
-		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);		
-		final String sqlSelectQuery = "select sti.common_name, if (sti.is_drug = 1, 'Drug','Non drug'), cn.name, SUM( stt.quantity), SUM( If (stt.quantity<0, stt.quantity*-1,0)) from stockmgmt_stock_item_transaction stt inner join openmrs.stockmgmt_stock_item sti on sti.stock_item_id = stt.stock_item_id inner join openmrs.concept_name cn on cn.concept_id = sti.dispensing_unit_id where stt.date_created >= '" + effectiveDate + "' group by sti.stock_item_id,stt.party_id;";
-		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
-		Transaction tx = null;
-		try {
-
-			tx = sf.getHibernateSessionFactory().getCurrentSession().beginTransaction();
-			final Transaction finalTx = tx;
-			sf.getCurrentSession().doWork(new Work() {
-
-				@Override
-				public void execute(Connection connection) throws SQLException {
-					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
-					try {
-
-						ResultSet resultSet = statement.executeQuery();
-						if (resultSet != null) {
-							ResultSetMetaData metaData = resultSet.getMetaData();
-
-							while (resultSet.next()) {
-								Object[] row = new Object[metaData.getColumnCount()];
-								for (int i = 1; i <= metaData.getColumnCount(); i++) {
-									row[i - 1] = resultSet.getObject(i);
-								}
-
-								ret.add(SimpleObject.create(
-									"item_name", row[0] != null ? row[0].toString() : "",
-									"item_type", row[1] != null ? row[1].toString() : "",
-									"unit_of_measure", row[2] != null ? row[2].toString() : "",
-									"quantity_at_hand", row[3] != null ? row[3].toString() : "",
-									"quantity_consumed", row[4] != null ? row[4].toString() : ""
-								));
-							}
-						}
-						finalTx.commit();
-					} finally {
-						try {
-							if (statement != null) {
-								statement.close();
-							}
-						} catch (Exception e) {
-						}
-					}
-				}
-			});
-		} catch (Exception e) {
-			throw new IllegalArgumentException("Unable to execute query", e);
-		}		
-		return ret;
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String effectiveDate = sd.format(fetchDate);
+        DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
+        final String sqlSelectQuery = "select sti.common_name, if (sti.is_drug = 1, 'Drug','Non drug'), cn.name, SUM( stt.quantity), SUM( If (stt.quantity<0, stt.quantity*-1,0)) from stockmgmt_stock_item_transaction stt inner join openmrs.stockmgmt_stock_item sti on sti.stock_item_id = stt.stock_item_id inner join openmrs.concept_name cn on cn.concept_id = sti.dispensing_unit_id where stt.date_created >= '" + effectiveDate + "' group by sti.stock_item_id,stt.party_id;";
+        final List<SimpleObject> ret = new ArrayList<SimpleObject>();
+        Transaction tx = null;
+        try {
+            Session hibSession = sf.getHibernateSessionFactory().getCurrentSession();
+            boolean startedTx = false;
+            if (!hibSession.getTransaction().isActive()) {
+                tx = hibSession.beginTransaction();
+                startedTx = true;
+            }
+            sf.getCurrentSession().doWork(connection -> {
+                try (PreparedStatement statement = connection.prepareStatement(sqlSelectQuery)) {
+                    try (ResultSet resultSet = statement.executeQuery()) {
+                        ResultSetMetaData metaData = resultSet.getMetaData();
+                        while (resultSet.next()) {
+                            Object[] row = new Object[metaData.getColumnCount()];
+                            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                                row[i - 1] = resultSet.getObject(i);
+                            }
+                            ret.add(SimpleObject.create(
+                                    "item_name", row[0] != null ? row[0].toString() : "",
+                                    "item_type", row[1] != null ? row[1].toString() : "",
+                                    "unit_of_measure", row[2] != null ? row[2].toString() : "",
+                                    "quantity_at_hand", row[3] != null ? row[3].toString() : "",
+                                    "quantity_consumed", row[4] != null ? row[4].toString() : ""
+                            ));
+                        }
+                    }
+                }
+            });
+            // Only commit if we started the transaction here
+            if (startedTx && tx != null && tx.isActive()) {
+                tx.commit();
+            }
+        } catch (Exception e) {
+            // Rollback if we started transaction and something went wrong
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
+            }
+            throw new IllegalArgumentException("Unable to execute query", e);
+        }
+        return ret;
 	}
 
 	public static Map<String, Integer> workLoad(Date midNightDateTime){
@@ -850,58 +986,55 @@ public class VisualizationDataExchange {
 	 * Gets details of  wait_time
 	 * @param
 	 * @return details of  wait_time
+     *
 	 */
 	public static List<SimpleObject> getWaitTime(Date fetchDate) {
-		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		String effectiveDate = sd.format(fetchDate);
-		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
-		final String sqlSelectQuery = "SELECT tbl.name,ROUND(SUM(tbl.diff), 2), count(tbl.patient_id) as patient_count FROM (select q.name,qe.started_at,qe.ended_at, TIMESTAMPDIFF(SECOND, qe.started_at, qe.ended_at) / 60 as diff, qe.patient_id from openmrs.queue_entry qe\n" +
-				"    inner join openmrs.queue q on q.queue_id = qe.queue_id where (qe.date_created >=  '"+effectiveDate+"' or qe.date_changed >= '"+effectiveDate+"' ) and qe.ended_at is not null) tbl GROUP BY tbl.name;";
-		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
-		Transaction tx = null;
-		try {
-
-			tx = sf.getHibernateSessionFactory().getCurrentSession().beginTransaction();
-			final Transaction finalTx = tx;
-			sf.getCurrentSession().doWork(new Work() {
-
-				@Override
-				public void execute(Connection connection) throws SQLException {
-					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
-					try {
-
-						ResultSet resultSet = statement.executeQuery();
-						if (resultSet != null) {
-							ResultSetMetaData metaData = resultSet.getMetaData();
-
-							while (resultSet.next()) {
-								Object[] row = new Object[metaData.getColumnCount()];
-								for (int i = 1; i <= metaData.getColumnCount(); i++) {
-									row[i - 1] = resultSet.getObject(i);
-								}
-
-								ret.add(SimpleObject.create(
-									"queue", row[0] != null ? row[0].toString() : "",
-									"total_wait_time", row[1] != null ? row[1].toString() : "",
-									"patient_count", row[2] != null ? row[2].toString() : ""
-								));
-							}
-						}
-						finalTx.commit();
-					} finally {
-						try {
-							if (statement != null) {
-								statement.close();
-							}
-						} catch (Exception e) {
-						}
-					}
-				}
-			});
-		} catch (Exception e) {
-			throw new IllegalArgumentException("Unable to execute query", e);
-		}
-		return ret;
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String effectiveDate = sd.format(fetchDate);
+        DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
+        final String sqlSelectQuery =
+                "SELECT tbl.name,ROUND(SUM(tbl.diff), 2), count(tbl.patient_id) as patient_count FROM " +
+                        "(select q.name,qe.started_at,qe.ended_at, TIMESTAMPDIFF(SECOND, qe.started_at, qe.ended_at) / 60 as diff, qe.patient_id " +
+                        " from openmrs.queue_entry qe " +
+                        " inner join openmrs.queue q on q.queue_id = qe.queue_id " +
+                        " where (qe.date_created >=  '" + effectiveDate + "' or qe.date_changed >= '" + effectiveDate + "' ) and qe.ended_at is not null) tbl GROUP BY tbl.name;";
+        final List<SimpleObject> ret = new ArrayList<SimpleObject>();
+        Transaction tx = null;
+        try {
+            Session hibSession = sf.getHibernateSessionFactory().getCurrentSession();
+            boolean startedTx = false;
+            if (!hibSession.getTransaction().isActive()) {
+                tx = hibSession.beginTransaction();
+                startedTx = true;
+            }
+            sf.getCurrentSession().doWork(connection -> {
+                try (PreparedStatement statement = connection.prepareStatement(sqlSelectQuery)) {
+                    try (ResultSet resultSet = statement.executeQuery()) {
+                        ResultSetMetaData metaData = resultSet.getMetaData();
+                        while (resultSet.next()) {
+                            Object[] row = new Object[metaData.getColumnCount()];
+                            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                                row[i - 1] = resultSet.getObject(i);
+                            }
+                            ret.add(SimpleObject.create(
+                                    "queue", row[0] != null ? row[0].toString() : "",
+                                    "total_wait_time", row[1] != null ? row[1].toString() : "",
+                                    "patient_count", row[2] != null ? row[2].toString() : ""
+                            ));
+                        }
+                    }
+                }
+            });
+            if (startedTx && tx != null && tx.isActive()) {
+                tx.commit();
+            }
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
+            }
+            throw new IllegalArgumentException("Unable to execute query", e);
+        }
+        return ret;
 	}
 
 	/**
@@ -910,68 +1043,60 @@ public class VisualizationDataExchange {
 	 * @return details of staff by cadre
 	 */
 	public static List<SimpleObject> getStaffByCadre(Date fetchDate) {
-		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		String effectiveDate = sd.format(fetchDate);
-		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
-		final String sqlSelectQuery = "SELECT ur.role as role, COUNT(DISTINCT ur.user_id) AS role_count\n" + //
-						"FROM user_role ur\n" + //
-						"JOIN users u ON ur.user_id = u.user_id\n" + //
-						"WHERE role LIKE '%Clinician' \n" + //
-						"   OR role LIKE '%Data Clerk' \n" + //
-						"   OR role LIKE '%Manager' \n" + //
-						"   OR role LIKE '%Pharmacist'\n" + //
-						"   OR role LIKE '%Provider'\n" + //
-						"   OR role LIKE '%Nurse%'\n" + //
-						"   OR role LIKE '%Cashier%'\n" + //
-						"   OR role LIKE '%Dentist%'\n" + //
-						"and u.date_created >= '" + effectiveDate + "'\n" + //
-						"GROUP BY ur.role;";
-		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
-		Transaction tx = null;
-		try {
-
-			tx = sf.getHibernateSessionFactory().getCurrentSession().beginTransaction();
-			final Transaction finalTx = tx;
-			sf.getCurrentSession().doWork(new Work() {
-
-				@Override
-				public void execute(Connection connection) throws SQLException {
-					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
-					try {
-
-						ResultSet resultSet = statement.executeQuery();
-						if (resultSet != null) {
-							ResultSetMetaData metaData = resultSet.getMetaData();
-
-							while (resultSet.next()) {
-								Object[] row = new Object[metaData.getColumnCount()];
-								for (int i = 1; i <= metaData.getColumnCount(); i++) {
-									row[i - 1] = resultSet.getObject(i);
-								}
-
-								ret.add(SimpleObject.create(
-									"staff", row[0] != null ? row[0].toString() : "",
-									"staff_count", row[1] != null ? row[1].toString() : ""									
-								));
-							}
-						}
-						finalTx.commit();
-					} finally {
-						try {
-							if (statement != null) {
-								statement.close();
-							}
-						} catch (Exception e) {
-						}
-					}
-				}
-			});
-		} catch (Exception e) {
-			System.err.println("KenyaEMR IL: Unable to get staff by cadre: " + e.getMessage());
-			e.printStackTrace();
-			throw new IllegalArgumentException("Unable to execute query", e);
-		}
-		return ret;
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String effectiveDate = sd.format(fetchDate);
+        DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
+        final String sqlSelectQuery = "SELECT ur.role as role, COUNT(DISTINCT ur.user_id) AS role_count\n" +
+                "FROM user_role ur\n" +
+                "JOIN users u ON ur.user_id = u.user_id\n" +
+                "WHERE role LIKE '%Clinician' \n" +
+                "   OR role LIKE '%Data Clerk' \n" +
+                "   OR role LIKE '%Manager' \n" +
+                "   OR role LIKE '%Pharmacist'\n" +
+                "   OR role LIKE '%Provider'\n" +
+                "   OR role LIKE '%Nurse%'\n" +
+                "   OR role LIKE '%Cashier%'\n" +
+                "   OR role LIKE '%Dentist%'\n" +
+                "and u.date_created >= '" + effectiveDate + "'\n" +
+                "GROUP BY ur.role;";
+        final List<SimpleObject> ret = new ArrayList<SimpleObject>();
+        Transaction tx = null;
+        try {
+            Session hibSession = sf.getHibernateSessionFactory().getCurrentSession();
+            boolean startedTx = false;
+            if (!hibSession.getTransaction().isActive()) {
+                tx = hibSession.beginTransaction();
+                startedTx = true;
+            }
+            sf.getCurrentSession().doWork(connection -> {
+                try (PreparedStatement statement = connection.prepareStatement(sqlSelectQuery)) {
+                    try (ResultSet resultSet = statement.executeQuery()) {
+                        ResultSetMetaData metaData = resultSet.getMetaData();
+                        while (resultSet.next()) {
+                            Object[] row = new Object[metaData.getColumnCount()];
+                            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                                row[i - 1] = resultSet.getObject(i);
+                            }
+                            ret.add(SimpleObject.create(
+                                    "staff", row[0] != null ? row[0].toString() : "",
+                                    "staff_count", row[1] != null ? row[1].toString() : ""
+                            ));
+                        }
+                    }
+                }
+            });
+            if (startedTx && tx != null && tx.isActive()) {
+                tx.commit();
+            }
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
+            }
+            log.error("KenyaEMR IL: Unable to get staff by cadre: " + e.getMessage());
+            e.printStackTrace();
+            throw new IllegalArgumentException("Unable to execute query", e);
+        }
+        return ret;
 	}
 
 	/**
@@ -980,53 +1105,45 @@ public class VisualizationDataExchange {
 	 * @return details of total waivers
 	 */
 	public static List<SimpleObject> getTotalWaivers(Date fetchDate) {
-		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		String effectiveDate = sd.format(fetchDate);
-		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
-		final String sqlSelectQuery = "SELECT sum(amount_tendered) as total FROM openmrs.cashier_bill_payment where payment_mode_id = 7 and date_created >= '" + effectiveDate + "'";
-		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
-		Transaction tx = null;
-		try {
-
-			tx = sf.getHibernateSessionFactory().getCurrentSession().beginTransaction();
-			final Transaction finalTx = tx;
-			sf.getCurrentSession().doWork(new Work() {
-
-				@Override
-				public void execute(Connection connection) throws SQLException {
-					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
-					try {
-
-						ResultSet resultSet = statement.executeQuery();
-						if (resultSet != null) {
-							ResultSetMetaData metaData = resultSet.getMetaData();
-
-							while (resultSet.next()) {
-								Object[] row = new Object[metaData.getColumnCount()];
-								for (int i = 1; i <= metaData.getColumnCount(); i++) {
-									row[i - 1] = resultSet.getObject(i);
-								}
-
-								ret.add(SimpleObject.create(
-									"waivers", row[0] != null ? row[0].toString() : ""
-								));
-							}
-						}
-						finalTx.commit();
-					} finally {
-						try {
-							if (statement != null) {
-								statement.close();
-							}
-						} catch (Exception e) {
-						}
-					}
-				}
-			});
-		} catch (Exception e) {
-			throw new IllegalArgumentException("Unable to execute query", e);
-		}
-		return ret;
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String effectiveDate = sd.format(fetchDate);
+        DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
+        final String sqlSelectQuery = "SELECT sum(amount_tendered) as total FROM openmrs.cashier_bill_payment where payment_mode_id = 17 and date_created >= '" + effectiveDate + "'";
+        final List<SimpleObject> ret = new ArrayList<SimpleObject>();
+        Transaction tx = null;
+        try {
+            Session hibSession = sf.getHibernateSessionFactory().getCurrentSession();
+            boolean startedTx = false;
+            if (!hibSession.getTransaction().isActive()) {
+                tx = hibSession.beginTransaction();
+                startedTx = true;
+            }
+            sf.getCurrentSession().doWork(connection -> {
+                try (PreparedStatement statement = connection.prepareStatement(sqlSelectQuery)) {
+                    try (ResultSet resultSet = statement.executeQuery()) {
+                        ResultSetMetaData metaData = resultSet.getMetaData();
+                        while (resultSet.next()) {
+                            Object[] row = new Object[metaData.getColumnCount()];
+                            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                                row[i - 1] = resultSet.getObject(i);
+                            }
+                            ret.add(SimpleObject.create(
+                                    "waivers", row[0] != null ? row[0].toString() : ""
+                            ));
+                        }
+                    }
+                }
+            });
+            if (startedTx && tx != null && tx.isActive()) {
+                tx.commit();
+            }
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
+            }
+            throw new IllegalArgumentException("Unable to execute query", e);
+        }
+        return ret;
 	}
 	/**
 	 * Gets KenyaEMR Version running
@@ -1048,199 +1165,226 @@ public class VisualizationDataExchange {
 	 * @param fetchDate
 	 * @return
 	 */
-	public static List<SimpleObject> getInpatientsByWard(Date fetchDate) {
-		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		String effectiveDate = sd.format(fetchDate);
-		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
-		final String sqlSelectQuery = "select b.name as ward, count(bm.patient_id) as no_of_patients\n" +
-				"from bed_patient_assignment_map bm\n" +
-				"         inner join encounter e on bm.encounter_id = e.encounter_id\n" +
-				"         inner join (select bl.location_id, l.name, bl.bed_id\n" +
-				"                     from bed_location_map bl\n" +
-				"                              inner join location l on l.location_id = bl.location_id) b on bm.bed_id = b.bed_id\n" +
-				"         inner join (select b.status, bt.bed_type_id, b.bed_id\n" +
-				"                     from bed b\n" +
-				"                              inner join bed_type bt on b.bed_type_id = bt.bed_type_id) t on bm.bed_id = t.bed_id\n" +
-				"where date_started >= '" + effectiveDate + "'\n" +
-				"  and status = 'OCCUPIED'\n" +
-				"group by ward;";
-		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
-		Transaction tx = null;
-		try {
+    public static List<SimpleObject> getInpatientsByWard(Date fetchDate) {
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String effectiveDate = sd.format(fetchDate);
+        DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
+        final String sqlSelectQuery = "select b.name as ward, count(bm.patient_id) as no_of_patients\n" +
+                "from bed_patient_assignment_map bm\n" +
+                "         inner join encounter e on bm.encounter_id = e.encounter_id\n" +
+                "         inner join (select bl.location_id, l.name, bl.bed_id\n" +
+                "                     from bed_location_map bl\n" +
+                "                              inner join location l on l.location_id = bl.location_id) b on bm.bed_id = b.bed_id\n" +
+                "         inner join (select b.status, bt.bed_type_id, b.bed_id\n" +
+                "                     from bed b\n" +
+                "                              inner join bed_type bt on b.bed_type_id = bt.bed_type_id) t on bm.bed_id = t.bed_id\n" +
+                "where date_started >= '" + effectiveDate + "'\n" +
+                "  and status = 'OCCUPIED'\n" +
+                "group by ward;";
+        final List<SimpleObject> ret = new ArrayList<SimpleObject>();
+        Transaction tx = null;
+        try {
+            Session hibSession = sf.getHibernateSessionFactory().getCurrentSession();
+            boolean startedTx = false;
+            if (!hibSession.getTransaction().isActive()) {
+                tx = hibSession.beginTransaction();
+                startedTx = true;
+            }
+            sf.getCurrentSession().doWork(connection -> {
+                try (PreparedStatement statement = connection.prepareStatement(sqlSelectQuery)) {
+                    try (ResultSet resultSet = statement.executeQuery()) {
+                        ResultSetMetaData metaData = resultSet.getMetaData();
+                        while (resultSet.next()) {
+                            Object[] row = new Object[metaData.getColumnCount()];
+                            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                                row[i - 1] = resultSet.getObject(i);
+                            }
+                            ret.add(SimpleObject.create(
+                                    "ward", row[0] != null ? row[0].toString() : "",
+                                    "no_of_patients", row[1] != null ? row[1].toString() : ""
+                            ));
+                        }
+                    }
+                }
+            });
+            if (startedTx && tx != null && tx.isActive()) {
+                tx.commit();
+            }
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
+            }
+            throw new IllegalArgumentException("Unable to execute query", e);
+        }
+        return ret;
+    }
 
-			tx = sf.getHibernateSessionFactory().getCurrentSession().beginTransaction();
-			final Transaction finalTx = tx;
-			sf.getCurrentSession().doWork(new Work() {
-
-				@Override
-				public void execute(Connection connection) throws SQLException {
-					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
-					try {
-
-						ResultSet resultSet = statement.executeQuery();
-						if (resultSet != null) {
-							ResultSetMetaData metaData = resultSet.getMetaData();
-
-							while (resultSet.next()) {
-								Object[] row = new Object[metaData.getColumnCount()];
-								for (int i = 1; i <= metaData.getColumnCount(); i++) {
-									row[i - 1] = resultSet.getObject(i);
-								}
-
-								ret.add(SimpleObject.create(
-										"ward", row[0] != null ? row[0].toString() : "",
-										"no_of_patients", row[1] != null ? row[1].toString() : ""
-								));
-							}
-						}
-						finalTx.commit();
-					} finally {
-						try {
-							if (statement != null) {
-								statement.close();
-							}
-						} catch (Exception e) {
-						}
-					}
-				}
-			});
-		} catch (Exception e) {
-			throw new IllegalArgumentException("Unable to execute query", e);
-		}
-		return ret;
-	}
+	/**
+	 * @param fetchDate
+     *
+	 * @return
+	 */
+    public static List<SimpleObject> getInpatientsByAge(Date fetchDate) {
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String effectiveDate = sd.format(fetchDate);
+        DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
+        final String sqlSelectQuery = "select if(timestampdiff(YEAR, date(p.birthdate), date(current_date)) < 5, 'Child', 'Adult') as age,\n" +
+                "       count(bm.patient_id)                                                                 as no_of_patients\n" +
+                "from bed_patient_assignment_map bm\n" +
+                "         inner join encounter e on bm.encounter_id = e.encounter_id\n" +
+                "         inner join (select bl.location_id, l.name, bl.bed_id\n" +
+                "                     from bed_location_map bl\n" +
+                "                              inner join location l on l.location_id = bl.location_id) b on bm.bed_id = b.bed_id\n" +
+                "         inner join (select b.status, bt.bed_type_id, b.bed_id\n" +
+                "                     from bed b\n" +
+                "                              inner join bed_type bt on b.bed_type_id = bt.bed_type_id) t on bm.bed_id = t.bed_id\n" +
+                "         inner join person p on bm.patient_id = p.person_id\n" +
+                "where date_started >= '" + effectiveDate + "'\n" +
+                "  and status = 'OCCUPIED'\n" +
+                "group by age;";
+        final List<SimpleObject> ret = new ArrayList<SimpleObject>();
+        Transaction tx = null;
+        try {
+            Session hibSession = sf.getHibernateSessionFactory().getCurrentSession();
+            boolean startedTx = false;
+            if (!hibSession.getTransaction().isActive()) {
+                tx = hibSession.beginTransaction();
+                startedTx = true;
+            }
+            sf.getCurrentSession().doWork(connection -> {
+                try (PreparedStatement statement = connection.prepareStatement(sqlSelectQuery)) {
+                    try (ResultSet resultSet = statement.executeQuery()) {
+                        ResultSetMetaData metaData = resultSet.getMetaData();
+                        while (resultSet.next()) {
+                            Object[] row = new Object[metaData.getColumnCount()];
+                            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                                row[i - 1] = resultSet.getObject(i);
+                            }
+                            ret.add(SimpleObject.create(
+                                    "age", row[0] != null ? row[0].toString() : "",
+                                    "no_of_patients", row[1] != null ? row[1].toString() : ""
+                            ));
+                        }
+                    }
+                }
+            });
+            if (startedTx && tx != null && tx.isActive()) {
+                tx.commit();
+            }
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
+            }
+            throw new IllegalArgumentException("Unable to execute query", e);
+        }
+        return ret;
+    }
 
 	/**
 	 * @param fetchDate
 	 * @return
 	 */
-	public static List<SimpleObject> getInpatientsByAge(Date fetchDate) {
-		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		String effectiveDate = sd.format(fetchDate);
-		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
-		final String sqlSelectQuery = "select if(timestampdiff(YEAR, date(p.birthdate), date(current_date)) < 5, 'Child', 'Adult') as Age,\n" +
-				"       count(bm.patient_id)                                                                 as no_of_patients\n" +
-				"from bed_patient_assignment_map bm\n" +
-				"         inner join encounter e on bm.encounter_id = e.encounter_id\n" +
-				"         inner join (select bl.location_id, l.name, bl.bed_id\n" +
-				"                     from bed_location_map bl\n" +
-				"                              inner join location l on l.location_id = bl.location_id) b on bm.bed_id = b.bed_id\n" +
-				"         inner join (select b.status, bt.bed_type_id, b.bed_id\n" +
-				"                     from bed b\n" +
-				"                              inner join bed_type bt on b.bed_type_id = bt.bed_type_id) t on bm.bed_id = t.bed_id\n" +
-				"         inner join person p on bm.patient_id = p.person_id\n" +
-				"where date_started >= '" + effectiveDate + "'\n" +
-				"  and status = 'OCCUPIED'\n" +
-				"group by age;";
-		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
-		Transaction tx = null;
-		try {
-
-			tx = sf.getHibernateSessionFactory().getCurrentSession().beginTransaction();
-			final Transaction finalTx = tx;
-			sf.getCurrentSession().doWork(new Work() {
-
-				@Override
-				public void execute(Connection connection) throws SQLException {
-					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
-					try {
-
-						ResultSet resultSet = statement.executeQuery();
-						if (resultSet != null) {
-							ResultSetMetaData metaData = resultSet.getMetaData();
-
-							while (resultSet.next()) {
-								Object[] row = new Object[metaData.getColumnCount()];
-								for (int i = 1; i <= metaData.getColumnCount(); i++) {
-									row[i - 1] = resultSet.getObject(i);
-								}
-
-								ret.add(SimpleObject.create(
-										"age", row[0] != null ? row[0].toString() : "",
-										"no_of_patients", row[1] != null ? row[1].toString() : ""
-								));
-							}
-						}
-						finalTx.commit();
-					} finally {
-						try {
-							if (statement != null) {
-								statement.close();
-							}
-						} catch (Exception e) {
-						}
-					}
-				}
-			});
-		} catch (Exception e) {
-			throw new IllegalArgumentException("Unable to execute query", e);
-		}
-		return ret;
-	}
-
-	/**
-	 * @param fetchDate
-	 * @return
-	 */
-	public static List<SimpleObject> getPaymentByDepartment(Date fetchDate) {
-		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		String effectiveDate = sd.format(fetchDate);
-		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
-		final String sqlSelectQuery = "select cbs.name as department,\n" +
-				"       sum(price) as amount_paid\n" +
-				"from cashier_bill_line_item bli\n" +
-				"         inner join cashier_billable_service cbs\n" +
-				"                    on bli.service_id = cbs.service_id and bli.payment_status = 'PAID'\n" +
-				"         inner join cashier_bill_payment cbp on bli.bill_id = cbp.bill_id\n" +
-				" where cbp.date_created >= '"+effectiveDate+"' and cbp.voided = 0\n" +
-				"group by department;";
-		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
-		Transaction tx = null;
-		try {
-
-			tx = sf.getHibernateSessionFactory().getCurrentSession().beginTransaction();
-			final Transaction finalTx = tx;
-			sf.getCurrentSession().doWork(new Work() {
-
-				@Override
-				public void execute(Connection connection) throws SQLException {
-					PreparedStatement statement = connection.prepareStatement(sqlSelectQuery);
-					try {
-
-						ResultSet resultSet = statement.executeQuery();
-						if (resultSet != null) {
-							ResultSetMetaData metaData = resultSet.getMetaData();
-
-							while (resultSet.next()) {
-								Object[] row = new Object[metaData.getColumnCount()];
-								for (int i = 1; i <= metaData.getColumnCount(); i++) {
-									row[i - 1] = resultSet.getObject(i);
-								}
-
-								ret.add(SimpleObject.create(
-										"department", row[0] != null ? row[0].toString() : "",
-										"amount_paid", row[1] != null ? row[1].toString() : ""
-								));
-							}
-						}
-						finalTx.commit();
-					} finally {
-						try {
-							if (statement != null) {
-								statement.close();
-							}
-						} catch (Exception e) {
-						}
-					}
-				}
-			});
-		} catch (Exception e) {
-			System.err.println("KenyaEMR IL: Unable to get payment by department: " + e.getMessage());
-			e.printStackTrace();
-			throw new IllegalArgumentException("Unable to execute query", e);
-		}
-		return ret;
-	}
+    public static List<SimpleObject> getPaymentByDepartment(Date fetchDate) {
+        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String effectiveDate = sd.format(fetchDate);
+        DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
+        final String sqlSelectQuery = "WITH bill_line_items AS (\n" +
+                "    SELECT\n" +
+                "        bli.bill_id,\n" +
+                "        cbs.name AS department,\n" +
+                "        bli.price AS line_item_amount\n" +
+                "    FROM cashier_bill_line_item bli\n" +
+                "             INNER JOIN cashier_billable_service cbs\n" +
+                "                        ON bli.service_id = cbs.service_id\n" +
+                "    WHERE bli.date_created >= '" + effectiveDate + "'\n" +
+                "      AND bli.payment_status IN ('PAID', 'PENDING')\n" +
+                "),\n" +
+                "\n" +
+                "     bill_totals AS (\n" +
+                "         SELECT\n" +
+                "             bill_id,\n" +
+                "             SUM(line_item_amount) AS bill_total\n" +
+                "         FROM bill_line_items\n" +
+                "         GROUP BY bill_id\n" +
+                "     ),\n" +
+                "\n" +
+                "     department_sums AS (\n" +
+                "         SELECT\n" +
+                "             bill_id,\n" +
+                "             department,\n" +
+                "             SUM(line_item_amount) AS department_total\n" +
+                "         FROM bill_line_items\n" +
+                "         GROUP BY bill_id, department\n" +
+                "     ),\n" +
+                "\n" +
+                "     payments AS (\n" +
+                "         SELECT\n" +
+                "             bill_id,\n" +
+                "             SUM(amount_tendered) AS total_tendered\n" +
+                "         FROM cashier_bill_payment\n" +
+                "         WHERE date_created >= '" + effectiveDate + "'\n" +
+                "           AND voided = 0\n" +
+                "         GROUP BY bill_id\n" +
+                "     ),\n" +
+                "\n" +
+                "     departments_with_payments AS (\n" +
+                "         SELECT\n" +
+                "             ds.department,\n" +
+                "             ds.bill_id,\n" +
+                "             ds.department_total,\n" +
+                "             bt.bill_total,\n" +
+                "             p.total_tendered,\n" +
+                "             -- share of bill payment to this department for the bill\n" +
+                "             COALESCE(p.total_tendered,0) * (ds.department_total / bt.bill_total) AS allocated_payment\n" +
+                "         FROM department_sums ds\n" +
+                "                  INNER JOIN bill_totals bt ON ds.bill_id = bt.bill_id\n" +
+                "                  LEFT JOIN payments p ON ds.bill_id = p.bill_id\n" +
+                "     )\n" +
+                "\n" +
+                "SELECT\n" +
+                "    department,\n" +
+                "    SUM(allocated_payment) AS amount_paid\n" +
+                "FROM departments_with_payments\n" +
+                "GROUP BY department\n" +
+                "ORDER BY department;";
+        final List<SimpleObject> ret = new ArrayList<SimpleObject>();
+        Transaction tx = null;
+        try {
+            Session hibSession = sf.getHibernateSessionFactory().getCurrentSession();
+            boolean startedTx = false;
+            if (!hibSession.getTransaction().isActive()) {
+                tx = hibSession.beginTransaction();
+                startedTx = true;
+            }
+            sf.getCurrentSession().doWork(connection -> {
+                try (PreparedStatement statement = connection.prepareStatement(sqlSelectQuery)) {
+                    try (ResultSet resultSet = statement.executeQuery()) {
+                        ResultSetMetaData metaData = resultSet.getMetaData();
+                        while (resultSet.next()) {
+                            Object[] row = new Object[metaData.getColumnCount()];
+                            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                                row[i - 1] = resultSet.getObject(i);
+                            }
+                            ret.add(SimpleObject.create(
+                                    "department", row[0] != null ? row[0].toString() : "",
+                                    "amount_paid", row[1] != null ? row[1].toString() : ""
+                            ));
+                        }
+                    }
+                }
+            });
+            if (startedTx && tx != null && tx.isActive()) {
+                tx.commit();
+            }
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
+            }
+            log.error("KenyaEMR IL: Unable to get payment by department: " + e.getMessage(), e);
+            throw new IllegalArgumentException("Unable to execute query", e);
+        }
+        return ret;
+    }
 
 	/**
 	 * Gets details of total patients registered in SHA - Social Health Agency
@@ -1261,6 +1405,7 @@ public class VisualizationDataExchange {
 		}
 		return ret;
 	}
+
 }
 
 
