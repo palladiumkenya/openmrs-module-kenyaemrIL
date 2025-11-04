@@ -1,6 +1,5 @@
 package org.openmrs.module.kenyaemrIL.visualizationMetrics;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -8,8 +7,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.openmrs.GlobalProperty;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.kenyaemrIL.KenyaEmrInteropDirectPushTask;
@@ -19,27 +16,22 @@ import org.openmrs.ui.framework.SimpleObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 public class VisualizationUtils {
     private static final Logger log = LoggerFactory.getLogger(KenyaEmrInteropDirectPushTask.class);
-
-    public static JsonNodeFactory getJsonNodeFactory() {
-        final JsonNodeFactory factory = JsonNodeFactory.instance;
-        return factory;
-    }
 
     public static Boolean sendPOST(String params)   {
 
         CloseableHttpClient httpClient = HttpClients.custom().setSSLSocketFactory(ILUtils.sslConnectionSocketFactoryWithDisabledSSLVerification()).build();
 
         try {
-            String stringResponse = "";           
             GlobalProperty globalPostUrl = Context.getAdministrationService().getGlobalPropertyObject(ILMetadata.GP_VISUALIZATION_SERVER_POST_END_POINT);
             if (globalPostUrl == null || StringUtils.isBlank(globalPostUrl.getPropertyValue())) {
-                log.error("Visualization POST endpoint GlobalProperty is not configured.");
+                System.err.println("Visualization POST endpoint GlobalProperty is not configured.");
                 return false;
             }
             String strPostUrl = globalPostUrl.getPropertyValue();
@@ -54,14 +46,13 @@ public class VisualizationUtils {
 
             //verify the valid error code first
             Integer statusCode = response.getStatusLine().getStatusCode();
-            System.out.println("Server response: " + statusCode);
 
             if (statusCode != 200) {
                 String errorsString = "";
                 try {
                     if (response.getEntity() != null) {
                         String responseString = EntityUtils.toString(response.getEntity());
-                        System.out.println("Server detailed error: " + responseString);
+                        System.err.println("Server detailed error: " + responseString);
 
                         // Enhanced parsing for server error response in JSON
                         org.json.simple.parser.JSONParser parser = new org.json.simple.parser.JSONParser();
@@ -72,14 +63,13 @@ public class VisualizationUtils {
                         Object data = responseObj.get("data");
                         errorsString += (msg != null ? msg : "");
                         if (data != null) {
-                            errorsString += " [ERROR DETAILS]: " + data.toString();
+                            errorsString += " [ERROR DETAILS]: " + data;
                         }
                     } else {
                         System.out.println("Response entity is null.");
                     }
                 } catch (Exception ex) {
-                    log.error("Failed to parse error response: " + ex.getMessage(), ex);
-                    System.out.println("Failed to parse error response: " + ex.getMessage());
+                    System.err.println("Failed to parse error response: " + ex.getMessage()+":"+ex);
                     errorsString = "Failed to parse error response";
                 }
                 if (StringUtils.isNotBlank(errorsString)) {
@@ -89,19 +79,15 @@ public class VisualizationUtils {
                 } else {
                     errorsString = "No error message";
                 }
-                System.out.println("Error sending message to interop server! Status code - " + statusCode + ". Msg - " + errorsString);
-                log.error("Error sending message to visualization server! Status code - " + statusCode + ". Msg - " + errorsString);
+                System.err.println("Error sending message to interop server! Status code - " + statusCode + ". Msg - " + errorsString);
             return false;
             } else {
-
-                log.info("Successfully sent message to visualization server");
-                System.out.println("Successfully sent message to visualization server");
+                System.out.println("Message sent successfully: Visualization server responded with code "+statusCode);
             return true;
             }
         } catch (Exception e) {
             e.printStackTrace();
-            log.error(e.getMessage());
-            System.out.println(e.getMessage());
+            System.err.println("Sys err: "+e.getMessage());
             return true;
         }
     }
@@ -120,5 +106,23 @@ public class VisualizationUtils {
         }
         return list;
     }
+
+    /**
+     * Checks Internet connectivity using a test URL.
+     * @param testUrl URL to test
+     * @return true if connected, false otherwise
+     */
+    public static boolean hasInternetConnectivity(String testUrl) {
+        try {
+            URLConnection connection = new URL(testUrl).openConnection();
+            connection.setConnectTimeout(4000);
+            connection.connect();
+            return true;
+        } catch (Exception ex) {
+            log.warn("KenyaEMR IL: Unable to connect to {}", testUrl, ex);
+            return false;
+        }
+    }
+
 }
 
