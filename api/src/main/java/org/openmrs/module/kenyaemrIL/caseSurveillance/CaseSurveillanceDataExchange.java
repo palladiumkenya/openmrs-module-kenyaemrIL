@@ -99,6 +99,7 @@ public class CaseSurveillanceDataExchange {
     private static SimpleObject mapToTestedPositiveObject(Encounter encounter, Patient patient) {
         PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
         String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
+        Date birthdate = (patient != null) ? patient.getBirthdate() : null;
         return SimpleObject.create(
                 "createdAt", formatDateTime(encounter.getDateCreated()),
                 "updatedAt", formatDateTime(encounter.getDateChanged()),
@@ -107,7 +108,7 @@ public class CaseSurveillanceDataExchange {
                 "subCounty", safeGetField(address, PersonAddress::getStateProvince),
                 "ward", safeGetField(address, PersonAddress::getAddress6),
                 "mflCode", EmrUtils.getMFLCode(),
-                "dob", formatDate(patient.getBirthdate()),
+                "dob", birthdate != null ? formatDate(birthdate) : null,
                 "sex", sex != null ? dmiUtils.formatGender(sex) : null,
                 "positiveHivTestDate", formatDateTime(encounter.getEncounterDatetime())
         );
@@ -124,6 +125,7 @@ public class CaseSurveillanceDataExchange {
     private SimpleObject mapToLinkageObject(Encounter encounter, Patient patient, String artStartDate) {
         PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
         String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
+        Date birthdate = (patient != null) ? patient.getBirthdate() : null;
         return SimpleObject.create(
                 "createdAt", formatDateTime(encounter.getDateCreated()),
                 "updatedAt", formatDateTime(encounter.getDateChanged()),
@@ -132,7 +134,7 @@ public class CaseSurveillanceDataExchange {
                 "subCounty", safeGetField(address, PersonAddress::getStateProvince),
                 "ward", safeGetField(address, PersonAddress::getAddress6),
                 "mflCode", EmrUtils.getMFLCode(),
-                "dob", formatDate(patient.getBirthdate()),
+                "dob", birthdate != null ? formatDate(birthdate) : null,
                 "sex", sex != null ? dmiUtils.formatGender(sex) : null,
                 "positiveHivTestDate", null,
                 "artStartDate", artStartDate
@@ -143,6 +145,7 @@ public class CaseSurveillanceDataExchange {
     private SimpleObject mapToPregnantAndPostpartumAtHighRiskObject(Encounter encounter, Patient patient) {
         PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
         String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
+        Date birthdate = (patient != null) ? patient.getBirthdate() : null;
         return SimpleObject.create(
                 "createdAt", formatDateTime(encounter.getDateCreated()),
                 "updatedAt", formatDateTime(encounter.getDateChanged()),
@@ -151,7 +154,7 @@ public class CaseSurveillanceDataExchange {
                 "subCounty", safeGetField(address, PersonAddress::getStateProvince),
                 "ward", safeGetField(address, PersonAddress::getAddress6),
                 "mflCode", EmrUtils.getMFLCode(),
-                "dob", formatDate(patient.getBirthdate()),
+                "dob", birthdate != null ? formatDate(birthdate) : null,
                 "sex", sex != null ? dmiUtils.formatGender(sex) : null
         );
     }
@@ -160,6 +163,7 @@ public class CaseSurveillanceDataExchange {
     private SimpleObject mapToPregnantAndPostpartumAtHighRiskOnPrEPObject(Encounter encounter, Patient patient, String prepNumber, String prepRegimen) {
         PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
         String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
+        Date birthdate = (patient != null) ? patient.getBirthdate() : null;
         return SimpleObject.create(
                 "createdAt", formatDateTime(encounter.getDateCreated()),
                 "updatedAt", formatDateTime(encounter.getDateChanged()),
@@ -168,7 +172,7 @@ public class CaseSurveillanceDataExchange {
                 "subCounty", safeGetField(address, PersonAddress::getStateProvince),
                 "ward", safeGetField(address, PersonAddress::getAddress6),
                 "mflCode", EmrUtils.getMFLCode(),
-                "dob", formatDate(patient.getBirthdate()),
+                "dob", birthdate != null ? formatDate(birthdate) : null,
                 "sex", sex != null ? dmiUtils.formatGender(sex) : null,
                 "prepStartDate", formatDateTime(encounter.getEncounterDatetime()),
                 "prepNumber", prepNumber,
@@ -182,6 +186,7 @@ public class CaseSurveillanceDataExchange {
         Patient patient = Context.getPatientService().getPatient(patientId);
         PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
         String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
+        Date birthdate = (patient != null) ? patient.getBirthdate() : null;
         return SimpleObject.create(
                 "createdAt", createdAt,
                 "updatedAt", null,
@@ -190,7 +195,7 @@ public class CaseSurveillanceDataExchange {
                 "subCounty", safeGetField(address, PersonAddress::getStateProvince),
                 "ward", safeGetField(address, PersonAddress::getAddress6),
                 "mflCode", EmrUtils.getMFLCode(),
-                "dob", formatDate(patient.getBirthdate()),
+                "dob", birthdate != null ? formatDate(birthdate) : null,
                 "sex", sex != null ? dmiUtils.formatGender(sex) : null,
                 "pregnancyStatus", pregnant,
                 "breastFeedingStatus", breastfeeding,
@@ -208,6 +213,7 @@ public class CaseSurveillanceDataExchange {
     private SimpleObject mapToEacObject(Encounter encounter, Patient patient, String upn) {
         PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
         String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
+        Date birthdate = (patient != null) ? patient.getBirthdate() : null;
         return SimpleObject.create(
                 "createdAt", formatDateTime(encounter.getDateCreated()),
                 "updatedAt", formatDateTime(encounter.getDateChanged()),
@@ -216,7 +222,7 @@ public class CaseSurveillanceDataExchange {
                 "subCounty", safeGetField(address, PersonAddress::getStateProvince),
                 "ward", safeGetField(address, PersonAddress::getAddress6),
                 "mflCode", EmrUtils.getMFLCode(),
-                "dob", formatDate(patient.getBirthdate()),
+                "dob", birthdate != null ? formatDate(birthdate) : null,
                 "sex", sex != null ? dmiUtils.formatGender(sex) : null,
                 "pregnancyStatus", null,
                 "breastFeedingStatus", null,
@@ -234,6 +240,7 @@ public class CaseSurveillanceDataExchange {
     private SimpleObject mapToHEIObject(Encounter encounter, Patient patient, String heiNumber) {
         PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
         String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
+        Date birthdate = (patient != null) ? patient.getBirthdate() : null;
         return SimpleObject.create(
                 "createdAt", formatDateTime(encounter.getDateCreated()),
                 "updatedAt", formatDateTime(encounter.getDateChanged()),
@@ -242,7 +249,7 @@ public class CaseSurveillanceDataExchange {
                 "subCounty", safeGetField(address, PersonAddress::getStateProvince),
                 "ward", safeGetField(address, PersonAddress::getAddress6),
                 "mflCode", EmrUtils.getMFLCode(),
-                "dob", formatDate(patient.getBirthdate()),
+                "dob", birthdate != null ? formatDate(birthdate) : null,
                 "sex", sex != null ? dmiUtils.formatGender(sex) : null,
                 "heiId", heiNumber
         );
@@ -252,6 +259,7 @@ public class CaseSurveillanceDataExchange {
     private SimpleObject mapToHEIDnaPcrObject(Encounter encounter, Patient patient, String heiNumber) {
         PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
         String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
+        Date birthdate = (patient != null) ? patient.getBirthdate() : null;
         return SimpleObject.create(
                 "createdAt", formatDateTime(encounter.getDateCreated()),
                 "updatedAt", formatDateTime(encounter.getDateChanged()),
@@ -260,7 +268,7 @@ public class CaseSurveillanceDataExchange {
                 "subCounty", safeGetField(address, PersonAddress::getStateProvince),
                 "ward", safeGetField(address, PersonAddress::getAddress6),
                 "mflCode", EmrUtils.getMFLCode(),
-                "dob", formatDate(patient.getBirthdate()),
+                "dob", birthdate != null ? formatDate(birthdate) : null,
                 "sex", sex != null ? dmiUtils.formatGender(sex) : null,
                 "heiId", heiNumber
         );
@@ -270,6 +278,7 @@ public class CaseSurveillanceDataExchange {
     private SimpleObject mapToHEIWithoutOutcomesObject(Encounter encounter, Patient patient, String heiNumber) {
         PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
         String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
+        Date birthdate = (patient != null) ? patient.getBirthdate() : null;
         return SimpleObject.create(
                 "createdAt", formatDateTime(encounter.getDateCreated()),
                 "updatedAt", formatDateTime(encounter.getDateChanged()),
@@ -278,7 +287,7 @@ public class CaseSurveillanceDataExchange {
                 "subCounty", safeGetField(address, PersonAddress::getStateProvince),
                 "ward", safeGetField(address, PersonAddress::getAddress6),
                 "mflCode", EmrUtils.getMFLCode(),
-                "dob", formatDate(patient.getBirthdate()),
+                "dob", birthdate != null ? formatDate(birthdate) : null,
                 "sex", sex != null ? dmiUtils.formatGender(sex) : null,
                 "heiId", heiNumber
         );
@@ -1095,6 +1104,7 @@ public class CaseSurveillanceDataExchange {
             }
 
             putRequest.setEntity(new StringEntity(payloadJson, StandardCharsets.UTF_8));
+
 
             // Execute the PUT request
             try (CloseableHttpResponse response = httpClient.execute(putRequest)) {
