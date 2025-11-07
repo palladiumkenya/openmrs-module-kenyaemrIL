@@ -80,8 +80,6 @@ public class VisualizationDataExchange {
 		Map<String, Integer> workloadMap;
 		Map<String, Integer> visitByAgeMap;
         Map<String, Integer> inpatientVisitsByAgeMap;
-        Map<String, Integer> casualtyVisitsByAgeMap;
-        Map<String, Integer> mortuaryVisitsByAgeMap;
         Map<String, Integer> outpatientByServiceMap;
 		Map<String, Integer> immunizationsMap;
 		List<SimpleObject> diagnosis = new ArrayList<SimpleObject>();
@@ -139,22 +137,16 @@ public class VisualizationDataExchange {
             VisitService visitService = Context.getVisitService();
             Collection<VisitType> visitTypes = Arrays.asList(
                 MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.INPATIENT),
-                MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.OUTPATIENT),
-                MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.CASUALTY),
-                MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.MORTUARY)
+                MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.OUTPATIENT)
             );
             List<Visit> allVisits = visitService.getVisits(visitTypes, null, null, null, fetchDate, null, null, null, null, true, false);
             List<Visit> outPatientVisits = visitService.getVisits(Collections.singleton(MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.OUTPATIENT)), null, null, null, fetchDate, null, null, null, null, true, false);
             List<Visit> inPatientVisits = visitService.getVisits(Collections.singleton(MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.INPATIENT)), null, null, null, fetchDate, null, null, null, null, true, false);
-            List<Visit> casualtyPatientVisits = visitService.getVisits(Collections.singleton(MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.CASUALTY)), null, null, null, fetchDate, null, null, null, null, true, false);
-            List<Visit> mortuaryAdmissions = visitService.getVisits(Collections.singleton(MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.MORTUARY)), null, null, null, fetchDate, null, null, null, null, true, false);
 
             visitsMap = allVisits(allVisits);
             outpatientByServiceMap = outPatientVisitsByService(outPatientVisits);
             inpatientVisitsByAgeMap = inPatientVisitsByAge(inPatientVisits);
             visitByAgeMap = outPatientVisitsByAge(outPatientVisits);
-            casualtyVisitsByAgeMap = casualtyVisitsByAge(casualtyPatientVisits);
-            mortuaryVisitsByAgeMap = mortuaryVisitsByAge(mortuaryAdmissions);
 
 			// Prepare the visits structure
 			List<SimpleObject> visitDetails = new ArrayList<>();
@@ -171,10 +163,6 @@ public class VisualizationDataExchange {
                     visitsObject.put("age_details", mapToBreakdownList(visitByAgeMap, "age", "total"));
                 } else if ("Inpatient".equals(visitType) && !inpatientVisitsByAgeMap.isEmpty()) {
                     visitsObject.put("age_details", mapToBreakdownList(inpatientVisitsByAgeMap, "age", "total"));
-                } else if ("Casualty/Emergency".equals(visitType) && !casualtyVisitsByAgeMap.isEmpty()) {
-                    visitsObject.put("age_details", mapToBreakdownList(casualtyVisitsByAgeMap, "age", "total"));
-                } else if ("Mortuary".equals(visitType) && !mortuaryVisitsByAgeMap.isEmpty()) {
-                    visitsObject.put("age_details", mapToBreakdownList(mortuaryVisitsByAgeMap, "age", "total"));
                 }
                 visitDetails.add(visitsObject);
             }
@@ -511,30 +499,6 @@ public class VisualizationDataExchange {
         }
         return outpatientByAgeMap;
 	}
-
-    public static Map<String, Integer> casualtyVisitsByAge(List<Visit> casualtyVisits) {
-        Map<String, Integer> casualtyByAgeMap = new HashMap<>();
-
-        if (casualtyVisits == null || casualtyVisits.isEmpty()) {
-            return casualtyByAgeMap;
-        }
-
-        final String UNDER_5 = "Casualty/Emergency Under 5";
-        final String ABOVE_5 = "Casualty/Emergency 5 And Above";
-
-        for (Visit visit : casualtyVisits) {
-            VisitType visitTypeObj = visit.getVisitType();
-            if (visitTypeObj == null) continue;
-
-            Patient patient = visit.getPatient();
-            if (patient == null) continue;
-
-            int age = patient.getAge();
-            String key = (age < 5) ? UNDER_5 : ABOVE_5;
-            casualtyByAgeMap.merge(key, 1, Integer::sum);
-        }
-        return casualtyByAgeMap;
-    }
 
     public static Map<String, Integer> mortuaryVisitsByAge(List<Visit> mortuaryAdmissions) {
         Map<String, Integer> mortuaryByAgeMap = new HashMap<>();
