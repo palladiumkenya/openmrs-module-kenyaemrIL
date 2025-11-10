@@ -732,13 +732,13 @@ public class CaseSurveillanceDataExchange {
             Integer patientId = row[0] != null ? Integer.parseInt(row[0].toString()) : null;
             String pregnant = safeToString(row[1]);
             String breastFeedingStatus = safeToString(row[2]);
-            String positiveHivTestDate = CaseSurveillanceUtils.formatDate(row[3], df);
-            String visitDate = CaseSurveillanceUtils.formatDate(row[4], df);
-            String artStartDate = CaseSurveillanceUtils.formatDate(row[5], df);
-            String lastVlOrderDate = CaseSurveillanceUtils.formatDate(row[6], df);
-            String lastVlResultsDate = CaseSurveillanceUtils.formatDate(row[7], df);
+            String positiveHivTestDate = formatDateTime((Date)row[3]);
+            String visitDate = formatDateTime((Date)row[4]);
+            String artStartDate = formatDateTime((Date)row[5]);
+            String lastVlOrderDate = formatDateTime((Date)row[6]);
+            String lastVlResultsDate = formatDateTime((Date)row[7]);
             Integer orderReason = row[8] != null ? Integer.parseInt(row[8].toString()) : null;
-            String createdAt = CaseSurveillanceUtils.formatDate(row[9], df);
+            String createdAt = formatDateTime((Date)row[9]);
             String upn = safeToString(row[10]);
             String vlResult = safeToString(row[11]);
 
