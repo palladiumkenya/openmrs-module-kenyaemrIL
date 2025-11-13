@@ -485,6 +485,8 @@ public class CaseSurveillanceDataExchange {
             if (patient == null) {
                 continue;
             }
+         //   if (patient == null || "M".equals(patient.getGender())) continue;
+
             boolean isHighRisk = EmrUtils.encounterThatPassCodedAnswer(htsScreeningEncounter, htsScrRiskQstn, htsScrHighRiskResult)
                     || EmrUtils.encounterThatPassCodedAnswer(htsScreeningEncounter, htsScrRiskQstn, htsScrHighestRiskResult);
 
@@ -597,7 +599,7 @@ public class CaseSurveillanceDataExchange {
         // Screening encounters
         for (Map.Entry<Patient, List<Encounter>> entry : htsScreeningEncountersMap.entrySet()) {
             Patient patient = entry.getKey();
-            if (patient == null || processedPatientIds.contains(patient.getId())) continue;
+            if (patient == null || !"F".equals(patient.getGender()) || processedPatientIds.contains(patient.getId())) continue;
 
             for (Encounter screeningEncounter : entry.getValue()) {
                 // Check high-risk flags
