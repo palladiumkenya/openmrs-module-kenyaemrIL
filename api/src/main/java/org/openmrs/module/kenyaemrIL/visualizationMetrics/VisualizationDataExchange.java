@@ -348,6 +348,7 @@ public class VisualizationDataExchange {
 				payloadObj.put("mortality", mortality);
 			}
             System.out.println("KenyaEMR IL: Visualization: Finished generating mortality data.");
+            System.out.println("Mortality Data Payload " + mortality);
         } catch(Exception ex) {
             System.err.println("KenyaEMR IL:Visualization: Error generating mortality data: "+ ex.getMessage()+":"+ ex);
 		}
@@ -580,19 +581,41 @@ public class VisualizationDataExchange {
 		return immunizationsMap;
 	}
 
+    /**
+     * Retrieves a mapping of diagnosis names to their respective counts, based on the provided fetch date.
+     * The query filters diagnosis data based on specific criteria and aggregates results grouped by diagnosis names.
+     *
+     * @param fetchDate the date from which diagnoses should be considered in the query; only diagnoses on or after this date are included
+     * @return a map where the keys are diagnosis names (String) and the values are their respective counts (Integer)
+     * @throws IllegalArgumentException if the query execution fails or any error occurs during data retrieval
+     */
     public static Map<String, Integer> allDiagnosis(Date fetchDate) {
         Map<String, Integer> diagnosisMap = new HashMap<>();
         SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String effectiveDate = sd.format(fetchDate);
         DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
 
-        final String sqlSelectQuery = "SELECT cn.name as diagnosis_name, COUNT(*) as total\n" +
-                "FROM encounter_diagnosis d\n" +
-                "         INNER JOIN concept_name cn\n" +
-                "                    ON d.diagnosis_coded = cn.concept_id and cn.locale = 'en' and concept_name_type = 'FULLY_SPECIFIED'\n" +
-                "         INNER JOIN encounter e ON d.encounter_id = e.encounter_id and e.voided = 0\n" +
-                "WHERE e.encounter_datetime >= '" + effectiveDate + "'\n" +
-                "GROUP BY cn.name";
+        final String sqlSelectQuery = "SELECT\n" +
+                "    GROUP_CONCAT(cn.name) AS diagnosis_name,\n" +
+                "    COUNT(*) AS total\n" +
+                "FROM (\n" +
+                "         SELECT encounter_id, MAX(dx_rank) AS chosen_idx_rank\n" +
+                "         FROM encounter_diagnosis\n" +
+                "         WHERE dx_rank IN (1,2)\n" +
+                "         GROUP BY encounter_id\n" +
+                "     ) chosen_diagnosis\n" +
+                "         JOIN encounter_diagnosis d\n" +
+                "              ON d.encounter_id = chosen_diagnosis.encounter_id\n" +
+                "                  AND d.dx_rank = chosen_diagnosis.chosen_idx_rank\n" +
+                "         JOIN encounter e\n" +
+                "              ON d.encounter_id = e.encounter_id\n" +
+                "                  AND e.voided = 0\n" +
+                "         JOIN concept_name cn\n" +
+                "              ON d.diagnosis_coded = cn.concept_id\n" +
+                "                  AND cn.locale = 'en'\n" +
+                "                  AND cn.concept_name_type = 'FULLY_SPECIFIED'\n" +
+                "WHERE e.encounter_datetime >= '"+effectiveDate+"'\n" +
+                "GROUP BY cn.name;";
 
         Transaction tx = null;
         try {
@@ -1092,7 +1115,7 @@ public class VisualizationDataExchange {
                                 row[i - 1] = resultSet.getObject(i);
                             }
                             ret.add(SimpleObject.create(
-                                    "waivers", row[0] != null ? row[0].toString() : ""
+                                    "waivers", row[0] != null ? row[0].toString() : null
                             ));
                         }
                     }

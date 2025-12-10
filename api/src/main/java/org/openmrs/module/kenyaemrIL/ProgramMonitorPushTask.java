@@ -111,8 +111,14 @@ public class ProgramMonitorPushTask extends AbstractTask {
             boolean processSuccess = false;
             try {
                 CaseSurveillanceDataExchange caseSurveillance = new CaseSurveillanceDataExchange();
-                caseSurveillance.processAndSendCaseSurveillancePayload(csFetchDate);
-                processSuccess = true;
+                String result = caseSurveillance.processAndSendCaseSurveillancePayload(csFetchDate);
+
+                // Check if the result string indicates success
+                if (result != null && (result.contains("Success") || result.contains("No case surveillance data"))) {
+                    processSuccess = true;
+                } else {
+                    log.error("Case surveillance upload failed with response: " + result);
+                }
             } catch (Exception e) {
                 log.error("Error during case surveillance process", e);
             }
