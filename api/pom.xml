@@ -166,6 +166,10 @@
 			<version>1.2</version>
 			<scope>compile</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>kenyaemr.cashier-api</artifactId>
+		</dependency>
 	</dependencies>
 	
 	<build>
