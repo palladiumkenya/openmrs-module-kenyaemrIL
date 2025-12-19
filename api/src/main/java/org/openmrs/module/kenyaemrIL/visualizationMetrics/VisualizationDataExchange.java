@@ -24,6 +24,9 @@ import org.openmrs.api.db.hibernate.DbSessionFactory;
 import org.openmrs.module.Module;
 import org.openmrs.module.ModuleFactory;
 import org.openmrs.module.kenyaemr.Dictionary;
+import org.openmrs.module.kenyaemr.cashier.api.model.Bill;
+import org.openmrs.module.kenyaemr.cashier.api.search.BillSearch;
+import org.openmrs.module.kenyaemr.cashier.api.search.BillableServiceSearch;
 import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemr.metadata.HivMetadata;
 import org.openmrs.module.kenyaemr.metadata.MchMetadata;
@@ -33,6 +36,9 @@ import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.parameter.EncounterSearchCriteriaBuilder;
 import org.openmrs.ui.framework.SimpleObject;
 import org.openmrs.util.PrivilegeConstants;
+import org.openmrs.module.kenyaemr.cashier.api.model.BillableService;
+import org.openmrs.module.kenyaemr.cashier.api.model.BillLineItem;
+import org.openmrs.module.kenyaemr.cashier.api.IBillService;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -80,8 +86,6 @@ public class VisualizationDataExchange {
 		Map<String, Integer> workloadMap;
 		Map<String, Integer> visitByAgeMap;
         Map<String, Integer> inpatientVisitsByAgeMap;
-        Map<String, Integer> casualtyVisitsByAgeMap;
-        Map<String, Integer> mortuaryVisitsByAgeMap;
         Map<String, Integer> outpatientByServiceMap;
 		Map<String, Integer> immunizationsMap;
 		List<SimpleObject> diagnosis = new ArrayList<SimpleObject>();
@@ -97,10 +101,12 @@ public class VisualizationDataExchange {
 		List<SimpleObject> mortality = new ArrayList<SimpleObject>();
 		List<SimpleObject> queueWaitTime = new ArrayList<SimpleObject>();
 		List<SimpleObject> staff = new ArrayList<SimpleObject>();
+		List<SimpleObject> loggedInUsers = new ArrayList<SimpleObject>();
 		List<SimpleObject> ipdPatientsByWard = new ArrayList<SimpleObject>();
 		List<SimpleObject> ipdWardPatients = new ArrayList<SimpleObject>();
 		List<SimpleObject> ipdAgePatients = new ArrayList<SimpleObject>();
 		List<SimpleObject> staffCount = new ArrayList<SimpleObject>();
+		List<SimpleObject> loggedInUsersCount = new ArrayList<SimpleObject>();
 		List<SimpleObject> waivers = new ArrayList<SimpleObject>();
 		List<SimpleObject> waiversCount = new ArrayList<SimpleObject>();
 		String timestamp = formatter.format(fetchDate);
@@ -139,22 +145,16 @@ public class VisualizationDataExchange {
             VisitService visitService = Context.getVisitService();
             Collection<VisitType> visitTypes = Arrays.asList(
                 MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.INPATIENT),
-                MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.OUTPATIENT),
-                MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.CASUALTY),
-                MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.MORTUARY)
+                MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.OUTPATIENT)
             );
             List<Visit> allVisits = visitService.getVisits(visitTypes, null, null, null, fetchDate, null, null, null, null, true, false);
             List<Visit> outPatientVisits = visitService.getVisits(Collections.singleton(MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.OUTPATIENT)), null, null, null, fetchDate, null, null, null, null, true, false);
             List<Visit> inPatientVisits = visitService.getVisits(Collections.singleton(MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.INPATIENT)), null, null, null, fetchDate, null, null, null, null, true, false);
-            List<Visit> casualtyPatientVisits = visitService.getVisits(Collections.singleton(MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.CASUALTY)), null, null, null, fetchDate, null, null, null, null, true, false);
-            List<Visit> mortuaryAdmissions = visitService.getVisits(Collections.singleton(MetadataUtils.existing(VisitType.class, CommonMetadata._VisitType.MORTUARY)), null, null, null, fetchDate, null, null, null, null, true, false);
 
             visitsMap = allVisits(allVisits);
-            outpatientByServiceMap = outPatientVisitsByService(outPatientVisits);
+            outpatientByServiceMap = outPatientVisitsByService(outPatientVisits, fetchDate);
             inpatientVisitsByAgeMap = inPatientVisitsByAge(inPatientVisits);
             visitByAgeMap = outPatientVisitsByAge(outPatientVisits);
-            casualtyVisitsByAgeMap = casualtyVisitsByAge(casualtyPatientVisits);
-            mortuaryVisitsByAgeMap = mortuaryVisitsByAge(mortuaryAdmissions);
 
 			// Prepare the visits structure
 			List<SimpleObject> visitDetails = new ArrayList<>();
@@ -171,10 +171,6 @@ public class VisualizationDataExchange {
                     visitsObject.put("age_details", mapToBreakdownList(visitByAgeMap, "age", "total"));
                 } else if ("Inpatient".equals(visitType) && !inpatientVisitsByAgeMap.isEmpty()) {
                     visitsObject.put("age_details", mapToBreakdownList(inpatientVisitsByAgeMap, "age", "total"));
-                } else if ("Casualty/Emergency".equals(visitType) && !casualtyVisitsByAgeMap.isEmpty()) {
-                    visitsObject.put("age_details", mapToBreakdownList(casualtyVisitsByAgeMap, "age", "total"));
-                } else if ("Mortuary".equals(visitType) && !mortuaryVisitsByAgeMap.isEmpty()) {
-                    visitsObject.put("age_details", mapToBreakdownList(mortuaryVisitsByAgeMap, "age", "total"));
                 }
                 visitDetails.add(visitsObject);
             }
@@ -268,6 +264,7 @@ public class VisualizationDataExchange {
 					billingObject.put("amount_due", bill.get("amount_due"));
 					billingObject.put("amount_paid",bill.get("amount_paid"));
 					billingObject.put("balance_due", bill.get("balance_due"));
+					billingObject.put("total_refunds", bill.get("total_refunds"));
 					billing.add(billingObject);
 					payloadObj.put("billing", billing);
 				}
@@ -360,6 +357,7 @@ public class VisualizationDataExchange {
 				payloadObj.put("mortality", mortality);
 			}
             System.out.println("KenyaEMR IL: Visualization: Finished generating mortality data.");
+            System.out.println("Mortality Data Payload " + mortality);
         } catch(Exception ex) {
             System.err.println("KenyaEMR IL:Visualization: Error generating mortality data: "+ ex.getMessage()+":"+ ex);
 		}
@@ -403,6 +401,26 @@ public class VisualizationDataExchange {
             System.out.println("KenyaEMR IL: Visualization: Finished generating staffing data.");
         } catch(Exception ex) {
             System.err.println("KenyaEMR IL:Visualization: Error generating staffing data: "+ ex.getMessage()+":"+ ex);
+		}
+
+		try {
+			System.out.println("KenyaEMR IL: Visualization: Generating Logged in users data...");
+			loggedInUsers = getLoggedInUsers(fetchDate);
+			if (!loggedInUsers.isEmpty()) {
+				for (int i = 0; i < loggedInUsers.size(); i++) {
+					SimpleObject loggedInUsersList = loggedInUsers.get(i);
+					SimpleObject loggedInUsersObject = new SimpleObject();
+					loggedInUsersObject.put("logged_in_users_with_roles", loggedInUsersList.get("logged_in_users_with_roles"));
+					loggedInUsersObject.put("total_active_users_with_roles", loggedInUsersList.get("total_active_users_with_roles"));
+					loggedInUsersCount.add(loggedInUsersObject);
+					payloadObj.put("logged_in_users_with_roles", loggedInUsersCount);
+				}
+			} else {
+				payloadObj.put("logged_in_users_with_roles", loggedInUsersCount);
+			}
+			System.out.println("KenyaEMR IL: Visualization: Finished generating Logged in users data.");
+		} catch (Exception ex) {
+			System.err.println("KenyaEMR IL:Visualization: Error generating Logged in users data: " + ex.getMessage() + ":" + ex);
 		}
 
 		try {
@@ -512,30 +530,6 @@ public class VisualizationDataExchange {
         return outpatientByAgeMap;
 	}
 
-    public static Map<String, Integer> casualtyVisitsByAge(List<Visit> casualtyVisits) {
-        Map<String, Integer> casualtyByAgeMap = new HashMap<>();
-
-        if (casualtyVisits == null || casualtyVisits.isEmpty()) {
-            return casualtyByAgeMap;
-        }
-
-        final String UNDER_5 = "Casualty/Emergency Under 5";
-        final String ABOVE_5 = "Casualty/Emergency 5 And Above";
-
-        for (Visit visit : casualtyVisits) {
-            VisitType visitTypeObj = visit.getVisitType();
-            if (visitTypeObj == null) continue;
-
-            Patient patient = visit.getPatient();
-            if (patient == null) continue;
-
-            int age = patient.getAge();
-            String key = (age < 5) ? UNDER_5 : ABOVE_5;
-            casualtyByAgeMap.merge(key, 1, Integer::sum);
-        }
-        return casualtyByAgeMap;
-    }
-
     public static Map<String, Integer> mortuaryVisitsByAge(List<Visit> mortuaryAdmissions) {
         Map<String, Integer> mortuaryByAgeMap = new HashMap<>();
 
@@ -578,25 +572,62 @@ public class VisualizationDataExchange {
         return inpatientByAgeMap;
 	}
 
-    public static Map<String, Integer> outPatientVisitsByService(List<Visit> outPatientVisits) {
+	public static Map<String, Integer> outPatientVisitsByService(List<Visit> outPatientVisits, Date fetchDate) {
+		Map<String, Integer> outpatientByServiceMap = new HashMap<>();
+		if (outPatientVisits == null || outPatientVisits.isEmpty()) {
+			return outpatientByServiceMap;
+		}
 
-        Map<String, Integer> outpatientByServiceMap = new HashMap<>();
+		// 1. Collect unique patients to minimize database hits
+		Set<Patient> uniquePatients = outPatientVisits.stream()
+				.map(Visit::getPatient)
+				.filter(java.util.Objects::nonNull)
+				.collect(Collectors.toSet());
 
-        EncounterSearchCriteriaBuilder searchCriteria = new EncounterSearchCriteriaBuilder().setVisits(outPatientVisits);
+		// 2. Fetch all relevant bills for these patients since the fetchDate
+		IBillService billingService = Context.getService(IBillService.class);
+		Map<Integer, List<Bill>> billsByPatientId = new HashMap<>();
 
-        List<Encounter> encounters = service.getEncounters(searchCriteria.createEncounterSearchCriteria());
+		for (Patient patient : uniquePatients) {
+			Bill template = new Bill();
+			template.setPatient(patient);
+			BillSearch search = new BillSearch(template, fetchDate, null, false);
+			List<Bill> patientBills = billingService.getBills(search);
+			billsByPatientId.put(patient.getPatientId(), patientBills);
+		}
 
-        if (!encounters.isEmpty()) {
-            for (Encounter encounter : encounters) {
-                if (encounter.getEncounterType() == null || encounter.getEncounterType().getName() == null) {
-                    continue;
-                }
-                String serviceName = encounter.getEncounterType().getName();
-                outpatientByServiceMap.merge(serviceName, 1, Integer::sum);
-            }
-        }
-        return outpatientByServiceMap;
-    }
+		// 3. Map service types to visit counts (ensuring unique visits per type)
+		Map<String, Set<Integer>> serviceTypeVisitIds = new HashMap<>();
+
+		for (Visit visit : outPatientVisits) {
+			Integer patientId = visit.getPatient().getPatientId();
+			List<Bill> bills = billsByPatientId.getOrDefault(patientId, Collections.emptyList());
+
+			for (Bill bill : bills) {
+				if (bill.getLineItems() == null) continue;
+
+				for (BillLineItem lineItem : bill.getLineItems()) {
+					BillableService service = lineItem.getBillableService();
+
+					// Determine service type name, defaulting to "Other" if null
+					String serviceTypeName = "Other";
+					if (service != null && service.getServiceType() != null) {
+						serviceTypeName = service.getServiceType().getName().getName();
+					}
+
+					// Count this visit once per service type
+					serviceTypeVisitIds.putIfAbsent(serviceTypeName, new HashSet<>());
+					Set<Integer> countedVisits = serviceTypeVisitIds.get(serviceTypeName);
+
+					if (!countedVisits.contains(visit.getVisitId())) {
+						outpatientByServiceMap.merge(serviceTypeName, 1, Integer::sum);
+						countedVisits.add(visit.getVisitId());
+					}
+				}
+			}
+		}
+		return outpatientByServiceMap;
+	}
 
 	public static Map<String, Integer> immunizations(Date fetchDate) {
 		Map<String, Integer> immunizationsMap = new HashMap<>();
@@ -616,19 +647,41 @@ public class VisualizationDataExchange {
 		return immunizationsMap;
 	}
 
+    /**
+     * Retrieves a mapping of diagnosis names to their respective counts, based on the provided fetch date.
+     * The query filters diagnosis data based on specific criteria and aggregates results grouped by diagnosis names.
+     *
+     * @param fetchDate the date from which diagnoses should be considered in the query; only diagnoses on or after this date are included
+     * @return a map where the keys are diagnosis names (String) and the values are their respective counts (Integer)
+     * @throws IllegalArgumentException if the query execution fails or any error occurs during data retrieval
+     */
     public static Map<String, Integer> allDiagnosis(Date fetchDate) {
         Map<String, Integer> diagnosisMap = new HashMap<>();
         SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String effectiveDate = sd.format(fetchDate);
         DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
 
-        final String sqlSelectQuery = "SELECT cn.name as diagnosis_name, COUNT(*) as total\n" +
-                "FROM encounter_diagnosis d\n" +
-                "         INNER JOIN concept_name cn\n" +
-                "                    ON d.diagnosis_coded = cn.concept_id and cn.locale = 'en' and concept_name_type = 'FULLY_SPECIFIED'\n" +
-                "         INNER JOIN encounter e ON d.encounter_id = e.encounter_id and e.voided = 0\n" +
-                "WHERE e.encounter_datetime >= '" + effectiveDate + "'\n" +
-                "GROUP BY cn.name";
+        final String sqlSelectQuery = "SELECT\n" +
+                "    GROUP_CONCAT(cn.name) AS diagnosis_name,\n" +
+                "    COUNT(*) AS total\n" +
+                "FROM (\n" +
+                "         SELECT encounter_id, MAX(dx_rank) AS chosen_idx_rank\n" +
+                "         FROM encounter_diagnosis\n" +
+                "         WHERE dx_rank IN (1,2)\n" +
+                "         GROUP BY encounter_id\n" +
+                "     ) chosen_diagnosis\n" +
+                "         JOIN encounter_diagnosis d\n" +
+                "              ON d.encounter_id = chosen_diagnosis.encounter_id\n" +
+                "                  AND d.dx_rank = chosen_diagnosis.chosen_idx_rank\n" +
+                "         JOIN encounter e\n" +
+                "              ON d.encounter_id = e.encounter_id\n" +
+                "                  AND e.voided = 0\n" +
+                "         JOIN concept_name cn\n" +
+                "              ON d.diagnosis_coded = cn.concept_id\n" +
+                "                  AND cn.locale = 'en'\n" +
+                "                  AND cn.concept_name_type = 'FULLY_SPECIFIED'\n" +
+                "WHERE e.encounter_datetime >= '"+effectiveDate+"'\n" +
+                "GROUP BY cn.name;";
 
         Transaction tx = null;
         try {
@@ -668,59 +721,127 @@ public class VisualizationDataExchange {
 		String effectiveDate = sd.format(fetchDate);
 		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);		
 		final String sqlSelectQuery = "WITH bill_line_items AS (\n" +
-                "    SELECT\n" +
-                "        bli.bill_id,\n" +
-                "        bli.service_id,\n" +
-                "        cbs.name AS department,\n" +
-                "        bli.price,\n" +
-                "        bli.date_created\n" +
-                "    FROM cashier_bill_line_item bli\n" +
-                "             INNER JOIN cashier_billable_service cbs ON bli.service_id = cbs.service_id\n" +
-                "    WHERE bli.date_created >= '" + effectiveDate + "'\n" +
-                "      AND bli.payment_status IN ('PAID', 'PENDING')\n" +
-                "),\n" +
-                "     bill_payment_totals AS (\n" +
-                "         -- Total paid per bill\n" +
-                "         SELECT bill_id,\n" +
-                "                SUM(amount_tendered) AS total_tendered\n" +
-                "         FROM cashier_bill_payment\n" +
-                "         WHERE date_created >= '" + effectiveDate + "'\n" +
-                "           AND voided = 0\n" +
-                "GROUP BY bill_id\n" +
-                "     ),\n" +
-                "     bill_amounts AS (\n" +
-                "         -- Total amount billed (sum of all line items) per bill\n" +
-                "         SELECT\n" +
-                "             bill_id,\n" +
-                "             SUM(price) AS bill_total\n" +
-                "         FROM cashier_bill_line_item\n" +
-                "         WHERE date_created >= '" + effectiveDate + "'\n" +
-                "           AND payment_status IN ('PAID', 'PENDING')\n" +
-                "         GROUP BY bill_id\n" +
-                "     ),\n" +
-                "     per_line_item AS (\n" +
-                "         -- Allocate bill payment proportionally to each line item\n" +
-                "         SELECT\n" +
-                "             bli.service_id,\n" +
-                "             bli.bill_id,\n" +
-                "             bli.department,\n" +
-                "             bli.price AS line_item_amount,\n" +
-                "             COALESCE(bpt.total_tendered, 0) * (bli.price / ba.bill_total) AS amount_paid,\n" +
-                "             bli.price - (COALESCE(bpt.total_tendered, 0) * (bli.price / ba.bill_total)) AS remaining_balance\n" +
-                "         FROM bill_line_items bli\n" +
-                "                  LEFT JOIN bill_payment_totals bpt ON bli.bill_id = bpt.bill_id\n" +
-                "                  INNER JOIN bill_amounts ba ON bli.bill_id = ba.bill_id\n" +
-                "     )\n" +
-                "SELECT\n" +
-                "    service_id,\n" +
-                "    COUNT(DISTINCT bill_id) AS invoice_count,\n" +
-                "    department,\n" +
-                "    SUM(line_item_amount) AS bill_amount,\n" +
-                "    SUM(amount_paid) AS amount_paid,\n" +
-                "    SUM(remaining_balance) AS remaining_balance\n" +
-                "FROM per_line_item\n" +
-                "GROUP BY service_id, department\n" +
-                "ORDER BY department, service_id;";
+				"    SELECT\n" +
+				"        bli.bill_id,\n" +
+				"        bli.service_id,\n" +
+				"        cn_fs.name AS department,\n" +
+				"        bli.price,\n" +
+				"        bli.line_item_order,\n" +
+				"        bli.date_created\n" +
+				"    FROM cashier_bill_line_item bli\n" +
+				"             INNER JOIN cashier_billable_service cbs\n" +
+				"                        ON bli.service_id = cbs.service_id\n" +
+				"             LEFT JOIN concept c\n" +
+				"                       ON c.concept_id = cbs.service_type\n" +
+				"                           AND c.retired = 0\n" +
+				"             LEFT JOIN concept_name cn_fs\n" +
+				"                       ON cn_fs.concept_id = cbs.service_type\n" +
+				"                           AND cn_fs.voided = 0\n" +
+				"                           AND cn_fs.locale = 'en'\n" +
+				"                           AND cn_fs.concept_name_type = 'FULLY_SPECIFIED'\n" +
+				"    WHERE bli.date_created >= '"+effectiveDate+"'\n" +
+				"      AND bli.payment_status IN ('PAID', 'PENDING', 'CREDITED')\n" +
+				"      AND bli.voided = 0\n" +
+				"),\n" +
+				"     bill_payment_totals AS (\n" +
+				"         SELECT\n" +
+				"             bill_id,\n" +
+				"             SUM(amount_tendered) AS total_tendered\n" +
+				"         FROM cashier_bill_payment\n" +
+				"         WHERE date_created >= '"+effectiveDate+"'\n" +
+				"           AND voided = 0\n" +
+				"         GROUP BY bill_id\n" +
+				"     ),\n" +
+				"     charge_lines_ranked AS (\n" +
+				"         SELECT\n" +
+				"             bli.bill_id,\n" +
+				"             bli.service_id,\n" +
+				"             bli.department,\n" +
+				"             bli.price AS line_item_amount,\n" +
+				"             bli.line_item_order,\n" +
+				"             COALESCE(bpt.total_tendered, 0) AS total_tendered,\n" +
+				"\n" +
+				"             -- Sum of previous line item amounts in order\n" +
+				"             COALESCE(\n" +
+				"                     SUM(bli.price) OVER (\n" +
+				"                         PARTITION BY bli.bill_id\n" +
+				"                         ORDER BY bli.line_item_order, bli.service_id\n" +
+				"                         ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING\n" +
+				"                         ),\n" +
+				"                     0\n" +
+				"             ) AS running_before\n" +
+				"         FROM bill_line_items bli\n" +
+				"                  LEFT JOIN bill_payment_totals bpt\n" +
+				"                            ON bpt.bill_id = bli.bill_id\n" +
+				"         WHERE bli.price > 0\n" +
+				"     ),\n" +
+				"     per_charge_line_item AS (\n" +
+				"         SELECT\n" +
+				"             bill_id,\n" +
+				"             service_id,\n" +
+				"             department,\n" +
+				"             line_item_amount,\n" +
+				"             -- Waterfall allocation by line_item_order:\n" +
+				"             -- pay this line with whatever is left after paying earlier lines\n" +
+				"             GREATEST(\n" +
+				"                     LEAST(total_tendered - running_before, line_item_amount),\n" +
+				"                     0\n" +
+				"             ) AS amount_paid,\n" +
+				"\n" +
+				"             line_item_amount - GREATEST(\n" +
+				"                     LEAST(total_tendered - running_before, line_item_amount),\n" +
+				"                     0\n" +
+				"                                ) AS remaining_balance\n" +
+				"         FROM charge_lines_ranked\n" +
+				"     ),\n" +
+				"     refund_totals AS (\n" +
+				"         SELECT\n" +
+				"             service_id,\n" +
+				"             department,\n" +
+				"             COUNT(DISTINCT bill_id) AS refund_invoice_count,\n" +
+				"             SUM(-price) AS total_refunds\n" +
+				"         FROM bill_line_items\n" +
+				"         WHERE price < 0\n" +
+				"         GROUP BY service_id, department\n" +
+				"     ),\n" +
+				"     charge_totals AS (\n" +
+				"         SELECT\n" +
+				"             service_id,\n" +
+				"             department AS service_type,\n" +
+				"             COUNT(DISTINCT bill_id) AS invoice_count,\n" +
+				"             SUM(line_item_amount) AS bill_amount,\n" +
+				"             SUM(amount_paid) AS amount_paid,\n" +
+				"             SUM(remaining_balance) AS balance_due\n" +
+				"         FROM per_charge_line_item\n" +
+				"         GROUP BY service_id, department\n" +
+				"     )\n" +
+				"SELECT\n" +
+				"    COALESCE(c.service_id, r.service_id) AS service_id,\n" +
+				"    COALESCE(c.service_type, r.department) AS service_type,\n" +
+				"    COALESCE(c.invoice_count, 0) AS invoices,\n" +
+				"    COALESCE(c.bill_amount, 0) AS amount_due,\n" +
+				"    COALESCE(c.amount_paid, 0) AS amount_paid,\n" +
+				"    COALESCE(c.balance_due, 0) AS balance_due,\n" +
+				"    COALESCE(r.total_refunds, 0) AS total_refunds\n" +
+				"FROM charge_totals c\n" +
+				"         LEFT JOIN refund_totals r\n" +
+				"                   ON r.service_id = c.service_id\n" +
+				"                       AND r.department = c.service_type\n" +
+				"UNION ALL\n" +
+				"SELECT\n" +
+				"    r.service_id,\n" +
+				"    r.department as service_type,\n" +
+				"    0 AS invoices,\n" +
+				"    0 AS amount_due,\n" +
+				"    0 AS amount_paid,\n" +
+				"    0 AS balance_due,\n" +
+				"    r.total_refunds\n" +
+				"FROM refund_totals r\n" +
+				"         LEFT JOIN charge_totals c\n" +
+				"                   ON c.service_id = r.service_id\n" +
+				"                       AND c.service_type = r.department\n" +
+				"WHERE c.service_id IS NULL\n" +
+				"ORDER BY service_type, service_id;\n";
 		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
 		Transaction tx = null;
 		try {
@@ -745,11 +866,12 @@ public class VisualizationDataExchange {
 								}
 
 								ret.add(SimpleObject.create(
-									"invoices", row[1] != null ? row[1].toString() : "",
-									"service_type", row[2] != null ? row[2].toString() : "",		
+									"service_type", row[1] != null ? row[1].toString() : "",
+									"invoices", row[2] != null ? row[2].toString() : "",
 									"amount_due", row[3] != null ? row[3].toString() : "",
 									"amount_paid", row[4] != null ? row[4].toString() : "",
-									"balance_due", row[5] != null ? row[5].toString() : ""
+									"balance_due", row[5] != null ? row[5].toString() : "",
+									"total_refunds", row[6] != null ? row[6].toString() : ""
 								));
 							}
 						}
@@ -779,28 +901,43 @@ public class VisualizationDataExchange {
         SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String effectiveDate = sd.format(fetchDate);
         DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
-        final String sqlSelectQuery = "WITH payments AS (\n" +
-                "    SELECT\n" +
-                "        bill_id,\n" +
-                "        payment_mode_id,\n" +
-                "        SUM(amount_tendered) AS total_tendered\n" +
-                "    FROM cashier_bill_payment\n" +
-                "    WHERE (date_created >= '" + effectiveDate + "'\n" +
-                "        OR date_changed >= '" + effectiveDate + "')\n" +
-                "      AND voided = 0\n" +
-                "    GROUP BY bill_id, payment_mode_id\n" +
-                ")\n" +
-                "SELECT\n" +
-                "    pm.payment_mode_id, pm.name AS payment_mode,\n" +
-                "    COUNT(DISTINCT cb.patient_id) AS patient_count,\n" +
-                "    SUM(p.total_tendered) AS amount_paid\n" +
-                "FROM payments p\n" +
-                "         INNER JOIN cashier_payment_mode pm\n" +
-                "                    ON pm.payment_mode_id = p.payment_mode_id and pm.retired = 0\n" +
-                "         INNER JOIN cashier_bill cb\n" +
-                "                    ON cb.bill_id = p.bill_id\n" +
-                "GROUP BY pm.payment_mode_id, pm.name\n" +
-                "ORDER BY pm.name;";
+        final String sqlSelectQuery = "WITH bill_totals AS (\n" +
+				"    -- Calculate the total value of all charges (positive prices) per bill\n" +
+				"    SELECT bill_id, SUM(price) AS total_bill_value\n" +
+				"    FROM cashier_bill_line_item\n" +
+				"    WHERE price > 0 AND voided = 0\n" +
+				"    GROUP BY bill_id\n" +
+				"),\n" +
+				"     refund_per_bill AS (\n" +
+				"         -- Sum of negative line items (refunds) per bill\n" +
+				"         SELECT bill_id, SUM(-price) AS bill_refunds\n" +
+				"         FROM cashier_bill_line_item\n" +
+				"         WHERE price < 0 AND voided = 0\n" +
+				"         GROUP BY bill_id\n" +
+				"     ),\n" +
+				"     payment_ratios AS (\n" +
+				"         SELECT\n" +
+				"             p.bill_id,\n" +
+				"             pm.name AS payment_mode,\n" +
+				"             b.patient_id,\n" +
+				"             p.amount_tendered,\n" +
+				"             -- Subtract share of refund: (Amount Tendered - (Total Refund * (This Payment / Total Bill Charges)))\n" +
+				"             ROUND((p.amount_tendered - (COALESCE(r.bill_refunds, 0) * (p.amount_tendered / NULLIF(bt.total_bill_value, 0)))),2) AS net_paid\n" +
+				"         FROM cashier_bill_payment p\n" +
+				"                  INNER JOIN cashier_bill b ON p.bill_id = b.bill_id\n" +
+				"                  INNER JOIN cashier_payment_mode pm ON p.payment_mode_id = pm.payment_mode_id\n" +
+				"                  INNER JOIN bill_totals bt ON p.bill_id = bt.bill_id\n" +
+				"                  LEFT JOIN refund_per_bill r ON p.bill_id = r.bill_id\n" +
+				"         WHERE p.date_created >= '"+effectiveDate+"'\n" +
+				"           AND p.voided = 0 AND b.voided = 0\n" +
+				"     )\n" +
+				"SELECT\n" +
+				"    payment_mode,\n" +
+				"    COUNT(DISTINCT patient_id) AS no_of_patients,\n" +
+				"    SUM(net_paid) AS amount_paid\n" +
+				"FROM payment_ratios\n" +
+				"GROUP BY payment_mode\n" +
+				"ORDER BY amount_paid DESC;";
         final List<SimpleObject> ret = new ArrayList<SimpleObject>();
         Transaction tx = null;
         try {
@@ -814,15 +951,16 @@ public class VisualizationDataExchange {
                 try (PreparedStatement statement = connection.prepareStatement(sqlSelectQuery)) {
                     try (ResultSet resultSet = statement.executeQuery()) {
                         ResultSetMetaData metaData = resultSet.getMetaData();
+
                         while (resultSet.next()) {
                             Object[] row = new Object[metaData.getColumnCount()];
                             for (int i = 1; i <= metaData.getColumnCount(); i++) {
                                 row[i - 1] = resultSet.getObject(i);
                             }
                             ret.add(SimpleObject.create(
-                                    "payment_mode", row[1] != null ? row[1].toString() : "",
-                                    "no_of_patients", row[2] != null ? row[2].toString() : "",
-                                    "amount_paid", row[3] != null ? row[3].toString() : ""
+                                    "payment_mode", row[0] != null ? row[0].toString() : "",
+                                    "no_of_patients", row[1] != null ? row[1].toString() : "",
+                                    "amount_paid", row[2] != null ? row[2].toString() : ""
                             ));
                         }
                     }
@@ -835,7 +973,8 @@ public class VisualizationDataExchange {
             if (tx != null && tx.isActive()) {
                 tx.rollback();
             }
-            throw new IllegalArgumentException("Unable to execute query", e);
+			log.error("KenyaEMR IL: Visualization: getPayments failed: " + e.getMessage(), e);
+			throw new IllegalArgumentException("Unable to execute query: " + e.getMessage(), e);
         }
         return ret;
 	}
@@ -1047,18 +1186,39 @@ public class VisualizationDataExchange {
         String effectiveDate = sd.format(fetchDate);
         DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
         final String sqlSelectQuery = "SELECT ur.role as role, COUNT(DISTINCT ur.user_id) AS role_count\n" +
-                "FROM user_role ur\n" +
-                "JOIN users u ON ur.user_id = u.user_id\n" +
-                "WHERE role LIKE '%Clinician' \n" +
-                "   OR role LIKE '%Data Clerk' \n" +
-                "   OR role LIKE '%Manager' \n" +
-                "   OR role LIKE '%Pharmacist'\n" +
-                "   OR role LIKE '%Provider'\n" +
-                "   OR role LIKE '%Nurse%'\n" +
-                "   OR role LIKE '%Cashier%'\n" +
-                "   OR role LIKE '%Dentist%'\n" +
-                "and u.date_created >= '" + effectiveDate + "'\n" +
-                "GROUP BY ur.role;";
+				"                FROM user_role ur\n" +
+				"                JOIN users u ON ur.user_id = u.user_id\n" +
+				"                WHERE (role LIKE '%Clinician'\n" +
+				"                    OR role LIKE '%Clerk'\n" +
+				"                    OR role LIKE '%Lab Technician%'\n" +
+				"                    OR role LIKE '%Doctor%'\n" +
+				"                    OR role LIKE '%Health Record Officer'\n" +
+				"                    OR role LIKE '%Finance Administrator%'\n" +
+				"                    OR role LIKE '%Inventory%'\n" +
+				"                    OR role LIKE '%Manager'\n" +
+				"                    OR role LIKE '%Nutritionist'\n" +
+				"                    OR role LIKE '%Orthopedics'\n" +
+				"                    OR role LIKE '%Physiotherapist'\n" +
+				"                    OR role LIKE '%Radiologist'\n" +
+				"                    OR role LIKE '%Receptionist%Registration%'\n" +
+				"                    OR role LIKE '%Stock%'\n" +
+				"                    OR role LIKE '%HTS%'\n" +
+				"                    OR role LIKE '%ICT Officer'\n" +
+				"                    OR role LIKE '%Mortician'\n" +
+				"                    OR role LIKE '%Pathologist'\n" +
+				"                    OR role LIKE '%Social Worker'\n" +
+				"                    OR role LIKE '%Public Health Officer/Surveillance Officer'\n" +
+				"                    OR role LIKE '%Insurance Agent'\n" +
+				"                    OR role LIKE '%Counselor%'\n" +
+				"                    OR role LIKE '%Therapist%'\n" +
+				"                    OR role LIKE '%Peer%'\n" +
+				"                    OR role LIKE '%Pharmacist'\n" +
+				"                    OR role LIKE '%Provider'\n" +
+				"                    OR role LIKE '%Nurse%'\n" +
+				"                    OR role LIKE '%Cashier%'\n" +
+				"                    OR role LIKE '%Dentist%')\n" +
+				"                and u.date_created >= '" + effectiveDate + "'\n" +
+				"                GROUP BY ur.role;";
         final List<SimpleObject> ret = new ArrayList<SimpleObject>();
         Transaction tx = null;
         try {
@@ -1100,6 +1260,129 @@ public class VisualizationDataExchange {
 	}
 
 	/**
+	 * Retrieves a list of users who are currently logged in based on their last login timestamp
+	 * and filters them by specific roles. It also calculates the total number of active users
+	 * with relevant roles.
+	 * @param fetchDate The date used as a reference to determine users who have logged in since that time.
+	 * @return A list of {@code SimpleObject} instances, where each object contains:
+	 *         - "logged_in_users_with_roles": The number of logged-in users who match the specified roles.
+	 *         - "total_active_users_with_roles": The total number of active users matching the specified roles.
+	 * @throws IllegalArgumentException If any error occurs while executing the query.
+	 */
+	public static List<SimpleObject> getLoggedInUsers(Date fetchDate) {
+		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String effectiveDate = sd.format(fetchDate);
+		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
+		final String sqlSelectQuery = "SELECT\n" +
+				"    (SELECT COUNT(DISTINCT p.user_id)\n" +
+				"     FROM user_property p\n" +
+				"              JOIN user_role r ON p.user_id = r.user_id\n" +
+				"     WHERE p.property = 'lastLoginTimestamp'\n" +
+				"       AND p.property_value >= UNIX_TIMESTAMP('"+effectiveDate+"') * 1000\n" +
+				"       AND (r.role LIKE '%Clinician'\n" +
+				"         OR r.role LIKE '%Clerk'\n" +
+				"         OR r.role LIKE '%Lab Technician%'\n" +
+				"         OR r.role LIKE '%Doctor%'\n" +
+				"         OR r.role LIKE '%Health Record Officer'\n" +
+				"         OR r.role LIKE '%Finance Administrator%'\n" +
+				"         OR r.role LIKE '%Inventory%'\n" +
+				"         OR r.role LIKE '%Manager'\n" +
+				"         OR r.role LIKE '%Nutritionist'\n" +
+				"         OR r.role LIKE '%Orthopedics'\n" +
+				"         OR r.role LIKE '%Physiotherapist'\n" +
+				"         OR r.role LIKE '%Radiologist'\n" +
+				"         OR r.role LIKE '%Receptionist%Registration%'\n" +
+				"         OR r.role LIKE '%Stock%'\n" +
+				"         OR r.role LIKE '%HTS%'\n" +
+				"         OR r.role LIKE '%ICT Officer'\n" +
+				"         OR r.role LIKE '%Mortician'\n" +
+				"         OR r.role LIKE '%Pathologist'\n" +
+				"         OR r.role LIKE '%Social Worker'\n" +
+				"         OR r.role LIKE '%Public Health Officer/Surveillance Officer'\n" +
+				"         OR r.role LIKE '%Insurance Agent'\n" +
+				"         OR r.role LIKE '%Counselor%'\n" +
+				"         OR r.role LIKE '%Therapist%'\n" +
+				"         OR r.role LIKE '%Peer%'\n" +
+				"         OR r.role LIKE '%Pharmacist'\n" +
+				"         OR r.role LIKE '%Provider'\n" +
+				"         OR r.role LIKE '%Nurse%'\n" +
+				"         OR r.role LIKE '%Cashier%'\n" +
+				"         OR r.role LIKE '%Dentist%')\n" +
+				"    ) AS logged_in_users_with_roles,\n" +
+				"    (SELECT COUNT(DISTINCT u.user_id)\n" +
+				"     FROM users u\n" +
+				"              JOIN user_role r ON u.user_id = r.user_id\n" +
+				"     WHERE u.retired = 0\n" +
+				"       AND (r.role LIKE '%Clinician'\n" +
+				"         OR r.role LIKE '%Clerk'\n" +
+				"         OR r.role LIKE '%Lab Technician%'\n" +
+				"         OR r.role LIKE '%Doctor%'\n" +
+				"         OR r.role LIKE '%Health Record Officer'\n" +
+				"         OR r.role LIKE '%Finance Administrator%'\n" +
+				"         OR r.role LIKE '%Inventory%'\n" +
+				"         OR r.role LIKE '%Manager'\n" +
+				"         OR r.role LIKE '%Nutritionist'\n" +
+				"         OR r.role LIKE '%Orthopedics'\n" +
+				"         OR r.role LIKE '%Physiotherapist'\n" +
+				"         OR r.role LIKE '%Radiologist'\n" +
+				"         OR r.role LIKE '%Receptionist%Registration%'\n" +
+				"         OR r.role LIKE '%Stock%'\n" +
+				"         OR r.role LIKE '%HTS%'\n" +
+				"         OR r.role LIKE '%ICT Officer'\n" +
+				"         OR r.role LIKE '%Mortician'\n" +
+				"         OR r.role LIKE '%Pathologist'\n" +
+				"         OR r.role LIKE '%Social Worker'\n" +
+				"         OR r.role LIKE '%Public Health Officer/Surveillance Officer'\n" +
+				"         OR r.role LIKE '%Insurance Agent'\n" +
+				"         OR r.role LIKE '%Counselor%'\n" +
+				"         OR r.role LIKE '%Therapist%'\n" +
+				"         OR r.role LIKE '%Peer%'\n" +
+				"         OR r.role LIKE '%Pharmacist'\n" +
+				"         OR r.role LIKE '%Provider'\n" +
+				"         OR r.role LIKE '%Nurse%'\n" +
+				"         OR r.role LIKE '%Cashier%'\n" +
+				"         OR r.role LIKE '%Dentist%')\n" +
+				"    ) AS total_active_users_with_roles;";
+		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
+		Transaction tx = null;
+		try {
+			Session hibSession = sf.getHibernateSessionFactory().getCurrentSession();
+			boolean startedTx = false;
+			if (!hibSession.getTransaction().isActive()) {
+				tx = hibSession.beginTransaction();
+				startedTx = true;
+			}
+			sf.getCurrentSession().doWork(connection -> {
+				try (PreparedStatement statement = connection.prepareStatement(sqlSelectQuery)) {
+					try (ResultSet resultSet = statement.executeQuery()) {
+						ResultSetMetaData metaData = resultSet.getMetaData();
+						while (resultSet.next()) {
+							Object[] row = new Object[metaData.getColumnCount()];
+							for (int i = 1; i <= metaData.getColumnCount(); i++) {
+								row[i - 1] = resultSet.getObject(i);
+							}
+							ret.add(SimpleObject.create(
+									"logged_in_users_with_roles", row[0] != null ? row[0].toString() : "",
+									"total_active_users_with_roles", row[1] != null ? row[1].toString() : ""
+							));
+						}
+					}
+				}
+			});
+			if (startedTx && tx != null && tx.isActive()) {
+				tx.commit();
+			}
+		} catch (Exception e) {
+			if (tx != null && tx.isActive()) {
+				tx.rollback();
+			}
+			log.error("KenyaEMR IL: Unable to get staff by cadre: " + e.getMessage());
+			e.printStackTrace();
+			throw new IllegalArgumentException("Unable to execute query", e);
+		}
+		return ret;
+	}
+	/**
 	 * Gets details of total waivers
 	 * @param
 	 * @return details of total waivers
@@ -1128,7 +1411,7 @@ public class VisualizationDataExchange {
                                 row[i - 1] = resultSet.getObject(i);
                             }
                             ret.add(SimpleObject.create(
-                                    "waivers", row[0] != null ? row[0].toString() : ""
+                                    "waivers", row[0] != null ? row[0].toString() : null
                             ));
                         }
                     }
@@ -1289,64 +1572,51 @@ public class VisualizationDataExchange {
         String effectiveDate = sd.format(fetchDate);
         DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
         final String sqlSelectQuery = "WITH bill_line_items AS (\n" +
-                "    SELECT\n" +
-                "        bli.bill_id,\n" +
-                "        cbs.name AS department,\n" +
-                "        bli.price AS line_item_amount\n" +
-                "    FROM cashier_bill_line_item bli\n" +
-                "             INNER JOIN cashier_billable_service cbs\n" +
-                "                        ON bli.service_id = cbs.service_id\n" +
-                "    WHERE bli.date_created >= '" + effectiveDate + "'\n" +
-                "      AND bli.payment_status IN ('PAID', 'PENDING')\n" +
-                "),\n" +
-                "\n" +
-                "     bill_totals AS (\n" +
-                "         SELECT\n" +
-                "             bill_id,\n" +
-                "             SUM(line_item_amount) AS bill_total\n" +
-                "         FROM bill_line_items\n" +
-                "         GROUP BY bill_id\n" +
-                "     ),\n" +
-                "\n" +
-                "     department_sums AS (\n" +
-                "         SELECT\n" +
-                "             bill_id,\n" +
-                "             department,\n" +
-                "             SUM(line_item_amount) AS department_total\n" +
-                "         FROM bill_line_items\n" +
-                "         GROUP BY bill_id, department\n" +
-                "     ),\n" +
-                "\n" +
-                "     payments AS (\n" +
-                "         SELECT\n" +
-                "             bill_id,\n" +
-                "             SUM(amount_tendered) AS total_tendered\n" +
-                "         FROM cashier_bill_payment\n" +
-                "         WHERE date_created >= '" + effectiveDate + "'\n" +
-                "           AND voided = 0\n" +
-                "         GROUP BY bill_id\n" +
-                "     ),\n" +
-                "\n" +
-                "     departments_with_payments AS (\n" +
-                "         SELECT\n" +
-                "             ds.department,\n" +
-                "             ds.bill_id,\n" +
-                "             ds.department_total,\n" +
-                "             bt.bill_total,\n" +
-                "             p.total_tendered,\n" +
-                "             -- share of bill payment to this department for the bill\n" +
-                "             COALESCE(p.total_tendered,0) * (ds.department_total / bt.bill_total) AS allocated_payment\n" +
-                "         FROM department_sums ds\n" +
-                "                  INNER JOIN bill_totals bt ON ds.bill_id = bt.bill_id\n" +
-                "                  LEFT JOIN payments p ON ds.bill_id = p.bill_id\n" +
-                "     )\n" +
-                "\n" +
-                "SELECT\n" +
-                "    department,\n" +
-                "    SUM(allocated_payment) AS amount_paid\n" +
-                "FROM departments_with_payments\n" +
-                "GROUP BY department\n" +
-                "ORDER BY department;";
+				"    SELECT\n" +
+				"        bli.bill_id,\n" +
+				"        bli.service_id,\n" +
+				"        COALESCE(cn_fs.name, 'Unassigned') AS department,\n" +
+				"        bli.price,\n" +
+				"        bli.line_item_order\n" +
+				"    FROM cashier_bill_line_item bli\n" +
+				"             INNER JOIN cashier_billable_service cbs ON bli.service_id = cbs.service_id\n" +
+				"             LEFT JOIN concept_name cn_fs ON cn_fs.concept_id = cbs.service_type\n" +
+				"        AND cn_fs.voided = 0 AND cn_fs.locale = 'en' AND cn_fs.concept_name_type = 'FULLY_SPECIFIED'\n" +
+				"    WHERE bli.date_created >= '"+effectiveDate+"'\n" +
+				"      AND bli.payment_status IN ('PAID', 'PENDING', 'CREDITED')\n" +
+				"      AND bli.voided = 0\n" +
+				"),\n" +
+				"     bill_payment_totals AS (\n" +
+				"         -- Only include bills that have at least one payment entry\n" +
+				"         SELECT bill_id, SUM(amount_tendered) AS total_tendered\n" +
+				"         FROM cashier_bill_payment\n" +
+				"         WHERE date_created >= '"+effectiveDate+"' AND voided = 0\n" +
+				"         GROUP BY bill_id\n" +
+				"         HAVING SUM(amount_tendered) > 0\n" +
+				"     ),\n" +
+				"     department_net AS (\n" +
+				"         -- INNER JOIN ensures we only attribute charges to bills that were actually paid\n" +
+				"         SELECT\n" +
+				"             department,\n" +
+				"             GREATEST(LEAST(bpt.total_tendered -\n" +
+				"                            COALESCE(SUM(bli.price) OVER (PARTITION BY bli.bill_id ORDER BY bli.line_item_order, bli.service_id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING), 0),\n" +
+				"                            bli.price), 0) AS amount\n" +
+				"         FROM bill_line_items bli\n" +
+				"                  INNER JOIN bill_payment_totals bpt ON bpt.bill_id = bli.bill_id\n" +
+				"         WHERE bli.price > 0\n" +
+				"         UNION ALL\n" +
+				"         -- Subtract refunds\n" +
+				"         SELECT department, price AS amount\n" +
+				"         FROM bill_line_items\n" +
+				"         WHERE price < 0\n" +
+				"     )\n" +
+				"SELECT\n" +
+				"    department,\n" +
+				"    SUM(amount) AS amount_paid\n" +
+				"FROM department_net\n" +
+				"GROUP BY department\n" +
+				"HAVING SUM(amount) <> 0 -- Only return rows where money was actually paid/not refunded\n" +
+				"ORDER BY department;";
         final List<SimpleObject> ret = new ArrayList<SimpleObject>();
         Transaction tx = null;
         try {

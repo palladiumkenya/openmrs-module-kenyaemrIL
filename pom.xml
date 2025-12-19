@@ -43,7 +43,7 @@
         <htmlformentryVersion>3.9.2</htmlformentryVersion>
         <htmlwidgetsVersion>1.10.0</htmlwidgetsVersion>
         <idgenVersion>4.5.0</idgenVersion>
-        <kenyaemrVersion>19.3.0-SNAPSHOT</kenyaemrVersion>
+        <kenyaemrVersion>19.2.2</kenyaemrVersion>
         <bedmanagementVersion>5.14.0-SNAPSHOT</bedmanagementVersion>
         <kenyacoreVersion>3.0.1</kenyacoreVersion>
         <kenyauiVersion>3.0.0</kenyauiVersion>
@@ -60,6 +60,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <fhir-core.version>5.4.0</fhir-core.version>
         <bahmniAppointmentsVersion>2.0.0</bahmniAppointmentsVersion>
+        <kenyaEMRCashierVersion>4.2.5-SNAPSHOT</kenyaEMRCashierVersion>
     </properties>
 
     <dependencyManagement>
@@ -354,6 +355,12 @@
                 <groupId>org.openmrs.module</groupId>
                 <artifactId>bedmanagement-api</artifactId>
                 <version>${bedmanagementVersion}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.openmrs.module</groupId>
+                <artifactId>kenyaemr.cashier-api</artifactId>
+                <version>${kenyaEMRCashierVersion}</version>
                 <scope>provided</scope>
             </dependency>
         </dependencies>
