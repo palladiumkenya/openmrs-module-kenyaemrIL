@@ -22,10 +22,12 @@ import org.openmrs.OrderType;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PatientIdentifierType;
+import org.openmrs.Person;
 import org.openmrs.PersonAddress;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.OrderService;
+import org.openmrs.api.PersonService;
 import org.openmrs.api.context.Context;
 import org.openmrs.calculation.result.CalculationResult;
 import org.openmrs.module.kenyaemr.Dictionary;
@@ -35,6 +37,7 @@ import org.openmrs.module.kenyaemr.calculation.library.hiv.art.InitialArtStartDa
 import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
 import org.openmrs.module.kenyaemr.metadata.HivMetadata;
 import org.openmrs.module.kenyaemr.metadata.MchMetadata;
+import org.openmrs.module.kenyaemr.metadata.OTZMetadata;
 import org.openmrs.module.kenyaemr.util.EmrUtils;
 import org.openmrs.module.kenyaemr.util.HtsConstants;
 import org.openmrs.module.kenyaemr.wrapper.PatientWrapper;
@@ -77,9 +80,25 @@ public class CaseSurveillanceDataExchange {
     private static final Logger log = LoggerFactory.getLogger(CaseSurveillanceDataExchange.class);
     private static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
     private static final String DATE_FORMAT = "yyyy-MM-dd";
-    private static final String PrEP_INITIAl_FUP_ENCOUNTER = "706a8b12-c4ce-40e4-aec3-258b989bf6d3";
+    private static final String PrEP_INITIAl_ENCOUNTER = "706a8b12-c4ce-40e4-aec3-258b989bf6d3";
     private static final String HTS_ELIGIBILITY_FORM = "04295648-7606-11e8-adc0-fa7ae01bbebc";
     private static final String PrEP_INITIAL_FORM = "1bfb09fc-56d7-4108-bd59-b2765fd312b8";
+    private static final String PrEP_RISK_ASSESSMENT_ENCOUNTER_UUID = "6e5ec039-8d2a-4172-b3fb-ee9d0ba647b7";
+    private static final String PrEP_RISK_ASSESSMENT_FORM_UUID = "40374909-05fc-4af8-b789-ed9c394ac785";
+    private static final Integer CONSENTED_TO_PREP_QSTN = 165094, HTS_RISK_SCR_QSTN = 167163,  HTS_HIGHEST_RISK_ANS = 167164, HTS_HIGH_RISK_ANS = 1408, DEATH_DATE = 1543, CAUSE_OF_DEATH = 1599;
+    public static final String PREP_ENROLLMENT_ENC_TYPE = "35468fe8-a889-4cd4-9b35-27ac98bdd750";
+    public static final String PREP_ENROLLMENT_FORM = "d63eb2ee-d5e8-4ea4-b5ea-ea3670af03ac";
+    public static final String PREP_INITIATION_FORM = "d5ca78be-654e-4d23-836e-a934739be555";
+    public static String PrEP_REGIMEN = "164515AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    public static String TYPE_OF_PrEP = "166866AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    public static String REASON_FOR_STARTING_PrEP = "159623AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    public static String REASON_FOR_SWITCHING_PrEP = "4b59ac07-cf72-4f46-b8c0-4f62b1779f7e";
+    public static String DATE_SWITCHED_PrEP = "68bfa3f3-1fc7-4d9d-bb41-e897c3c430ef";
+    public static String PrEP_FOLLOWUP_FORM = "ee3e2017-52c0-4a54-99ab-ebb542fb8984";
+    public static String PrEP_FOLLOWUP_ENCOUNTER_TYPE = "c4a2be28-6673-4c36-b886-ea89b0a42116";
+    public static String PrEP_STATUS = "42ad51f2-dc4f-48eb-8440-9a0bd8969374";
+    public static String PrEP_REFILL_FORM = "291c03c8-a216-11e9-a2a3-2a2ae2dbcce4";
+    public static String PrEP_REFILL_ENCOUNTER_TYPE = "291c0828-a216-11e9-a2a3-2a2ae2dbcce4";
 
     // Utility method for null-safe string extraction
     private static String safeGetField(PersonAddress address, Function<PersonAddress, String> mapper) {
@@ -179,6 +198,46 @@ public class CaseSurveillanceDataExchange {
                 "prepRegimen", prepRegimen
         );
     }
+
+    private SimpleObject mapToPrEPUptakeObject(
+            Encounter latestPrEPEnc,
+            Patient patient,
+            String prepNumber,
+            String prepMethod,
+            Date prepStartDate,
+            String prepStatus,
+            String reasonForStartingPrEP,
+            String reasonForSwitchingPrEP,
+            Date dateSwitchedPrep,
+            String prepRegimen
+
+           ) {
+
+        PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
+        String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
+        Date birthdate = (patient != null) ? patient.getBirthdate() : null;
+        return SimpleObject.create(
+
+                "createdAt", formatDateTime(latestPrEPEnc.getDateCreated()),
+                "updatedAt", formatDateTime(latestPrEPEnc.getDateChanged()),
+                "patientId", patient.getPatientId(),
+                "county", safeGetField(address, PersonAddress::getCountyDistrict),
+                "subCounty", safeGetField(address, PersonAddress::getStateProvince),
+                "ward", safeGetField(address, PersonAddress::getAddress6),
+                "mflCode", EmrUtils.getMFLCode(),
+                "dob", birthdate != null ? formatDate(birthdate) : null,
+                "sex", sex != null ? dmiUtils.formatGender(sex) : null,
+                "prepStartDate", formatDateTime(prepStartDate),
+                "prepNumber", prepNumber,
+                "prepType", prepMethod,
+                "prepRegimen", prepRegimen,
+                "prepStatus", prepStatus,
+                "reasonForStartingPrep", reasonForStartingPrEP,
+                "reasonForSwitchingPrep", reasonForSwitchingPrEP,
+                "dateSwitchedPrep", formatDate(dateSwitchedPrep)
+        );
+    }
+
 
     // Utility method for creating structured SimpleObject for VL Eligibility variables
     private SimpleObject mapToVlEligibilityObject(String createdAt,Integer patientId, String pregnant, String breastfeeding, String vlResult, String vlresultDate,String positiveHivTestDate,
@@ -292,7 +351,25 @@ public class CaseSurveillanceDataExchange {
                 "heiId", heiNumber
         );
     }
+    private SimpleObject mapToMortalityObject(Patient patient, Date createdAt, Date updatedAt, Date deathDate, String causeOfDeath) {
+        PersonAddress address = Optional.ofNullable(patient).map(Patient::getPersonAddress).orElse(null);
+        String sex = Optional.ofNullable(patient).map(Patient::getGender).orElse(null);
+        Date birthdate = (patient != null) ? patient.getBirthdate() : null;
 
+        return SimpleObject.create(
+                "createdAt", formatDateTime(createdAt),
+                "updatedAt", formatDateTime(updatedAt),
+                "patientId", patient.getPatientId().toString(),
+                "county", safeGetField(address, PersonAddress::getCountyDistrict),
+                "subCounty", safeGetField(address, PersonAddress::getStateProvince),
+                "ward", safeGetField(address, PersonAddress::getAddress6),
+                "mflCode", EmrUtils.getMFLCode(),
+                "dob", birthdate != null ? formatDate(birthdate) : null,
+                "sex", sex != null ? dmiUtils.formatGender(sex) : null,
+                "deathDate", formatDateTime(deathDate),
+                "causeOfDeath", causeOfDeath
+        );
+    }
     /**
      * Retrieves a list of patients tested HIV-positive since the last fetch date
      */
@@ -435,7 +512,6 @@ public class CaseSurveillanceDataExchange {
 
     /**
      * Pregnant and postpartum women at high risk of turning HIV+
-     *
      * @param fetchDate
      * @return
      */
@@ -444,92 +520,231 @@ public class CaseSurveillanceDataExchange {
         if (fetchDate == null) {
             throw new IllegalArgumentException("Fetch date cannot be null");
         }
+        if (fetchDate.after(new Date())) {
+            throw new IllegalArgumentException("Fetch date cannot be in the future.");
+        }
+
+        // PrEP eligibility window: ALL relevant encounters must have encounterDatetime within the last 72 hours
+        final Date now = new Date();
+        final Date threeDaysAgo = Date.from(java.time.Instant.now().minus(3, java.time.temporal.ChronoUnit.DAYS));
+
+        // Still honor incremental fetching, but don't go earlier than the PrEP window
+        final Date effectiveFromDate = fetchDate.after(threeDaysAgo) ? fetchDate : threeDaysAgo;
+        System.out.println("Effective from date: " + effectiveFromDate);
+
         List<SimpleObject> result = new ArrayList<>();
         ConceptService conceptService = Context.getConceptService();
         EncounterService encounterService = Context.getEncounterService();
-        Concept htsEntryPointQstn = conceptService.getConcept(160540);
-        Concept htsEntryPointANC = conceptService.getConcept(160538);
-        Concept htsEntryPointMAT = conceptService.getConcept(160456);
-        Concept htsEntryPointPNC = conceptService.getConcept(1623);
-        Concept htsScrRiskQstn = conceptService.getConcept(167163);
-        Concept htsScrHighRiskResult = conceptService.getConcept(1408);
-        Concept htsScrHighestRiskResult = conceptService.getConcept(167164);
+
+        // Cohort concepts
+        Concept pregnantQstn = conceptService.getConceptByUuid(Metadata.Concept.PREGNANCY_STATUS);
+        Concept breastfeedingQstn = conceptService.getConceptByUuid(Metadata.Concept.CURRENTLY_BREASTFEEDING);
+        Concept yes = Dictionary.getConcept(Dictionary.YES);
+
+        Concept htsScrRiskQstn = conceptService.getConcept(HTS_RISK_SCR_QSTN);
+        Concept htsScrHighRiskResult = conceptService.getConcept(HTS_HIGH_RISK_ANS);
+        Concept htsScrHighestRiskResult = conceptService.getConcept(HTS_HIGHEST_RISK_ANS);
+
         Concept htsFinalTestQuestion = conceptService.getConcept(HtsConstants.HTS_FINAL_TEST_CONCEPT_ID);
         Concept htsNegativeResult = conceptService.getConcept(HtsConstants.HTS_NEGATIVE_RESULT_CONCEPT_ID);
+        // PrEP consent concepts (from PrEP Risk Assessment)
+        Concept consentedToPrEPQstn = conceptService.getConcept(CONSENTED_TO_PREP_QSTN);
+        Concept consentedToPrEPAnswer = conceptService.getConceptByUuid(Metadata.Concept.YES);
 
-        if (htsFinalTestQuestion == null || htsNegativeResult == null) {
+        List<String> missing = new ArrayList<>();
+        if (pregnantQstn == null) missing.add("PREGNANCY_STATUS (" + Metadata.Concept.PREGNANCY_STATUS + ")");
+        if (breastfeedingQstn == null) missing.add("CURRENTLY_BREASTFEEDING (" + Metadata.Concept.CURRENTLY_BREASTFEEDING + ")");
+        if (yes == null) missing.add("YES (" + Dictionary.YES + ")");
+        if (htsScrRiskQstn == null) missing.add("HTS_RISK_SCR_QSTN (" + HTS_RISK_SCR_QSTN + ")");
+        if (htsScrHighRiskResult == null) missing.add("HTS_HIGH_RISK_ANS (" + HTS_HIGH_RISK_ANS + ")");
+        if (htsScrHighestRiskResult == null) missing.add("HTS_HIGHEST_RISK_ANS (" + HTS_HIGHEST_RISK_ANS + ")");
+        if (htsFinalTestQuestion == null) missing.add("HTS_FINAL_TEST_CONCEPT_ID (" + HtsConstants.HTS_FINAL_TEST_CONCEPT_ID + ")");
+        if (htsNegativeResult == null) missing.add("HTS_NEGATIVE_RESULT_CONCEPT_ID (" + HtsConstants.HTS_NEGATIVE_RESULT_CONCEPT_ID + ")");
+        if (consentedToPrEPQstn == null) missing.add("CONSENTED_TO_PREP_QSTN (" + CONSENTED_TO_PREP_QSTN + ")");
+
+        if (!missing.isEmpty()) {
+            log.error("Required concepts are missing; cannot build Pregnant and postpartum at high risk linked to PrEP dataset. Missing: {}", missing);
             return result;
         }
 
-        // Get relevant encounter types
-        List<EncounterType> htsEncounterType = Collections.singletonList(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.HTS));
-
-        List<Form> testingForms = Arrays.asList(
+        // Metadata
+        List<EncounterType> htsEncounterType = Collections.singletonList(
+                MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.HTS)
+        );
+        List<Form> htsTestingForms = Arrays.asList(
                 MetadataUtils.existing(Form.class, CommonMetadata._Form.HTS_INITIAL_TEST),
                 MetadataUtils.existing(Form.class, CommonMetadata._Form.HTS_CONFIRMATORY_TEST)
         );
+        Form htsEligibilityForm = MetadataUtils.existing(Form.class, HTS_ELIGIBILITY_FORM);
 
-        // Build HTS encounter search criteria for HTS Eligibility screening
-        EncounterSearchCriteria htsEligibilityScrSearchCriteria = new EncounterSearchCriteria(
-                null, null, fetchDate, null, null, Collections.singletonList(MetadataUtils.existing(Form.class, HTS_ELIGIBILITY_FORM)), htsEncounterType, null, null, null, false
+        List<EncounterType> prepRiskAssessmentEncounterType = Collections.singletonList(
+                MetadataUtils.existing(EncounterType.class, PrEP_RISK_ASSESSMENT_ENCOUNTER_UUID)
         );
+        Form prepRiskAssessmentForm = MetadataUtils.existing(Form.class, PrEP_RISK_ASSESSMENT_FORM_UUID);
 
-        List<Encounter> screeningEncounters = encounterService.getEncounters(htsEligibilityScrSearchCriteria);
-        if (screeningEncounters == null || screeningEncounters.isEmpty()) {
-            return Collections.emptyList();
+        // Pull HTS eligibility encounters ON/AFTER effectiveFromDate (driver set)
+        List<Encounter> eligibilityEncounters = Optional.ofNullable(encounterService.getEncounters(
+                        new EncounterSearchCriteria(
+                                null, null, effectiveFromDate, null, null,
+                                Collections.singletonList(htsEligibilityForm),
+                                htsEncounterType,
+                                null, null, null,
+                                false
+                        )
+                )).orElse(Collections.emptyList()).stream()
+                .filter(e -> e != null && e.getEncounterDatetime() != null)
+                .filter(e -> !e.getEncounterDatetime().before(threeDaysAgo) && !e.getEncounterDatetime().after(now))
+                .collect(Collectors.toList());
+
+        if (eligibilityEncounters.isEmpty()) {
+            System.out.println("INFO - IL: Finished generating Pregnant and postpartum at high risk dataset: 0 records found");
+            return result;
         }
 
-        Set<Patient> highRiskPatients = new HashSet<>();
-        for (Encounter htsScreeningEncounter : screeningEncounters) {
-            Patient patient = htsScreeningEncounter.getPatient();
-            if (patient == null) {
-                continue;
+        // Pull HTS tests ON/AFTER effectiveFromDate (same window)
+        List<Encounter> htsTestEncounters = Optional.ofNullable(encounterService.getEncounters(
+                        new EncounterSearchCriteria(
+                                null, null, effectiveFromDate, null, null,
+                                htsTestingForms,
+                                htsEncounterType,
+                                null, null, null,
+                                false
+                        )
+                )).orElse(Collections.emptyList()).stream()
+                .filter(e -> e != null && e.getEncounterDatetime() != null)
+                .filter(e -> !e.getEncounterDatetime().before(threeDaysAgo) && !e.getEncounterDatetime().after(now))
+                .collect(Collectors.toList());
+
+        // Pull PrEP risk assessments ON/AFTER effectiveFromDate (same window)
+        List<Encounter> prepRiskAssessmentEncounters = Optional.ofNullable(encounterService.getEncounters(
+                        new EncounterSearchCriteria(
+                                null, null, effectiveFromDate, null, null,
+                                Collections.singletonList(prepRiskAssessmentForm),
+                                prepRiskAssessmentEncounterType,
+                                null, null, null,
+                                false
+                        )
+                )).orElse(Collections.emptyList()).stream()
+                .filter(e -> e != null && e.getEncounterDatetime() != null)
+                .filter(e -> !e.getEncounterDatetime().before(threeDaysAgo) && !e.getEncounterDatetime().after(now))
+                .collect(Collectors.toList());
+
+        Map<Integer, List<Encounter>> testsByPatientId = htsTestEncounters.stream()
+                .filter(e -> e != null && e.getPatient() != null && e.getPatient().getPatientId() != null)
+                .collect(Collectors.groupingBy(e -> e.getPatient().getPatientId()));
+
+        Map<Integer, List<Encounter>> prepRiskByPatientId = prepRiskAssessmentEncounters.stream()
+                .filter(e -> e != null && e.getPatient() != null && e.getPatient().getPatientId() != null)
+                .collect(Collectors.groupingBy(e -> e.getPatient().getPatientId()));
+
+        // Helper: pick latest encounter within [from, to] (inclusive)
+        final java.util.function.BiFunction<List<Encounter>, Date[], Encounter> latestWithin = (encounters, range) -> {
+            if (encounters == null || encounters.isEmpty() || range == null || range.length != 2) {
+                return null;
             }
-         //   if (patient == null || "M".equals(patient.getGender())) continue;
-
-            boolean isHighRisk = EmrUtils.encounterThatPassCodedAnswer(htsScreeningEncounter, htsScrRiskQstn, htsScrHighRiskResult)
-                    || EmrUtils.encounterThatPassCodedAnswer(htsScreeningEncounter, htsScrRiskQstn, htsScrHighestRiskResult);
-
-            if (isHighRisk) {
-                highRiskPatients.add(patient);
-            }
-        }
-        EncounterSearchCriteria htsTestSearchCriteria = new EncounterSearchCriteria(
-                null, null, fetchDate, null, null, testingForms,
-                Collections.singletonList(MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.HTS)),
-                null, null, null, false
-        );
-        List<Encounter> htsTestEncounters = encounterService.getEncounters(htsTestSearchCriteria);
-        if( htsTestEncounters == null || htsTestEncounters.isEmpty()) {
-            return Collections.emptyList();
-        }
-        Map<Patient, List<Encounter>> testEncountersByPatient = htsTestEncounters.stream()
-                .filter(e -> e.getPatient() != null)
-                .collect(Collectors.groupingBy(Encounter::getPatient));
-
-        // Evaluate each high-risk patient
-        for (Encounter screening : screeningEncounters) {
-            Patient patient = screening.getPatient();
-            if (!highRiskPatients.contains(patient) || !"F".equals(patient.getGender())) {
-                continue;
-            }
-            List<Encounter> patientTests = testEncountersByPatient.getOrDefault(patient, Collections.emptyList());
-
-            // Check if patient meets criteria based on test encounters
-            for (Encounter testEncounter : patientTests) {
-                if (EmrUtils.encounterThatPassCodedAnswer(testEncounter, htsFinalTestQuestion, htsNegativeResult)
-                        && (EmrUtils.encounterThatPassCodedAnswer(testEncounter, htsEntryPointQstn, htsEntryPointANC)
-                        || EmrUtils.encounterThatPassCodedAnswer(testEncounter, htsEntryPointQstn, htsEntryPointMAT)
-                        || EmrUtils.encounterThatPassCodedAnswer(testEncounter, htsEntryPointQstn, htsEntryPointPNC))) {
-                    result.add(mapToPregnantAndPostpartumAtHighRiskObject(screening, patient));
-                    break;
+            Date from = range[0];
+            Date to = range[1];
+            Encounter best = null;
+            for (Encounter e : encounters) {
+                if (e == null || e.getEncounterDatetime() == null) {
+                    continue;
+                }
+                Date d = e.getEncounterDatetime();
+                if (from != null && d.before(from)) {
+                    continue;
+                }
+                if (to != null && d.after(to)) {
+                    continue;
+                }
+                if (best == null || d.after(best.getEncounterDatetime())) {
+                    best = e;
                 }
             }
+            return best;
+        };
+
+        // Dedupe per patient (since events can span days within the window)
+        Set<Integer> processedPatientIds = new HashSet<>();
+
+        for (Encounter eligibility : eligibilityEncounters) {
+            if (eligibility == null || eligibility.getPatient() == null || eligibility.getPatient().getPatientId() == null) {
+                continue;
+            }
+
+            Patient patient = eligibility.getPatient();
+            Integer patientId = patient.getPatientId();
+
+            if (processedPatientIds.contains(patientId)) {
+                continue;
+            }
+
+            String gender = patient.getGender();
+            if (gender == null || !"F".equalsIgnoreCase(gender.trim())) {
+                continue;
+            }
+            if (eligibility.getEncounterDatetime() == null) {
+                continue;
+            }
+
+            boolean pregnantOrBreastfeeding =
+                    EmrUtils.encounterThatPassCodedAnswer(eligibility, pregnantQstn, yes)
+                            || EmrUtils.encounterThatPassCodedAnswer(eligibility, breastfeedingQstn, yes);
+            if (!pregnantOrBreastfeeding) {
+                continue;
+            }
+
+            boolean isHighRisk =
+                    EmrUtils.encounterThatPassCodedAnswer(eligibility, htsScrRiskQstn, htsScrHighRiskResult)
+                            || EmrUtils.encounterThatPassCodedAnswer(eligibility, htsScrRiskQstn, htsScrHighestRiskResult);
+            if (!isHighRisk) {
+                continue;
+            }
+
+            // Enforce ordering + same 3-day window:
+            // 1) Eligibility screening is the anchor (must occur first)
+            // 2) HTS test and PrEP behavioral assessment must occur AFTER eligibility
+            // 3) All three must be within 3 days from eligibility (and within the global 72h window)
+            Date eligibilityDateTime = eligibility.getEncounterDatetime();
+            Date windowStart = eligibilityDateTime.before(threeDaysAgo) ? threeDaysAgo : eligibilityDateTime;
+            Date windowEnd = Date.from(eligibilityDateTime.toInstant().plus(3, java.time.temporal.ChronoUnit.DAYS));
+            if (windowEnd.after(now)) {
+                windowEnd = now;
+            }
+
+            Encounter latestTestInRange = latestWithin.apply(testsByPatientId.get(patientId), new Date[]{windowStart, windowEnd});
+            if (latestTestInRange == null || latestTestInRange.getEncounterDatetime() == null) {
+                continue;
+            }
+            if (latestTestInRange.getEncounterDatetime().before(eligibilityDateTime)) {
+                continue; // eligibility must be before HTS test
+            }
+            boolean testedNegative = EmrUtils.encounterThatPassCodedAnswer(latestTestInRange, htsFinalTestQuestion, htsNegativeResult);
+            if (!testedNegative) {
+                continue;
+            }
+
+            Encounter latestPrepRiskInRange = latestWithin.apply(prepRiskByPatientId.get(patientId), new Date[]{windowStart, windowEnd});
+            boolean consentedToPrep = latestPrepRiskInRange != null
+                    && latestPrepRiskInRange.getEncounterDatetime() != null
+                    && !latestPrepRiskInRange.getEncounterDatetime().before(eligibilityDateTime)
+                    && EmrUtils.encounterThatPassCodedAnswer(latestPrepRiskInRange, consentedToPrEPQstn, consentedToPrEPAnswer);
+            if (!consentedToPrep) {
+                continue;
+            }
+
+            result.add(mapToPregnantAndPostpartumAtHighRiskObject(eligibility, patient));
+            processedPatientIds.add(patientId);
         }
-        System.out.println("INFO - IL: Finished generating Pregnant and postpartum at high risk dataset: "+ result.size() + " records found");
+
+        System.out.println("INFO - IL: Finished generating Pregnant and postpartum at high risk dataset: " + result.size() + " records found");
         return result;
     }
 
+    /**
+     * Pregnant and postpartum patients at high risk linked to PrEP
+     * @param fetchDate
+     * @return
+     */
     public List<SimpleObject> pregnantAndPostpartumAtHighRiskLinkedToPrEP(Date fetchDate) {
         System.out.println("INFO - IL: Started generating Pregnant and postpartum at high risk linked to PrEP dataset... ");
         if (fetchDate == null) {
@@ -539,100 +754,253 @@ public class CaseSurveillanceDataExchange {
             throw new IllegalArgumentException("Fetch date cannot be in the future.");
         }
 
+        // PrEP eligibility window: ALL relevant encounters must have encounterDatetime within the last 72 hours
+        final Date now = new Date();
+        final Date threeDaysAgo = Date.from(java.time.Instant.now().minus(3, java.time.temporal.ChronoUnit.DAYS));
+
+        // Still honor incremental fetching, but don't go earlier than the PrEP window
+        final Date effectiveFromDate = fetchDate.after(threeDaysAgo) ? fetchDate : threeDaysAgo;
+
         List<SimpleObject> result = new ArrayList<>();
         ConceptService conceptService = Context.getConceptService();
         EncounterService encounterService = Context.getEncounterService();
 
-        // HTS Concepts
-        Concept htsEntryPointQstn = conceptService.getConcept(160540);
-        Concept htsEntryPointANC = conceptService.getConcept(160538);
-        Concept htsEntryPointMAT = conceptService.getConcept(160456);
-        Concept htsEntryPointPNC = conceptService.getConcept(1623);
-        Concept htsScrRiskQstn = conceptService.getConcept(167163);
-        Concept htsScrHighRiskResult = conceptService.getConcept(1408);
-        Concept htsScrHighestRiskResult = conceptService.getConcept(167164);
+        // ---- Concepts used to qualify the cohort (latest HTS eligibility + latest HTS test) ----
+        Concept pregnantQstn = conceptService.getConceptByUuid(Metadata.Concept.PREGNANCY_STATUS);
+        Concept breastfeedingQstn = conceptService.getConceptByUuid(Metadata.Concept.CURRENTLY_BREASTFEEDING);
+        Concept yes = conceptService.getConceptByUuid(Metadata.Concept.YES);
 
-        Concept htsEligibilityCurrentOnPrEPQstn = conceptService.getConcept(165203);
-        Concept htsEligibilityCurrentOnPrEPResult = Dictionary.getConcept(Dictionary.YES);
+        Concept htsScrRiskQstn = conceptService.getConcept(HTS_RISK_SCR_QSTN);
+        Concept htsScrHighRiskResult = conceptService.getConcept(HTS_HIGH_RISK_ANS);
+        Concept htsScrHighestRiskResult = conceptService.getConcept(HTS_HIGHEST_RISK_ANS);
 
         Concept htsFinalTestQuestion = conceptService.getConcept(HtsConstants.HTS_FINAL_TEST_CONCEPT_ID);
         Concept htsNegativeResult = conceptService.getConcept(HtsConstants.HTS_NEGATIVE_RESULT_CONCEPT_ID);
 
-        if (htsFinalTestQuestion == null || htsNegativeResult == null) {
-            log.error("Required HTS or PrEP concepts are missing");
+        // PrEP consent (from PrEP Risk Assessment)
+        Concept consentedToPrEPQstn = conceptService.getConcept(CONSENTED_TO_PREP_QSTN);
+        Concept consentedToPrEPAnswer = conceptService.getConceptByUuid(Metadata.Concept.YES);
+
+        if (pregnantQstn == null || breastfeedingQstn == null || yes == null
+                || htsScrRiskQstn == null || htsScrHighRiskResult == null || htsScrHighestRiskResult == null
+                || htsFinalTestQuestion == null || htsNegativeResult == null
+                || consentedToPrEPQstn == null || consentedToPrEPAnswer == null) {
+            log.error("Required concepts are missing; cannot build Pregnant and postpartum at high risk linked to PrEP dataset");
             return result;
         }
 
-        // Encounter Types
+        // ---- Metadata (forms/types) ----
         List<EncounterType> htsEncounterType = Collections.singletonList(
                 MetadataUtils.existing(EncounterType.class, CommonMetadata._EncounterType.HTS)
         );
-        List<EncounterType> prepInitialFUPEncounterType = Collections.singletonList(
-                MetadataUtils.existing(EncounterType.class, PrEP_INITIAl_FUP_ENCOUNTER)
-        );
-
-        List<Form> testingForms = Arrays.asList(
+        List<Form> htsTestingForms = Arrays.asList(
                 MetadataUtils.existing(Form.class, CommonMetadata._Form.HTS_INITIAL_TEST),
                 MetadataUtils.existing(Form.class, CommonMetadata._Form.HTS_CONFIRMATORY_TEST)
         );
-        Form prepInitialForm = MetadataUtils.existing(Form.class, PrEP_INITIAL_FORM);
         Form htsEligibilityForm = MetadataUtils.existing(Form.class, HTS_ELIGIBILITY_FORM);
 
-        // Pre-Fetch encounters
-        Map<Patient, List<Encounter>> htsScreeningEncountersMap = encounterService.getEncounters(
-                new EncounterSearchCriteria(null, null, fetchDate, null, null,
-                        Collections.singletonList(htsEligibilityForm), htsEncounterType, null, null, null, false)
-        ).stream().collect(Collectors.groupingBy(Encounter::getPatient));
+        // PrEP linkage encounters (what we are reporting on/after fetchDate, but still within the 72-hour window)
+        List<EncounterType> prepInitialFUPEncounterType = Collections.singletonList(
+                MetadataUtils.existing(EncounterType.class, PrEP_INITIAl_ENCOUNTER)
+        );
+        Form prepInitialForm = MetadataUtils.existing(Form.class, PrEP_INITIAL_FORM);
 
-        Map<Patient, List<Encounter>> htsTestEncountersMap = encounterService.getEncounters(
-                new EncounterSearchCriteria(null, null, fetchDate, null, null, testingForms, htsEncounterType, null, null, null, false)
-        ).stream().collect(Collectors.groupingBy(Encounter::getPatient));
+        // PrEP consent source
+        List<EncounterType> prepRiskAssessmentEncounterType = Collections.singletonList(
+                MetadataUtils.existing(EncounterType.class, PrEP_RISK_ASSESSMENT_ENCOUNTER_UUID)
+        );
+        Form prepRiskAssessmentForm = MetadataUtils.existing(Form.class, PrEP_RISK_ASSESSMENT_FORM_UUID);
 
-        Map<Patient, List<Encounter>> prepEncountersMap = encounterService.getEncounters(
-                new EncounterSearchCriteria(null, null, fetchDate, null, null,
-                        Collections.singletonList(MetadataUtils.existing(Form.class, PrEP_INITIAL_FORM)),
-                        prepInitialFUPEncounterType, null, null, null, false)
-        ).stream().collect(Collectors.groupingBy(Encounter::getPatient));
+        // ---- Pull PrEP linkages on/after effectiveFromDate and within the 72-hour window (driver set) ----
+        List<Encounter> prepLinkageEncounters = Optional.ofNullable(encounterService.getEncounters(
+                        new EncounterSearchCriteria(
+                                null, null, effectiveFromDate, null, null,
+                                Collections.singletonList(prepInitialForm),
+                                prepInitialFUPEncounterType,
+                                null, null, null,
+                                false
+                        )
+                )).orElse(Collections.emptyList()).stream()
+                .filter(e -> e != null && e.getEncounterDatetime() != null)
+                .filter(e -> !e.getEncounterDatetime().before(threeDaysAgo) && !e.getEncounterDatetime().after(now))
+                .collect(Collectors.toList());
+
+        if (prepLinkageEncounters.isEmpty()) {
+            System.out.println("INFO - IL: Finished generating Pregnant and postpartum at high risk linked to PrEP dataset: 0 records found");
+            return result;
+        }
+
+        // Keep only the latest linkage per patient (avoid duplicates if multiple PrEP encounters exist after fetchDate)
+        Map<Integer, Encounter> latestPrepLinkageByPatientId = new HashMap<>();
+        for (Encounter e : prepLinkageEncounters) {
+            if (e == null || e.getPatient() == null || e.getPatient().getPatientId() == null || e.getEncounterDatetime() == null) {
+                continue;
+            }
+            Integer pid = e.getPatient().getPatientId();
+            Encounter existing = latestPrepLinkageByPatientId.get(pid);
+
+            Date candidateDate = e.getEncounterDatetime();
+            Date existingDate = existing != null ? existing.getEncounterDatetime() : null;
+
+            if (existing == null || (candidateDate != null && (existingDate == null || candidateDate.after(existingDate)))) {
+                latestPrepLinkageByPatientId.put(pid, e);
+            }
+        }
+
+        if (latestPrepLinkageByPatientId.isEmpty()) {
+            System.out.println("INFO - IL: Finished generating Pregnant and postpartum at high risk linked to PrEP dataset: 0 records found");
+            return result;
+        }
+
+        // ---- Pull HTS eligibility + HTS tests + PrEP risk assessment within the same 72-hour window ----
+        // (We limit to effectiveFromDate to reduce load, since anything older is out of window anyway.)
+        List<Encounter> eligibilityEncounters = Optional.ofNullable(encounterService.getEncounters(
+                        new EncounterSearchCriteria(
+                                null, null, effectiveFromDate, null, null,
+                                Collections.singletonList(htsEligibilityForm),
+                                htsEncounterType,
+                                null, null, null,
+                                false
+                        )
+                )).orElse(Collections.emptyList()).stream()
+                .filter(e -> e != null && e.getEncounterDatetime() != null)
+                .filter(e -> !e.getEncounterDatetime().before(threeDaysAgo) && !e.getEncounterDatetime().after(now))
+                .collect(Collectors.toList());
+
+        List<Encounter> htsTestEncounters = Optional.ofNullable(encounterService.getEncounters(
+                        new EncounterSearchCriteria(
+                                null, null, effectiveFromDate, null, null,
+                                htsTestingForms,
+                                htsEncounterType,
+                                null, null, null,
+                                false
+                        )
+                )).orElse(Collections.emptyList()).stream()
+                .filter(e -> e != null && e.getEncounterDatetime() != null)
+                .filter(e -> !e.getEncounterDatetime().before(threeDaysAgo) && !e.getEncounterDatetime().after(now))
+                .collect(Collectors.toList());
+
+        List<Encounter> prepRiskAssessmentEncounters = Optional.ofNullable(encounterService.getEncounters(
+                        new EncounterSearchCriteria(
+                                null, null, effectiveFromDate, null, null,
+                                Collections.singletonList(prepRiskAssessmentForm),
+                                prepRiskAssessmentEncounterType,
+                                null, null, null,
+                                false
+                        )
+                )).orElse(Collections.emptyList()).stream()
+                .filter(e -> e != null && e.getEncounterDatetime() != null)
+                .filter(e -> !e.getEncounterDatetime().before(threeDaysAgo) && !e.getEncounterDatetime().after(now))
+                .collect(Collectors.toList());
+
+        Map<Integer, List<Encounter>> eligibilityByPatientId = eligibilityEncounters.stream()
+                .filter(e -> e.getPatient() != null && e.getPatient().getPatientId() != null)
+                .collect(Collectors.groupingBy(e -> e.getPatient().getPatientId()));
+
+        Map<Integer, List<Encounter>> htsTestsByPatientId = htsTestEncounters.stream()
+                .filter(e -> e.getPatient() != null && e.getPatient().getPatientId() != null)
+                .collect(Collectors.groupingBy(e -> e.getPatient().getPatientId()));
+
+        Map<Integer, List<Encounter>> prepRiskAssessmentByPatientId = prepRiskAssessmentEncounters.stream()
+                .filter(e -> e.getPatient() != null && e.getPatient().getPatientId() != null)
+                .collect(Collectors.groupingBy(e -> e.getPatient().getPatientId()));
 
         Set<Integer> processedPatientIds = new HashSet<>();
 
-        // Screening encounters
-        for (Map.Entry<Patient, List<Encounter>> entry : htsScreeningEncountersMap.entrySet()) {
-            Patient patient = entry.getKey();
-            if (patient == null || !"F".equals(patient.getGender()) || processedPatientIds.contains(patient.getId())) continue;
+        // ---- Build results: each record = PrEP linkage within window that occurs AFTER screening + test + risk assessment (also within window) ----
+        for (Map.Entry<Integer, Encounter> entry : latestPrepLinkageByPatientId.entrySet()) {
+            Integer patientId = entry.getKey();
+            Encounter prepLinkageEncounter = entry.getValue();
+            Patient patient = prepLinkageEncounter.getPatient();
 
-            for (Encounter screeningEncounter : entry.getValue()) {
-                // Check high-risk flags
-                boolean isHighRisk = EmrUtils.encounterThatPassCodedAnswer(screeningEncounter, htsScrRiskQstn, htsScrHighRiskResult)
-                        || EmrUtils.encounterThatPassCodedAnswer(screeningEncounter, htsScrRiskQstn, htsScrHighestRiskResult);
-                if (!isHighRisk) continue;
-
-                // Get all test encounters for patient
-                List<Encounter> testEncounters = htsTestEncountersMap.getOrDefault(patient, Collections.emptyList());
-
-                for (Encounter htsEncounter : testEncounters) {
-                    boolean testedNegative = EmrUtils.encounterThatPassCodedAnswer(htsEncounter, htsFinalTestQuestion, htsNegativeResult);
-                    boolean hasEntryPoint = EmrUtils.encounterThatPassCodedAnswer(htsEncounter, htsEntryPointQstn, htsEntryPointANC)
-                            || EmrUtils.encounterThatPassCodedAnswer(htsEncounter, htsEntryPointQstn, htsEntryPointMAT)
-                            || EmrUtils.encounterThatPassCodedAnswer(htsEncounter, htsEntryPointQstn, htsEntryPointPNC);
-                    if (!testedNegative || !hasEntryPoint) continue;
-
-                    // Check PrEP linkage (either currently on PrEP or has PrEP encounters)
-                    boolean isCurrentlyOnPrEP = EmrUtils.encounterThatPassCodedAnswer(screeningEncounter, htsEligibilityCurrentOnPrEPQstn, htsEligibilityCurrentOnPrEPResult);
-                    List<Encounter> prepEncounters = prepEncountersMap.getOrDefault(patient, Collections.emptyList());
-                    if (!isCurrentlyOnPrEP && prepEncounters.isEmpty()) continue;
-
-                    // Collect PrEP details
-                    String prepNumber = CaseSurveillanceUtils.getPrepNumber(patient);
-                    String prepRegimen = CaseSurveillanceUtils.getPrepRegimen(patient);
-
-                    result.add(mapToPregnantAndPostpartumAtHighRiskOnPrEPObject(htsEncounter, patient, prepNumber, prepRegimen));
-                    processedPatientIds.add(patient.getId());
-                    break;
-                }
+            if (patient == null || patient.getPatientId() == null) {
+                continue;
             }
+            if (processedPatientIds.contains(patientId)) {
+                continue;
+            }
+
+            String gender = patient.getGender();
+            if (gender == null || !"F".equalsIgnoreCase(gender.trim())) {
+                continue;
+            }
+
+            Date linkageDateTime = prepLinkageEncounter.getEncounterDatetime();
+            if (linkageDateTime == null) {
+                continue;
+            }
+
+            // Anchor on eligibility screening (must occur before HTS test), and enforce that:
+            // eligibility + HTS test + PrEP behavioral assessment happen within the SAME 3-day window.
+            Encounter latestEligibility = latestOnOrBefore(eligibilityByPatientId.get(patientId), linkageDateTime);
+            if (latestEligibility == null || latestEligibility.getEncounterDatetime() == null) {
+                continue;
+            }
+            Date eligibilityDateTime = latestEligibility.getEncounterDatetime();
+            if (linkageDateTime.before(eligibilityDateTime)) {
+                continue; // linkage must be after eligibility screening
+            }
+
+            boolean pregnantOrBreastfeeding =
+                    EmrUtils.encounterThatPassCodedAnswer(latestEligibility, pregnantQstn, yes)
+                            || EmrUtils.encounterThatPassCodedAnswer(latestEligibility, breastfeedingQstn, yes);
+            if (!pregnantOrBreastfeeding) {
+                continue;
+            }
+
+            boolean isHighRisk =
+                    EmrUtils.encounterThatPassCodedAnswer(latestEligibility, htsScrRiskQstn, htsScrHighRiskResult)
+                            || EmrUtils.encounterThatPassCodedAnswer(latestEligibility, htsScrRiskQstn, htsScrHighestRiskResult);
+            if (!isHighRisk) {
+                continue;
+            }
+
+            Date windowStart = eligibilityDateTime.before(threeDaysAgo) ? threeDaysAgo : eligibilityDateTime;
+            Date windowEnd = Date.from(eligibilityDateTime.toInstant().plus(3, java.time.temporal.ChronoUnit.DAYS));
+            if (windowEnd.after(linkageDateTime)) {
+                windowEnd = linkageDateTime; // everything must occur on/before linkage
+            }
+            if (windowEnd.after(now)) {
+                windowEnd = now;
+            }
+
+            // PrEP behavioral assessment must be AFTER eligibility and within the 3-day window
+            Encounter latestPrepRiskInWindow = latestWithin(prepRiskAssessmentByPatientId.get(patientId), windowStart, windowEnd);
+            if (latestPrepRiskInWindow == null || latestPrepRiskInWindow.getEncounterDatetime() == null) {
+                continue;
+            }
+            if (latestPrepRiskInWindow.getEncounterDatetime().before(eligibilityDateTime)) {
+                continue; // eligibility must be before behavioral assessment
+            }
+            boolean consentedToPrep = EmrUtils.encounterThatPassCodedAnswer(latestPrepRiskInWindow, consentedToPrEPQstn, consentedToPrEPAnswer);
+            if (!consentedToPrep) {
+                continue;
+            }
+
+            // HTS test must be AFTER eligibility and within the 3-day window
+            Encounter latestHtsTestInWindow = latestWithin(htsTestsByPatientId.get(patientId), windowStart, windowEnd);
+            if (latestHtsTestInWindow == null || latestHtsTestInWindow.getEncounterDatetime() == null) {
+                continue;
+            }
+            if (latestHtsTestInWindow.getEncounterDatetime().before(eligibilityDateTime)) {
+                continue; // eligibility must be before HTS test
+            }
+
+            // Latest test must be HIV negative
+            boolean testedNegative = EmrUtils.encounterThatPassCodedAnswer(latestHtsTestInWindow, htsFinalTestQuestion, htsNegativeResult);
+            if (!testedNegative) {
+                continue;
+            }
+
+            String prepNumber = CaseSurveillanceUtils.getPrepNumber(patient);
+            String prepRegimen = CaseSurveillanceUtils.getPrepRegimen(patient);
+
+            // Map using the PrEP linkage encounter (dataset is about the linkage event)
+            result.add(mapToPregnantAndPostpartumAtHighRiskOnPrEPObject(prepLinkageEncounter, patient, prepNumber, prepRegimen));
+            processedPatientIds.add(patientId);
         }
-        System.out.println("INFO - IL: Finished generating Pregnant and postpartum at high risk linked to PrEP dataset: "+ result.size() + " records found");
+
+        System.out.println("INFO - IL: Finished generating Pregnant and postpartum at high risk linked to PrEP dataset: " + result.size() + " records found");
         return result;
     }
     @SuppressWarnings("unchecked")
@@ -641,88 +1009,140 @@ public class CaseSurveillanceDataExchange {
         Session session = Context.getRegisteredComponent("sessionFactory", SessionFactory.class).getCurrentSession();
 
         String sql = "select e.patient_id,\n" +
-                "       b.pregnant,\n" +
-                "       b.breastFeedingStatus,\n" +
-                "       b.positiveHivTestDate,\n" +
-                "       b.visitDate,\n" +
-                "       b.artStartDate,\n" +
-                "       b.lastVlOrderDate,\n" +
-                "       b.lastVlResultsDate,\n" +
-                "       b.vlOrderReason,\n" +
-                "       b.dateCreated,\n" +
-                "       e.upn,\n" +
-                "       b.vlResult\n" +
+                "b.pregnant,\n" +
+                "b.breastFeedingStatus,\n" +
+                "b.positiveHivTestDate,\n" +
+                "b.visitDate,\n" +
+                "b.artStartDate,\n" +
+                "b.lastVlOrderDate,\n" +
+                "b.lastVlResultsDate,\n" +
+                "b.vlOrderReason,\n" +
+                "b.dateCreated,\n" +
+                "e.upn,\n" +
+                "b.vlResult\n" +
                 "from (select fup.visit_date,\n" +
-                "             fup.patient_id,\n" +
-                "             max(e.visit_date)                                                      as enroll_date,\n" +
-                "             greatest(max(fup.visit_date), ifnull(max(d.visit_date), '0000-00-00')) as latest_vis_date,\n" +
-                "             greatest(mid(max(concat(fup.visit_date, fup.next_appointment_date)), 11),\n" +
-                "                      ifnull(max(d.visit_date), '0000-00-00'))                      as latest_tca,\n" +
-                "             d.patient_id                                                           as disc_patient,\n" +
-                "             d.effective_disc_date                                                  as effective_disc_date,\n" +
-                "             max(d.visit_date)                                                      as date_discontinued,\n" +
-                "             de.patient_id                                                          as started_on_drugs,\n" +
-                "             p.unique_patient_no                                                    as upn\n" +
-                "      from kenyaemr_etl.etl_patient_hiv_followup fup\n" +
-                "               join kenyaemr_etl.etl_patient_demographics p on p.patient_id = fup.patient_id\n" +
-                "               join kenyaemr_etl.etl_hiv_enrollment e on fup.patient_id = e.patient_id\n" +
-                "               left join kenyaemr_etl.etl_drug_event de\n" +
-                "                         on e.patient_id = de.patient_id and de.program = 'HIV' and\n" +
-                "                            date(de.date_started) <= date(CURRENT_DATE)\n" +
-                "               left outer JOIN\n" +
-                "           (select patient_id,\n" +
-                "                   coalesce(date(effective_discontinuation_date), visit_date) visit_date,\n" +
-                "                   max(date(effective_discontinuation_date)) as               effective_disc_date\n" +
-                "            from kenyaemr_etl.etl_patient_program_discontinuation\n" +
-                "            where date(visit_date) <= date(CURRENT_DATE)\n" +
-                "              and program_name = 'HIV'\n" +
-                "            group by patient_id) d on d.patient_id = fup.patient_id\n" +
-                "      where fup.visit_date <= date(CURRENT_DATE)\n" +
-                "      group by patient_id\n" +
-                "      having (started_on_drugs is not null and started_on_drugs <> '')\n" +
-                "         and (\n" +
-                "          (\n" +
-                "              (timestampdiff(DAY, date(latest_tca), date(CURRENT_DATE)) <= 30 and\n" +
-                "               ((date(d.effective_disc_date) > date(CURRENT_DATE) or date(enroll_date) > date(d.effective_disc_date)) or\n" +
-                "                d.effective_disc_date is null))\n" +
-                "                  and\n" +
-                "              (date(latest_vis_date) >= date(date_discontinued) or date(latest_tca) >= date(date_discontinued) or\n" +
-                "               disc_patient is null)\n" +
-                "              )\n" +
-                "          )) e\n" +
-                "         INNER JOIN (select v.patient_id,case pregnancy_status when 1065 then 'YES' when 1066 then 'NO' end     as pregnant,\n" +
-                "                            case v.breastfeeding_status when 1065 then 'YES' when 1066 then 'NO' end as breastFeedingStatus,\n" +
-                "                            v.date_confirmed_hiv_positive                                            as positiveHivTestDate,\n" +
-                "                            v.latest_hiv_followup_visit                                              as visitDate,\n" +
-                "                            v.date_started_art                                                       as artStartDate,\n" +
-                "                            v.date_test_requested                                                    as lastVlOrderDate,\n" +
-                "                            v.date_test_result_received                                              as lastVlResultsDate,\n" +
-                "                            v.order_reason                                                           as vlOrderReason,\n" +
-                "                            v.date_created                                                           as dateCreated,\n" +
-                "                            v.vl_result                                                           as vlResult\n" +
-                "                     from kenyaemr_etl.etl_viral_load_validity_tracker v\n" +
-                "                              inner join kenyaemr_etl.etl_patient_demographics d on v.patient_id = d.patient_id\n" +
-                "                     where ((TIMESTAMPDIFF(MONTH, v.date_started_art, date(CURRENT_DATE)) >= 3 and\n" +
-                "                             v.base_viral_load_test_result is null) -- First VL new on ART+\n" +
-                "                         OR ((v.pregnancy_status = 1065 or v.breastfeeding_status = 1065) and\n" +
-                "                             TIMESTAMPDIFF(MONTH, v.date_started_art, date(CURRENT_DATE)) >= 3 and\n" +
-                "                             (v.vl_result is not null and\n" +
-                "                              v.date_test_requested < date(CURRENT_DATE)) and\n" +
-                "                             (v.order_reason not in (159882, 1434, 2001237, 163718))) -- immediate for PG & BF+\n" +
-                "                         OR (v.lab_test = 856 AND v.vl_result >= 200 AND\n" +
-                "                             TIMESTAMPDIFF(MONTH, v.date_test_requested, date(CURRENT_DATE)) >= 3) -- Unsuppressed VL+\n" +
-                "                         OR (((v.lab_test = 1305 AND v.vl_result = 1302) OR v.vl_result < 200) AND\n" +
-                "                             TIMESTAMPDIFF(MONTH, v.date_test_requested, date(CURRENT_DATE)) >= 6 and\n" +
-                "                             TIMESTAMPDIFF(YEAR, d.DOB, v.date_test_requested) BETWEEN 0 AND 24) -- 0-24 with last suppressed vl+\n" +
-                "                         OR (((v.lab_test = 1305 AND v.vl_result = 1302) OR v.vl_result < 200) AND\n" +
-                "                             TIMESTAMPDIFF(MONTH, v.date_test_requested, date(CURRENT_DATE)) >= 12 and\n" +
-                "                             TIMESTAMPDIFF(YEAR, d.DOB, v.date_test_requested) > 24) -- > 24 with last suppressed vl+\n" +
-                "                         OR ((v.pregnancy_status = 1065 or v.breastfeeding_status = 1065) and\n" +
-                "                             TIMESTAMPDIFF(MONTH, v.date_started_art, date(CURRENT_DATE)) >= 3\n" +
-                "                             and (v.order_reason in (159882, 1434, 2001237, 163718) and\n" +
-                "                                  TIMESTAMPDIFF(MONTH, v.date_test_requested, date(CURRENT_DATE)) >= 6) and\n" +
-                "                             ((v.lab_test = 1305 AND v.vl_result = 1302) OR (v.vl_result < 200))) -- PG & BF after PG/BF baseline < 200\n" +
-                "                               )) b on e.patient_id = b.patient_id;";
+                " fup.patient_id,\n" +
+                " max(e.visit_date)                                                      as enroll_date,\n" +
+                " greatest(max(fup.visit_date), ifnull(max(d.visit_date), '0000-00-00')) as latest_vis_date,\n" +
+                " greatest(mid(max(concat(fup.visit_date, fup.next_appointment_date)), 11),\n" +
+                "          ifnull(max(d.visit_date), '0000-00-00'))                      as latest_tca,\n" +
+                " d.patient_id                                                           as disc_patient,\n" +
+                " d.effective_disc_date                                                  as effective_disc_date,\n" +
+                " max(d.visit_date)                                                      as date_discontinued,\n" +
+                " de.patient_id                                                          as started_on_drugs,\n" +
+                " p.unique_patient_no                                                    as upn\n" +
+                "from kenyaemr_etl.etl_patient_hiv_followup fup\n" +
+                "   join kenyaemr_etl.etl_patient_demographics p on p.patient_id = fup.patient_id\n" +
+                "   join kenyaemr_etl.etl_hiv_enrollment e on fup.patient_id = e.patient_id\n" +
+                "   left join kenyaemr_etl.etl_drug_event de\n" +
+                "             on e.patient_id = de.patient_id and de.program = 'HIV' and\n" +
+                "                date(de.date_started) <= date(CURRENT_DATE)\n" +
+                "   left outer JOIN\n" +
+                "(select patient_id,\n" +
+                "       coalesce(date(effective_discontinuation_date), visit_date) visit_date,\n" +
+                "       max(date(effective_discontinuation_date)) as               effective_disc_date\n" +
+                "from kenyaemr_etl.etl_patient_program_discontinuation\n" +
+                "where date(visit_date) <= date(CURRENT_DATE)\n" +
+                "  and program_name = 'HIV'\n" +
+                "group by patient_id) d on d.patient_id = fup.patient_id\n" +
+                "where fup.visit_date <= date(CURRENT_DATE)\n" +
+                "group by patient_id\n" +
+                "having (started_on_drugs is not null and started_on_drugs <> '')\n" +
+                "and (\n" +
+                "(\n" +
+                "  (timestampdiff(DAY, date(latest_tca), date(CURRENT_DATE)) <= 30 and\n" +
+                "   ((date(d.effective_disc_date) > date(CURRENT_DATE) or date(enroll_date) > date(d.effective_disc_date)) or\n" +
+                "    d.effective_disc_date is null))\n" +
+                "      and\n" +
+                "  (date(latest_vis_date) >= date(date_discontinued) or date(latest_tca) >= date(date_discontinued) or\n" +
+                "   disc_patient is null)\n" +
+                "  )\n" +
+                ")) e\n" +
+                "INNER JOIN (SELECT t.patient_id,\n" +
+                "                case t.pregnancy_status when 1065 then 'YES' when 1066 then 'NO' end     as pregnant,\n" +
+                "                case t.breastfeeding_status when 1065 then 'YES' when 1066 then 'NO' end as breastFeedingStatus,\n" +
+                "                t.date_confirmed_hiv_positive                                            as positiveHivTestDate,\n" +
+                "                t.latest_hiv_followup_visit                                              as visitDate,\n" +
+                "                t.date_started_art                                                       as artStartDate,\n" +
+                "                t.date_test_requested                                                    as lastVlOrderDate,\n" +
+                "                t.date_test_result_received                                              as lastVlResultsDate,\n" +
+                "                t.order_reason                                                           as vlOrderReason,\n" +
+                "                t.date_created                                                           as dateCreated,\n" +
+                "                t.vl_result                                                              as vlResult\n" +
+                "         FROM (SELECT v.*,\n" +
+                "                      d.DOB,\n" +
+                "                      -- Substitution Logic: If current is null and requested is later than base/previous, use previous\n" +
+                "                      IF(\n" +
+                "                              v.vl_result IS NULL\n" +
+                "                                  AND v.date_test_result_received IS NULL\n" +
+                "                                  AND v.date_test_requested >\n" +
+                "                                      GREATEST(COALESCE(v.base_viral_load_test_date, '1900-01-01'),\n" +
+                "                                          COALESCE(v.previous_date_test_requested, '1900-01-01')\n" +
+                "                                      ),\n" +
+                "                              v.previous_test_result,\n" +
+                "                              v.vl_result\n" +
+                "                      ) AS effective_vl_result,\n" +
+                "                      IF(\n" +
+                "                              v.vl_result IS NULL\n" +
+                "                                  AND v.date_test_result_received IS NULL\n" +
+                "                                  AND v.date_test_requested >\n" +
+                "                                      GREATEST(COALESCE(v.base_viral_load_test_date, '1900-01-01'),\n" +
+                "                                             COALESCE(v.previous_date_test_requested, '1900-01-01')\n" +
+                "                                      ),\n" +
+                "                              v.previous_date_test_requested,\n" +
+                "                              v.date_test_requested\n" +
+                "                      ) AS effective_date_requested\n" +
+                "               FROM kenyaemr_etl.etl_viral_load_validity_tracker v\n" +
+                "                        INNER JOIN kenyaemr_etl.etl_patient_demographics d\n" +
+                "                                   ON v.patient_id = d.patient_id\n" +
+                "               WHERE v.date_test_requested <= CURRENT_DATE) t\n" +
+                "         WHERE (\n" +
+                "             (TIMESTAMPDIFF(MONTH, t.date_started_art, CURRENT_DATE) >= 3 AND\n" +
+                "              t.base_viral_load_test_result IS NULL) -- First VL new on ART\n" +
+                "                 OR\n" +
+                "             (\n" +
+                "                 (t.pregnancy_status = 1065 OR t.breastfeeding_status = 1065)\n" +
+                "                     AND TIMESTAMPDIFF(MONTH, t.date_started_art, CURRENT_DATE) >= 3\n" +
+                "                     AND\n" +
+                "                 (t.effective_vl_result IS NOT NULL AND t.effective_date_requested < CURRENT_DATE)\n" +
+                "                     AND (t.order_reason NOT IN (159882, 1434, 2001237, 163718))\n" +
+                "                 )\n" +
+                "                 OR\n" +
+                "             (\n" +
+                "                 t.lab_test = 856 AND t.effective_vl_result >= 200\n" +
+                "                     AND TIMESTAMPDIFF(MONTH, t.effective_date_requested, CURRENT_DATE) >= 3\n" +
+                "                 )\n" +
+                "                 OR\n" +
+                "             (\n" +
+                "                 ((t.lab_test = 1305 AND t.effective_vl_result = 1302) OR t.effective_vl_result < 200)\n" +
+                "                     AND TIMESTAMPDIFF(MONTH, t.effective_date_requested, CURRENT_DATE) >= 6\n" +
+                "                     AND TIMESTAMPDIFF(YEAR, t.DOB, t.effective_date_requested) BETWEEN 0 AND 24\n" +
+                "                 )\n" +
+                "                 OR\n" +
+                "             (\n" +
+                "                 ((t.lab_test = 1305 AND t.effective_vl_result = 1302) OR t.effective_vl_result < 200)\n" +
+                "                     AND TIMESTAMPDIFF(MONTH, t.effective_date_requested, CURRENT_DATE) >= 12\n" +
+                "                     AND TIMESTAMPDIFF(YEAR, t.DOB, t.effective_date_requested) > 24\n" +
+                "                 )\n" +
+                "                 OR\n" +
+                "             (\n" +
+                "                 (t.pregnancy_status = 1065 OR t.breastfeeding_status = 1065)\n" +
+                "                     AND TIMESTAMPDIFF(MONTH, t.date_started_art, CURRENT_DATE) >= 3\n" +
+                "                     AND (\n" +
+                "                     t.order_reason IN (159882, 1434, 2001237, 163718)\n" +
+                "                         AND TIMESTAMPDIFF(MONTH, t.effective_date_requested, CURRENT_DATE) >= 6\n" +
+                "                     )\n" +
+                "                     AND ((t.lab_test = 1305 AND t.effective_vl_result = 1302) OR\n" +
+                "                          (t.effective_vl_result < 200))\n" +
+                "                 )\n" +
+                "             )\n" +
+                "           AND NOT (\n" +
+                "             t.vl_result IS NULL\n" +
+                "                 AND t.date_test_result_received IS NULL\n" +
+                "                 AND t.base_viral_load_test_result IS NULL\n" +
+                "                 AND t.previous_test_result IS NULL\n" +
+                "             )) b on e.patient_id = b.patient_id\n" +
+                "group by b.patient_id;\n";
 
         List<Object[]> rows = session.createSQLQuery(sql)
                 .list();
@@ -813,7 +1233,6 @@ public class CaseSurveillanceDataExchange {
      *
      * @return
      */
-    //todo Confirm whether transmission is cumulative
     public List<SimpleObject> totalHEI() {
         System.out.println("INFO - IL: Started generating all HEIs dataset... ");
         Date effectiveDate = Date.from(LocalDate.now().minusMonths(24).withDayOfMonth(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
@@ -834,7 +1253,6 @@ public class CaseSurveillanceDataExchange {
         if (!heiEncounters.isEmpty()) {
             for (Encounter heiEncounter : heiEncounters) {
                 Patient patient = heiEncounter.getPatient();
-
                 String heiNumber = getHEINumber(patient);
                 if (patient.getBirthdate() != null && patient.getBirthdate().compareTo(effectiveDate) >= 0 && heiNumber != null) {
                     result.add(mapToHEIObject(heiEncounter, patient, heiNumber));
@@ -881,7 +1299,6 @@ public class CaseSurveillanceDataExchange {
         System.out.println("INFO - IL: Finished generating HEI without DNA PCR test dataset: "+ result.size() + " records found");
         return result;
     }
-
 
     /** HEIs without documented final Outcome
      * @param fetchDate
@@ -942,7 +1359,340 @@ public class CaseSurveillanceDataExchange {
         System.out.println("INFO - IL: Finished generating HEI without final outcome dataset: "+ result.size() + " records found");
         return result;
     }
+    /**
+     * Patients who have died since the last fetch date (mortality)
+     */
+    public List<SimpleObject> mortality(Date fetchDate) {
+        System.out.println("INFO - IL: Started generating mortality dataset... ");
+        if (fetchDate == null) {
+            throw new IllegalArgumentException("Fetch date cannot be null");
+        }
+        if (fetchDate.after(new Date())) {
+            throw new IllegalArgumentException("Fetch date cannot be in the future.");
+        }
 
+        List<SimpleObject> result = new ArrayList<>();
+        EncounterService encounterService = Context.getEncounterService();
+        PersonService personService = Context.getPersonService();
+
+        // Discontinuation forms where death details may be captured as Obs
+        List<Form> discForms = Arrays.asList(
+                MetadataUtils.existing(Form.class, HivMetadata._Form.HIV_DISCONTINUATION),
+                MetadataUtils.existing(Form.class, MchMetadata._Form.MCHCS_DISCONTINUATION),
+                MetadataUtils.existing(Form.class, MchMetadata._Form.MCHMS_DISCONTINUATION),
+                MetadataUtils.existing(Form.class, MchMetadata._Form.MCHCS_HEI_COMPLETION),
+                MetadataUtils.existing(Form.class, OTZMetadata._Form.OTZ_DISCONTINUATION_FORM)
+        );
+
+        // Pull discontinuation encounters since fetchDate (source for death obs)
+        List<Encounter> discontinuationEncounters = Optional.ofNullable(
+                encounterService.getEncounters(null, null, fetchDate, null, discForms, null, null, null, null, false)
+        ).orElse(Collections.emptyList());
+
+        // Dedupe: one record per patient
+        Set<Integer> processedPatientIds = new HashSet<>();
+
+        // 1) Prefer Obs-derived death details from discontinuation encounters
+        for (Encounter encounter : discontinuationEncounters) {
+            if (encounter == null || encounter.getPatient() == null || encounter.getPatient().getPatientId() == null) {
+                continue;
+            }
+
+            Patient patient = encounter.getPatient();
+            Integer patientId = patient.getPatientId();
+            if (processedPatientIds.contains(patientId)) {
+                continue;
+            }
+
+            Date obsDeathDate = null;
+            String obsCauseOfDeath = null;
+
+            for (Obs ob : Optional.ofNullable(encounter.getObs()).orElse(Collections.emptySet())) {
+                if (ob == null || ob.getConcept() == null || ob.getConcept().getUuid() == null) {
+                    continue;
+                }
+                int conceptId = ob.getConcept().getConceptId();
+
+                if (DEATH_DATE.equals(conceptId)) {
+                    Date candidate = (ob.getValueDatetime() != null) ? ob.getValueDatetime() : ob.getObsDatetime();
+                    if (candidate != null && (obsDeathDate == null || candidate.after(obsDeathDate))) {
+                        obsDeathDate = candidate;
+                    }
+                } else if (CAUSE_OF_DEATH.equals(conceptId)) {
+                    if (ob.getValueCoded() != null && ob.getValueCoded().getName() != null) {
+                        obsCauseOfDeath = ob.getValueCoded().getName().getName();
+                    }
+                }
+            }
+
+            // qualify only those who died since fetchDate
+            if (obsDeathDate == null || obsDeathDate.before(fetchDate)) {
+                continue;
+            }
+
+            result.add(mapToMortalityObject(
+                    patient,
+                    encounter.getDateCreated(),
+                    encounter.getDateChanged(),
+                    obsDeathDate,
+                    obsCauseOfDeath
+            ));
+            processedPatientIds.add(patientId);
+        }
+
+        // 2) Add remaining deceased persons from Person.deathDate / Person.causeOfDeath
+        List<Person> deceasedPersons = Optional.ofNullable(personService.getPeople("", true)).orElse(Collections.emptyList());
+        for (Person person : deceasedPersons) {
+            if (person == null || person.getDeathDate() == null) {
+                continue;
+            }
+            if (person.getDeathDate().before(fetchDate)) {
+                continue;
+            }
+            if (!(person instanceof Patient)) {
+                continue;
+            }
+
+            Patient patient = (Patient) person;
+            if (patient.getPatientId() == null) {
+                continue;
+            }
+
+            Integer patientId = patient.getPatientId();
+            if (processedPatientIds.contains(patientId)) {
+                continue;
+            }
+
+            String causeOfDeath = null;
+            if (person.getCauseOfDeath() != null && person.getCauseOfDeath().getName() != null) {
+                causeOfDeath = person.getCauseOfDeath().getName().getName();
+            }
+
+            result.add(mapToMortalityObject(
+                    patient,
+                    patient.getDateCreated(),
+                    patient.getDateChanged(),
+                    person.getDeathDate(),
+                    causeOfDeath
+            ));
+            processedPatientIds.add(patientId);
+        }
+
+        System.out.println("INFO - IL: Finished generating mortality dataset: " + result.size() + " records found");
+        return result;
+    }
+
+    /**
+     *
+     * @param fetchDate
+     * @return
+     */
+    public List<SimpleObject> prEPUptake(Date fetchDate) {
+        System.out.println("INFO - IL: Started generating PrEP uptake dataset... ");
+        if (fetchDate == null) {
+            throw new IllegalArgumentException("Fetch date cannot be null");
+        }
+        final Date effectiveFromDate = aMomentBefore(fetchDate);
+
+        EncounterService encounterService = Context.getEncounterService();
+        List<SimpleObject> result = new ArrayList<>();
+
+        // --- Metadata (resolve once) ---
+        Form prepEnrollmentForm = MetadataUtils.existing(Form.class, PREP_ENROLLMENT_FORM);
+        Form prepInitiationForm = MetadataUtils.existing(Form.class, PREP_INITIATION_FORM);
+
+        EncounterType prepEnrollmentEncounterType =
+                MetadataUtils.existing(EncounterType.class, PREP_ENROLLMENT_ENC_TYPE);
+
+        Form prepInitialForm = MetadataUtils.existing(Form.class, PrEP_INITIAL_FORM);
+        EncounterType prepInitialEncounterType =
+                MetadataUtils.existing(EncounterType.class, PrEP_INITIAl_ENCOUNTER);
+
+        List<Form> prepVisitForms = Arrays.asList(
+                MetadataUtils.existing(Form.class, PrEP_FOLLOWUP_FORM),
+                MetadataUtils.existing(Form.class, PrEP_REFILL_FORM)
+        );
+        List<EncounterType> prepVisitEncounterTypes = Arrays.asList(
+                MetadataUtils.existing(EncounterType.class, PrEP_FOLLOWUP_ENCOUNTER_TYPE),
+                MetadataUtils.existing(EncounterType.class, PrEP_REFILL_ENCOUNTER_TYPE)
+        );
+
+        // Enrollment-related forms
+        List<Form> prepEnrollmentForms = Arrays.asList(prepEnrollmentForm, prepInitiationForm);
+
+        // Pull relevant encounters since last fetch (driver set)
+        List<Encounter> enrollmentSinceFetch = Optional.ofNullable(encounterService.getEncounters(
+                new EncounterSearchCriteria(
+                        null, null, effectiveFromDate, null, null,
+                        prepEnrollmentForms,
+                        Collections.singleton(prepEnrollmentEncounterType),
+                        null, null, null,
+                        false
+                ))).orElse(Collections.emptyList());
+
+        List<Encounter> initialsSinceFetch = Optional.ofNullable(encounterService.getEncounters(
+                new EncounterSearchCriteria(
+                        null, null, effectiveFromDate, null, null,
+                        Collections.singletonList(prepInitialForm),
+                        Collections.singleton(prepInitialEncounterType),
+                        null, null, null,
+                        false
+                ))).orElse(Collections.emptyList());
+
+        List<Encounter> followupsAndRefillsSinceFetch = Optional.ofNullable(encounterService.getEncounters(
+                new EncounterSearchCriteria(
+                        null, null, effectiveFromDate, null, null,
+                        prepVisitForms,
+                        prepVisitEncounterTypes,
+                        null, null, null,
+                        false
+                ))).orElse(Collections.emptyList());
+
+        // Latest SINCE fetch per patient
+        Map<Integer, Encounter> latestEnrollmentSinceFetchByPatientId = new HashMap<>();
+        Map<Integer, Encounter> latestInitialSinceFetchByPatientId = new HashMap<>();
+        Map<Integer, Encounter> latestVisitSinceFetchByPatientId = new HashMap<>();
+
+        for (Encounter e : enrollmentSinceFetch) {
+            mergeLatest(latestEnrollmentSinceFetchByPatientId, e);
+        }
+        for (Encounter e : initialsSinceFetch) {
+            mergeLatest(latestInitialSinceFetchByPatientId, e);
+        }
+        for (Encounter e : followupsAndRefillsSinceFetch) {
+            mergeLatest(latestVisitSinceFetchByPatientId, e);
+        }
+
+        // Cohort = union of keys across the three maps
+        Set<Integer> patientIds = new HashSet<>();
+        patientIds.addAll(latestEnrollmentSinceFetchByPatientId.keySet());
+        patientIds.addAll(latestInitialSinceFetchByPatientId.keySet());
+        patientIds.addAll(latestVisitSinceFetchByPatientId.keySet());
+
+        if (patientIds.isEmpty()) {
+            System.out.println("INFO - IL: Finished generating PrEP uptake dataset: 0 records found");
+            return result;
+        }
+
+        for (Integer patientId : patientIds) {
+            if (patientId == null) {
+                continue;
+            }
+
+            Encounter latestSinceFetch = latestOf(
+                    latestOf(
+                            latestFromMap(latestEnrollmentSinceFetchByPatientId, patientId),
+                            latestFromMap(latestInitialSinceFetchByPatientId, patientId)
+                    ),
+                    latestFromMap(latestVisitSinceFetchByPatientId, patientId)
+            );
+
+            if (latestSinceFetch == null || latestSinceFetch.getEncounterDatetime() == null) {
+                continue;
+            }
+            if (latestSinceFetch.getEncounterDatetime().before(fetchDate)) {
+                continue;
+            }
+
+            Patient patient = latestSinceFetch.getPatient();
+            if (patient == null) {
+                continue;
+            }
+
+            List<Encounter> patientEnrollments = encounterService.getEncounters(
+                    patient, null, null, null,
+                    prepEnrollmentForms,
+                    Collections.singleton(prepEnrollmentEncounterType),
+                    null, null, null,
+                    false
+            );
+
+            if (patientEnrollments == null || patientEnrollments.isEmpty()) {
+                continue;
+            }
+
+            Encounter latestEnrollmentAllTime = CaseSurveillanceUtils.getLatestEncounter(patientEnrollments);
+            if (latestEnrollmentAllTime == null || latestEnrollmentAllTime.getEncounterDatetime() == null) {
+                continue;
+            }
+
+            Date prepStartDate = computePrepStartDateFromEnrollmentEncounters(patientEnrollments);
+            if (prepStartDate == null) {
+                prepStartDate = latestEnrollmentAllTime.getEncounterDatetime();
+            }
+
+            List<Encounter> patientInitials = encounterService.getEncounters(
+                    patient, null, null, null,
+                    Collections.singletonList(prepInitialForm),
+                    Collections.singleton(prepInitialEncounterType),
+                    null, null, null,
+                    false
+            );
+            Encounter latestInitialAllTime = CaseSurveillanceUtils.getLatestEncounter(patientInitials);
+
+            Encounter latestInitialSinceFetch = latestFromMap(latestInitialSinceFetchByPatientId, patientId);
+            Encounter latestVisitSinceFetch = latestFromMap(latestVisitSinceFetchByPatientId, patientId);
+            Encounter latestClinicalTouchpointSinceFetch = latestOf(latestInitialSinceFetch, latestVisitSinceFetch);
+            Encounter enrollmentSince = latestFromMap(latestEnrollmentSinceFetchByPatientId, patientId);
+            Encounter sourceEncounter = (latestClinicalTouchpointSinceFetch != null)
+                    ? latestClinicalTouchpointSinceFetch
+                    : (enrollmentSince != null ? enrollmentSince : latestEnrollmentAllTime);
+
+            Encounter initialForReason = (latestInitialSinceFetch != null) ? latestInitialSinceFetch : latestInitialAllTime;
+
+            String prepStatus = firstNonBlank(
+                    getCodedValue(sourceEncounter, PrEP_STATUS),
+                    getCodedValue(latestEnrollmentAllTime, PrEP_STATUS)
+            );
+
+            String reasonForSwitching = firstNonBlank(
+                    getCodedValue(sourceEncounter, REASON_FOR_SWITCHING_PrEP),
+                    getCodedValue(latestEnrollmentAllTime, REASON_FOR_SWITCHING_PrEP),
+                    (latestInitialAllTime != null ? getCodedValue(latestInitialAllTime, REASON_FOR_SWITCHING_PrEP) : null)
+            );
+
+            Date dateSwitchedPrep = firstNonNull(
+                    CaseSurveillanceUtils.getDateValue(sourceEncounter, DATE_SWITCHED_PrEP),
+                    CaseSurveillanceUtils.getDateValue(latestEnrollmentAllTime, DATE_SWITCHED_PrEP),
+                    (latestInitialAllTime != null ? CaseSurveillanceUtils.getDateValue(latestInitialAllTime, DATE_SWITCHED_PrEP) : null)
+            );
+
+            String prepMethod = firstNonBlank(
+                    getCodedValue(sourceEncounter, TYPE_OF_PrEP),
+                    getCodedValue(latestEnrollmentAllTime, TYPE_OF_PrEP),
+                    (latestInitialAllTime != null ? getCodedValue(latestInitialAllTime, TYPE_OF_PrEP) : null)
+            );
+
+            String prepRegimen = firstNonBlank(
+                    getCodedValue(sourceEncounter, PrEP_REGIMEN),
+                    getCodedValue(latestEnrollmentAllTime, PrEP_REGIMEN),
+                    (latestInitialAllTime != null ? getCodedValue(latestInitialAllTime, PrEP_REGIMEN) : null)
+            );
+
+            String reasonForStartingPrep = CaseSurveillanceUtils.getCodedValue(
+                    initialForReason,
+                    REASON_FOR_STARTING_PrEP
+            );
+            if (prepStartDate == null) {
+                prepStartDate = latestEnrollmentAllTime.getEncounterDatetime();
+            }
+            result.add(mapToPrEPUptakeObject(
+                    latestSinceFetch,
+                    patient,
+                    getPrepNumber(patient),
+                    prepMethod,
+                    prepStartDate,
+                    prepStatus,
+                    reasonForStartingPrep,
+                    reasonForSwitching,
+                    dateSwitchedPrep,
+                    prepRegimen
+            ));
+        }
+
+        System.out.println("INFO-IL: Finished generating PrEP uptake dataset...");
+        return result;
+    }
     /**
      * Generates the case surveillance payload for visualization metrics.
      */
@@ -982,6 +1732,7 @@ public class CaseSurveillanceDataExchange {
         for (SimpleObject hei : allHEI) {
             payload.add(mapToDatasetStructure(hei, "hei_at_6_to_8_weeks"));
         }
+
         //HEI Without DNA PCR
         List<SimpleObject> dnaPCRResults = heiWithoutDnaPCRResults();
         for (SimpleObject heiWithoutDnaPcr : dnaPCRResults) {
@@ -1001,6 +1752,16 @@ public class CaseSurveillanceDataExchange {
         List<SimpleObject> eligibleForVl = eligibleForVl();
         for (SimpleObject eligibleForVlVariables : eligibleForVl) {
             payload.add(mapToDatasetStructure(eligibleForVlVariables, "eligible_for_vl"));
+        }
+        // Mortality
+        List<SimpleObject> mortality = mortality(fetchDate);
+        for (SimpleObject death : mortality) {
+            payload.add(mapToDatasetStructure(death, "mortality"));
+        }
+
+        List<SimpleObject> prepUptake = prEPUptake(fetchDate);
+        for (SimpleObject prep : prepUptake) {
+            payload.add(mapToDatasetStructure(prep, "prep_uptake"));
         }
         return payload;
     }
@@ -1026,6 +1787,9 @@ public class CaseSurveillanceDataExchange {
             return result;
         }
 
+        Integer patientId = getIntegerValue.apply("patientId");
+        String shaNumber = CaseSurveillanceUtils.resolveShaNumber(patientId);
+
         // Populate client details
         client.put("county", getStringValue.apply("county"));
         client.put("subCounty", getStringValue.apply("subCounty"));
@@ -1033,6 +1797,7 @@ public class CaseSurveillanceDataExchange {
         client.put("patientPk", getIntegerValue.apply("patientId"));
         client.put("sex", getStringValue.apply("sex"));
         client.put("dob", getStringValue.apply("dob"));
+        client.put("shaNumber", shaNumber);
 
         // Populate event details
         event.put("mflCode", getIntegerValue.apply("mflCode"));
@@ -1051,6 +1816,7 @@ public class CaseSurveillanceDataExchange {
             event.put("positiveHivTestDate", getStringValue.apply("positiveHivTestDate"));
         } else if ("prep_linked_at_risk_pbfw".equals(eventType)) {
             event.put("prepNumber", getStringValue.apply("prepNumber"));
+
             event.put("prepRegimen", getStringValue.apply("prepRegimen"));
             event.put("prepStartDate", getStringValue.apply("prepStartDate"));
         } else if ("eligible_for_vl".equals(eventType)) {
@@ -1065,6 +1831,18 @@ public class CaseSurveillanceDataExchange {
             }
         } else if ("hei_at_6_to_8_weeks".equals(eventType) || "hei_without_pcr".equals(eventType) || "hei_without_final_outcome".equals(eventType)) {
             event.put("heiId", getStringValue.apply("heiId"));
+        } else if ("mortality".equals(eventType)) {
+            event.put("deathDate", getStringValue.apply("deathDate"));
+            event.put("causeOfDeath", getStringValue.apply("causeOfDeath"));
+        } else if ("prep_uptake".equals(eventType)) {
+            event.put("prepNumber", getStringValue.apply("prepNumber"));
+            event.put("prepStartDate", getStringValue.apply("prepStartDate"));
+            event.put("prepStatus", getStringValue.apply("prepStatus"));
+            event.put("reasonForStartingPrep", getStringValue.apply("reasonForStartingPrep"));
+            event.put("reasonForSwitchingPrep", getStringValue.apply("reasonForSwitchingPrep"));
+            event.put("dateSwitchedPrep", getStringValue.apply("dateSwitchedPrep"));
+            event.put("prepType", getStringValue.apply("prepType"));
+            event.put("prepRegimen", getStringValue.apply("prepRegimen"));
         }
         // Combine client and event with eventType
         Map<String, Object> result = new HashMap<>();
@@ -1107,7 +1885,6 @@ public class CaseSurveillanceDataExchange {
 
             putRequest.setEntity(new StringEntity(payloadJson, StandardCharsets.UTF_8));
 
-
             // Execute the PUT request
             try (CloseableHttpResponse response = httpClient.execute(putRequest)) {
                 int statusCode = response.getStatusLine().getStatusCode();
@@ -1147,6 +1924,7 @@ public class CaseSurveillanceDataExchange {
             return ("No case surveillance data to send at " + fetchDate);
         }
         System.out.println("Case surveillance Payload size: " + jsonPayload.getBytes(StandardCharsets.UTF_8).length + " bytes");
+        System.out.println("Case surveillance Payload: " + jsonPayload);
         return sendCaseSurveillancePayload(payload);
     }
 

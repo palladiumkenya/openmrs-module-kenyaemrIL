@@ -60,6 +60,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.openmrs.module.kenyaemrIL.visualizationMetrics.VisualizationUtils.mapToBreakdownList;
+import static org.openmrs.module.kenyaemrIL.visualizationMetrics.VisualizationUtils.nullIfBlank;
 
 public class VisualizationDataExchange {
 
@@ -124,17 +125,8 @@ public class VisualizationDataExchange {
         System.out.println("KenyaEMR IL: Visualization: generating Visualization data started for mfl_code "+facilityMfl+" since "+fetchDate+ "at "+new Date());
 		try {
             System.out.println("KenyaEMR IL: Visualization: Generating bed management data...");
-			if (bedManagement.size() > 0) {
-				SimpleObject bedManagementObject = new SimpleObject();
-				bedManagementObject.put("ward", "");
-				bedManagementObject.put("capacity", "");
-				bedManagementObject.put("occupancy", "");
-				bedManagementObject.put("new_admissions", "");
-				bedManagement.add(bedManagementObject);
-				payloadObj.put("bed_management", bedManagement);
-			} else {
-				payloadObj.put("bed_management", bedManagement);
-			}
+			bedManagement = getBedManagement(fetchDate);
+			payloadObj.put("bed_management", bedManagement);
             System.out.println("KenyaEMR IL: Visualization: Finished generating bed management data.");
 		} catch(Exception ex) {
             System.err.println("KenyaEMR IL:Visualization: Error generating bed management data: "+ ex.getMessage()+":"+ ex);
@@ -662,12 +654,12 @@ public class VisualizationDataExchange {
         DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
 
         final String sqlSelectQuery = "SELECT\n" +
-                "    GROUP_CONCAT(cn.name) AS diagnosis_name,\n" +
+                "    cn.name AS diagnosis_name,\n" +
                 "    COUNT(*) AS total\n" +
                 "FROM (\n" +
                 "         SELECT encounter_id, MAX(dx_rank) AS chosen_idx_rank\n" +
                 "         FROM encounter_diagnosis\n" +
-                "         WHERE dx_rank IN (1,2)\n" +
+                "         WHERE dx_rank = 2\n" +
                 "         GROUP BY encounter_id\n" +
                 "     ) chosen_diagnosis\n" +
                 "         JOIN encounter_diagnosis d\n" +
@@ -868,10 +860,10 @@ public class VisualizationDataExchange {
 								ret.add(SimpleObject.create(
 									"service_type", row[1] != null ? row[1].toString() : "",
 									"invoices", row[2] != null ? row[2].toString() : "",
-									"amount_due", row[3] != null ? row[3].toString() : "",
-									"amount_paid", row[4] != null ? row[4].toString() : "",
-									"balance_due", row[5] != null ? row[5].toString() : "",
-									"total_refunds", row[6] != null ? row[6].toString() : ""
+									"amount_due", nullIfBlank(row[3]),
+									"amount_paid", nullIfBlank(row[4]),
+									"balance_due", nullIfBlank(row[5]),
+									"total_refunds", nullIfBlank(row[6])
 								));
 							}
 						}
@@ -959,8 +951,8 @@ public class VisualizationDataExchange {
                             }
                             ret.add(SimpleObject.create(
                                     "payment_mode", row[0] != null ? row[0].toString() : "",
-                                    "no_of_patients", row[1] != null ? row[1].toString() : "",
-                                    "amount_paid", row[2] != null ? row[2].toString() : ""
+                                    "no_of_patients", nullIfBlank(row[1]),
+                                    "amount_paid", nullIfBlank(row[2])
                             ));
                         }
                     }
@@ -1410,9 +1402,9 @@ public class VisualizationDataExchange {
                             for (int i = 1; i <= metaData.getColumnCount(); i++) {
                                 row[i - 1] = resultSet.getObject(i);
                             }
+							String waivers = row[0] == null ? null : row[0].toString().trim();
                             ret.add(SimpleObject.create(
-                                    "waivers", row[0] != null ? row[0].toString() : null
-                            ));
+                                    "waivers", (waivers == null || waivers.isEmpty()) ? null : waivers));
                         }
                     }
                 }
@@ -1637,7 +1629,7 @@ public class VisualizationDataExchange {
                             }
                             ret.add(SimpleObject.create(
                                     "department", row[0] != null ? row[0].toString() : "",
-                                    "amount_paid", row[1] != null ? row[1].toString() : ""
+                                    "amount_paid", nullIfBlank(row[1])
                             ));
                         }
                     }
@@ -1676,6 +1668,106 @@ public class VisualizationDataExchange {
 		return ret;
 	}
 
+	/**
+	 * Retrieves bed management data
+	 * This method executes a query to gather details about bed allocation, occupancy,
+	 * and availability across different wards and bed types
+	 */
+	public static List<SimpleObject> getBedManagement(Date fetchDate) {
+		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		DbSessionFactory sf = Context.getRegisteredComponents(DbSessionFactory.class).get(0);
+
+		final String sqlSelectQuery = "WITH bed_state AS (\n" +
+				"    SELECT\n" +
+				"        blm.location_id,\n" +
+				"        btag.name      AS bed_tag,\n" +
+				"        bt.name        AS bed_type,\n" +
+				"        COUNT(b.bed_id) AS actual_beds,\n" +
+				"        SUM(CASE WHEN bpam.bed_id IS NOT NULL THEN 1 ELSE 0 END) AS occupied_count\n" +
+				"    FROM bed b\n" +
+				"             JOIN bed_location_map blm\n" +
+				"                  ON blm.bed_id = b.bed_id\n" +
+				"             JOIN bed_tag_map btm\n" +
+				"                  ON btm.bed_id = b.bed_id\n" +
+				"                      AND btm.voided = 0\n" +
+				"             JOIN bed_tag btag\n" +
+				"                  ON btag.bed_tag_id = btm.bed_tag_id\n" +
+				"                      AND btag.voided = 0\n" +
+				"             LEFT JOIN bed_type bt\n" +
+				"                       ON bt.bed_type_id = b.bed_type_id\n" +
+				"                           AND bt.retired = 0\n" +
+				"             LEFT JOIN bed_patient_assignment_map bpam\n" +
+				"                       ON bpam.bed_id = b.bed_id\n" +
+				"                           AND bpam.date_stopped IS NULL\n" +
+				"                           AND bpam.voided = 0\n" +
+				"    WHERE b.voided = 0\n" +
+				"    GROUP BY blm.location_id, btag.name,bt.name\n" +
+				")\n" +
+				"SELECT\n" +
+				"    l.name AS ward,\n" +
+				"    REPLACE(REPLACE(lat.name, 'Ward Authorized ', ''), 's', '') AS bed_tag,\n" +
+				"    bs.bed_type,\n" +
+				"    CAST(la.value_reference AS UNSIGNED) AS authorized_capacity,\n" +
+				"    COALESCE(bs.actual_beds, 0) AS actual_beds,\n" +
+				"    COALESCE(bs.occupied_count, 0) AS occupied_beds,\n" +
+				"    -- Available = Physical Beds - Occupied Beds\n" +
+				"    COALESCE(bs.actual_beds, 0) - COALESCE(bs.occupied_count, 0) AS available_beds\n" +
+				"FROM location l\n" +
+				"         JOIN location_tag_map ltm ON l.location_id = ltm.location_id\n" +
+				"         JOIN location_tag lt ON ltm.location_tag_id = lt.location_tag_id\n" +
+				"    AND lt.name = 'Admission Location'\n" +
+				"         JOIN location_attribute la ON la.location_id = l.location_id AND la.voided = 0\n" +
+				"         JOIN location_attribute_type lat ON lat.location_attribute_type_id = la.attribute_type_id\n" +
+				"    AND lat.retired = 0\n" +
+				"    AND lat.name REGEXP '^Ward Authorized (Beds|Cots|Incubators)'\n" +
+				"         LEFT JOIN bed_state bs ON bs.location_id = l.location_id\n" +
+				"    AND lat.name = CONCAT('Ward Authorized ', bs.bed_tag, 's')\n" +
+				"WHERE l.retired = 0\n" +
+				"ORDER BY l.name, bed_tag,bed_type;";
+		final List<SimpleObject> ret = new ArrayList<SimpleObject>();
+		Transaction tx = null;
+		try {
+			Session hibSession = sf.getHibernateSessionFactory().getCurrentSession();
+			boolean startedTx = false;
+			if (!hibSession.getTransaction().isActive()) {
+				tx = hibSession.beginTransaction();
+				startedTx = true;
+			}
+			sf.getCurrentSession().doWork(connection -> {
+				try (PreparedStatement statement = connection.prepareStatement(sqlSelectQuery)) {
+					try (ResultSet resultSet = statement.executeQuery()) {
+						ResultSetMetaData metaData = resultSet.getMetaData();
+						while (resultSet.next()) {
+							Object[] row = new Object[metaData.getColumnCount()];
+							for (int i = 1; i <= metaData.getColumnCount(); i++) {
+								row[i - 1] = resultSet.getObject(i);
+							}
+							ret.add(SimpleObject.create(
+									"ward", row[0] != null ? row[0].toString() : "",
+									"bed_tag", row[1] != null ? row[1].toString() : "",
+									"bed_type", row[2] != null ? row[2].toString() : "",
+									"authorized_capacity", row[3] != null ? Integer.parseInt(row[3].toString()) : 0,
+									"actual_beds", row[4] != null ? Integer.parseInt(row[4].toString()) : 0,
+									"occupied_beds", row[5] != null ? Integer.parseInt(row[5].toString()) : 0,
+									"available_beds", row[6] != null ? Integer.parseInt(row[6].toString()) : 0
+							));
+						}
+					}
+				}
+			});
+			if (startedTx && tx != null && tx.isActive()) {
+
+				tx.commit();
+			}
+		} catch (Exception e) {
+			if (tx != null && tx.isActive()) {
+				tx.rollback();
+			}
+			log.error("KenyaEMR IL: Unable to get bed data: " + e.getMessage(), e);
+			throw new IllegalArgumentException("Unable to execute query", e);
+		}
+		return ret;
+	}
 }
 
 

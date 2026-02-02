@@ -124,5 +124,17 @@ public class VisualizationUtils {
         }
     }
 
+    /**
+     * Returns null if the given value is blank (null or empty string after trimming), otherwise returns the value as a string.
+     * @param value the value to check
+     * @return null if blank, otherwise the trimmed string representation of the value
+     */
+    public static String nullIfBlank(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String s = value.toString().trim();
+        return s.isEmpty() ? null : s;
+    }
 }
 
