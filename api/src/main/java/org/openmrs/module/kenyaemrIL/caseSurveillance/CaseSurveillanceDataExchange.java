@@ -488,20 +488,10 @@ public class CaseSurveillanceDataExchange {
                 log.warn("Encounter has no linked patient, skipping...");
                 continue;
             }
-            String artStartDate;
-            try {
-                log.debug("Evaluating ART start date for patientId={}, encounterId={}, encounterDatetime={}",
-                        patient.getPatientId(), encounter.getEncounterId(), encounter.getEncounterDatetime());
-                artStartDate = getArtStartDate(patient);
-            } catch (Exception e) {
-                log.error("Failed to evaluate ART start date for patientId={}, encounterId={}",
-                        patient.getPatientId(), encounter.getEncounterId(), e);
-                continue;
-            }
+            String artStartDate = getArtStartDate(patient);
 
             if (artStartDate == null) {
-                log.warn("Encounter has no ART start date, skipping... patientId={}, encounterId={}",
-                        patient.getPatientId(), encounter.getEncounterId());
+                log.warn("Encounter has no ART start date, skipping...");
                 continue;
             }
 
