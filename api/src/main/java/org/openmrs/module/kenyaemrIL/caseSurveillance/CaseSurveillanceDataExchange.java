@@ -1690,7 +1690,7 @@ public class CaseSurveillanceDataExchange {
             ));
         }
 
-        System.out.println("INFO-IL: Finished generating PrEP uptake dataset...");
+        System.out.println("INFO - IL: Finished generating PrEP uptake dataset: " + result.size() + " records found");
         return result;
     }
     /**
