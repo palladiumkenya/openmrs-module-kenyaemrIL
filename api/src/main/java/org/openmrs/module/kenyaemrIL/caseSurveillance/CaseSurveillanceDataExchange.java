@@ -488,10 +488,20 @@ public class CaseSurveillanceDataExchange {
                 log.warn("Encounter has no linked patient, skipping...");
                 continue;
             }
-            String artStartDate = getArtStartDate(patient);
+            String artStartDate;
+            try {
+                log.debug("Evaluating ART start date for patientId={}, encounterId={}, encounterDatetime={}",
+                        patient.getPatientId(), encounter.getEncounterId(), encounter.getEncounterDatetime());
+                artStartDate = getArtStartDate(patient);
+            } catch (Exception e) {
+                log.error("Failed to evaluate ART start date for patientId={}, encounterId={}",
+                        patient.getPatientId(), encounter.getEncounterId(), e);
+                continue;
+            }
 
             if (artStartDate == null) {
-                log.warn("Encounter has no ART start date, skipping...");
+                log.warn("Encounter has no ART start date, skipping... patientId={}, encounterId={}",
+                        patient.getPatientId(), encounter.getEncounterId());
                 continue;
             }
 
@@ -1690,7 +1700,7 @@ public class CaseSurveillanceDataExchange {
             ));
         }
 
-        System.out.println("INFO-IL: Finished generating PrEP uptake dataset...");
+        System.out.println("INFO - IL: Finished generating PrEP uptake dataset: " + result.size() + " records found");
         return result;
     }
     /**
