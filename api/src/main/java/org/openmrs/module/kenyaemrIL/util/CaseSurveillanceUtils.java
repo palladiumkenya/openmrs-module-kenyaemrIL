@@ -181,6 +181,9 @@ public class CaseSurveillanceUtils {
      * Fetch PrEP Number for the given patient
      */
     public static String getPrepNumber(Patient patient) {
+        if (patient == null) {
+            return null;
+        }
         PatientIdentifierType prepIdentifierType = MetadataUtils.existing(
                 PatientIdentifierType.class, PrEP_NUMBER_IDENTIFIER_TYPE_UUID
         );
